@@ -20,6 +20,8 @@
     <node name="arm_controller_spawner" pkg="dynamixel_controllers" type="controller_spawner.py"
           args="--manager=dxl_manager
                 --port arm_port
-                arm_controller"
+                shoulder_controller
+                elbow_controller
+                wrist_controller"
           output="screen"/>
 </launch>
