@@ -12,10 +12,13 @@
 		<param name="topic_command_elbow" value="/elbow_controller/command" type="str"/>
 		<param name="topic_command_wrist" value="/wrist_controller/command" type="str"/>
 		
+		<param name="input_boundary" value="/home/pryre/catkin_ws/src/mantis_uav/mantis_config/config/bounds.txt" type="str"/>
+		
 		<!-- Frame Configuration -->
 		<param name="mav_frame" value="fcu" type="str"/>
+		<param name="camera_frame" value="usb_cam" type="str"/>
 		<!-- Camera Transformation [X,Y,Z, w, x, y, z] -->
-		<rosparam param="static_camera_pose">[0.2, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]</rosparam>
+		<rosparam param="static_camera_pose">[0.125, 0.0, 0.0, 0.383, 0.0, 0.924, 0.0]</rosparam>
 		<!-- Arm Transformation [w, x, y, z] -->
 		<!-- This should be the rotation of mav_frame to the pivot of the mounting joint-->
 		<rosparam param="static_arm_rotation">[0.707, 0.0, 0.707, 0.0]</rosparam>

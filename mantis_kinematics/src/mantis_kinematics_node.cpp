@@ -17,7 +17,12 @@
 
 #include <vector>
 #include <string>
-
+#include <cmath>
+#include <iostream>
+#include <fstream>
+#include <iterator>
+#include <sstream>
+#include <limits>
 
 void loadParam(ros::NodeHandle &n, const std::string &str, bool &param) {
 	if( !n.getParam( str, param ) ) {
@@ -156,6 +161,77 @@ void transformTF2ToMsg( const tf2::Transform &t, geometry_msgs::Transform &g ) {
 	quaternionTF2ToMsg( t.getRotation(), g.rotation );
 }
 
+//http://alienryderflex.com/polygon/
+bool pointInPolygon( double x, double y, const std::vector< double > &px, const std::vector< double > &py ) {
+	bool oddNodes = false;
+	int j = px.size() - 1;
+
+	for (int i = 0; i < px.size(); i++) {
+		if ( ( py.at(i) < y ) && ( py.at(j) >= y ) || ( py.at(j) < y ) && ( py.at(i) >= y ) ) {
+			if ( ( px.at(i) + ( y - py.at(i) ) / ( py.at(j) - py.at(i) ) * ( px.at(j) - px.at(i) ) ) < x ) {
+				oddNodes = !oddNodes;
+			}
+		}
+		
+		j = i; 
+	}
+
+	return oddNodes;
+}
+
+//https://gist.github.com/atduskgreg/1325002
+double distanceFromLine(const double x, const double y, const double lx1, const double ly1, const double lx2, const double ly2, double &cx, double &cy) {
+    double xDelta = lx2 - lx1;
+    double yDelta = ly2 - ly1;
+
+    double u = ((x - lx1) * xDelta + (y - ly1)*yDelta) / (xDelta * xDelta + yDelta * yDelta);
+
+    if (u < 0) {
+		cx = lx1;
+		cy = ly1;
+	} else if (u > 1) {
+		cx = lx2;
+		cy = ly2;
+	} else {
+        cx = lx1 + (u * xDelta);
+		cy = ly1 + (u * yDelta);
+	}
+    
+    double dx = x - cx;
+    double dy = y - cy;
+	
+    return std::sqrt(dx * dx + dy * dy);	// distance
+}
+
+//https://gist.github.com/atduskgreg/1325002
+double distanceFromPoly(const double x, const double y, const std::vector< double > &px, const std::vector< double > &py, double &cx, double &cy) {
+    double result = std::numeric_limits<double>::max();
+	
+    // check each line
+	int j = px.size() - 1;
+	
+    for(int i = 0; i < px.size(); i++) {
+		double cx_temp = 0;
+		double cy_temp = 0;
+		double current_x = px.at(i);	//Current Point
+		double current_y = py.at(i);
+		double last_x = px.at(j);	//Last Point
+		double last_y = py.at(j);
+        
+        double segmentDistance = distanceFromLine(x, y, last_x, last_y, current_x, current_y, cx_temp, cy_temp);
+        
+        if(segmentDistance < result){
+			cx = cx_temp;
+			cy = cy_temp;
+            result = segmentDistance;
+        }
+		
+		j = i;
+    }
+    
+    return result;
+}
+
 class MantisKinematics {
 	private:
 		ros::NodeHandle nh_;
@@ -175,9 +251,13 @@ class MantisKinematics {
 		tf2_ros::StaticTransformBroadcaster tfbrs_;
 		
 		std::string mav_frame;
+		std::string camera_frame;
 		double arm_length_mount;
 		double arm_length_link1;
 		double arm_length_link2;
+		
+		std::vector< double > px_;
+		std::vector< double > pz_;
 
 	public:
 		MantisKinematics() : nh_(ros::this_node::getName()), tfln_(tfBuffer) {
@@ -188,7 +268,11 @@ class MantisKinematics {
 			std::string topic_command_shoulder = "command_shoulder";
 			std::string topic_command_elbow = "command_elbow";
 			std::string topic_command_wrist = "command_wrist";
+			
+			std::string input_boundary;
+			
 			mav_frame = "fcu";
+			camera_frame = "camera";
 
 			loadParam(nh_, "topic_marker_detected", topic_marker_detected);
 			loadParam(nh_, "topic_state_shoulder", topic_state_shoulder);
@@ -199,7 +283,10 @@ class MantisKinematics {
 			loadParam(nh_, "topic_command_elbow", topic_command_elbow);
 			loadParam(nh_, "topic_command_wrist", topic_command_wrist);
 
+			loadParam(nh_, "input_boundary", input_boundary);
+
 			loadParam(nh_, "mav_frame", mav_frame);
+			loadParam(nh_, "camera_frame", camera_frame);
 			loadParam(nh_, "arm_length_mount", arm_length_mount);
 			loadParam(nh_, "arm_length_link1", arm_length_link1);
 			loadParam(nh_, "arm_length_link2", arm_length_link2);
@@ -208,7 +295,7 @@ class MantisKinematics {
 			geometry_msgs::TransformStamped tf_static_camera;
 			tf_static_camera.header.stamp = ros::Time::now();
 			tf_static_camera.header.frame_id = mav_frame;
-			tf_static_camera.child_frame_id = "camera";
+			tf_static_camera.child_frame_id = camera_frame;
 			loadParam(nh_, "static_camera_pose", tf_static_camera.transform);
 			tf2::Quaternion camera_q;
 			quaternionMsgToTF2(tf_static_camera.transform.rotation, camera_q);
@@ -226,6 +313,13 @@ class MantisKinematics {
 			quaternionTF2ToMsg(arm_q, tf_static_arm.transform.rotation);
 			tfbrs_.sendTransform(tf_static_arm);	//Send off a once-off transform to define arm mount
 			
+			//TODO: Read in the boundary polygon (could be generated on the fly...
+			std::vector< std::vector < double > > temp_poly;
+			readBoundaryPoly( input_boundary, temp_poly);
+			px_ = temp_poly.at(0);
+			pz_ = temp_poly.at(1);
+			
+			
 			marker_sub_ = nh_.subscribe<ml_msgs::MarkerDetection> ( topic_marker_detected, 100, &MantisKinematics::marker_cb, this );
 			state_shoulder_sub_ = nh_.subscribe<dynamixel_msgs::JointState> ( topic_state_shoulder, 100, &MantisKinematics::shoulder_cb, this );
 			state_elbow_sub_ = nh_.subscribe<dynamixel_msgs::JointState> ( topic_state_elbow, 100, &MantisKinematics::elbow_cb, this );
@@ -240,7 +334,33 @@ class MantisKinematics {
 
 		~MantisKinematics() {
 		}
-
+		
+		void readBoundaryPoly( std::string filename, std::vector< std::vector < double > > &p ) {
+			std::ifstream in( filename );
+			std::string record;
+			
+			p.clear();
+			p.push_back(std::vector < double >());
+			p.push_back(std::vector < double >());
+			
+			double x;
+			double z;
+			int i = 1;
+			
+			while ( in >> x >> z ) {
+				p.at(0).push_back( x );
+				p.at(1).push_back( z );
+				
+				ROS_INFO("Point %i: [%0.4f, %0.4f]", i, x, z);
+				i++;
+			}
+			
+			ROS_ASSERT_MSG( p.at(0).size() == p.at(1).size(), "Polygon definition was not correct (px != py)" );
+			
+			ROS_INFO("Loaded boundary with %li points", p.at(0).size() );
+		}
+		
+		//TODO: Each joint should be dynamically created according to the model
 		void shoulder_cb(const dynamixel_msgs::JointState::ConstPtr& state ) {
 			geometry_msgs::TransformStamped tf;
 			tf2::Quaternion q;
@@ -288,9 +408,46 @@ class MantisKinematics {
 			
 			tfbr_.sendTransform(tf);
 		}
+		
+		void setXZGoal( const double x, const double z) {
+			double gx = 0;
+			double gz = 0;
+			double dist = 0;
+		
+			if( pointInPolygon(x, z, px_, pz_) ) {
+				gx = x;
+				gz = z;
+			} else {
+				dist = distanceFromPoly(x, z, px_, pz_, gx, gz);
+			}
+			
+			//TODO: ik
+			//TODO: Broadcast shoulder and wrist
+		}
 
+		//TODO: This should not be here at all
+		//Instead it should be pose goal input in mav_frame, and output the rotation commands
 		void marker_cb(const ml_msgs::MarkerDetection::ConstPtr& msg) {
-			ROS_INFO("NEW MARKER_MESSAGE!");
+			for(int i = 0; i < msg->markers.size(); i++) {
+				if(msg->markers.at(i).marker_id == 0) {	//XXX: We only check for the marker 0
+					geometry_msgs::TransformStamped tf;
+			
+					tf.header = msg->header;
+					tf.child_frame_id = "marker";
+					tf.transform.translation.x = msg->markers.at(i).pose.position.x;
+					tf.transform.translation.y = msg->markers.at(i).pose.position.y;
+					tf.transform.translation.z = msg->markers.at(i).pose.position.z;
+					tf.transform.rotation.w = msg->markers.at(i).pose.orientation.w;
+					tf.transform.rotation.x = msg->markers.at(i).pose.orientation.x;
+					tf.transform.rotation.y = msg->markers.at(i).pose.orientation.y;
+					tf.transform.rotation.z = msg->markers.at(i).pose.orientation.z;
+			
+					tfbr_.sendTransform(tf);
+					
+					setXZGoal(tf.transform.translation.x, tf.transform.translation.z);
+					//TODO: Point wrist at marker
+				}
+			}
 		}
 };
 
