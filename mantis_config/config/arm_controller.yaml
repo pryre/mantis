@@ -7,7 +7,7 @@ shoulder_controller:
     joint_speed: 1.0
     motor_master:
         id: 1
-        init: 360
+        init: 512
         min: 200
         max: 360
     motor_slave:
