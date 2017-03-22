@@ -409,7 +409,7 @@ class MantisKinematics {
 			tfbr_.sendTransform(tf);
 		}
 
-		void setXZGoal( const double x, const double z) {
+		void setXZGoal( const double x, const double z, const ros::Time time_goal_set) {
 			double gx = 0;
 			double gz = 0;
 			double dist = 0;
@@ -423,7 +423,7 @@ class MantisKinematics {
 
 			geometry_msgs::TransformStamped tf_fcu_endeff;
 
-			tf_fcu_endeff.header.stamp = ros::Time::now();
+			tf_fcu_endeff.header.stamp = time_goal_set;
 			tf_fcu_endeff.header.frame_id = "fcu";
 			tf_fcu_endeff.child_frame_id = "arm_goal";
 			tf_fcu_endeff.transform.translation.x = gx;
@@ -471,7 +471,7 @@ class MantisKinematics {
 
 			//Calculate the wrist angle
 			geometry_msgs::TransformStamped tf_ag_marker;
-			tf_ag_marker = tfBuffer.lookupTransform("arm_goal", "marker", ros::Time(0));
+			tf_ag_marker = tfBuffer.lookupTransform("arm_goal", "marker", time_goal_set);
 
 			double yaw_to_marker = atan2(tf_ag_marker.transform.translation.y, tf_ag_marker.transform.translation.x);
 			if( yaw_to_marker > M_PI )
@@ -521,7 +521,7 @@ class MantisKinematics {
 						ros::Duration(1.0).sleep();
 					}
 
-					setXZGoal(tf_fcu_marker.transform.translation.x, tf_fcu_marker.transform.translation.z);
+					setXZGoal(tf_fcu_marker.transform.translation.x, tf_fcu_marker.transform.translation.z, msg->header.stamp);
 					//TODO: Point wrist at marker
 				}
 			}
