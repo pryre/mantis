@@ -435,31 +435,13 @@ class MantisKinematics {
 			tf_fcu_endeff.transform.rotation.z = 0.0f;
 
 			tfbr_.sendTransform(tf_fcu_endeff);
-			//tfBuffer.setTransform(tf_fcu_endeff, "private");
+			tfBuffer.setTransform(tf_fcu_endeff, "private");
 
 
 			geometry_msgs::TransformStamped tf_fcu_link1;
 			tf_fcu_link1 = tfBuffer.lookupTransform("fcu", "arm_link1", ros::Time(0));
 
-			//Get the goal from the first joint, rotate the frame
-			/*
-			double a = M_PI; //TODO: Calculate this properly
-			double xt = gx - tf_fcu_link1.transform.translation.x;
-			double yt = gz - tf_fcu_link1.transform.translation.z;
-			ROS_INFO("TARGET ADJ: [%0.2f, %0.2f]", xt, yt);
-
-			tf2::Matrix3x3 rot_matrix( cos(a), -sin(a), 0.0f, sin(a), cos(a), 0.0f, 0.0f, 0.0f, 0.0f );
-			tf2::Matrix3x3 gl(xt, 0.0f, 0.0f, yt, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-			tf2::Matrix3x3 goal_local = rot_matrix * gl;
-
-			//Local goal relative to the first joint
-			double xl = (goal_local.getRow(0)).getX();
-			double yl = (goal_local.getRow(1)).getX();
-
-			ROS_INFO("TARGET LCL: [%0.2f, %0.2f]", xl, yl);
-			*/
-
-			ROS_INFO("GOAL SET: [%0.2f, %0.2f]", gx, gz);
+			//ROS_INFO("GOAL SET: [%0.2f, %0.2f]", gx, gz);
 
 			tf2::Vector3 goal_local;
 			goal_local.setX(gx - tf_fcu_link1.transform.translation.x);
@@ -469,7 +451,7 @@ class MantisKinematics {
 			double xl = goal_local.getZ() - 0.01;	//XXX: Bump it a little to make the boundary check more reliable
 			double yl = goal_local.getX() - 0.01;
 
-			ROS_INFO("GOAL LOCAL: [%0.2f, %0.2f]", xl, yl);
+			//ROS_INFO("GOAL LOCAL: [%0.2f, %0.2f]", xl, yl);
 
 			//Figure out the goal rotations
 			double c2 = (pow(xl,2) + pow(yl,2) - pow(arm_length_link1,2) - pow(arm_length_link2,2))/(2*arm_length_link1*arm_length_link2);
@@ -480,45 +462,20 @@ class MantisKinematics {
 			double k2 = arm_length_link2*s2;
 			double theta1 = atan2(yl, xl) - atan2(k2, k1);
 
-			ROS_INFO("ANGLES LOCAL: [%0.2f, %0.2f]", theta1*180/(M_PI), theta2*180/(M_PI));
+			//ROS_INFO("ANGLES LOCAL: [%0.2f, %0.2f]", theta1*180/(M_PI), theta2*180/(M_PI));
 			//Rotate to align with the encoders on the servos
 			theta1 = -theta1;
 			theta2 = -theta2;
 
-			ROS_INFO("ANGLES SET: [%0.2f, %0.2f]", theta1*180/(M_PI), theta2*180/(M_PI));
+			//ROS_INFO("ANGLES SET: [%0.2f, %0.2f]", theta1*180/(M_PI), theta2*180/(M_PI));
 
-			//Make sure the angles are within the bounds of the manipulator
-			/*
-			if (theta1 > arm.link1.limP) || (theta1 < arm.link1.limN) || (theta2 > arm.link2.limP) || (theta2 < arm.link2.limN)
-				figure(2)
-					hold on;
-					plot(goal.x, goal.y, 'rx');
-					plot(bounds(1,:), bounds(2,:), 'g');
-					axis('equal');
-					grid on;
+			//Calculate the wrist angle
+			geometry_msgs::TransformStamped tf_ag_marker;
+			tf_ag_marker = tfBuffer.lookupTransform("arm_goal", "marker", ros::Time(0));
 
-				disp('Goal location not able to be actuated');
-
-				if theta1 > arm.link1.limP
-					theta1 = arm.link1.limP;
-				end
-
-				if theta1 < arm.link1.limN
-					theta1 = arm.link1.limN;
-				end
-
-				if theta2 > arm.link2.limP
-					theta2 = arm.link2.limP;
-				end
-
-				if theta2 < arm.link2.limN
-					theta2 = arm.link2.limN;
-				end
-
-				disp('Going to closest location');
-				disp(['Calculated angles: [', num2str(round(theta1,2)), '; ', num2str(round(theta2,2)), ']']);
-			end
-			*/
+			double yaw_to_marker = atan2(tf_ag_marker.transform.translation.y, tf_ag_marker.transform.translation.x);
+			if( yaw_to_marker > M_PI )
+				yaw_to_marker -= 2*M_PI;
 
 			//Transmit the goal angles
 			if(!std::isnan(theta1) && !std::isnan(theta2)) {
@@ -527,10 +484,11 @@ class MantisKinematics {
 				command_shoulder_pub_.publish(out_cmd);
 				out_cmd.data = theta2;
 				command_elbow_pub_.publish(out_cmd);
+				out_cmd.data = yaw_to_marker;
+				command_wrist_pub_.publish(out_cmd);
 			} else {
-				ROS_INFO("Ignoring position request");
+				ROS_WARN("Ignoring position request");
 			}
-			//TODO: Broadcast shoulder and wrist
 		}
 
 		//TODO: This should not be here at all
