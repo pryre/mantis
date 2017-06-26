@@ -14,8 +14,8 @@
 	<arg name="topic_input_image" default="/$(arg camera_name)/image_raw" />
 
 	<!-- Launch detector node -->
-	<include file="$(find mantis_goal_detector_ball)/launch/ball_detector.launch">
-		<arg name="config_yaml" value="$(find mantis_goal_detector_ball)/launch/tennis_ball_config.yaml" />
+	<include file="$(find mantis_target_detector_ball)/launch/ball_detector.launch">
+		<arg name="config_yaml" value="$(find mantis_target_detector_ball)/launch/tennis_ball_config.yaml" />
 
 		<arg name="topic_input_camera_info" value="$(arg topic_input_camera_info)" />
 		<arg name="topic_input_image" value="$(arg topic_input_image)" />

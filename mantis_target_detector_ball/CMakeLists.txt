@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(mantis_goal_detector_ball)
+project(mantis_target_detector_ball)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
 # add_definitions(-std=c++11)

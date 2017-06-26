@@ -6,10 +6,10 @@
 	<arg name="topic_output_detect" />
 	<arg name="topic_output_marker" />
 	
-	<arg name="config_yaml" default="$(find mantis_goal_detector_ball)/launch/ball_config.yaml" />
+	<arg name="config_yaml" default="$(find mantis_target_detector_ball)/launch/ball_config.yaml" />
 	<arg name="log_output" default="screen" />
 	
-	<node pkg="mantis_goal_detector_ball" type="mantis_goal_detector_node" name="goal_detector" required="true" clear_params="true" output="$(arg log_output)">
+	<node pkg="mantis_target_detector_ball" type="mantis_goal_detector_node" name="goal_detector" required="true" clear_params="true" output="$(arg log_output)">
 		<param name="topic_input_camera_info" value="$(arg topic_input_camera_info)" />
 		<param name="topic_input_image" value="$(arg topic_input_image)" />
 		<param name="topic_output_detect" value="$(arg topic_output_detect)" />

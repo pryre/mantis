@@ -17,6 +17,7 @@ class BallDetector {
 		image_transport::Publisher pub_debug_image_;
 		image_transport::Publisher pub_overlay_image_;
 		ros::Publisher pub_detect_;
+		ros::Publisher pub_marker_;
 
 		bool got_camera_info_;
 		sensor_msgs::CameraInfo camera_info_;
@@ -26,6 +27,7 @@ class BallDetector {
 		std::string topic_output_debug_image_;
 		std::string topic_output_overlay_image_;
 		std::string topic_output_detect_;
+		std::string topic_output_marker_;
 
 	public:
 		BallDetector() :
@@ -36,7 +38,8 @@ class BallDetector {
 			topic_input_image_( "input_image" ),
 			topic_output_debug_image_( "debug_image" ),
 			topic_output_overlay_image_( "overlay_image" ),
-			topic_output_detect_( "circles" ) {
+			topic_output_detect_( "target_pose" ),
+			topic_output_detect_( "target_marker" ) {
 
 			//Get parameters, or if not defined, use the defaults
 			nh_.param( "topic_input_camera_info", topic_input_camera_info_, topic_input_camera_info_ );

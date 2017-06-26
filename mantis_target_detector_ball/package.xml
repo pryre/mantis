@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>mantis_goal_detector_ball</name>
+  <name>mantis_target_detector_ball</name>
   <version>0.0.0</version>
-  <description>The mantis_goal_detector_ball package</description>
+  <description>The mantis_target_detector_ball package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
