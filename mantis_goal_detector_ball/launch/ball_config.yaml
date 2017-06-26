@@ -1,0 +1,7 @@
+ball_description:
+    size: 0.1
+    name: red_ball
+	hue_min: 230
+    hue_max: 25
+
+show_marker: true
