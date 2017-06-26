@@ -1,7 +1,17 @@
 ball_description:
-    size: 0.067
     name: tennis_ball
-	hue_min: 230
-    hue_max: 25
-	
+    size: 0.067
+    #hsv scales
+    #  hue: 0.0 -> 360.0
+    #  sat: 0.0 -> 1.0
+    #  val: 0.0 -> 1.0
+    hsv_min:
+        hue: 45.0
+        sat: 0.1
+        val: 0.4
+    hsv_max:
+        hue: 120.0
+        sat: 0.4
+        val: 1.0
+
 show_marker: true

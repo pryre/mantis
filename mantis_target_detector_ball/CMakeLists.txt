@@ -9,7 +9,8 @@ project(mantis_target_detector_ball)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  std_msgs
+  geometry_msgs
+  visualization_msgs
   cv_bridge
   image_transport
 )

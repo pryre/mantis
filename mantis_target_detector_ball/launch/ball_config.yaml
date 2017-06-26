@@ -1,7 +1,13 @@
 ball_description:
-    size: 0.1
     name: red_ball
-	hue_min: 230
-    hue_max: 25
+    size: 0.1
+    hsv_min:
+        hue: 230
+        sat: 50
+        val: 50
+    hsv_max:
+        hue: 25
+        sat: 255
+        val: 255
 
 show_marker: true

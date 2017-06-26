@@ -4,7 +4,7 @@
 	<arg name="camera_name" default="camera" />
 	<arg name="topic_output_detect" default="/target_pose" />
 	<arg name="topic_output_marker" default="/target_marker" />
-	
+
 	<arg name="log_output" default="screen" />
 
 	<!-- Launch camera node -->
@@ -21,7 +21,7 @@
 		<arg name="topic_input_image" value="$(arg topic_input_image)" />
 		<arg name="topic_output_detect" value="$(arg topic_output_detect)" />
 		<arg name="topic_output_marker" value="$(arg topic_output_marker)" />
-		
+
 		<arg name="log_output" value="$(arg log_output)" />
 	</include>
 </launch>
