@@ -1,6 +1,10 @@
 ball_description:
     name: red_ball
     size: 0.1
+    #HSV scales
+    #  hue: 0.0 -> 360.0
+    #  sat: 0.0 -> 1.0
+    #  val: 0.0 -> 1.0
     hsv_min:
         hue: 230
         sat: 50
@@ -9,5 +13,25 @@ ball_description:
         hue: 25
         sat: 255
         val: 255
+
+hough_detector:
+    accum_scale: 2 4 #Invearse scaling for accumulator size (larger allows more approximate circles)
+    min_dist_scale: 4 #Invearse scaling for minimum distance between circles (larger lets detections be closer)
+    param1: 100 #Hough specific parameters
+    param2: 40 #Hough specific parameters
+    min_radius: 50 #Minimum circle detection radius (0 to unset)
+    max_radius: 100 #Maximum circle detection radius (0 to unset)
+
+filters:
+    openning:
+	    size: 11
+    closing:
+	    size: 11
+    blur:
+	    size: 9
+		distribution: 2
+    pose_low_pass:
+        size_alpha: 0.2
+        position_alpha: 0.2
 
 show_marker: true

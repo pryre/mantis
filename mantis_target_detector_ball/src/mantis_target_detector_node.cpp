@@ -23,14 +23,28 @@ class BallDetector {
 		bool got_camera_info_;
 		sensor_msgs::CameraInfo camera_info_;
 
-		std::string ball_name_;
-		double ball_size_;
-		double ball_hsv_min_hue_;
-		double ball_hsv_min_sat_;
-		double ball_hsv_min_val_;
-		double ball_hsv_max_hue_;
-		double ball_hsv_max_sat_;
-		double ball_hsv_max_val_;
+		std::string param_ball_name_;
+		double param_ball_size_;
+		double param_hsv_min_hue_;
+		double param_hsv_min_sat_;
+		double param_hsv_min_val_;
+		double param_hsv_max_hue_;
+		double param_hsv_max_sat_;
+		double param_hsv_max_val_;
+
+		double param_hough_accum_;
+		double param_hough_min_dist_;
+		double param_hough_param1_;
+		double param_hough_param2_;
+		double param_hough_min_rad_;
+		double param_hough_max_rad_;
+
+		double param_morph_open_size_;
+		double param_morph_close_size_;
+		double param_blur_size_;
+		double param_blur_dist_;
+		double param_low_pass_pos_a_;
+		double param_low_pass_size_a_;
 
 		std::string topic_input_camera_info_;
 		std::string topic_input_image_;
@@ -43,8 +57,20 @@ class BallDetector {
 		BallDetector() :
 			nh_( ros::this_node::getName() ),
 			it_(nh_),
-			ball_name_( "ball" ),
-			ball_size_( 1.0 ),
+			param_ball_name_( "ball" ),
+			param_ball_size_( 1.0 ),
+			param_hough_accum_( 2 ),
+			param_hough_min_dist_( 4 ),
+			param_hough_param1_( 100 ),
+			param_hough_param2_( 40 ),
+			param_hough_min_rad_( 50 ),
+			param_hough_max_rad_( 100 ),
+			param_morph_open_size_( 11 ),
+			param_morph_close_size_( 11 ),
+			param_blur_size_( 9 ),
+			param_blur_dist_( 2 ),
+			param_low_pass_pos_a_( 0.2 ),
+			param_low_pass_size_a_( 0.2 ),
 			got_camera_info_( false ),
 			topic_input_camera_info_( "input_camera_info" ),
 			topic_input_image_( "input_image" ),
@@ -67,14 +93,28 @@ class BallDetector {
 			pub_overlay_image_ = it_.advertise(topic_output_overlay_image_, 100);
 			pub_detect_ = nh_.advertise<geometry_msgs::PoseStamped>( topic_output_detect_, 100 );
 
-			nh_.param( "ball_description/name", ball_name_, ball_name_ );
-			nh_.param( "ball_description/size", ball_size_, ball_size_ );
-			nh_.param( "ball_description/hsv_min/hue", ball_hsv_min_hue_, ball_hsv_min_hue_ );
-			nh_.param( "ball_description/hsv_min/sat", ball_hsv_min_sat_, ball_hsv_min_sat_ );
-			nh_.param( "ball_description/hsv_min/val", ball_hsv_min_val_, ball_hsv_min_val_ );
-			nh_.param( "ball_description/hsv_max/hue", ball_hsv_max_hue_, ball_hsv_max_hue_ );
-			nh_.param( "ball_description/hsv_max/sat", ball_hsv_max_sat_, ball_hsv_max_sat_ );
-			nh_.param( "ball_description/hsv_max/val", ball_hsv_max_val_, ball_hsv_max_val_ );
+			nh_.param( "ball_description/name", param_ball_name_, param_ball_name_ );
+			nh_.param( "ball_description/size", param_ball_size_, param_ball_size_ );
+			nh_.param( "ball_description/hsv_min/hue", param_hsv_min_hue_, param_hsv_min_hue_ );
+			nh_.param( "ball_description/hsv_min/sat", param_hsv_min_sat_, param_hsv_min_sat_ );
+			nh_.param( "ball_description/hsv_min/val", param_hsv_min_val_, param_hsv_min_val_ );
+			nh_.param( "ball_description/hsv_max/hue", param_hsv_max_hue_, param_hsv_max_hue_ );
+			nh_.param( "ball_description/hsv_max/sat", param_hsv_max_sat_, param_hsv_max_sat_ );
+			nh_.param( "ball_description/hsv_max/val", param_hsv_max_val_, param_hsv_max_val_ );
+
+			nh_.param( "hough_detector/accum_scale", param_hough_accum_, param_hough_accum_);
+			nh_.param( "hough_detector/min_dist_scale", param_hough_min_dist_, param_hough_min_dist_ );
+			nh_.param( "hough_detector/param1", param_hough_param1_, param_hough_param1_ );
+			nh_.param( "hough_detector/param2", param_hough_param2_, param_hough_param2_ );
+			nh_.param( "hough_detector/min_radius", param_hough_min_rad_, param_hough_min_rad_ );
+			nh_.param( "hough_detector/max_radius", param_hough_max_rad_, param_hough_max_rad_ );
+
+			nh_.param( "filters/openning/size", param_morph_open_size_, param_morph_open_size_ );
+			nh_.param( "filters/closing/size", param_morph_close_size_, param_morph_close_size_ );
+			nh_.param( "filters/blur/size", param_blur_size_, param_blur_size_ );
+			nh_.param( "filters/blur/distribution", param_blur_dist_, param_blur_dist_ );
+			nh_.param( "filters/pose_low_pass/position_alpha", param_low_pass_pos_a_, param_low_pass_pos_a_ );
+			nh_.param( "filters/pose_low_pass/size_alpha", param_low_pass_size_a_, param_low_pass_size_a_ );
 
 			bool do_marker_pub = false;
 			nh_.param( "show_marker", do_marker_pub, do_marker_pub );
@@ -91,15 +131,15 @@ class BallDetector {
 			if(do_marker_pub) {
 				pub_marker_ = nh_.advertise<visualization_msgs::Marker>( topic_output_marker_, 1, true );
 
-				double mid_hue = ( ball_hsv_max_hue_ + (ball_hsv_min_hue_ > ball_hsv_max_hue_ ? ball_hsv_min_hue_ + 360.0 : ball_hsv_min_hue_ ) ) / 2.0;
-				double mid_sat = ( ball_hsv_max_sat_ + ball_hsv_min_sat_ ) / 2.0;
-				double mid_val = ( ball_hsv_max_val_ + ball_hsv_min_val_ ) / 2.0;
+				double mid_hue = ( param_hsv_max_hue_ + (param_hsv_min_hue_ > param_hsv_max_hue_ ? param_hsv_min_hue_ + 360.0 : param_hsv_min_hue_ ) ) / 2.0;
+				double mid_sat = ( param_hsv_max_sat_ + param_hsv_min_sat_ ) / 2.0;
+				double mid_val = ( param_hsv_max_val_ + param_hsv_min_val_ ) / 2.0;
 
 				visualization_msgs::Marker marker;
 				marker.header.frame_id = camera_info_.header.frame_id;
 				marker.header.stamp = ros::Time::now();
 
-				marker.ns = ball_name_;
+				marker.ns = param_ball_name_;
 				marker.id = 0;
 				marker.type = visualization_msgs::Marker::SPHERE;
 				marker.action = visualization_msgs::Marker::ADD;
@@ -113,9 +153,9 @@ class BallDetector {
 				marker.pose.orientation.z = 0.0;
 				marker.pose.orientation.w = 1.0;
 
-				marker.scale.x = ball_size_;
-				marker.scale.y = ball_size_;
-				marker.scale.z = ball_size_;
+				marker.scale.x = param_ball_size_;
+				marker.scale.y = param_ball_size_;
+				marker.scale.z = param_ball_size_;
 
 				//Convert the average HSV detection to a RGBA value for ROS
 				//CV::HSV:
@@ -178,56 +218,61 @@ class BallDetector {
 			cv::cvtColor(cv_ptr->image, hsv_image, cv::COLOR_BGR2HSV);
 
 			//Create a spectrum mask
-			if( ball_hsv_min_hue_ < ball_hsv_max_hue_ ) {
+			if( param_hsv_min_hue_ < param_hsv_max_hue_ ) {
 				cv::inRange( hsv_image,
-							 cv::Scalar( (uint8_t)( ball_hsv_min_hue_ / 2.0 ),
-										 (uint8_t)( ball_hsv_min_sat_ * 255.0 ),
-										 (uint8_t)( ball_hsv_min_val_ * 255.0 ) ),
-							 cv::Scalar( (uint8_t)( ball_hsv_max_hue_ / 2.0 ),
-										 (uint8_t)( ball_hsv_max_sat_ * 255.0 ),
-										 (uint8_t)( ball_hsv_max_val_ * 255.0 ) ),
+							 cv::Scalar( (uint8_t)( param_hsv_min_hue_ / 2.0 ),
+										 (uint8_t)( param_hsv_min_sat_ * 255.0 ),
+										 (uint8_t)( param_hsv_min_val_ * 255.0 ) ),
+							 cv::Scalar( (uint8_t)( param_hsv_max_hue_ / 2.0 ),
+										 (uint8_t)( param_hsv_max_sat_ * 255.0 ),
+										 (uint8_t)( param_hsv_max_val_ * 255.0 ) ),
 							 hsv_image);
 			} else {
 				cv::Mat low_range;
 				cv::Mat high_range;
 
 				cv::inRange( hsv_image,
-							 cv::Scalar( (uint8_t)( ball_hsv_min_hue_ / 2.0 ),
-										 (uint8_t)( ball_hsv_min_sat_ * 255.0 ),
-										 (uint8_t)( ball_hsv_min_val_ * 255.0 ) ),
+							 cv::Scalar( (uint8_t)( param_hsv_min_hue_ / 2.0 ),
+										 (uint8_t)( param_hsv_min_sat_ * 255.0 ),
+										 (uint8_t)( param_hsv_min_val_ * 255.0 ) ),
 							 cv::Scalar( (uint8_t)( 0.0 ),
-										 (uint8_t)( ball_hsv_max_sat_ * 255.0 ),
-										 (uint8_t)( ball_hsv_max_val_ * 255.0 ) ),
+										 (uint8_t)( param_hsv_max_sat_ * 255.0 ),
+										 (uint8_t)( param_hsv_max_val_ * 255.0 ) ),
 							 low_range);
 
 				cv::inRange( hsv_image,
 							 cv::Scalar( (uint8_t)( 0.0 ),
-										 (uint8_t)( ball_hsv_min_sat_ * 255.0 ),
-										 (uint8_t)( ball_hsv_min_val_ * 255.0 ) ),
-							 cv::Scalar( (uint8_t)( ball_hsv_max_hue_ / 2.0 ),
-										 (uint8_t)( ball_hsv_max_sat_ * 255.0 ),
-										 (uint8_t)( ball_hsv_max_val_ * 255.0 ) ),
+										 (uint8_t)( param_hsv_min_sat_ * 255.0 ),
+										 (uint8_t)( param_hsv_min_val_ * 255.0 ) ),
+							 cv::Scalar( (uint8_t)( param_hsv_max_hue_ / 2.0 ),
+										 (uint8_t)( param_hsv_max_sat_ * 255.0 ),
+										 (uint8_t)( param_hsv_max_val_ * 255.0 ) ),
 							 high_range);
 
 				cv::bitwise_or( low_range, high_range, hsv_image );
 			}
 
 			//Perform an Openning and Closing morphology transform to fill in and smooth out the ball
-			cv::Mat structuring_element = getStructuringElement( cv::MORPH_ELLIPSE, cv::Size( 9, 9 ) );
-			cv::morphologyEx( hsv_image, hsv_image, cv::MORPH_OPEN, structuring_element );	//Apply the specified morphology operation
-			cv::morphologyEx( hsv_image, hsv_image, cv::MORPH_CLOSE, structuring_element );	//Apply the specified morphology operation
+			cv::Mat stuct_el_open = getStructuringElement( cv::MORPH_ELLIPSE, cv::Size( param_morph_open_size_, param_morph_open_size_ ) );
+			cv::Mat stuct_el_close = getStructuringElement( cv::MORPH_ELLIPSE, cv::Size( param_morph_close_size_, param_morph_close_size_ ) );
+			cv::morphologyEx( hsv_image, hsv_image, cv::MORPH_OPEN, stuct_el_open );	//Apply the specified morphology operation
+			cv::morphologyEx( hsv_image, hsv_image, cv::MORPH_CLOSE, stuct_el_close );	//Apply the specified morphology operation
 
 			//Blur slightly to increase chances of detection
-			cv::GaussianBlur(hsv_image, hsv_image, cv::Size(9, 9), 2, 2);
+			cv::GaussianBlur(hsv_image, hsv_image, cv::Size(param_blur_size_, param_blur_size_), param_blur_dist_);
 
 			// Use the Hough transform to detect circles in the combined threshold image
 			std::vector<cv::Vec3f> found_circles;
-			double min_dist = hsv_image.rows / 8;	//TODO: Params
-			double param1 = 100;	//TODO: Params
-			double param2 = 20;	//TODO: Params
-			double min_radius = 50;	//TODO: Params
-			double max_radius = 200;	//TODO: Params
-			cv::HoughCircles(hsv_image, found_circles, CV_HOUGH_GRADIENT, 1, min_dist, param1, param2, min_radius, max_radius);
+
+			cv::HoughCircles(hsv_image,
+							 found_circles,
+							 CV_HOUGH_GRADIENT,
+							 param_hough_accum_,
+							 hsv_image.rows / param_hough_min_dist_,
+							 param_hough_param1_,
+							 param_hough_param2_,
+							 param_hough_min_rad_,
+							 param_hough_max_rad_);
 
 			if(found_circles.size() > 0) {
 				//Transmit the detection message
@@ -266,11 +311,13 @@ class BallDetector {
 
 			//Only compute and send the overlay image if a node is subscribed
 			if( pub_overlay_image_.getNumSubscribers() > 0 ) {
+				//TODO: Red for detected position and size
+				//TODO: Blue for filtered position and size
 				if( found_circles.size() > 0 ) {
 					for( size_t current_circle = 0; current_circle < found_circles.size(); ++current_circle ) {
 						cv::Point center( std::round( found_circles[current_circle][0] ), std::round( found_circles[current_circle][1] ) );
 						int radius = std::round( found_circles[current_circle][2] );
-						cv::circle( cv_ptr->image, center, radius, cv::Scalar( 0, 255, 0 ), 5 );
+						cv::circle( cv_ptr->image, center, radius, cv::Scalar( 255, 0, 0 ), 5 );
 					}
 				}
 
