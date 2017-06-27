@@ -35,3 +35,4 @@ filters:
         position_alpha: 0.2
 
 show_marker: true
+camera_is_rectified: true

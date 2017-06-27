@@ -1,6 +1,6 @@
 ball_description:
     name: tennis_ball
-    size: 0.067
+    diameter: 0.067
     #HSV scales
     #  hue: 0.0 -> 360.0
     #  sat: 0.0 -> 1.0
@@ -20,7 +20,7 @@ hough_detector:
     param1: 100 #Hough specific parameters
     param2: 40 #Hough specific parameters
     min_radius: 50 #Minimum circle detection radius (0 to unset)
-    max_radius: 100 #Maximum circle detection radius (0 to unset)
+    max_radius: 400 #Maximum circle detection radius (0 to unset)
 
 filters:
     openning:
@@ -31,7 +31,8 @@ filters:
         size: 9
         distribution: 2
     pose_low_pass:
-        size_alpha: 0.2
+        size_alpha: 0.1
         position_alpha: 0.2
 
 show_marker: true
+camera_is_rectified: true

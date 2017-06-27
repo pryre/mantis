@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   cv_bridge
   image_transport
+  tf2_ros
+  tf2
 )
 
 add_definitions(-std=c++11)
