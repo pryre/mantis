@@ -107,7 +107,7 @@ catkin_python_setup()
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES rqt_mc_tuner
+#  LIBRARIES mantis_rqt_eyedropper
 #  CATKIN_DEPENDS mavros mavros_msgs rospy rqt_gui rqt_gui_py
 #  DEPENDS system_lib
 )
@@ -125,7 +125,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/rqt_mc_tuner.cpp
+#   src/${PROJECT_NAME}/mantis_rqt_eyedropper.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -136,7 +136,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/rqt_mc_tuner_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/mantis_rqt_eyedropper_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -191,7 +191,7 @@ install(FILES
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_rqt_mc_tuner.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_mantis_rqt_eyedropper.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

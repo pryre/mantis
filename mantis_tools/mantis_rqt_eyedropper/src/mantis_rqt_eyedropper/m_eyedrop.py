@@ -1,15 +1,20 @@
 import os
 import math
+import numpy as np
 import rospkg
 import rospy
 
 from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
 from python_qt_binding.QtWidgets import QWidget
+from python_qt_binding.QtWidgets import QGraphicsScene
+from python_qt_binding.QtGui import QBrush
+from python_qt_binding.QtGui import QColor
 
 import cv2
-from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+
+from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
 
 class MEyedrop(Plugin):
@@ -50,37 +55,23 @@ class MEyedrop(Plugin):
 		# Add widget to the user interface
 		context.add_widget(self._widget)
 
-		self._widget.button_arm.clicked.connect(self.button_arm_pressed)
+		self._widget.button_refresh_topics.clicked.connect(self.button_refresh_topics_pressed)
+		self._widget.button_take_sample.clicked.connect(self.button_take_sample_pressed)
+
+		self.colour_pane_scene = QGraphicsScene()
+		self.colour_pane_scene.setBackgroundBrush( QBrush( QColor(0, 0, 0) ) )
+		self._widget.graphics_view_colour_pane.setScene(self.colour_pane_scene)
+		self._widget.graphics_view_colour_pane.show()
 
 		self.bridge = CvBridge()
-		self.image_sub = rospy.Subscriber("image_topic",Image,self.callback)
 
-	def callback(self,data):
-		try:
-			cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-		except CvBridgeError as e:
-			print(e)
-
-		(rows,cols,channels) = cv_image.shape
-		if cols > 60 and rows > 60 :
-			cv2.circle(cv_image, (50,50), 10, 255)
-
-		cv2.imshow("Image window", cv_image)
-		cv2.waitKey(3)
-
-		try:
-			#self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
-			pass
-		except CvBridgeError as e:
-			rospy.loginfo(e)
+		#TODO: Should be dynamic!
+		self.image_sub = rospy.Subscriber("/camera/image_raw", Image, self.image_callback)
+		self.point_sub = rospy.Subscriber("/camera/image_raw_mouse_left", Point, self.point_callback)
 
 	def shutdown_plugin(self):
-		# TODO unregister all publishers here
-		#self.timer_setpoint.shutdown()
-
-		cv2.destroyAllWindows()
-
-		pass
+		self.image_sub.unregister()
+		self.point_sub.unregister()
 
 	def save_settings(self, plugin_settings, instance_settings):
 		# TODO save intrinsic configuration, usually using:
@@ -97,9 +88,66 @@ class MEyedrop(Plugin):
 		# This will enable a setting button (gear icon) in each dock widget title bar
 		# Usually used to open a modal configuration dialog
 
-	def button_arm_pressed(self):
-		self.do_arm(True)
+	def button_refresh_topics_pressed(self):
+		pass
 
+	def button_take_sample_pressed(self):
+		self.do_take_sample()
+
+	def do_take_sample(self):
+		try:
+			px_x = int(self._widget.spinbox_pixel_location_x.value())
+			px_y = int(self._widget.spinbox_pixel_location_y.value())
+
+			b = self.cv_image.item(px_y, px_x, 0)
+			g = self.cv_image.item(px_y, px_x, 1)
+			r = self.cv_image.item(px_y, px_x, 2)
+
+			px_bgr = np.zeros((1, 1, 3), np.uint8)
+			px_bgr[:] = tuple((b, g, r))
+			px_hsv = cv2.cvtColor(px_bgr, cv2.COLOR_BGR2HSV)
+
+			h = px_hsv.item(0, 0, 0)
+			s = px_hsv.item(0, 0, 1)
+			v = px_hsv.item(0, 0, 2)
+
+			self._widget.line_edit_pixel_b.setText(str(b))
+			self._widget.line_edit_pixel_g.setText(str(g))
+			self._widget.line_edit_pixel_r.setText(str(r))
+
+			self._widget.line_edit_pixel_h.setText(str(h))
+			self._widget.line_edit_pixel_s.setText(str(s))
+			self._widget.line_edit_pixel_v.setText(str(v))
+
+			self.colour_pane_scene.setForegroundBrush( QBrush( QColor(r,g,b) ) )
+			self._widget.graphics_view_colour_pane.show()
+
+			rospy.loginfo("Sample [%d, %d]: RGB(%d, %d, %d); HSV(%d, %d, %d)" % (px_x, px_y, r, g, b, h, s, v))
+
+		except Exception as e:
+			rospy.loginfo(e)
+
+	def point_callback(self,data):
+		self._widget.spinbox_pixel_location_x.setValue(int(data.x))
+		self._widget.spinbox_pixel_location_y.setValue(int(data.y))
+
+		self.do_take_sample()
+
+	def image_callback(self,data):
+		self._widget.spinbox_pixel_location_x.setMaximum(data.width - 1)
+		self._widget.spinbox_pixel_location_y.setMaximum(data.height - 1)
+
+		self._widget.spinbox_pixel_location_x.setEnabled(True)
+		self._widget.spinbox_pixel_location_y.setEnabled(True)
+		self._widget.button_take_sample.setEnabled(True)
+
+		try:
+			self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+		except CvBridgeError as e:
+			rospy.loginfo(e)
+
+		if self._widget.check_box_auto_update.isChecked():
+			self.do_take_sample()
 
 
 
