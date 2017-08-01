@@ -25,16 +25,16 @@ class MEyedrop(Plugin):
 		rp = rospkg.RosPack()
 
 		# Process standalone plugin command-line arguments
-		#from argparse import ArgumentParser
-		#parser = ArgumentParser()
+		from argparse import ArgumentParser
+		parser = ArgumentParser()
 		# Add argument(s) to the parser.
-		#parser.add_argument("-q", "--quiet", action="store_true",
-		#              dest="quiet",
-		#              help="Put plugin in silent mode")
-		#args, unknowns = parser.parse_known_args(context.argv())
-		#if not args.quiet:
-		#    print 'arguments: ', args
-		#    print 'unknowns: ', unknowns
+		parser.add_argument("-q", "--quiet", action="store_true",
+		              dest="quiet",
+		              help="Put plugin in silent mode")
+		self.args, unknowns = parser.parse_known_args(context.argv())
+		if not self.args.quiet:
+		    print 'arguments: ', args
+		    print 'unknowns: ', unknowns
 
 		# Create QWidget
 		self._widget = QWidget()
@@ -88,6 +88,8 @@ class MEyedrop(Plugin):
 		# This will enable a setting button (gear icon) in each dock widget title bar
 		# Usually used to open a modal configuration dialog
 
+	#XXX: rospy.get_published_topics()
+
 	def button_refresh_topics_pressed(self):
 		pass
 
@@ -122,7 +124,11 @@ class MEyedrop(Plugin):
 			self.colour_pane_scene.setForegroundBrush( QBrush( QColor(r,g,b) ) )
 			self._widget.graphics_view_colour_pane.show()
 
-			rospy.loginfo("Sample [%d, %d]: RGB(%d, %d, %d); HSV(%d, %d, %d)" % (px_x, px_y, r, g, b, h, s, v))
+			if not self.args.quiet:
+				rospy.loginfo("----------------")
+				rospy.loginfo("XY:  [%d, %d]" % (px_x, px_y))
+				rospy.loginfo("RGB: [%d, %d, %d]" % (r, g, b))
+				rospy.loginfo("HSV: [%d, %d, %d]" % (h, s, v))
 
 		except Exception as e:
 			rospy.loginfo(e)
