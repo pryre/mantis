@@ -6,10 +6,9 @@ import rospy
 
 from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
-from python_qt_binding.QtWidgets import QWidget
-from python_qt_binding.QtWidgets import QGraphicsScene
-from python_qt_binding.QtGui import QBrush
-from python_qt_binding.QtGui import QColor
+from python_qt_binding.QtWidgets import QWidget, QGraphicsScene
+from python_qt_binding.QtGui import QBrush, QColor
+from python_qt_binding.QtCore import QObject, pyqtSignal
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
@@ -31,10 +30,7 @@ class MEyedrop(Plugin):
 		parser.add_argument("-q", "--quiet", action="store_true",
 		              dest="quiet",
 		              help="Put plugin in silent mode")
-		self.args, unknowns = parser.parse_known_args(context.argv())
-		if not self.args.quiet:
-		    print 'arguments: ', args
-		    print 'unknowns: ', unknowns
+		self.args, unknowns = parser.parse_known_args( context.argv() )
 
 		# Create QWidget
 		self._widget = QWidget()
@@ -58,6 +54,9 @@ class MEyedrop(Plugin):
 		self._widget.button_refresh_topics.clicked.connect(self.button_refresh_topics_pressed)
 		self._widget.button_take_sample.clicked.connect(self.button_take_sample_pressed)
 
+		self._widget.combo_box_topic_image.currentIndexChanged.connect(self.do_subscribe_image)
+		self._widget.combo_box_topic_point.currentIndexChanged.connect(self.do_subscribe_point)
+
 		self.colour_pane_scene = QGraphicsScene()
 		self.colour_pane_scene.setBackgroundBrush( QBrush( QColor(0, 0, 0) ) )
 		self._widget.graphics_view_colour_pane.setScene(self.colour_pane_scene)
@@ -65,13 +64,18 @@ class MEyedrop(Plugin):
 
 		self.bridge = CvBridge()
 
-		#TODO: Should be dynamic!
-		self.image_sub = rospy.Subscriber("/camera/image_raw", Image, self.image_callback)
-		self.point_sub = rospy.Subscriber("/camera/image_raw_mouse_left", Point, self.point_callback)
+		self.do_refresh_topic_lists()
 
 	def shutdown_plugin(self):
-		self.image_sub.unregister()
-		self.point_sub.unregister()
+		try:
+			self.image_sub.unregister()
+		except:
+			pass
+
+		try:
+			self.point_sub.unregister()
+		except:
+			pass
 
 	def save_settings(self, plugin_settings, instance_settings):
 		# TODO save intrinsic configuration, usually using:
@@ -88,13 +92,60 @@ class MEyedrop(Plugin):
 		# This will enable a setting button (gear icon) in each dock widget title bar
 		# Usually used to open a modal configuration dialog
 
-	#XXX: rospy.get_published_topics()
+	def do_get_topic_list(self, msg_type):
+		topics = rospy.get_published_topics()
+
+		match_topics = []
+
+		for t in topics:
+			if t[1] == msg_type:
+				match_topics.append(t[0])
+
+		return match_topics
+
+	def do_refresh_topic_lists(self):
+		self._widget.combo_box_topic_image.clear()
+		self._widget.combo_box_topic_point.clear()
+		self._widget.combo_box_topic_image.addItem('')
+		self._widget.combo_box_topic_point.addItem('')
+
+		for it in self.do_get_topic_list('sensor_msgs/Image'):
+			self._widget.combo_box_topic_image.addItem(it)
+
+		for pt in self.do_get_topic_list('geometry_msgs/Point'):
+			self._widget.combo_box_topic_point.addItem(pt)
 
 	def button_refresh_topics_pressed(self):
-		pass
+		self.do_refresh_topic_lists()
 
 	def button_take_sample_pressed(self):
 		self.do_take_sample()
+
+	def do_subscribe_image(self):
+		topic_name = self._widget.combo_box_topic_image.currentText()
+
+		rospy.loginfo("image topic: %s" % topic_name)
+
+		if topic_name:
+			self.image_sub = rospy.Subscriber(topic_name, Image, self.image_callback)
+		else:
+			try:
+				self.image_sub.unregister()
+			except:
+				pass
+
+	def do_subscribe_point(self):
+		topic_name = self._widget.combo_box_topic_point.currentText()
+
+		rospy.loginfo("point topic: %s" % topic_name)
+
+		if topic_name:
+			self.point_sub = rospy.Subscriber(topic_name, Point, self.point_callback)
+		else:
+			try:
+				self.point_sub.unregister()
+			except:
+				pass
 
 	def do_take_sample(self):
 		try:
