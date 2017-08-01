@@ -1,0 +1,20 @@
+<library path="src">
+  <class name="Eyedropper" type="mantis_rqt_eyedropper.m_eyedrop.MEyedrop" base_class_type="rqt_gui_py::Plugin">
+    <description>
+      A Python-based GUI interface to assist with picking image colour values
+    </description>
+    <qtgui>
+      <!-- optional grouping...
+      <group>
+        <label>Group</label>
+      </group>
+      <group>
+        <label>Subgroup</label>
+      </group>
+      -->
+      <label>Eyedropper</label>
+      <icon type="theme">system-help</icon>
+      <statustip>Shows colour information about a specific point in a picture</statustip>
+    </qtgui>
+  </class>
+</library>
