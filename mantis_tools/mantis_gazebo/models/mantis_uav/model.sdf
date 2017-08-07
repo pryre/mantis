@@ -1,0 +1,515 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='mantis_uav'>
+    <link name='body_link'>
+      <pose>0 0 0.5 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>1.2</mass>
+        <inertia>
+          <ixx>0.09375</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.09375</iyy>
+          <iyz>0</iyz>
+          <izz>0.1815</izz>
+        </inertia>
+        <pose frame=''>0 0 0 0 0 0</pose>
+      </inertial>
+
+      <collision name='collision'>
+        <geometry>
+          <cylinder>
+            <radius>0.275</radius>
+            <length>0.03</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+	  <visual name='visual_uav_body'>
+        <pose frame=''>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.105</radius>
+            <length>0.03</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+
+      <visual name='visual_uav_arm_1'>
+        <pose frame=''>0 -0.19 0 1.5708 0 3.1416</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+
+      <visual name='visual_uav_arm_2'>
+        <pose frame=''>0 0.19 0 1.5708 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+
+	  <visual name='visual_uav_arm_3'>
+        <pose frame=''>0.165 0.095 0 1.5708 0 2.0944</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Red</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+
+	  <visual name='visual_uav_arm_4'>
+        <pose frame=''>-0.165 -0.095 0 1.5708 0 2.0944</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+
+	  <visual name='visual_uav_arm_5'>
+        <pose frame=''>0.165 -0.095 0 1.5708 0 1.0472</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Red</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+	  <visual name='visual_uav_arm_6'>
+        <pose frame=''>-0.165 0.095 0 1.5708 0 1.0472</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+
+      <visual name='visual_uav_prop_1'>
+        <pose frame=''>0 -0.275 0.02 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.1</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0.5</transparency>
+      </visual>
+
+      <visual name='visual_uav_prop_2'>
+        <pose frame=''>0 0.275 0.02 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.1</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0.5</transparency>
+      </visual>
+
+      <visual name='visual_uav_prop_3'>
+        <pose frame=''>0.2382 0.1375 0.02 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.1</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0.5</transparency>
+      </visual>
+
+      <visual name='visual_uav_prop_4'>
+        <pose frame=''>-0.2382 -0.1375 0.02 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.1</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0.5</transparency>
+      </visual>
+
+      <visual name='visual_uav_prop_5'>
+        <pose frame=''>0.2382 -0.1375 0.02 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.1</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0.5</transparency>
+      </visual>
+
+      <visual name='visual_uav_prop_6'>
+        <pose frame=''>-0.2382 0.1375 0.02 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.1</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0.5</transparency>
+      </visual>
+    </link>
+
+
+	<joint type="fixed" name="joint_body_shoulder">
+      <parent>body_link</parent>
+      <child>arm_link_shoulder</child>
+    </joint>
+
+
+    <link name="arm_link_shoulder">
+      <pose>0 0 0.46175 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.082</mass>
+        <inertia>
+          <ixx>0.000022675</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000020326</iyy>
+          <iyz>0</iyz>
+          <izz>0.00001345</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.0285 0.034 0.0465</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.0285 0.034 0.0465</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+
+
+	<joint type="revolute" name="joint_shoulder_upperarm_servo">
+      <pose>0 0 0.09 0 0 0</pose>
+      <parent>arm_link_shoulder</parent>
+      <child>arm_link_upperarm</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <dynamics>
+          <friction>0</friction>
+        </dynamics>
+        <limit>
+          <lower>-1.57</lower>
+          <upper>1.57</upper>
+        </limit>
+      </axis>
+    </joint>
+
+
+    <link name="arm_link_upperarm">
+      <pose>0 0 0.35975 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.008</mass>
+        <inertia>
+          <ixx>0.000010504</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000010504</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001808</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
+
+
+	<joint type="fixed" name="joint_upperarm_elbow">
+      <parent>arm_link_upperarm</parent>
+      <child>arm_link_elbow_servo</child>
+    </joint>
+
+
+    <link name="arm_link_elbow_servo">
+      <pose>0 0 0.2765 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.082</mass>
+        <inertia>
+          <ixx>0.000022675</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000020326</iyy>
+          <iyz>0</iyz>
+          <izz>0.00001345</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.0285 0.034 0.0465</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.0285 0.034 0.0465</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+
+
+	<joint type="revolute" name="joint_elbow_forearm_servo">
+      <pose>0 0 0.09 0 0 0</pose>
+      <parent>arm_link_elbow_servo</parent>
+      <child>arm_link_forearm</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <dynamics>
+          <friction>0</friction>
+        </dynamics>
+        <limit>
+          <lower>-1.57</lower>
+          <upper>1.57</upper>
+        </limit>
+      </axis>
+    </joint>
+
+
+    <link name="arm_link_forearm">
+      <pose>0 0 0.1745 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.008</mass>
+        <inertia>
+          <ixx>0.000010504</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000010504</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001808</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_forearm_arm">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
+
+    <static>false</static>
+    <allow_auto_disable>1</allow_auto_disable>
+  </model>
+</sdf>
