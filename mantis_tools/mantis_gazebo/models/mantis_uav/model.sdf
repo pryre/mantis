@@ -17,7 +17,6 @@
           <iyz>0</iyz>
           <izz>0.1815</izz>
         </inertia>
-        <pose frame=''>0 0 0 0 0 0</pose>
       </inertial>
 
       <collision name='collision'>
@@ -30,7 +29,6 @@
       </collision>
 
 	  <visual name='visual_uav_body'>
-        <pose frame=''>0 0 0 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.105</radius>
