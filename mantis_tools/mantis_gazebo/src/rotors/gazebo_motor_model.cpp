@@ -36,17 +36,13 @@ void GazeboMotorModel::Publish() {
 }
 
 void GazeboMotorModel::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
-
   // Make sure the ROS node for Gazebo has already been initialized
   if( !ros::isInitialized() ) {
     ROS_FATAL("A ROS node for Gazebo has not been initialized, unable to load plugin.");
     return;
   }
 
-  ROS_INFO("Setting up motor model plugin");
-
   model_ = _model;
-
   namespace_.clear();
 
   if (_sdf->HasElement("robotNamespace"))
@@ -147,7 +143,7 @@ void GazeboMotorModel::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
   // Create the first order filter.
   rotor_velocity_filter_.reset(new FirstOrderFilter<double>(time_constant_up_, time_constant_down_, ref_motor_rot_vel_));
 
-  ROS_INFO("Loaded mantis motor model plugin!");
+  ROS_INFO( "Loaded mantis motor model plugin [%i]!", motor_number_ + 1 );
 }
 
 // This gets called by the world update start event.

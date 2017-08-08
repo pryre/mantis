@@ -688,6 +688,270 @@
     </joint>
 
 
+    <link name="landing_gear_1">
+      <pose>0 -0.275 0.425 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.008</mass>
+        <inertia>
+          <ixx>0.000010504</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000010504</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001808</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_landing_gear_1">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_landing_gear_1">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
+
+
+	<joint type="fixed" name="joint_body_landing_gear_1">
+      <parent>base_link</parent>
+      <child>landing_gear_1</child>
+    </joint>
+
+
+    <link name="landing_gear_2">
+      <pose>0 0.275 0.425 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.008</mass>
+        <inertia>
+          <ixx>0.000010504</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000010504</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001808</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_landing_gear_2">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_landing_gear_2">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
+
+
+	<joint type="fixed" name="joint_body_landing_gear_2">
+      <parent>base_link</parent>
+      <child>landing_gear_2</child>
+    </joint>
+
+
+    <link name="landing_gear_3">
+      <pose>0.2382 0.1375 0.425 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.008</mass>
+        <inertia>
+          <ixx>0.000010504</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000010504</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001808</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_landing_gear_3">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_landing_gear_3">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
+
+
+	<joint type="fixed" name="joint_body_landing_gear_3">
+      <parent>base_link</parent>
+      <child>landing_gear_3</child>
+    </joint>
+
+
+    <link name="landing_gear_4">
+      <pose>-0.2382 -0.1375 0.425 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.008</mass>
+        <inertia>
+          <ixx>0.000010504</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000010504</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001808</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_landing_gear_4">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_landing_gear_4">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
+
+
+	<joint type="fixed" name="joint_body_landing_gear_4">
+      <parent>base_link</parent>
+      <child>landing_gear_4</child>
+    </joint>
+
+
+    <link name="landing_gear_5">
+      <pose>0.2382 -0.1375 0.425 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.008</mass>
+        <inertia>
+          <ixx>0.000010504</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000010504</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001808</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_landing_gear_5">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_landing_gear_5">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
+
+
+	<joint type="fixed" name="joint_body_landing_gear_5">
+      <parent>base_link</parent>
+      <child>landing_gear_5</child>
+    </joint>
+
+
+    <link name="landing_gear_6">
+      <pose>-0.2382 0.1375 0.425 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.008</mass>
+        <inertia>
+          <ixx>0.000010504</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000010504</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001808</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_landing_gear_6">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_landing_gear_6">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
+
+
+	<joint type="fixed" name="joint_body_landing_gear_6">
+      <parent>base_link</parent>
+      <child>landing_gear_6</child>
+    </joint>
+
+
     <plugin name="mantis_gazebo_servo" filename="libmantis_gazebo_servo.so"/>
     <!-- TODO: PARAMETERS! -->
 
