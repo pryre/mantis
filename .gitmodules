@@ -1,0 +1,3 @@
+[submodule "mantis_tools/mantis_gazebo/resources/sitl_gazebo"]
+	path = mantis_tools/mantis_gazebo/resources/sitl_gazebo
+	url = https://github.com/PX4/sitl_gazebo/

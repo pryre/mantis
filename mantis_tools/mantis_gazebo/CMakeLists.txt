@@ -8,15 +8,18 @@ add_definitions(-std=c++11)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  geometry_msgs
-  dynamixel_msgs
   roscpp
-  tf2_ros
-  tf2
+  gazebo_ros
+  std_msgs
+  sensor_msgs
+  mavros_msgs
+  dynamixel_msgs
+  mantis_gazebo_msgs
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package(gazebo REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -106,9 +109,11 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES mantis_ik
+#  LIBRARIES mantis_gazebo
 #  CATKIN_DEPENDS geometry_msgs roscpp tf2
-#  DEPENDS system_lib
+  DEPENDS
+    roscpp
+	gazebo_ros
 )
 
 ###########
@@ -118,14 +123,21 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include_directories(include)
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
+link_directories(${GAZEBO_LIBRARY_DIRS})
+include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS})
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/mantis_gazebo_plugin.cpp
-# )
+add_library(${PROJECT_NAME}_servo
+  src/${PROJECT_NAME}/mg_servo.cpp
+)
+
+add_library(${PROJECT_NAME}_pwm_motor
+  src/${PROJECT_NAME}/mg_pwm_motor.cpp
+)
+
+add_library(${PROJECT_NAME}_motor_model
+  src/rotors/gazebo_motor_model.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -148,9 +160,23 @@ include_directories(
 #add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-#target_link_libraries(${PROJECT_NAME}_node
-#  ${catkin_LIBRARIES}
-#)
+target_link_libraries(${PROJECT_NAME}_servo
+  ${catkin_LIBRARIES}
+  ${GAZEBO_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+target_link_libraries(${PROJECT_NAME}_pwm_motor
+  ${catkin_LIBRARIES}
+  ${GAZEBO_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+target_link_libraries(${PROJECT_NAME}_motor_model
+  ${catkin_LIBRARIES}
+  ${GAZEBO_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -193,7 +219,7 @@ install(FILES
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_mantis_ik.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_mantis_gazebo.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 <sdf version='1.6'>
   <model name='mantis_uav'>
-    <link name='body_link'>
+    <link name='base_link'>
       <pose>0 0 0.5 0 0 0</pose>
       <gravity>1</gravity>
       <self_collide>0</self_collide>
@@ -19,7 +19,7 @@
         </inertia>
       </inertial>
 
-      <collision name='collision'>
+      <collision name='collision_base_link'>
         <geometry>
           <cylinder>
             <radius>0.275</radius>
@@ -41,12 +41,8 @@
             <uri>file://media/materials/scripts/gazebo.material</uri>
             <name>Gazebo/DarkGrey</name>
           </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
         </material>
         <cast_shadows>1</cast_shadows>
-        <transparency>0</transparency>
       </visual>
 
       <visual name='visual_uav_arm_1'>
@@ -63,12 +59,8 @@
             <uri>file://media/materials/scripts/gazebo.material</uri>
             <name>Gazebo/White</name>
           </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
         </material>
         <cast_shadows>1</cast_shadows>
-        <transparency>0</transparency>
       </visual>
 
       <visual name='visual_uav_arm_2'>
@@ -85,12 +77,8 @@
             <uri>file://media/materials/scripts/gazebo.material</uri>
             <name>Gazebo/White</name>
           </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
         </material>
         <cast_shadows>1</cast_shadows>
-        <transparency>0</transparency>
       </visual>
 
 	  <visual name='visual_uav_arm_3'>
@@ -107,12 +95,8 @@
             <uri>file://media/materials/scripts/gazebo.material</uri>
             <name>Gazebo/Red</name>
           </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
         </material>
         <cast_shadows>1</cast_shadows>
-        <transparency>0</transparency>
       </visual>
 
 	  <visual name='visual_uav_arm_4'>
@@ -129,12 +113,8 @@
             <uri>file://media/materials/scripts/gazebo.material</uri>
             <name>Gazebo/White</name>
           </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
         </material>
         <cast_shadows>1</cast_shadows>
-        <transparency>0</transparency>
       </visual>
 
 	  <visual name='visual_uav_arm_5'>
@@ -172,150 +152,14 @@
             <uri>file://media/materials/scripts/gazebo.material</uri>
             <name>Gazebo/White</name>
           </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
         </material>
         <cast_shadows>1</cast_shadows>
-        <transparency>0</transparency>
-      </visual>
-
-      <visual name='visual_uav_prop_1'>
-        <pose frame=''>0 -0.275 0.02 0 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.1</radius>
-            <length>0.01</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <lighting>1</lighting>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/DarkGrey</name>
-          </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
-        </material>
-        <cast_shadows>1</cast_shadows>
-        <transparency>0.5</transparency>
-      </visual>
-
-      <visual name='visual_uav_prop_2'>
-        <pose frame=''>0 0.275 0.02 0 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.1</radius>
-            <length>0.01</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <lighting>1</lighting>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/DarkGrey</name>
-          </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
-        </material>
-        <cast_shadows>1</cast_shadows>
-        <transparency>0.5</transparency>
-      </visual>
-
-      <visual name='visual_uav_prop_3'>
-        <pose frame=''>0.2382 0.1375 0.02 0 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.1</radius>
-            <length>0.01</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <lighting>1</lighting>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/DarkGrey</name>
-          </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
-        </material>
-        <cast_shadows>1</cast_shadows>
-        <transparency>0.5</transparency>
-      </visual>
-
-      <visual name='visual_uav_prop_4'>
-        <pose frame=''>-0.2382 -0.1375 0.02 0 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.1</radius>
-            <length>0.01</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <lighting>1</lighting>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/DarkGrey</name>
-          </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
-        </material>
-        <cast_shadows>1</cast_shadows>
-        <transparency>0.5</transparency>
-      </visual>
-
-      <visual name='visual_uav_prop_5'>
-        <pose frame=''>0.2382 -0.1375 0.02 0 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.1</radius>
-            <length>0.01</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <lighting>1</lighting>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/DarkGrey</name>
-          </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
-        </material>
-        <cast_shadows>1</cast_shadows>
-        <transparency>0.5</transparency>
-      </visual>
-
-      <visual name='visual_uav_prop_6'>
-        <pose frame=''>-0.2382 0.1375 0.02 0 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.1</radius>
-            <length>0.01</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <lighting>1</lighting>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/DarkGrey</name>
-          </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
-        </material>
-        <cast_shadows>1</cast_shadows>
-        <transparency>0.5</transparency>
       </visual>
     </link>
 
 
 	<joint type="fixed" name="joint_body_shoulder">
-      <parent>body_link</parent>
+      <parent>base_link</parent>
       <child>arm_link_shoulder</child>
     </joint>
 
@@ -338,7 +182,7 @@
         </inertia>
       </inertial>
 
-      <collision name="collision">
+      <collision name="collision_shoulder">
         <geometry>
           <box>
             <size>0.0285 0.034 0.0465</size>
@@ -346,7 +190,7 @@
         </geometry>
       </collision>
 
-      <visual name="visual">
+      <visual name="visual_shoulder">
         <geometry>
           <box>
             <size>0.0285 0.034 0.0465</size>
@@ -391,7 +235,7 @@
         </inertia>
       </inertial>
 
-      <collision name="collision">
+      <collision name="collision_upperarm">
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -400,7 +244,7 @@
         </geometry>
       </collision>
 
-      <visual name="visual">
+      <visual name="visual_upperarm">
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -435,7 +279,7 @@
         </inertia>
       </inertial>
 
-      <collision name="collision">
+      <collision name="collision_elbow_servo">
         <geometry>
           <box>
             <size>0.0285 0.034 0.0465</size>
@@ -443,7 +287,7 @@
         </geometry>
       </collision>
 
-      <visual name="visual">
+      <visual name="visual_elbow_servo">
         <geometry>
           <box>
             <size>0.0285 0.034 0.0465</size>
@@ -488,7 +332,7 @@
         </inertia>
       </inertial>
 
-      <collision name="collision">
+      <collision name="collision_forearm">
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -497,7 +341,7 @@
         </geometry>
       </collision>
 
-      <visual name="visual_forearm_arm">
+      <visual name="visual_forearm">
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -506,6 +350,457 @@
         </geometry>
       </visual>
     </link>
+
+
+    <link name='rotor_1'>
+      <pose>0 -0.275 0.5455 0 0 0</pose>
+      <gravity>1</gravity>
+      <velocity_decay/>
+      <self_collide>0</self_collide>
+
+      <inertial>
+        <mass>0.005</mass>
+        <inertia>
+          <ixx>9.75e-07</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000273104</iyy>
+          <iyz>0</iyz>
+          <izz>0.000274004</izz>
+        </inertia>
+      </inertial>
+
+      <collision name='collision_rotor_1'>
+        <geometry>
+          <cylinder>
+            <length>0.005</length>
+            <radius>0.128</radius>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name='visual_rotor_1'>
+        <geometry>
+          <box>
+            <size>0.256 0.015 0.005</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Black</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+    </link>
+
+
+    <joint type='revolute' name='joint_rotor_1'>
+      <child>rotor_1</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+
+    <link name='rotor_2'>
+      <pose>0 0.275 0.5455 0 0 0</pose>
+      <gravity>1</gravity>
+      <velocity_decay/>
+      <self_collide>0</self_collide>
+
+      <inertial>
+        <mass>0.005</mass>
+        <inertia>
+          <ixx>9.75e-07</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000273104</iyy>
+          <iyz>0</iyz>
+          <izz>0.000274004</izz>
+        </inertia>
+      </inertial>
+
+      <collision name='collision_rotor_2'>
+        <geometry>
+          <cylinder>
+            <length>0.005</length>
+            <radius>0.128</radius>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name='visual_rotor_2'>
+        <geometry>
+          <box>
+            <size>0.256 0.015 0.005</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Black</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+    </link>
+
+
+    <joint type='revolute' name='joint_rotor_2'>
+      <child>rotor_2</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+
+    <link name='rotor_3'>
+      <pose>0.2382 0.1375 0.5455 0 0 0</pose>
+      <gravity>1</gravity>
+      <velocity_decay/>
+      <self_collide>0</self_collide>
+
+      <inertial>
+        <mass>0.005</mass>
+        <inertia>
+          <ixx>9.75e-07</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000273104</iyy>
+          <iyz>0</iyz>
+          <izz>0.000274004</izz>
+        </inertia>
+      </inertial>
+
+      <collision name='collision_rotor_3'>
+        <geometry>
+          <cylinder>
+            <length>0.005</length>
+            <radius>0.128</radius>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name='visual_rotor_3'>
+        <geometry>
+          <box>
+            <size>0.256 0.015 0.005</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Black</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+    </link>
+
+
+    <joint type='revolute' name='joint_rotor_3'>
+      <child>rotor_3</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+
+    <link name='rotor_4'>
+      <pose>-0.2382 -0.1375 0.5455 0 0 0</pose>
+      <gravity>1</gravity>
+      <velocity_decay/>
+      <self_collide>0</self_collide>
+
+      <inertial>
+        <mass>0.005</mass>
+        <inertia>
+          <ixx>9.75e-07</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000273104</iyy>
+          <iyz>0</iyz>
+          <izz>0.000274004</izz>
+        </inertia>
+      </inertial>
+
+      <collision name='collision_rotor_4'>
+        <geometry>
+          <cylinder>
+            <length>0.005</length>
+            <radius>0.128</radius>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name='visual_rotor_4'>
+        <geometry>
+          <box>
+            <size>0.256 0.015 0.005</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Black</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+    </link>
+
+
+    <joint type='revolute' name='joint_rotor_4'>
+      <child>rotor_4</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+
+    <link name='rotor_5'>
+      <pose>0.2382 -0.1375 0.5455 0 0 0</pose>
+      <gravity>1</gravity>
+      <velocity_decay/>
+      <self_collide>0</self_collide>
+
+      <inertial>
+        <mass>0.005</mass>
+        <inertia>
+          <ixx>9.75e-07</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000273104</iyy>
+          <iyz>0</iyz>
+          <izz>0.000274004</izz>
+        </inertia>
+      </inertial>
+
+      <collision name='collision_rotor_5'>
+        <geometry>
+          <cylinder>
+            <length>0.005</length>
+            <radius>0.128</radius>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name='visual_rotor_5'>
+        <geometry>
+          <box>
+            <size>0.256 0.015 0.005</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Black</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+    </link>
+
+
+    <joint type='revolute' name='joint_rotor_5'>
+      <child>rotor_5</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+
+    <link name='rotor_6'>
+      <pose>-0.2382 0.1375 0.5455 0 0 0</pose>
+      <gravity>1</gravity>
+      <velocity_decay/>
+      <self_collide>0</self_collide>
+
+      <inertial>
+        <mass>0.005</mass>
+        <inertia>
+          <ixx>9.75e-07</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000273104</iyy>
+          <iyz>0</iyz>
+          <izz>0.000274004</izz>
+        </inertia>
+      </inertial>
+
+      <collision name='collision_rotor_6'>
+        <geometry>
+          <cylinder>
+            <length>0.005</length>
+            <radius>0.128</radius>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name='visual_rotor_6'>
+        <geometry>
+          <box>
+            <size>0.256 0.015 0.005</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Black</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+    </link>
+
+
+    <joint type='revolute' name='joint_rotor_6'>
+      <child>rotor_6</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+
+    <plugin name="mantis_gazebo_servo" filename="libmantis_gazebo_servo.so"/>
+    <!-- TODO: PARAMETERS! -->
+
+    <plugin name="mantis_gazebo_pwm" filename="libmantis_gazebo_pwm_motor.so"/>
+    <!-- TODO: PARAMETERS! -->
+
+	<plugin name='mantis_gazebo_motor_model_1' filename='libmantis_gazebo_motor_model.so'>
+      <robotNamespace></robotNamespace>
+      <jointName>joint_rotor_1</jointName>
+      <linkName>rotor_1</linkName>
+      <turningDirection>cw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>1500</maxRotVelocity>
+      <motorConstant>8.54858e-06</motorConstant>
+      <momentConstant>0.06</momentConstant>
+      <commandSubTopic>/command/motor_velocity</commandSubTopic>
+      <motorNumber>0</motorNumber>
+      <rotorDragCoefficient>0.000806428</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <motorSpeedPubTopic>/state/motor_speed/1</motorSpeedPubTopic>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+	<plugin name='mantis_gazebo_motor_model_2' filename='libmantis_gazebo_motor_model.so'>
+      <robotNamespace></robotNamespace>
+      <jointName>joint_rotor_2</jointName>
+      <linkName>rotor_2</linkName>
+      <turningDirection>ccw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>1500</maxRotVelocity>
+      <motorConstant>8.54858e-06</motorConstant>
+      <momentConstant>0.06</momentConstant>
+      <commandSubTopic>/command/motor_velocity</commandSubTopic>
+      <motorNumber>1</motorNumber>
+      <rotorDragCoefficient>0.000806428</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <motorSpeedPubTopic>/state/motor_speed/2</motorSpeedPubTopic>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+	<plugin name='mantis_gazebo_motor_model_3' filename='libmantis_gazebo_motor_model.so'>
+      <robotNamespace></robotNamespace>
+      <jointName>joint_rotor_3</jointName>
+      <linkName>rotor_3</linkName>
+      <turningDirection>cw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>1500</maxRotVelocity>
+      <motorConstant>8.54858e-06</motorConstant>
+      <momentConstant>0.06</momentConstant>
+      <commandSubTopic>/command/motor_velocity</commandSubTopic>
+      <motorNumber>2</motorNumber>
+      <rotorDragCoefficient>0.000806428</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <motorSpeedPubTopic>/state/motor_speed/3</motorSpeedPubTopic>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+	<plugin name='mantis_gazebo_motor_model_4' filename='libmantis_gazebo_motor_model.so'>
+      <robotNamespace></robotNamespace>
+      <jointName>joint_rotor_4</jointName>
+      <linkName>rotor_4</linkName>
+      <turningDirection>ccw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>1500</maxRotVelocity>
+      <motorConstant>8.54858e-06</motorConstant>
+      <momentConstant>0.06</momentConstant>
+      <commandSubTopic>/command/motor_velocity</commandSubTopic>
+      <motorNumber>3</motorNumber>
+      <rotorDragCoefficient>0.000806428</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <motorSpeedPubTopic>/state/motor_speed/4</motorSpeedPubTopic>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+	<plugin name='mantis_gazebo_motor_model_5' filename='libmantis_gazebo_motor_model.so'>
+      <robotNamespace></robotNamespace>
+      <jointName>joint_rotor_5</jointName>
+      <linkName>rotor_5</linkName>
+      <turningDirection>ccw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>1500</maxRotVelocity>
+      <motorConstant>8.54858e-06</motorConstant>
+      <momentConstant>0.06</momentConstant>
+      <commandSubTopic>/command/motor_velocity</commandSubTopic>
+      <motorNumber>4</motorNumber>
+      <rotorDragCoefficient>0.000806428</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <motorSpeedPubTopic>/state/motor_speed/5</motorSpeedPubTopic>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+	<plugin name='mantis_gazebo_motor_model_6' filename='libmantis_gazebo_motor_model.so'>
+      <robotNamespace></robotNamespace>
+      <jointName>joint_rotor_6</jointName>
+      <linkName>rotor_6</linkName>
+      <turningDirection>cw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>1500</maxRotVelocity>
+      <motorConstant>8.54858e-06</motorConstant>
+      <momentConstant>0.06</momentConstant>
+      <commandSubTopic>/command/motor_velocity</commandSubTopic>
+      <motorNumber>5</motorNumber>
+      <rotorDragCoefficient>0.000806428</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <motorSpeedPubTopic>/state/motor_speed/6</motorSpeedPubTopic>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
 
     <static>false</static>
     <allow_auto_disable>1</allow_auto_disable>
