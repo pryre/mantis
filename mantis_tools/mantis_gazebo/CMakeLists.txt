@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   mavros_msgs
+  nav_msgs
+  gazebo_msgs
   dynamixel_msgs
   mantis_gazebo_msgs
 )
@@ -147,7 +149,7 @@ add_library(${PROJECT_NAME}_motor_model
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-#add_executable(${PROJECT_NAME}_plugin src/mantis_gazebo_plugin.cpp)
+add_executable(model_state_odom_node src/model_state_odom_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -157,7 +159,7 @@ add_library(${PROJECT_NAME}_motor_model
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-#add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(model_state_odom_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_servo
@@ -176,6 +178,10 @@ target_link_libraries(${PROJECT_NAME}_motor_model
   ${catkin_LIBRARIES}
   ${GAZEBO_LIBRARIES}
   ${Boost_LIBRARIES}
+)
+
+target_link_libraries(model_state_odom_node
+  ${catkin_LIBRARIES}
 )
 
 #############
