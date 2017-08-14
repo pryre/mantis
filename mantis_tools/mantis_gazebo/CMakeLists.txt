@@ -141,6 +141,10 @@ add_library(${PROJECT_NAME}_motor_model
   src/rotors/gazebo_motor_model.cpp
 )
 
+add_library(${PROJECT_NAME}_pid_controller
+  src/pidController/pidController.cpp
+)
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -150,6 +154,7 @@ add_library(${PROJECT_NAME}_motor_model
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(model_state_odom_node src/model_state_odom_node.cpp)
+add_executable(controller_acro_node src/controller_acro_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -160,6 +165,7 @@ add_executable(model_state_odom_node src/model_state_odom_node.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(model_state_odom_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(controller_acro_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_servo
@@ -181,6 +187,11 @@ target_link_libraries(${PROJECT_NAME}_motor_model
 )
 
 target_link_libraries(model_state_odom_node
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(controller_acro_node
+  ${PROJECT_NAME}_pid_controller
   ${catkin_LIBRARIES}
 )
 

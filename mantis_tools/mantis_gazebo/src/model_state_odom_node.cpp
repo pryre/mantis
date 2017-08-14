@@ -1,9 +1,6 @@
 #include <ros/ros.h>
 
-#include <tf2/LinearMath/Transform.h>
-#include <tf2/LinearMath/Vector3.h>
 #include <tf2/LinearMath/Quaternion.h>
-#include <tf2/LinearMath/Matrix3x3.h>
 
 #include <nav_msgs/Odometry.h>
 #include <gazebo_msgs/ModelStates.h>
@@ -51,26 +48,34 @@ class ModelStatesOdom {
 
 			for( int i=0; i<msg_in->name.size(); i++ ) {
 				if( msg_in->name[i] == model_name_ ) {
+					tf2::Quaternion rot_l_vel;
+					tf2::Quaternion rot_a_vel;
+
 					tf2::Quaternion tmp_q( msg_in->pose[i].orientation.x,
 										   msg_in->pose[i].orientation.y,
 										   msg_in->pose[i].orientation.z,
 										   msg_in->pose[i].orientation.w );
 
-					tf2::Quaternion rot_vel;
-					rot_vel = ( tmp_q * tf2::Quaternion( msg_in->twist[i].linear.x,
-														 msg_in->twist[i].linear.y,
-														 msg_in->twist[i].linear.z,
-														 0.0 ) ) * tmp_q.inverse();
+					rot_l_vel = ( tmp_q.inverse() * tf2::Quaternion( msg_in->twist[i].linear.x,
+														   msg_in->twist[i].linear.y,
+														   msg_in->twist[i].linear.z,
+														   0.0 ) ) * tmp_q;
+
+					rot_a_vel = ( tmp_q.inverse() * tf2::Quaternion( msg_in->twist[i].angular.x,
+														   msg_in->twist[i].angular.y,
+														   msg_in->twist[i].angular.z,
+														   0.0 ) ) * tmp_q;
 
 					msg_odom_.pose.pose = msg_in->pose[i];
 					msg_odom_.twist.twist = msg_in->twist[i];
-					/*
-					msg_odom_.twist.linear.x = rot_vel.getX();
-					msg_odom_.twist.linear.y = rot_vel.getY();
-					msg_odom_.twist.linear.z = rot_vel.getZ();
-					*/
 
-					msg_odom_.header.stamp = ros::Time::now();
+					msg_odom_.twist.twist.linear.x = rot_l_vel.getX();
+					msg_odom_.twist.twist.linear.y = rot_l_vel.getY();
+					msg_odom_.twist.twist.linear.z = rot_l_vel.getZ();
+					msg_odom_.twist.twist.angular.x = rot_a_vel.getX();
+					msg_odom_.twist.twist.angular.y = rot_a_vel.getY();
+					msg_odom_.twist.twist.angular.z = rot_a_vel.getZ();
+
 					pub_odom_.publish(msg_odom_);
 
 					break;
