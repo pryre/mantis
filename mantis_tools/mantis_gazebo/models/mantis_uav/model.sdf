@@ -8,27 +8,28 @@
       <kinematic>0</kinematic>
 
 	  <inertial>
-        <mass>1.2</mass>
+	    <!-- Mass of frame plates + PC + FC + Camera + GPS + PM + UBEC -->
+        <mass>0.38</mass>
         <inertia>
-          <ixx>0.09375</ixx>
+          <ixx>0.0209475</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.09375</iyy>
+          <iyy>0.001075875</iyy>
           <iyz>0</iyz>
-          <izz>0.1815</izz>
+          <izz>0.001075875</izz>
         </inertia>
       </inertial>
 
       <collision name='collision_base_link'>
         <geometry>
           <cylinder>
-            <radius>0.275</radius>
+            <radius>0.105</radius>
             <length>0.03</length>
           </cylinder>
         </geometry>
       </collision>
 
-	  <visual name='visual_uav_body'>
+	  <visual name='visual_base_link'>
         <geometry>
           <cylinder>
             <radius>0.105</radius>
@@ -42,11 +43,39 @@
             <name>Gazebo/DarkGrey</name>
           </script>
         </material>
-        <cast_shadows>1</cast_shadows>
       </visual>
+	</link>
 
-      <visual name='visual_uav_arm_1'>
-        <pose frame=''>0 -0.19 0 1.5708 0 3.1416</pose>
+	
+    <link name="motor_arm_1">
+      <pose>0 -0.19 0 1.5708 0 3.1416</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+	    <!-- Mass of arm + ESC -->
+        <mass>0.09</mass>
+        <inertia>
+          <ixx>0.0002218125</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0002218125</iyy>
+          <iyz>0</iyz>
+          <izz>0.000010125</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_motor_arm_1">
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_motor_arm_1">
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -60,296 +89,280 @@
             <name>Gazebo/White</name>
           </script>
         </material>
-        <cast_shadows>1</cast_shadows>
-      </visual>
-
-      <visual name='visual_uav_arm_2'>
-        <pose frame=''>0 0.19 0 1.5708 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.17</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <lighting>1</lighting>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/White</name>
-          </script>
-        </material>
-        <cast_shadows>1</cast_shadows>
-      </visual>
-
-	  <visual name='visual_uav_arm_3'>
-        <pose frame=''>0.165 0.095 0 1.5708 0 2.0944</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.17</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <lighting>1</lighting>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Red</name>
-          </script>
-        </material>
-        <cast_shadows>1</cast_shadows>
-      </visual>
-
-	  <visual name='visual_uav_arm_4'>
-        <pose frame=''>-0.165 -0.095 0 1.5708 0 2.0944</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.17</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <lighting>1</lighting>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/White</name>
-          </script>
-        </material>
-        <cast_shadows>1</cast_shadows>
-      </visual>
-
-	  <visual name='visual_uav_arm_5'>
-        <pose frame=''>0.165 -0.095 0 1.5708 0 1.0472</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.17</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <lighting>1</lighting>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Red</name>
-          </script>
-          <shader type='vertex'>
-            <normal_map>__default__</normal_map>
-          </shader>
-        </material>
-        <cast_shadows>1</cast_shadows>
-        <transparency>0</transparency>
-      </visual>
-	  <visual name='visual_uav_arm_6'>
-        <pose frame=''>-0.165 0.095 0 1.5708 0 1.0472</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.17</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <lighting>1</lighting>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/White</name>
-          </script>
-        </material>
-        <cast_shadows>1</cast_shadows>
       </visual>
     </link>
 
 
-	<joint type="fixed" name="joint_body_shoulder">
+	<joint type="fixed" name="joint_body_motor_arm_1">
       <parent>base_link</parent>
-      <child>arm_link_shoulder</child>
+      <child>motor_arm_1</child>
     </joint>
 
-
-    <link name="arm_link_shoulder">
-      <pose>0 0 0.46175 0 0 0</pose>
+	
+    <link name="motor_arm_2">
+      <pose>0 0.19 0 1.5708 0 0</pose>
       <gravity>1</gravity>
       <self_collide>0</self_collide>
       <kinematic>0</kinematic>
 
 	  <inertial>
-        <mass>0.082</mass>
+	    <!-- Mass of arm + ESC -->
+        <mass>0.09</mass>
         <inertia>
-          <ixx>0.000022675</ixx>
+          <ixx>0.0002218125</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.000020326</iyy>
+          <iyy>0.0002218125</iyy>
           <iyz>0</iyz>
-          <izz>0.00001345</izz>
+          <izz>0.000010125</izz>
         </inertia>
       </inertial>
 
-      <collision name="collision_shoulder">
+      <collision name="collision_motor_arm_2">
         <geometry>
-          <box>
-            <size>0.0285 0.034 0.0465</size>
-          </box>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
         </geometry>
       </collision>
 
-      <visual name="visual_shoulder">
+      <visual name="visual_motor_arm_2">
         <geometry>
-          <box>
-            <size>0.0285 0.034 0.0465</size>
-          </box>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
         </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+        </material>
       </visual>
     </link>
 
 
-	<joint type="revolute" name="joint_shoulder_upperarm_servo">
-      <pose>0 0 0.09 0 0 0</pose>
-      <parent>arm_link_shoulder</parent>
-      <child>arm_link_upperarm</child>
-      <axis>
-        <xyz>0 1 0</xyz>
-        <dynamics>
-          <friction>0</friction>
-        </dynamics>
-        <limit>
-          <lower>-1.57</lower>
-          <upper>1.57</upper>
-        </limit>
-      </axis>
+	<joint type="fixed" name="joint_body_motor_arm_2">
+      <parent>base_link</parent>
+      <child>motor_arm_2</child>
     </joint>
 
-
-    <link name="arm_link_upperarm">
-      <pose>0 0 0.35975 0 0 0</pose>
+	
+    <link name="motor_arm_3">
+      <pose>0.165 0.095 0 1.5708 0 2.0944</pose>
       <gravity>1</gravity>
       <self_collide>0</self_collide>
       <kinematic>0</kinematic>
 
 	  <inertial>
-        <mass>0.008</mass>
+	    <!-- Mass of arm + ESC -->
+        <mass>0.09</mass>
         <inertia>
-          <ixx>0.000010504</ixx>
+          <ixx>0.0002218125</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.000010504</iyy>
+          <iyy>0.0002218125</iyy>
           <iyz>0</iyz>
-          <izz>0.000001808</izz>
+          <izz>0.000010125</izz>
         </inertia>
       </inertial>
 
-      <collision name="collision_upperarm">
+      <collision name="collision_motor_arm_3">
         <geometry>
           <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
+            <radius>0.015</radius>
+            <length>0.17</length>
           </cylinder>
         </geometry>
       </collision>
 
-      <visual name="visual_upperarm">
+      <visual name="visual_motor_arm_3">
         <geometry>
           <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
+            <radius>0.015</radius>
+            <length>0.17</length>
           </cylinder>
         </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Red</name>
+          </script>
+        </material>
       </visual>
     </link>
 
 
-	<joint type="fixed" name="joint_upperarm_elbow">
-      <parent>arm_link_upperarm</parent>
-      <child>arm_link_elbow_servo</child>
+	<joint type="fixed" name="joint_body_motor_arm_3">
+      <parent>base_link</parent>
+      <child>motor_arm_3</child>
     </joint>
 
 
-    <link name="arm_link_elbow_servo">
-      <pose>0 0 0.2765 0 0 0</pose>
+    <link name="motor_arm_4">
+      <pose>-0.165 -0.095 0 1.5708 0 2.0944</pose>
       <gravity>1</gravity>
       <self_collide>0</self_collide>
       <kinematic>0</kinematic>
 
 	  <inertial>
-        <mass>0.082</mass>
+	    <!-- Mass of arm + ESC -->
+        <mass>0.09</mass>
         <inertia>
-          <ixx>0.000022675</ixx>
+          <ixx>0.0002218125</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.000020326</iyy>
+          <iyy>0.0002218125</iyy>
           <iyz>0</iyz>
-          <izz>0.00001345</izz>
+          <izz>0.000010125</izz>
         </inertia>
       </inertial>
 
-      <collision name="collision_elbow_servo">
+      <collision name="collision_motor_arm_4">
         <geometry>
-          <box>
-            <size>0.0285 0.034 0.0465</size>
-          </box>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
         </geometry>
       </collision>
 
-      <visual name="visual_elbow_servo">
+      <visual name="visual_motor_arm_4">
         <geometry>
-          <box>
-            <size>0.0285 0.034 0.0465</size>
-          </box>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
         </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+        </material>
       </visual>
     </link>
 
 
-	<joint type="revolute" name="joint_elbow_forearm_servo">
-      <pose>0 0 0.09 0 0 0</pose>
-      <parent>arm_link_elbow_servo</parent>
-      <child>arm_link_forearm</child>
-      <axis>
-        <xyz>0 1 0</xyz>
-        <dynamics>
-          <friction>0</friction>
-        </dynamics>
-        <limit>
-          <lower>-1.57</lower>
-          <upper>1.57</upper>
-        </limit>
-      </axis>
+	<joint type="fixed" name="joint_body_motor_arm_4">
+      <parent>base_link</parent>
+      <child>motor_arm_4</child>
     </joint>
 
-
-    <link name="arm_link_forearm">
-      <pose>0 0 0.1745 0 0 0</pose>
+	
+    <link name="motor_arm_5">
+      <pose>0.165 -0.095 0 1.5708 0 1.0472</pose>
       <gravity>1</gravity>
       <self_collide>0</self_collide>
       <kinematic>0</kinematic>
 
 	  <inertial>
-        <mass>0.008</mass>
+	    <!-- Mass of arm + ESC -->
+        <mass>0.09</mass>
         <inertia>
-          <ixx>0.000010504</ixx>
+          <ixx>0.0002218125</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.000010504</iyy>
+          <iyy>0.0002218125</iyy>
           <iyz>0</iyz>
-          <izz>0.000001808</izz>
+          <izz>0.000010125</izz>
         </inertia>
       </inertial>
 
-      <collision name="collision_forearm">
+      <collision name="collision_motor_arm_5">
         <geometry>
           <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
+            <radius>0.015</radius>
+            <length>0.17</length>
           </cylinder>
         </geometry>
       </collision>
 
-      <visual name="visual_forearm">
+      <visual name="visual_motor_arm_5">
         <geometry>
           <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
+            <radius>0.015</radius>
+            <length>0.17</length>
           </cylinder>
         </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Red</name>
+          </script>
+        </material>
       </visual>
     </link>
+
+
+	<joint type="fixed" name="joint_body_motor_arm_5">
+      <parent>base_link</parent>
+      <child>motor_arm_5</child>
+    </joint>
+
+	
+    <link name="motor_arm_6">
+      <pose>-0.165 0.095 0 1.5708 0 1.0472</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+	    <!-- Mass of arm + ESC -->
+        <mass>0.09</mass>
+        <inertia>
+          <ixx>0.0002218125</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0002218125</iyy>
+          <iyz>0</iyz>
+          <izz>0.000010125</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_motor_arm_6">
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_motor_arm_6">
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.17</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+        </material>
+      </visual>
+    </link>
+
+
+	<joint type="fixed" name="joint_body_motor_arm_6">
+      <parent>base_link</parent>
+      <child>motor_arm_6</child>
+    </joint>
+
+
+<!-- TODO: Motors -->
+
+
+<!-- TODO: Battery -->
 
 
     <link name='rotor_1'>
@@ -950,6 +963,200 @@
       <parent>base_link</parent>
       <child>landing_gear_6</child>
     </joint>
+
+
+	<joint type="fixed" name="joint_body_shoulder">
+      <parent>base_link</parent>
+      <child>arm_link_shoulder</child>
+    </joint>
+
+
+    <link name="arm_link_shoulder">
+      <pose>0 0 0.46175 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.082</mass>
+        <inertia>
+          <ixx>0.000022675</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000020326</iyy>
+          <iyz>0</iyz>
+          <izz>0.00001345</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_shoulder">
+        <geometry>
+          <box>
+            <size>0.0285 0.034 0.0465</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <visual name="visual_shoulder">
+        <geometry>
+          <box>
+            <size>0.0285 0.034 0.0465</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+
+
+	<joint type="revolute" name="joint_shoulder_upperarm_servo">
+      <pose>0 0 0.09 0 0 0</pose>
+      <parent>arm_link_shoulder</parent>
+      <child>arm_link_upperarm</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <dynamics>
+          <friction>0</friction>
+        </dynamics>
+        <limit>
+          <lower>-1.57</lower>
+          <upper>1.57</upper>
+        </limit>
+      </axis>
+    </joint>
+
+
+    <link name="arm_link_upperarm">
+      <pose>0 0 0.35975 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.008</mass>
+        <inertia>
+          <ixx>0.000010504</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000010504</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001808</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_upperarm">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_upperarm">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
+
+
+	<joint type="fixed" name="joint_upperarm_elbow">
+      <parent>arm_link_upperarm</parent>
+      <child>arm_link_elbow_servo</child>
+    </joint>
+
+
+    <link name="arm_link_elbow_servo">
+      <pose>0 0 0.2765 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.082</mass>
+        <inertia>
+          <ixx>0.000022675</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000020326</iyy>
+          <iyz>0</iyz>
+          <izz>0.00001345</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_elbow_servo">
+        <geometry>
+          <box>
+            <size>0.0285 0.034 0.0465</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <visual name="visual_elbow_servo">
+        <geometry>
+          <box>
+            <size>0.0285 0.034 0.0465</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+
+
+	<joint type="revolute" name="joint_elbow_forearm_servo">
+      <pose>0 0 0.09 0 0 0</pose>
+      <parent>arm_link_elbow_servo</parent>
+      <child>arm_link_forearm</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <dynamics>
+          <friction>0</friction>
+        </dynamics>
+        <limit>
+          <lower>-1.57</lower>
+          <upper>1.57</upper>
+        </limit>
+      </axis>
+    </joint>
+
+
+    <link name="arm_link_forearm">
+      <pose>0 0 0.1745 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.008</mass>
+        <inertia>
+          <ixx>0.000010504</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000010504</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001808</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_forearm">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_forearm">
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
 
 
     <plugin name="mantis_gazebo_servo" filename="libmantis_gazebo_servo.so"/>
