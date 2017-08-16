@@ -12,7 +12,7 @@
   <arg name="headless" default="false"/>
   <arg name="debug" default="false"/>
   <arg name="physics" default="ode"/>
-  <arg name="verbose" default="false"/>
+  <arg name="verbose" default="true"/>
   <arg name="world_name" default="worlds/mantis.world"/> <!-- Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
   <arg name="respawn_gazebo" default="false"/>
   <arg name="use_clock_frequency" default="false"/>
@@ -45,6 +45,7 @@
     <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen"/>
   </group>
 
-  <node name="model_state_odom" pkg="mantis_gazebo" type="model_state_odom_node" respawn="$(arg respawn_gazebo)" output="screen" />
+  <node name="model_state_odom" pkg="mantis_gazebo" type="model_state_odom_node" output="screen" />
 
+  <node name="controller_acro" pkg="mantis_gazebo" type="controller_acro_node" output="screen" />
 </launch>
