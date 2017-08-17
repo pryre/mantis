@@ -23,7 +23,7 @@
       <collision name='collision_base_link'>
         <geometry>
           <cylinder>
-            <radius>0.105</radius>
+            <radius>0.275</radius>
             <length>0.03</length>
           </cylinder>
         </geometry>
@@ -45,18 +45,8 @@
         </material>
       </visual>
 
-      <collision name="collision_motor_arm_1">
-        <pose>0 -0.19 0.5 1.5708 0 3.1416</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.17</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
       <visual name="visual_motor_arm_1">
-        <pose>0 -0.19 0.5 1.5708 0 3.1416</pose>
+        <pose>0 -0.19 0 1.5708 0 3.1416</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -71,19 +61,9 @@
           </script>
         </material>
       </visual>
-
-      <collision name="collision_motor_arm_2">
-        <pose>0 0.19 0.5 1.5708 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.17</length>
-          </cylinder>
-        </geometry>
-      </collision>
 
       <visual name="visual_motor_arm_2">
-        <pose>0 0.19 0.5 1.5708 0 0</pose>
+        <pose>0 0.19 0 1.5708 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -98,19 +78,9 @@
           </script>
         </material>
       </visual>
-
-      <collision name="collision_motor_arm_3">
-        <pose>0.165 0.095 0.5 1.5708 0 2.0944</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.17</length>
-          </cylinder>
-        </geometry>
-      </collision>
 
       <visual name="visual_motor_arm_3">
-        <pose>0.165 0.095 0.5 1.5708 0 2.0944</pose>
+        <pose>0.165 0.095 0 1.5708 0 2.0944</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -126,18 +96,8 @@
         </material>
       </visual>
 
-      <collision name="collision_motor_arm_4">
-        <pose>-0.165 -0.095 0.5 1.5708 0 2.0944</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.17</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
       <visual name="visual_motor_arm_4">
-        <pose>-0.165 -0.095 0.5 1.5708 0 2.0944</pose>
+        <pose>-0.165 -0.095 0 1.5708 0 2.0944</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -153,18 +113,8 @@
         </material>
       </visual>
 
-      <collision name="collision_motor_arm_5">
-        <pose>0.165 -0.095 0.5 1.5708 0 1.0472</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.17</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
       <visual name="visual_motor_arm_5">
-        <pose>0.165 -0.095 0.5 1.5708 0 1.0472</pose>
+        <pose>0.165 -0.095 0 1.5708 0 1.0472</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -180,18 +130,8 @@
         </material>
       </visual>
 
-      <collision name="collision_motor_arm_6">
-        <pose>-0.165 0.095 0.5 1.5708 0 1.0472</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.17</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
       <visual name="visual_motor_arm_6">
-        <pose>-0.165 0.095 0.5 1.5708 0 1.0472</pose>
+        <pose>-0.165 0.095 0 1.5708 0 1.0472</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -208,7 +148,7 @@
       </visual>
 
       <collision name="collision_skid_1">
-        <pose>0 -0.275 0.425 0 0 0</pose>
+        <pose>0 -0.275 -0.075 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -218,7 +158,7 @@
       </collision>
 
       <visual name="visual_skid_1">
-        <pose>0 -0.275 0.425 0 0 0</pose>
+        <pose>0 -0.275 -0.075 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -228,7 +168,7 @@
       </visual>
 
       <collision name="collision_skid_2">
-        <pose>0 0.275 0.425 0 0 0</pose>
+        <pose>0 0.275 -0.075 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -238,7 +178,7 @@
       </collision>
 
       <visual name="visual_skid_2">
-        <pose>0 0.275 0.425 0 0 0</pose>
+        <pose>0 0.275 -0.075 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -248,7 +188,7 @@
       </visual>
 
       <collision name="collision_skid_3">
-        <pose>0.2382 0.1375 0.425 0 0 0</pose>
+        <pose>0.2382 0.1375 -0.075 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -258,7 +198,7 @@
       </collision>
 
       <visual name="visual_skid_3">
-        <pose>0.2382 0.1375 0.425 0 0 0</pose>
+        <pose>0.2382 0.1375 -0.075 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -268,7 +208,7 @@
       </visual>
 
       <collision name="collision_skid_4">
-        <pose>-0.2382 -0.1375 0.425 0 0 0</pose>
+        <pose>-0.2382 -0.1375 -0.075 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -278,7 +218,7 @@
       </collision>
 
       <visual name="visual_skid_4">
-        <pose>-0.2382 -0.1375 0.425 0 0 0</pose>
+        <pose>-0.2382 -0.1375 -0.075 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -288,7 +228,7 @@
       </visual>
 
       <collision name="collision_skid_5">
-        <pose>0.2382 -0.1375 0.425 0 0 0</pose>
+        <pose>0.2382 -0.1375 -0.075 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -298,7 +238,7 @@
       </collision>
 
       <visual name="visual_skid_5">
-        <pose>0.2382 -0.1375 0.425 0 0 0</pose>
+        <pose>0.2382 -0.1375 -0.075 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -308,7 +248,7 @@
       </visual>
 
       <collision name="collision_skid_6">
-        <pose>-0.2382 0.1375 0.425 0 0 0</pose>
+        <pose>-0.2382 0.1375 -0.075 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -318,7 +258,7 @@
       </collision>
 
       <visual name="visual_skid_6">
-        <pose>-0.2382 0.1375 0.425 0 0 0</pose>
+        <pose>-0.2382 0.1375 -0.075 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.008</radius>
@@ -328,7 +268,7 @@
       </visual>
 
       <collision name="collision_battery">
-        <pose>0 0 0.532 0 0 0</pose>
+        <pose>0 0 0.032 0 0 0</pose>
         <geometry>
           <box>
             <size>0.052 0.146 0.034</size>
@@ -337,7 +277,7 @@
       </collision>
 
       <visual name="visual_battery">
-        <pose>0 0 0.532 0 0 0</pose>
+        <pose>0 0 0.032 0 0 0</pose>
         <geometry>
           <box>
             <size>0.052 0.146 0.034</size>
@@ -885,10 +825,8 @@
 
 
     <plugin name="mantis_gazebo_servo" filename="libmantis_gazebo_servo.so"/>
-    <!-- TODO: PARAMETERS! -->
 
     <plugin name="mantis_gazebo_pwm" filename="libmantis_gazebo_pwm_motor.so"/>
-    <!-- TODO: PARAMETERS! -->
 
 	<plugin name='mantis_gazebo_motor_model_1' filename='libmantis_gazebo_motor_model.so'>
       <robotNamespace></robotNamespace>
