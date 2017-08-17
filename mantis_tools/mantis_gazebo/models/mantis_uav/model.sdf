@@ -9,14 +9,14 @@
 
 	  <inertial>
 	    <!-- Mass of frame plates + PC + FC + Camera + GPS + PM + UBEC -->
-        <mass>0.38</mass>
+        <mass>1.5480</mass>
         <inertia>
-          <ixx>0.00107587</ixx>
+          <ixx>0.015198135489664</ixx>
           <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.00107587</iyy>
-          <iyz>0</iyz>
-          <izz>0.00209475</izz>
+          <ixz>-1.192366728849071e-19</ixz>
+          <iyy>0.014353211169664</iyy>
+          <iyz>9.175993298526920e-20</iyz>
+          <izz>0.027767959346667</izz>
         </inertia>
       </inertial>
 
@@ -44,28 +44,9 @@
           </script>
         </material>
       </visual>
-	</link>
-
-
-    <link name="motor_arm_1">
-      <pose>0 -0.19 0.5 1.5708 0 3.1416</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.09</mass>
-        <inertia>
-          <ixx>0.000221813</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.000221813</iyy>
-          <iyz>0</iyz>
-          <izz>1.0125e-05</izz>
-        </inertia>
-      </inertial>
 
       <collision name="collision_motor_arm_1">
+        <pose>0 -0.19 0.5 1.5708 0 3.1416</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -75,6 +56,7 @@
       </collision>
 
       <visual name="visual_motor_arm_1">
+        <pose>0 -0.19 0.5 1.5708 0 3.1416</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -89,34 +71,9 @@
           </script>
         </material>
       </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_body_motor_arm_1">
-      <parent>base_link</parent>
-      <child>motor_arm_1</child>
-    </joint>
-
-
-    <link name="motor_arm_2">
-      <pose>0 0.19 0.5 1.5708 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.09</mass>
-        <inertia>
-          <ixx>0.000221813</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.000221813</iyy>
-          <iyz>0</iyz>
-          <izz>1.0125e-05</izz>
-        </inertia>
-      </inertial>
 
       <collision name="collision_motor_arm_2">
+        <pose>0 0.19 0.5 1.5708 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -126,6 +83,7 @@
       </collision>
 
       <visual name="visual_motor_arm_2">
+        <pose>0 0.19 0.5 1.5708 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -140,34 +98,9 @@
           </script>
         </material>
       </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_body_motor_arm_2">
-      <parent>base_link</parent>
-      <child>motor_arm_2</child>
-    </joint>
-
-
-    <link name="motor_arm_3">
-      <pose>0.165 0.095 0.5 1.5708 0 2.0944</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.09</mass>
-        <inertia>
-          <ixx>0.000221813</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.000221813</iyy>
-          <iyz>0</iyz>
-          <izz>1.0125e-05</izz>
-        </inertia>
-      </inertial>
 
       <collision name="collision_motor_arm_3">
+        <pose>0.165 0.095 0.5 1.5708 0 2.0944</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -177,6 +110,7 @@
       </collision>
 
       <visual name="visual_motor_arm_3">
+        <pose>0.165 0.095 0.5 1.5708 0 2.0944</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -191,34 +125,9 @@
           </script>
         </material>
       </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_body_motor_arm_3">
-      <parent>base_link</parent>
-      <child>motor_arm_3</child>
-    </joint>
-
-
-    <link name="motor_arm_4">
-      <pose>-0.165 -0.095 0.5 1.5708 0 2.0944</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.09</mass>
-        <inertia>
-          <ixx>0.000221813</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.000221813</iyy>
-          <iyz>0</iyz>
-          <izz>1.0125e-05</izz>
-        </inertia>
-      </inertial>
 
       <collision name="collision_motor_arm_4">
+        <pose>-0.165 -0.095 0.5 1.5708 0 2.0944</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -228,6 +137,7 @@
       </collision>
 
       <visual name="visual_motor_arm_4">
+        <pose>-0.165 -0.095 0.5 1.5708 0 2.0944</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -242,34 +152,9 @@
           </script>
         </material>
       </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_body_motor_arm_4">
-      <parent>base_link</parent>
-      <child>motor_arm_4</child>
-    </joint>
-
-
-    <link name="motor_arm_5">
-      <pose>0.165 -0.095 0.5 1.5708 0 1.0472</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.09</mass>
-        <inertia>
-          <ixx>0.000221813</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.000221813</iyy>
-          <iyz>0</iyz>
-          <izz>1.0125e-05</izz>
-        </inertia>
-      </inertial>
 
       <collision name="collision_motor_arm_5">
+        <pose>0.165 -0.095 0.5 1.5708 0 1.0472</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -279,6 +164,7 @@
       </collision>
 
       <visual name="visual_motor_arm_5">
+        <pose>0.165 -0.095 0.5 1.5708 0 1.0472</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -293,34 +179,9 @@
           </script>
         </material>
       </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_body_motor_arm_5">
-      <parent>base_link</parent>
-      <child>motor_arm_5</child>
-    </joint>
-
-
-    <link name="motor_arm_6">
-      <pose>-0.165 0.095 0.5 1.5708 0 1.0472</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.09</mass>
-        <inertia>
-          <ixx>0.000221813</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.000221813</iyy>
-          <iyz>0</iyz>
-          <izz>1.0125e-05</izz>
-        </inertia>
-      </inertial>
 
       <collision name="collision_motor_arm_6">
+        <pose>-0.165 0.095 0.5 1.5708 0 1.0472</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -330,6 +191,7 @@
       </collision>
 
       <visual name="visual_motor_arm_6">
+        <pose>-0.165 0.095 0.5 1.5708 0 1.0472</pose>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -344,36 +206,129 @@
           </script>
         </material>
       </visual>
-    </link>
 
+      <collision name="collision_skid_1">
+        <pose>0 -0.275 0.425 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
 
-	<joint type="fixed" name="joint_body_motor_arm_6">
-      <parent>base_link</parent>
-      <child>motor_arm_6</child>
-    </joint>
+      <visual name="visual_skid_1">
+        <pose>0 -0.275 0.425 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
 
-<!-- TODO: Motors -->
+      <collision name="collision_skid_2">
+        <pose>0 0.275 0.425 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
 
+      <visual name="visual_skid_2">
+        <pose>0 0.275 0.425 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
 
-    <link name="battery_link">
-      <pose>0 0 0.532 0 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
+      <collision name="collision_skid_3">
+        <pose>0.2382 0.1375 0.425 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
 
-	  <inertial>
-        <mass>0.580</mass>
-        <inertia>
-          <ixx>0.00108615</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.000186567</iyy>
-          <iyz>0</iyz>
-          <izz>0.00116097</izz>
-        </inertia>
-      </inertial>
+      <visual name="visual_skid_3">
+        <pose>0.2382 0.1375 0.425 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+
+      <collision name="collision_skid_4">
+        <pose>-0.2382 -0.1375 0.425 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_skid_4">
+        <pose>-0.2382 -0.1375 0.425 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+
+      <collision name="collision_skid_5">
+        <pose>0.2382 -0.1375 0.425 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_skid_5">
+        <pose>0.2382 -0.1375 0.425 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
+
+      <collision name="collision_skid_6">
+        <pose>-0.2382 0.1375 0.425 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual_skid_6">
+        <pose>-0.2382 0.1375 0.425 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+      </visual>
 
       <collision name="collision_battery">
+        <pose>0 0 0.532 0 0 0</pose>
         <geometry>
           <box>
             <size>0.052 0.146 0.034</size>
@@ -382,6 +337,7 @@
       </collision>
 
       <visual name="visual_battery">
+        <pose>0 0 0.532 0 0 0</pose>
         <geometry>
           <box>
             <size>0.052 0.146 0.034</size>
@@ -395,13 +351,7 @@
           </script>
         </material>
       </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_body_battery">
-      <parent>base_link</parent>
-      <child>battery_link</child>
-    </joint>
+	</link>
 
 
     <link name='rotor_1'>
@@ -737,270 +687,6 @@
           <upper>1e+16</upper>
         </limit>
       </axis>
-    </joint>
-
-
-    <link name="landing_gear_1">
-      <pose>0 -0.275 0.425 0 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.008</mass>
-        <inertia>
-          <ixx>9.826e-06</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>9.826e-06</iyy>
-          <iyz>0</iyz>
-          <izz>4.52e-07</izz>
-        </inertia>
-      </inertial>
-
-      <collision name="collision_landing_gear_1">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
-      <visual name="visual_landing_gear_1">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_body_landing_gear_1">
-      <parent>base_link</parent>
-      <child>landing_gear_1</child>
-    </joint>
-
-
-    <link name="landing_gear_2">
-      <pose>0 0.275 0.425 0 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.008</mass>
-        <inertia>
-          <ixx>9.826e-06</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>9.826e-06</iyy>
-          <iyz>0</iyz>
-          <izz>4.52e-07</izz>
-        </inertia>
-      </inertial>
-
-      <collision name="collision_landing_gear_2">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
-      <visual name="visual_landing_gear_2">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_body_landing_gear_2">
-      <parent>base_link</parent>
-      <child>landing_gear_2</child>
-    </joint>
-
-
-    <link name="landing_gear_3">
-      <pose>0.2382 0.1375 0.425 0 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.008</mass>
-        <inertia>
-          <ixx>9.826e-06</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>9.826e-06</iyy>
-          <iyz>0</iyz>
-          <izz>4.52e-07</izz>
-        </inertia>
-      </inertial>
-
-      <collision name="collision_landing_gear_3">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
-      <visual name="visual_landing_gear_3">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_body_landing_gear_3">
-      <parent>base_link</parent>
-      <child>landing_gear_3</child>
-    </joint>
-
-
-    <link name="landing_gear_4">
-      <pose>-0.2382 -0.1375 0.425 0 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.008</mass>
-        <inertia>
-          <ixx>9.826e-06</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>9.826e-06</iyy>
-          <iyz>0</iyz>
-          <izz>4.52e-07</izz>
-        </inertia>
-      </inertial>
-
-      <collision name="collision_landing_gear_4">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
-      <visual name="visual_landing_gear_4">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_body_landing_gear_4">
-      <parent>base_link</parent>
-      <child>landing_gear_4</child>
-    </joint>
-
-
-    <link name="landing_gear_5">
-      <pose>0.2382 -0.1375 0.425 0 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.008</mass>
-        <inertia>
-          <ixx>9.826e-06</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>9.826e-06</iyy>
-          <iyz>0</iyz>
-          <izz>4.52e-07</izz>
-        </inertia>
-      </inertial>
-
-      <collision name="collision_landing_gear_5">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
-      <visual name="visual_landing_gear_5">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_body_landing_gear_5">
-      <parent>base_link</parent>
-      <child>landing_gear_5</child>
-    </joint>
-
-
-    <link name="landing_gear_6">
-      <pose>-0.2382 0.1375 0.425 0 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.008</mass>
-        <inertia>
-          <ixx>9.826e-06</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>9.826e-06</iyy>
-          <iyz>0</iyz>
-          <izz>4.52e-07</izz>
-        </inertia>
-      </inertial>
-
-      <collision name="collision_landing_gear_6">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
-      <visual name="visual_landing_gear_6">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_body_landing_gear_6">
-      <parent>base_link</parent>
-      <child>landing_gear_6</child>
     </joint>
 
 
