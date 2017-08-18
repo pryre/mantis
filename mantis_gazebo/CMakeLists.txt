@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   gazebo_msgs
   dynamixel_msgs
   mantis_gazebo_msgs
+  hector_gazebo_plugins
 )
 
 ## System dependencies are found with CMake's conventions

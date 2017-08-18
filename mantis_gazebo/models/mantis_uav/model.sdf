@@ -834,11 +834,11 @@
 
     <plugin name="mantis_gazebo_pwm" filename="libmantis_gazebo_pwm_motor.so"/>
 
-    <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
+    <plugin name="imu_plugin" filename="libhector_gazebo_ros_imu.so">
       <alwaysOn>true</alwaysOn>
-      <frameName>base_link</frameName>
+      <frameName>world</frameName>
       <bodyName>base_link</bodyName>
-      <topicName>mantis_uav/imu</topicName>
+      <topicName>mantis_uav/imu_data</topicName>
       <serviceName>mantis_uav/imu_service</serviceName>
       <gaussianNoise>0.0</gaussianNoise>
       <updateRate>500.0</updateRate>

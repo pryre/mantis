@@ -5,9 +5,7 @@
 
 #include <mavros_msgs/AttitudeTarget.h>
 #include <mavros_msgs/RCOut.h>
-
 #include <sensor_msgs/Imu.h>
-#include <nav_msgs/Odometry.h>
 
 #include <pidController/pidController.h>
 
@@ -43,11 +41,11 @@ class ControllerAcro {
 		ros::NodeHandle nh_;
 
 		ros::Subscriber sub_attitude_target_;
-		ros::Subscriber sub_odom_;
+		ros::Subscriber sub_imu_;
 		ros::Publisher pub_rc_out_;
 
 		std::string topic_attitude_target_;
-		std::string topic_odom_;
+		std::string topic_imu_;
 		std::string topic_rc_out_;
 
 		std::string model_name_;
@@ -184,10 +182,8 @@ class ControllerAcro {
 			pub_rc_out_.publish(msg_rc_out_);
 		}
 
-		void odomCallback(const nav_msgs::Odometry::ConstPtr& msg_in) {
-			model_imu_.header = msg_in->header;
-			model_imu_.orientation = msg_in->pose.pose.orientation;
-			model_imu_.angular_velocity = msg_in->twist.twist.angular;
+		void imuCallback(const sensor_msgs::Imu::ConstPtr& msg_in) {
+			model_imu_ = *msg_in;
 		}
 
 		void attitudeTargetCallback( const mavros_msgs::AttitudeTarget::ConstPtr& msg_in ) {
@@ -199,12 +195,12 @@ class ControllerAcro {
 			frame_id_("world"),
 			model_name_("mantis_uav"),
 			topic_attitude_target_("/mantis_uav/command/attitude_target"),
-			topic_odom_("/mantis_uav/odom"),
+			topic_imu_("/mantis_uav/imu_data"),
 			topic_rc_out_("/mantis_uav/command/motor_pwm"),
 			pwm_update_rate_(100.0) {
 
 			sub_attitude_target_ = nh_.subscribe<mavros_msgs::AttitudeTarget>(topic_attitude_target_, 1, &ControllerAcro::attitudeTargetCallback, this);
-			sub_odom_ = nh_.subscribe<nav_msgs::Odometry>(topic_odom_, 10, &ControllerAcro::odomCallback, this);
+			sub_imu_ = nh_.subscribe<sensor_msgs::Imu>(topic_imu_, 10, &ControllerAcro::imuCallback, this);
 			pub_rc_out_ = nh_.advertise<mavros_msgs::RCOut>( topic_rc_out_, 10 );
 
 			tmr_rc_out_ = nh_.createTimer(ros::Duration(1 / pwm_update_rate_), &ControllerAcro::mixerCallback, this);
