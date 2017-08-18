@@ -1,7 +1,8 @@
 # Todo list for the Mantis MM-UAV
 
 ### Critical:
-- [ ] Create for node templates
+- [ ] Figure out why IMU does not give readings in correct frame
+- [ ] Fix inertial_calc so it considers Ixy, Ixz, etc. during movement calculations (and other TODOs)
 
 ### Additional
 - [ ] Add in config files for all nodes (where needed)
