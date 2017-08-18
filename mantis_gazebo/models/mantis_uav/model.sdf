@@ -256,13 +256,6 @@
             <length>0.12</length>
           </cylinder>
         </geometry>
-        <material>
-          <lighting>1</lighting>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/White</name>
-          </script>
-        </material>
       </collision>
 
       <visual name="visual_skid_1">
