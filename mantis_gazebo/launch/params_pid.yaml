@@ -1,0 +1,83 @@
+# Common configuration for the mavel velocity controller
+
+# Control
+control_rate: 50.0
+control_frame: "local_origin"
+
+throttle:
+  min: 0.0
+  mid: 0.5
+  max: 0.9
+
+# Maximum roll/pitch in radians
+tilt_max: 0.39
+
+# Data Stream
+stream:
+  min_rate:
+    reference:
+      odometry: 10.0
+    setpoint:
+      position: 5.0
+      velocity: 10.0
+      acceleration: 20.0
+  topic:
+    reference:
+      odometry: "reference/odometry"
+    setpoint:
+      position: "setpoint/position"
+      velocity: "setpoint/velocity"
+      acceleration: "setpoint/acceleration"
+    feedback:
+      position: "goal/position"
+      velocity: "goal/velocity"
+      acceleration: "goal/acceleration"
+      attitude: "goal/attitude"
+
+# PID Controllers
+pid:
+  position:
+    x:
+      kp: 1.25
+      ki: 0.0
+      kd: 0.5
+      tau: 0.05
+      min: -2.0
+      max: 2.0
+    y:
+      kp: 1.25
+      ki: 0.0
+      kd: 0.5
+      tau: 0.05
+      min: -2.0
+      max: 2.0
+    z:
+      kp: 1.0
+      ki: 0.0
+      kd: 0.1
+      tau: 0.05
+      min: -1.0
+      max: 2.0
+  velocity:
+    x:
+      kp: 0.09
+      ki: 0.02
+      kd: 0.04
+      tau: 0.05
+      min: -0.2
+      max: 0.2
+    y:
+      kp: 0.09
+      ki: 0.02
+      kd: 0.04
+      tau: 0.05
+      min: -0.2
+      max: 0.2
+    z:
+      kp: 0.2
+      ki: 0.02
+      kd: 0.0
+      tau: 0.05
+      min: -0.5
+      max: 0.5
+

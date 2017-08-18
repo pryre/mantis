@@ -8,7 +8,6 @@
       <kinematic>0</kinematic>
 
 	  <inertial>
-	    <!-- Mass of frame plates + PC + FC + Camera + GPS + PM + UBEC -->
         <mass>1.5480</mass>
         <inertia>
           <ixx>0.015198135489664</ixx>
@@ -147,6 +146,108 @@
         </material>
       </visual>
 
+      <visual name="visual_motor_1">
+        <pose>0 -0.275 0.027 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.014</radius>
+            <length>0.024</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+        </material>
+      </visual>
+
+      <visual name="visual_motor_2">
+        <pose>0 0.275 0.027 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.014</radius>
+            <length>0.024</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+        </material>
+      </visual>
+
+      <visual name="visual_motor_3">
+        <pose>0.2382 0.1375 0.027 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.014</radius>
+            <length>0.024</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+        </material>
+      </visual>
+
+      <visual name="visual_motor_4">
+        <pose>-0.2382 -0.1375 0.027 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.014</radius>
+            <length>0.024</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+        </material>
+      </visual>
+
+      <visual name="visual_motor_5">
+        <pose>0.2382 -0.1375 0.027 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.014</radius>
+            <length>0.024</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+        </material>
+      </visual>
+
+      <visual name="visual_motor_6">
+        <pose>-0.2382 0.1375 0.027 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.014</radius>
+            <length>0.024</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+        </material>
+      </visual>
+
       <collision name="collision_skid_1">
         <pose>0 -0.275 -0.075 0 0 0</pose>
         <geometry>
@@ -155,6 +256,13 @@
             <length>0.12</length>
           </cylinder>
         </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+        </material>
       </collision>
 
       <visual name="visual_skid_1">
@@ -165,6 +273,13 @@
             <length>0.12</length>
           </cylinder>
         </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+        </material>
       </visual>
 
       <collision name="collision_skid_2">
@@ -185,6 +300,13 @@
             <length>0.12</length>
           </cylinder>
         </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+        </material>
       </visual>
 
       <collision name="collision_skid_3">
@@ -205,6 +327,13 @@
             <length>0.12</length>
           </cylinder>
         </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+        </material>
       </visual>
 
       <collision name="collision_skid_4">
@@ -225,6 +354,13 @@
             <length>0.12</length>
           </cylinder>
         </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+        </material>
       </visual>
 
       <collision name="collision_skid_5">
@@ -245,6 +381,13 @@
             <length>0.12</length>
           </cylinder>
         </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+        </material>
       </visual>
 
       <collision name="collision_skid_6">
@@ -265,6 +408,13 @@
             <length>0.12</length>
           </cylinder>
         </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/White</name>
+          </script>
+        </material>
       </visual>
 
       <collision name="collision_battery">
@@ -352,7 +502,7 @@
 
 
     <link name='rotor_2'>
-      <pose>0 0.275 0.5455 0 0 0</pose>
+      <pose>0 0.275 0.5475 0 0 0</pose>
       <gravity>1</gravity>
       <velocity_decay/>
       <self_collide>0</self_collide>

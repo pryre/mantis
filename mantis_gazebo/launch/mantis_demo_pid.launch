@@ -48,4 +48,16 @@
   <node name="model_state_odom" pkg="mantis_gazebo" type="model_state_odom_node" output="screen" />
 
   <node name="controller_acro" pkg="mantis_gazebo" type="controller_acro_node" output="screen" />
+
+  <node pkg="mavel" type="mavel_node" name="mavel" clear_params="true" output="screen">
+	<!-- Controller Parameters /-->
+	<rosparam command="load" file="$(find mantis_gazebo)/launch/params_pid.yaml"/>
+
+	<remap from="/mavel/goal/attitude" to="/mantis_uav/command/attitude_target"/>
+	<remap from="/mavel/reference/odometry" to="/mantis_uav/odom"/>
+  </node>
+
+  <node pkg="rosservice" type="rosservice" name="arm_motors" args="call --wait /mantis_uav/arm/motors '{arm: true}'"/>
+
+
 </launch>
