@@ -70,6 +70,8 @@ class MantisGazeboPWMMotor : public ModelPlugin
 				ROS_INFO("Mantis: Motors disarmed!");
 			}
 
+			res.success = true;
+
 			return true;
 		}
 

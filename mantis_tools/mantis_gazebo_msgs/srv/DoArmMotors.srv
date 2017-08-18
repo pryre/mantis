@@ -1,2 +1,3 @@
 bool arm
 ---
+bool success

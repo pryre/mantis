@@ -1,5 +1,5 @@
+<?xml version='1.0'?>
 <launch>
-
   <!-- these are the arguments you can pass this launch file, for example paused:=true -->
   <arg name="paused" default="false"/>
   <arg name="use_sim_time" default="true"/>
@@ -44,8 +44,8 @@
   <group if="$(arg gui)">
     <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen"/>
   </group>
-
+  <!--
   <node name="model_state_odom" pkg="mantis_gazebo" type="model_state_odom_node" output="screen" />
-
+  -->
   <node name="controller_acro" pkg="mantis_gazebo" type="controller_acro_node" output="screen" />
 </launch>

@@ -629,7 +629,7 @@
       </axis>
     </joint>
 
-
+<!--
 	<joint type="fixed" name="joint_body_shoulder">
       <parent>base_link</parent>
       <child>arm_link_shoulder_servo</child>
@@ -825,8 +825,25 @@
 
 
     <plugin name="mantis_gazebo_servo" filename="libmantis_gazebo_servo.so"/>
-
+-->
     <plugin name="mantis_gazebo_pwm" filename="libmantis_gazebo_pwm_motor.so"/>
+
+	<plugin name="ground_truth" filename="libgazebo_ros_p3d.so">
+      <frameName>world</frameName>
+      <bodyName>base_link</bodyName>
+      <topicName>mantis_uav/odom</topicName>
+      <updateRate>30.0</updateRate>
+    </plugin>
+
+    <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
+      <alwaysOn>true</alwaysOn>
+      <frameName>world</frameName>
+      <bodyName>base_link</bodyName>
+      <topicName>mantis_uav/imu</topicName>
+      <serviceName>mantis_uav/imu_service</serviceName>
+      <gaussianNoise>0.0</gaussianNoise>
+      <updateRate>500.0</updateRate>
+    </plugin>
 
 	<plugin name='mantis_gazebo_motor_model_1' filename='libmantis_gazebo_motor_model.so'>
       <robotNamespace></robotNamespace>

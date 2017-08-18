@@ -72,9 +72,9 @@ class ModelStatesOdom {
 					msg_odom_.twist.twist.linear.x = rot_l_vel.getX();
 					msg_odom_.twist.twist.linear.y = rot_l_vel.getY();
 					msg_odom_.twist.twist.linear.z = rot_l_vel.getZ();
-					msg_odom_.twist.twist.angular.x = rot_a_vel.getX();
-					msg_odom_.twist.twist.angular.y = rot_a_vel.getY();
-					msg_odom_.twist.twist.angular.z = rot_a_vel.getZ();
+					//msg_odom_.twist.twist.angular.x = rot_a_vel.getX();
+					//msg_odom_.twist.twist.angular.y = rot_a_vel.getY();
+					//msg_odom_.twist.twist.angular.z = rot_a_vel.getZ();
 
 					pub_odom_.publish(msg_odom_);
 
