@@ -25,6 +25,10 @@ class MantisGazeboPWMMotor : public ModelPlugin
 								 safety_armed_(false) {
 		}
 
+		int32_t int32_constrain(const int32_t i, const int32_t min, const int32_t max) {
+			return (i < min) ? min : (i > max) ? max : i;
+		}
+
 		void Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/) {
 			// Make sure the ROS node for Gazebo has already been initialized
 			if( !ros::isInitialized() ) {
@@ -48,12 +52,15 @@ class MantisGazeboPWMMotor : public ModelPlugin
 			for(int i=0; i<msg_in->channels.size(); i++){
 				double pwm = param_pwm_min_;
 
-				if( safety_armed_ )
-					pwm = ( msg_in->channels[i] < param_pwm_min_ ) ? param_pwm_min_ : ( ( msg_in->channels[i] > param_pwm_max_ ) ? param_pwm_max_ : msg_in->channels[i] );
+				if( safety_armed_ ) {
+					pwm = int32_constrain( msg_in->channels[i], param_pwm_min_, param_pwm_max_);
 
-				double norm_ref = ( pwm - param_pwm_min_ ) / ( param_pwm_max_ - param_pwm_min_ );
+					double norm_ref = ( pwm - param_pwm_min_ ) / ( param_pwm_max_ - param_pwm_min_ );
 
-				msg_motor_velocity_.data[i] = ( norm_ref * param_motor_vel_max_ ) + param_motor_vel_armed_;
+					msg_motor_velocity_.data[i] = ( norm_ref * param_motor_vel_max_ ) + param_motor_vel_armed_;
+				} else {
+					msg_motor_velocity_.data[i] = 0;
+				}
 			}
 
 			pub_motor_velocity_.publish(msg_motor_velocity_);
@@ -82,7 +89,6 @@ class MantisGazeboPWMMotor : public ModelPlugin
 		uint16_t param_pwm_max_;
 		double param_motor_vel_max_;	//TODO: Params
 		double param_motor_vel_armed_;
-		//TODO: service for motor arm?
 
 		bool safety_armed_;
 

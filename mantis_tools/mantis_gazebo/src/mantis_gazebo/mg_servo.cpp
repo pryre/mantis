@@ -27,6 +27,8 @@ class MantisGazeboServo : public ModelPlugin
 			joint_shoulder_upperarm_servo_ = model_->GetJoint("joint_shoulder_upperarm_servo");
 			joint_elbow_forearm_servo_ = model_->GetJoint("joint_elbow_forearm_servo");
 
+			joint_shoulder_upperarm_servo_->SetPosition(0, -1.570796327);
+
 			sub_shoulder_ = nh_.subscribe<std_msgs::Float64>( model_->GetName() + "/command/shoulder", 100, &MantisGazeboServo::cmd_shoulder_cb, this );
 			sub_elbow_ = nh_.subscribe<std_msgs::Float64>( model_->GetName() + "/command/elbow", 100, &MantisGazeboServo::cmd_elbow_cb, this );
 			pub_joint_state_ = nh_.advertise<sensor_msgs::JointState>(model_->GetName() + "/state/joint_states", 10);

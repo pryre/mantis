@@ -8,7 +8,17 @@
       <kinematic>0</kinematic>
 
 	  <inertial>
-	    <!-- Mass of frame plates + PC + FC + Camera + GPS + PM + UBEC -->
+	    <!-- Mass of frame plates + PC + FC + Camera + GPS + PM + UBEC
+        <mass>1.2</mass>
+        <inertia>
+          <ixx>0.09375</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.09375</iyy>
+          <iyz>0</iyz>
+          <izz>0.1815</izz>
+        </inertia>
+		-->
         <mass>1.5480</mass>
         <inertia>
           <ixx>0.015198135489664</ixx>
@@ -303,12 +313,12 @@
       <inertial>
         <mass>0.005</mass>
         <inertia>
-          <ixx>1.04167e-07</ixx>
+          <ixx>9.75e-07</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>2.73171e-05</iyy>
+          <iyy>0.000273104</iyy>
           <iyz>0</iyz>
-          <izz>2.74004e-05</izz>
+          <izz>0.000274004</izz>
         </inertia>
       </inertial>
 
@@ -359,12 +369,12 @@
       <inertial>
         <mass>0.005</mass>
         <inertia>
-          <ixx>1.04167e-07</ixx>
+          <ixx>9.75e-07</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>2.73171e-05</iyy>
+          <iyy>0.000273104</iyy>
           <iyz>0</iyz>
-          <izz>2.74004e-05</izz>
+          <izz>0.000274004</izz>
         </inertia>
       </inertial>
 
@@ -415,12 +425,12 @@
       <inertial>
         <mass>0.005</mass>
         <inertia>
-          <ixx>1.04167e-07</ixx>
+          <ixx>9.75e-07</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>2.73171e-05</iyy>
+          <iyy>0.000273104</iyy>
           <iyz>0</iyz>
-          <izz>2.74004e-05</izz>
+          <izz>0.000274004</izz>
         </inertia>
       </inertial>
 
@@ -471,12 +481,12 @@
       <inertial>
         <mass>0.005</mass>
         <inertia>
-          <ixx>1.04167e-07</ixx>
+          <ixx>9.75e-07</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>2.73171e-05</iyy>
+          <iyy>0.000273104</iyy>
           <iyz>0</iyz>
-          <izz>2.74004e-05</izz>
+          <izz>0.000274004</izz>
         </inertia>
       </inertial>
 
@@ -527,12 +537,12 @@
       <inertial>
         <mass>0.005</mass>
         <inertia>
-          <ixx>1.04167e-07</ixx>
+          <ixx>9.75e-07</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>2.73171e-05</iyy>
+          <iyy>0.000273104</iyy>
           <iyz>0</iyz>
-          <izz>2.74004e-05</izz>
+          <izz>0.000274004</izz>
         </inertia>
       </inertial>
 
@@ -583,12 +593,12 @@
       <inertial>
         <mass>0.005</mass>
         <inertia>
-          <ixx>1.04167e-07</ixx>
+          <ixx>9.75e-07</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>2.73171e-05</iyy>
+          <iyy>0.000273104</iyy>
           <iyz>0</iyz>
-          <izz>2.74004e-05</izz>
+          <izz>0.000274004</izz>
         </inertia>
       </inertial>
 
@@ -629,7 +639,7 @@
       </axis>
     </joint>
 
-<!--
+
 	<joint type="fixed" name="joint_body_shoulder">
       <parent>base_link</parent>
       <child>arm_link_shoulder_servo</child>
@@ -825,15 +835,8 @@
 
 
     <plugin name="mantis_gazebo_servo" filename="libmantis_gazebo_servo.so"/>
--->
-    <plugin name="mantis_gazebo_pwm" filename="libmantis_gazebo_pwm_motor.so"/>
 
-	<plugin name="ground_truth" filename="libgazebo_ros_p3d.so">
-      <frameName>world</frameName>
-      <bodyName>base_link</bodyName>
-      <topicName>mantis_uav/odom</topicName>
-      <updateRate>30.0</updateRate>
-    </plugin>
+    <plugin name="mantis_gazebo_pwm" filename="libmantis_gazebo_pwm_motor.so"/>
 
     <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
       <alwaysOn>true</alwaysOn>

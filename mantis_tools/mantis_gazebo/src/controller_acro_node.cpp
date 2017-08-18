@@ -77,6 +77,7 @@ class ControllerAcro {
 		int32_t int32_constrain(const int32_t i, const int32_t min, const int32_t max) {
 			return (i < min) ? min : (i > max) ? max : i;
 		}
+
 		double double_constrain(const double i, const double min, const double max) {
 			return (i < min) ? min : (i > max) ? max : i;
 		}
@@ -145,8 +146,6 @@ class ControllerAcro {
 			control_forces_.p = controller_rates_y_.step( dt, control_rates_.p, model_imu_.angular_velocity.y );
 			control_forces_.y = controller_rates_z_.step( dt, control_rates_.y, model_imu_.angular_velocity.z );
 
-			control_forces_.p = 0;
-
 			int32_t max_output = 1000;
 			int32_t scale_factor = 1000;
 			int32_t prescaled_outputs[NUM_MOTORS];
@@ -210,7 +209,7 @@ class ControllerAcro {
 			param_ang_r_ff_ = 6.0;
 			double param_pid_rate_x_kp = 0.05;
 			double param_pid_rate_x_ki = 0.0;
-			double param_pid_rate_x_kd = 0.0; //0.003
+			double param_pid_rate_x_kd = 0.003;
 			double param_pid_rate_x_tau = 0.02;
 
 			param_ang_p_ff_ = 6.0;
@@ -228,9 +227,9 @@ class ControllerAcro {
 			param_rate_r_max_ = 3.85;	//~220 deg/s
 			param_rate_p_max_ = 3.85;	//~220 deg/s
 			param_rate_y_max_ = 1.05;	//~60 deg/s
-			double param_pid_force_x_max = 0.2; //20% throttle
-			double param_pid_force_y_max = 0.2; //20% throttle
-			double param_pid_force_z_max = 0.1; //10% throttle
+			double param_pid_force_x_max = 0.5; //20% throttle
+			double param_pid_force_y_max = 0.5; //20% throttle
+			double param_pid_force_z_max = 0.2; //10% throttle
 
 			controller_rates_x_.setGains( param_pid_rate_x_kp, param_pid_rate_x_ki, param_pid_rate_x_kd, param_pid_rate_x_tau);
 			controller_rates_x_.setOutputMinMax( -param_pid_force_x_max, param_pid_force_x_max );

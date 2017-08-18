@@ -25,10 +25,10 @@ if __name__ == '__main__':
     msg_out.pose.position.x = 0.0
     msg_out.pose.position.y = 0.0
     msg_out.pose.position.z = 1.0
-    msg_out.pose.orientation.w = 1.0
+    msg_out.pose.orientation.w = 0.7071
     msg_out.pose.orientation.x = 0.0
     msg_out.pose.orientation.y = 0.0
-    msg_out.pose.orientation.z = 0.0
+    msg_out.pose.orientation.z = 0.7071
 
     rospy.spin()
 
