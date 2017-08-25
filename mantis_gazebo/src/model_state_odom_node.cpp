@@ -1,6 +1,8 @@
 #include <ros/ros.h>
 
 #include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Vector3.h>
+#include <tf2/LinearMath/Matrix3x3.h>
 
 #include <nav_msgs/Odometry.h>
 #include <gazebo_msgs/ModelStates.h>
@@ -48,26 +50,42 @@ class ModelStatesOdom {
 
 			for( int i=0; i<msg_in->name.size(); i++ ) {
 				if( msg_in->name[i] == model_name_ ) {
+					//Velocities must be in the base_link frame
+					//The base_link frame is locked in roll and pitch with the world frame, but can rotate with yaw
 					tf2::Quaternion rot_l_vel;
 					tf2::Quaternion rot_a_vel;
 
+					//Get the rotation from the world to body frame (for angular measurements
 					tf2::Quaternion tmp_q( msg_in->pose[i].orientation.x,
 										   msg_in->pose[i].orientation.y,
 										   msg_in->pose[i].orientation.z,
 										   msg_in->pose[i].orientation.w );
-
-					rot_l_vel = ( tmp_q.inverse() * tf2::Quaternion( msg_in->twist[i].linear.x,
-														   msg_in->twist[i].linear.y,
-														   msg_in->twist[i].linear.z,
-														   0.0 ) ) * tmp_q;
 
 					rot_a_vel = ( tmp_q.inverse() * tf2::Quaternion( msg_in->twist[i].angular.x,
 														   msg_in->twist[i].angular.y,
 														   msg_in->twist[i].angular.z,
 														   0.0 ) ) * tmp_q;
 
+					//Derotate the world->body quaternion
+					tf2::Matrix3x3 r( tmp_q );
+					tf2::Vector3 body_x;
+					tf2::Vector3 body_y( r.getRow(1) );	//Use the y vector for yaw reference
+					tf2::Vector3 body_z(0.0, 0.0, 1.0);
+
+					body_x = body_y.cross(body_z);
+					body_x.normalize();
+					body_y = body_z.cross(body_x);
+					body_y.normalize();
+					r.setValue( body_x.x(), body_x.y(), body_x.z(), body_y.x(), body_y.y(), body_y.z(), body_z.x(), body_z.y(), body_z.z() );
+
+					r.getRotation( tmp_q );	//Copy the rotation back into the quaternion
+
+					rot_l_vel = ( tmp_q.inverse() * tf2::Quaternion( msg_in->twist[i].linear.x,
+														   msg_in->twist[i].linear.y,
+														   msg_in->twist[i].linear.z,
+														   0.0 ) ) * tmp_q;
+
 					msg_odom_.pose.pose = msg_in->pose[i];
-					//msg_odom_.twist.twist = msg_in->twist[i];
 
 					msg_odom_.twist.twist.linear.x = rot_l_vel.getX();
 					msg_odom_.twist.twist.linear.y = rot_l_vel.getY();
