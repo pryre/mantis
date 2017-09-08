@@ -828,7 +828,9 @@
       <axis>
         <xyz>0 1 0</xyz>
         <dynamics>
-          <friction>0.1</friction>
+          <damping>0.01</damping>
+          <spring_reference>0.0</spring_reference>
+          <spring_stiffness>0.0</spring_stiffness>
         </dynamics>
         <limit>
           <lower>-1.57</lower>
@@ -925,7 +927,9 @@
       <axis>
         <xyz>0 1 0</xyz>
         <dynamics>
-          <friction>0.1</friction>
+          <damping>0.01</damping>
+          <spring_reference>0.0</spring_reference>
+          <spring_stiffness>0.0</spring_stiffness>
         </dynamics>
         <limit>
           <lower>-1.57</lower>

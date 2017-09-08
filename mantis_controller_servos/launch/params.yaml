@@ -6,11 +6,11 @@ joint:
     pos:
       ff: 1.0
     vel:
-      kp: 1.0
+      kp: 0.6
       ki: 0.1
       kd: 0.0
       tau: 0.02
-      max: 0.5
+      max: 1.0
     eff:
       max: 2.0
   elbow:
@@ -18,9 +18,9 @@ joint:
       ff: 0.5
     vel:
       kp: 0.4
-      ki: 0.0
+      ki: 0.1
       kd: 0.0
       tau: 0.02
-      max: 0.5
+      max: 1.0
     eff:
       max: 2.0
