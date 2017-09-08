@@ -828,7 +828,7 @@
       <axis>
         <xyz>0 1 0</xyz>
         <dynamics>
-          <friction>0</friction>
+          <friction>0.1</friction>
         </dynamics>
         <limit>
           <lower>-1.57</lower>
@@ -925,7 +925,7 @@
       <axis>
         <xyz>0 1 0</xyz>
         <dynamics>
-          <friction>0</friction>
+          <friction>0.1</friction>
         </dynamics>
         <limit>
           <lower>-1.57</lower>

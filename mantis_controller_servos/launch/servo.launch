@@ -1,0 +1,8 @@
+<launch>
+	<node pkg="mantis_controller_servos" type="controller_node" name="controller_servos" clear_params="true" output="screen">
+		<param name="model_name" value="mantis_uav" />
+		<param name="servo_update_rate" value="100.0" />
+
+		<rosparam command="load" file="$(find mantis_controller_servos)/launch/params.yaml"/>
+	</node>
+</launch>
