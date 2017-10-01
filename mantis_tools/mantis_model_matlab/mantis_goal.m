@@ -50,6 +50,7 @@ function [ yf ] = mantis_goal( base_pos, arm_pos, p )
     
     
     %% Calculates joint angles
+   
     pos_diff = arm_pos - base_pos;
     
     % From here on, only work in the 2D frame

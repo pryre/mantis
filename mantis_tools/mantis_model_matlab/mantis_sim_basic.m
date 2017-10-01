@@ -32,6 +32,7 @@ params = mantis_params('params.yaml');
 % 
 %K = lqr(A,B,Q,R);
 
+
 %% Run Simulation
 
 % Simulation time
@@ -47,7 +48,7 @@ y0 = [ 0; 0; 0; 0; 0; 0; ...
        0; 0; 0; 0];
 
 % Final state
-yf = mantis_goal([0,0,2], [0.2,0,1.6], params);
+yf = mantis_goal([0,0,1], [0.2,0,0.6], params);
 
 % Controller input
 %u = -K*yf;
@@ -59,9 +60,9 @@ u = 0;
 
 %% Render
 
-figure(1);
-
 % REMOVE THIS
+yf(8) = pi/4;
+
 t = tspan;
 y = zeros(length(y0), length(t));
 
@@ -69,6 +70,8 @@ for i=1:length(t)
     y(:,i) = yf;
 end
 % REMOVE THIS
+
+figure(1);
 
 for k=1:length(t)
     mantis_draw(y(:,k), params);

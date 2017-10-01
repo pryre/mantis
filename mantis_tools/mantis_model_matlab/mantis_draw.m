@@ -5,61 +5,89 @@ function [ ] = mantis_draw( y, p )
 %        phi; theta; psi; dphi; dtheta; dpsi; ...
 %        thetal1; thetal2; dthetal1; dthetal2 ]
 %   p: Parameter structure as loaded by mantis_params()
-       
+    
+
     %% Draw reference frame
+    
     hold off; % Clean the display area
     plot3([0,0.5], [0,0], [0,0], 'color', 'r', 'linewidth', 1);
     hold on;
     plot3([0,0], [0,0.5], [0,0], 'color', 'g', 'linewidth', 1);
     plot3([0,0], [0,0], [0,0.5], 'color', 'b', 'linewidth', 1);
     
+    
     %% Draw multirotor
     
-    % TODO: Account for rotation
+    mr_pos = [y(1); y(2); y(3)];
+    mr_rot = angle2dcm(-y(9),-y(8),-y(7));
+    
     switch p.frame.layout
         case 'X6'
             fl = p.frame.motor_arm_length;
             x30 = fl*cos(deg2rad(30));
             y30 = fl*sin(deg2rad(30));
             
-            plot3([y(1),y(1)+x30], [y(2),y(2)+y30], [y(3),y(3)], 'color', 'r', 'linewidth', 2);
-            plot3([y(1),y(1)+x30], [y(2),y(2)-y30], [y(3),y(3)], 'color', 'r', 'linewidth', 2);
-            plot3([y(1)-x30,y(1)], [y(2)-y30,y(2)], [y(3),y(3)], 'color', 'k', 'linewidth', 2);
-            plot3([y(1)-x30,y(1)], [y(2)+y30,y(2)], [y(3),y(3)], 'color', 'k', 'linewidth', 2);
-            plot3([y(1),y(1)], [y(2)-fl,y(2)+fl], [y(3),y(3)], 'color', 'k', 'linewidth', 2);
+            %frame arm 1 a-b
+            fa0 = [0; 0; 0];
+            fa1 = [0; -fl; 0];
+            fa2 = [0; +fl; 0];
+            fa3 = [x30; y30; 0];
+            fa4 = [-x30; -y30; 0];
+            fa5 = [x30; -y30; 0];
+            fa6 = [-x30; +y30; 0];
+            
+            fa0 = fa0 + mr_pos;
+            fa1 = (mr_rot * fa1) + mr_pos;
+            fa2 = (mr_rot * fa2) + mr_pos;
+            fa3 = (mr_rot * fa3) + mr_pos;
+            fa4 = (mr_rot * fa4) + mr_pos;
+            fa5 = (mr_rot * fa5) + mr_pos;
+            fa6 = (mr_rot * fa6) + mr_pos;
+            
+            plot3([fa0(1),fa1(1)], [fa0(2),fa1(2)], [fa0(3),fa1(3)], 'color', 'k', 'linewidth', 2);
+            plot3([fa0(1),fa2(1)], [fa0(2),fa2(2)], [fa0(3),fa2(3)], 'color', 'k', 'linewidth', 2);
+            plot3([fa0(1),fa3(1)], [fa0(2),fa3(2)], [fa0(3),fa3(3)], 'color', 'r', 'linewidth', 2);
+            plot3([fa0(1),fa4(1)], [fa0(2),fa4(2)], [fa0(3),fa4(3)], 'color', 'k', 'linewidth', 2);
+            plot3([fa0(1),fa5(1)], [fa0(2),fa5(2)], [fa0(3),fa5(3)], 'color', 'r', 'linewidth', 2);
+            plot3([fa0(1),fa6(1)], [fa0(2),fa6(2)], [fa0(3),fa6(3)], 'color', 'k', 'linewidth', 2);
         otherwise
             error('Unsupported motor layout')
     end
     
+    
     %% Draw arm
+    
     al = p.arm.length;
     amp = p.arm.mount.point;
     l0rot = p.arm.mount.rotation;
-    l0x = y(1) + amp.x; % TODO: Account for rotation
-    l0y = y(2) + amp.y;
-    l0z = y(3) + amp.z;
+    l0 = [amp.x; amp.y; amp.z];
     
+    % Calculate first link end point
     l1rot = l0rot + y(13);
-    l1x = l0x + cos(l1rot)*al;
-    l1y = l0y; % TODO: Account for rotation
-    l1z = l0z + sin(l1rot)*al;
-    plot3([l0x,l1x], [l0y,l1y], [l0z,l1z], 'color', 'g', 'linewidth', 2);
+    l1 = [l0(1) + cos(l1rot)*al; l0(2); l0(3) + sin(l1rot)*al];
     
+    % Calculate second link end point
     l2rot = l1rot + y(14);
-    l2x = l1x + cos(l2rot)*al;
-    l2y = l1y; % TODO: Account for rotation
-    l2z = l1z + sin(l2rot)*al;
-    plot3([l1x,l2x], [l1y,l2y], [l1z,l2z], 'color', 'g', 'linewidth', 2);
+    l2 = [l1(1) + cos(l2rot)*al; l1(2); l1(3) + sin(l2rot)*al];
     
-    disp(['End Effector: [', num2str(l2x), ',', num2str(l2y), ',', num2str(l2z), ']']);
+    l0 = (mr_rot * l0) + mr_pos;
+    l1 = (mr_rot * l1) + mr_pos;
+    l2 = (mr_rot * l2) + mr_pos;
+    
+    plot3([l0(1),l1(1)], [l0(2),l1(2)], [l0(3),l1(3)], 'color', 'g', 'linewidth', 2);
+    plot3([l1(1),l2(1)], [l1(2),l2(2)], [l1(3),l2(3)], 'color', 'g', 'linewidth', 2);
+    
+    %disp(['End Effector: [', num2str(l2(1)), ',', num2str(l2(2)), ',', num2str(l2(3)), ']']);
     
     
     %% Draw
+    
     ax_s = p.plot.size / 2;
     
     axis([-ax_s, ax_s, -ax_s, ax_s, 0, 2*ax_s]);
     axis('square')
     
     drawnow;
+    
     
 end
