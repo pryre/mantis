@@ -5,6 +5,7 @@
 #include <dynamixel_workbench_toolbox/dynamixel_tool.h>
 #include <dynamixel_sdk/dynamixel_sdk.h>
 
+#include <mantis_interface_dynamixel/EnableTorque.h>
 #include <sensor_msgs/JointState.h>
 
 #include <string>
@@ -25,6 +26,7 @@ class InterfaceDynamixel {
 		ros::Timer timer_;
 		ros::Publisher pub_states_;
 		ros::Subscriber sub_setpoints_;
+		ros::ServiceServer srv_enable_torque_;
 
 		sensor_msgs::JointState joint_states_;
 		sensor_msgs::JointState joint_setpoints_;
@@ -61,6 +63,7 @@ class InterfaceDynamixel {
 		//ROS
 		void callback_timer(const ros::TimerEvent& e);
 		void callback_setpoints(const sensor_msgs::JointState::ConstPtr& msg_in);
+		bool enable_torque(mantis_interface_dynamixel::EnableTorque::Request& req, mantis_interface_dynamixel::EnableTorque::Response& res);
 
 		//Interfacing
 		bool load_dynamixel();
@@ -69,18 +72,18 @@ class InterfaceDynamixel {
 		void init_motor(std::string motor_model, uint8_t motor_id, double protocol_version);
 		bool add_motors();
 
+		//Control
+		bool set_torque(int motor_number, bool onoff);
+
 		bool readMotorState(std::string addr_name, int motor_number, int64_t *read_value);
 		bool readDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, int64_t *value);
 
-		//Control
-		bool enable_torque(bool onoff);
-		bool set_current_setpoint(int16_t pan_cur, int16_t tilt_cur);
-		bool read_dynamixel_state();
-		//bool dynamixelStatePublish();
+		bool writeMotorState(std::string addr_name, int motor_number, uint32_t write_value);
+		bool writeDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, uint32_t value);
 
 		//Conversion
-		double  convert_value_torque(int16_t value);
-		int16_t convert_torque_value(double torque);
-		uint32_t convert_radian_value(double radian);
-		double convert_value_radian(int32_t value);
+		int16_t convert_torque_value(double torque, int motor_number);
+		double convert_value_torque(int16_t value, int motor_number);
+		uint32_t convert_radian_value(double radian, int motor_number);
+		double convert_value_radian(uint32_t value, int motor_number);
 };

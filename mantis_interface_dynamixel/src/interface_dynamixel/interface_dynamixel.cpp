@@ -1,13 +1,12 @@
 #include <ros/ros.h>
 
 #include <interface_dynamixel/interface_dynamixel.h>
+#include <mantis_interface_dynamixel/EnableTorque.h>
 
 #include <dynamixel_workbench_toolbox/dynamixel_tool.h>
 #include <dynamixel_sdk/dynamixel_sdk.h>
 
 #include <sensor_msgs/JointState.h>
-#include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/PoseStamped.h>
 
 #include <vector>
 #include <string>
@@ -40,7 +39,6 @@ InterfaceDynamixel::InterfaceDynamixel() :
 	sub_setpoints_ = nh_.subscribe<sensor_msgs::JointState>( topic_input_setpoints_, 10, &InterfaceDynamixel::callback_setpoints, this );
 	pub_states_ = nh_.advertise<sensor_msgs::JointState>(topic_output_states_, 10);
 
-
 	//Dynamixel Setup
 	portHandler_ = dynamixel::PortHandler::getPortHandler( param_port_name_.c_str() );
 	packetHandler_ = dynamixel::PacketHandler::getPacketHandler( param_port_version_ );
@@ -69,6 +67,7 @@ InterfaceDynamixel::InterfaceDynamixel() :
 			ROS_INFO("All motors successfully added!");
 
 			timer_ = nh_.createTimer(ros::Duration(1.0 / param_update_rate_), &InterfaceDynamixel::callback_timer, this );
+			srv_enable_torque_ = nh_.advertiseService("enable_torque", &InterfaceDynamixel::enable_torque, this);
 
 			ROS_INFO("Dynamixel interface started successfully!");
 		} else {
@@ -86,16 +85,32 @@ InterfaceDynamixel::~InterfaceDynamixel() {
 
 void InterfaceDynamixel::shutdown_node( void ) {
 	ROS_ERROR("Shutting down dynamixel interface");
-	//TODO: writeTorque(false);
+
+	for(int i=0; i<dynamixel_.size(); i++)
+		set_torque(i, false);
+
 	portHandler_->closePort();
 	ros::shutdown();
 }
 
-void InterfaceDynamixel::init_motor(std::string motor_model, uint8_t motor_id, double protocol_version) {
-  dynamixel_tool::DynamixelTool dynamixel_motor(motor_id, motor_model, protocol_version);
-  dynamixel_.push_back(dynamixel_motor);
+bool InterfaceDynamixel::set_torque(int motor_number, bool onoff) {
+	return writeMotorState("torque_enable", motor_number, onoff);
 }
 
+bool InterfaceDynamixel::enable_torque(mantis_interface_dynamixel::EnableTorque::Request& req, mantis_interface_dynamixel::EnableTorque::Response& res) {
+	bool success = true;
+
+	if(req.set_enable.size() == dynamixel_.size())
+		for(int i=0; i<dynamixel_.size(); i++)
+			res.success &= set_torque(i, req.set_enable[i]);
+
+	return true;
+}
+
+void InterfaceDynamixel::init_motor(std::string motor_model, uint8_t motor_id, double protocol_version) {
+	dynamixel_tool::DynamixelTool dynamixel_motor(motor_id, motor_model, protocol_version);
+	dynamixel_.push_back(dynamixel_motor);
+}
 
 
 bool InterfaceDynamixel::add_motors() {
@@ -125,9 +140,6 @@ bool InterfaceDynamixel::add_motors() {
 }
 
 void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
-
-
-
 	//TODO:
 	//	Read in new states
 	//	Send out current goals
@@ -158,12 +170,17 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 		*/
 
 		int64_t reading_position = 0;
+		int64_t reading_velocity = 0;
+		int64_t reading_current = 0;
+
 		readMotorState("present_position", i, &reading_position);
+		readMotorState("present_velocity", i, &reading_velocity);
+		readMotorState("present_current", i, &reading_current);
 
 		joint_states.name.push_back("motor_" + std::to_string(i));
 		joint_states.position.push_back(reading_position);
-		joint_states.velocity.push_back(0.0);
-		joint_states.effort.push_back(0.0);
+		joint_states.velocity.push_back(reading_velocity);
+		joint_states.effort.push_back(reading_current);
 	}
 
 	pub_states_.publish(joint_states);
@@ -173,7 +190,6 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 	//TODO: Some checks, expect a stream?
 	joint_setpoints_ = *msg_in;
 }
-
 
 bool InterfaceDynamixel::readMotorState(std::string addr_name, int motor_number, int64_t *read_value) {
 	dynamixel_[motor_number].item_ = dynamixel_[motor_number].ctrl_table_[addr_name];
@@ -200,22 +216,102 @@ bool InterfaceDynamixel::readDynamixelRegister(uint8_t id, uint16_t addr, uint8_
 	if (dynamixel_comm_result_ == COMM_SUCCESS) {
 		if (dynamixel_error != 0) {
 			packetHandler_->printRxPacketError(dynamixel_error);
-			return false;
-		}
+		} else {
+			if (length == 1) {
+				*value = value_8_bit;
+			} else if (length == 2) {
+				*value = value_16_bit;
+			} else if (length == 4) {
+				*value = value_32_bit;
+			}
 
-		if (length == 1) {
-			*value = value_8_bit;
-		} else if (length == 2) {
-			*value = value_16_bit;
-		} else if (length == 4) {
-			*value = value_32_bit;
+			return true;
 		}
-
-		return true;
 	} else {
 		packetHandler_->printTxRxResult(dynamixel_comm_result_);
 		ROS_ERROR("[ID] %u, Fail to read!", id);
-
-		return false;
 	}
+
+	return false;
+}
+
+bool InterfaceDynamixel::writeMotorState(std::string addr_name, int motor_number, uint32_t write_value) {
+	dynamixel_[motor_number].item_ = dynamixel_[motor_number].ctrl_table_[addr_name];
+
+	return( writeDynamixelRegister(dynamixel_[motor_number].id_, dynamixel_[motor_number].item_->address, dynamixel_[motor_number].item_->data_length, write_value) );
+}
+
+bool InterfaceDynamixel::writeDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, uint32_t value) {
+	uint8_t dynamixel_error = 0;
+	int comm_result = COMM_TX_FAIL;
+
+	if (length == 1) {
+		comm_result = packetHandler_->write1ByteTxRx(portHandler_, id, addr, (uint8_t)value, &dynamixel_error);
+	} else if (length == 2) {
+		comm_result = packetHandler_->write2ByteTxRx(portHandler_, id, addr, (uint16_t)value, &dynamixel_error);
+	} else if (length == 4) {
+		comm_result = packetHandler_->write4ByteTxRx(portHandler_, id, addr, (uint32_t)value, &dynamixel_error);
+	}
+
+	if (comm_result == COMM_SUCCESS) {
+		if (dynamixel_error != 0) {
+			packetHandler_->printRxPacketError(dynamixel_error);
+		} else {
+			return true;
+		}
+	} else {
+		packetHandler_->printTxRxResult(comm_result);
+		ROS_ERROR("[ID] %u, Fail to write!", id);
+	}
+
+	return false;
+}
+
+
+int16_t InterfaceDynamixel::convert_torque_value(double torque, int motor_number) {
+	return (int16_t)(torque * dynamixel_[motor_number].torque_to_current_value_ratio_);
+}
+
+double InterfaceDynamixel::convert_value_torque(int16_t value, int motor_number) {
+	return (double)value / dynamixel_[motor_number].torque_to_current_value_ratio_;
+}
+
+uint32_t InterfaceDynamixel::convert_radian_value(double radian, int motor_number) {
+	int64_t value = 0;
+	int64_t rad_max = dynamixel_[motor_number].max_radian_;
+	int64_t rad_min = dynamixel_[motor_number].min_radian_;
+	int64_t val_max = dynamixel_[motor_number].value_of_max_radian_position_;
+	int64_t val_min = dynamixel_[motor_number].value_of_min_radian_position_;
+	int64_t val_zero = dynamixel_[motor_number].value_of_0_radian_position_;
+
+	if (radian > 0.0) {
+		value = (radian * (val_max - val_zero) / rad_max) + val_zero;
+	} else if (radian < 0.0) {
+		value = (radian * (val_min - val_zero) / rad_min) + val_zero;
+	} else {
+		value = val_zero;
+	}
+
+	value = (value > val_max) ? val_max : (value < val_min) ? val_min : value;
+
+	return value;
+}
+
+double InterfaceDynamixel::convert_value_radian(uint32_t value, int motor_number) {
+	double radian = 0.0;
+	int64_t rad_max = dynamixel_[motor_number].max_radian_;
+	int64_t rad_min = dynamixel_[motor_number].min_radian_;
+	int64_t val_max = dynamixel_[motor_number].value_of_max_radian_position_;
+	int64_t val_min = dynamixel_[motor_number].value_of_min_radian_position_;
+	int64_t val_zero = dynamixel_[motor_number].value_of_0_radian_position_;
+
+	if (value > val_zero) {
+		radian = (double) (value - val_zero) * rad_max / (double) (val_max - val_zero);
+	} else if (value < val_zero) {
+		radian = (double) (value - val_zero) * rad_min / (double) (val_min - val_zero);
+	}
+
+	radian = (radian > rad_max) ? rad_max : (radian < rad_min) ? rad_min : radian;
+
+	return radian;
 }
