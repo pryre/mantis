@@ -10,7 +10,13 @@
 
 
 Controller::Controller( void ) :
-	have_setpoint_(false) {
+	have_setpoint_(false),
+	param_ang_ff_(0.0),
+	param_vel_max_(0.000001),
+	param_vel_kp_(0.0),
+	param_vel_kd_(0.0),
+	param_vel_tau_(0.0),
+	param_effort_max_(0.000001) {
 }
 
 Controller::~Controller() {
@@ -55,6 +61,7 @@ void Controller::do_control( double dt ) {
 
 		//Velocity Controller
 		sp_effort_ = controller_velocity_.step( dt, sp_velocity_, state_velocity_ );	//TODO: use effort state as x_dot?
+
 	} else {
 		sp_angle_ = 0.0;
 		sp_velocity_ = 0.0;

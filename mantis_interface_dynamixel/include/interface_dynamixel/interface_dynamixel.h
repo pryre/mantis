@@ -9,16 +9,15 @@
 #include <sensor_msgs/JointState.h>
 
 #include <string>
+#include <math.h>
 
-typedef struct {
-  std::vector<uint8_t>  torque;
-  std::vector<int16_t>  current;
-} dynamixel_write_value_t;
 
-typedef struct {
-  std::vector<uint32_t> cur_pos;
-  std::vector<uint32_t> des_pos;
-} dynamixel_motor_pos_t;
+enum dynamixel_mode_t {
+	MOTOR_MODE_TORQUE = 0,
+	MOTOR_MODE_VELOCITY = 1,
+	MOTOR_MODE_POSITION = 3,
+	MOTOR_MODE_INVALID = 255
+};
 
 class InterfaceDynamixel {
 	private:
@@ -30,6 +29,7 @@ class InterfaceDynamixel {
 
 		sensor_msgs::JointState joint_states_;
 		sensor_msgs::JointState joint_setpoints_;
+		uint8_t motor_output_mode;
 
 		//Parameters
 		std::string topic_input_setpoints_;
@@ -50,9 +50,11 @@ class InterfaceDynamixel {
 		dynamixel::PortHandler *portHandler_;
 		dynamixel::PacketHandler *packetHandler_;
 		std::vector<dynamixel_tool::DynamixelTool> dynamixel_;
+		//dynamixel::GroupSyncWrite groupSyncWrite;
+		//dynamixel::GroupSyncRead groupSyncRead;
 
-		dynamixel_write_value_t *dynamixel_write_value_;
-		dynamixel_motor_pos_t *dynamixel_motor_pos_;
+		//dynamixel_write_value_t *dynamixel_write_value_;
+		//dynamixel_motor_pos_t *dynamixel_motor_pos_;
 
 	public:
 		InterfaceDynamixel( void );
@@ -73,7 +75,7 @@ class InterfaceDynamixel {
 		bool add_motors();
 
 		//Control
-		bool set_torque(int motor_number, bool onoff);
+		bool set_torque_enable(int motor_number, bool onoff);
 
 		bool readMotorState(std::string addr_name, int motor_number, int64_t *read_value);
 		bool readDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, int64_t *value);
@@ -81,9 +83,17 @@ class InterfaceDynamixel {
 		bool writeMotorState(std::string addr_name, int motor_number, uint32_t write_value);
 		bool writeDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, uint32_t value);
 
+		void initSyncRead();
+		bool doSyncRead(std::vector<std::vector<std::int32_t>> *states);
+		void doSyncWrite();
+
+		//bool bulk_read_states(std::vector<std::string> *states, std::vector<std::vector<int32_t>> *result);
+
 		//Conversion
-		int16_t convert_torque_value(double torque, int motor_number);
-		double convert_value_torque(int16_t value, int motor_number);
-		uint32_t convert_radian_value(double radian, int motor_number);
-		double convert_value_radian(uint32_t value, int motor_number);
+		int convert_torque_value(double torque, int motor_number);
+		double convert_value_torque(int value, int motor_number);
+		int convert_velocity_value(double velocity, int motor_number);	//rad/s to value rpm
+		double convert_value_velocity(int value, int motor_number);	//Reading to rad/s
+		int32_t convert_radian_value(double radian, int motor_number);
+		double convert_value_radian(int32_t value, int motor_number);
 };

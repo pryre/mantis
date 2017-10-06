@@ -49,6 +49,8 @@ Spawner::~Spawner() {
 void Spawner::callback_timer(const ros::TimerEvent& e) {
 	double dt = ( e.current_real - e.last_real ).toSec(); ;
 
+	servo_goals_.header.stamp = e.current_real;
+
 	//For all controllers
 	for(int i = 0; i < controllers.size(); i++) {
 		//Update states

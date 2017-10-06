@@ -101,9 +101,13 @@ double pidController::step( double dt, double sp, double x ) {
 
 	//Calculate D term (use dirty derivative if we don't have access to a measurement of the derivative)
 	//The dirty derivative is a sort of low-pass filtered version of the derivative.
-	double x_dot = ( ( 2.0f * tau_ - dt ) / ( 2.0f * tau_ + dt ) * x_dot_ ) + ( 2.0f / ( 2.0f * tau_ + dt ) * ( x - x_prev_ ) );
+	//double x_dot = ( ( 2.0f * tau_ - dt ) / ( 2.0f * tau_ + dt ) * x_dot_ ) + ( 2.0f / ( 2.0f * tau_ + dt ) * ( x - x_prev_ ) );
 
-	double output = this->step( dt, sp, x, x_dot );
+
+	double xdot = (x - x_) / dt;
+	double xdot_filtered = x_dot_ - tau_ * (x_dot_ - xdot);
+
+	double output = this->step( dt, sp, x, xdot_filtered );
 
 	//Save last state
 	x_prev_ = x;
