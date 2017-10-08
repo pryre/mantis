@@ -7,8 +7,8 @@ clc;
 %% Setup Parameters
 % Simulation parameters
 time_start = 0;
-time_end = 1;
-time_dt = 0.01;
+time_end = 5;
+%time_dt = 0.01;
 
 %g = -9.80665; %m/s
 
@@ -19,7 +19,7 @@ params = mantis_params('params.yaml');
 %% Generate the system model
 % Model is for a locked frame multirotor, such that only it can only pitch,
 % but cannot move in any other rotation or translation
-syms l1 l2 l3 lc2 lc3 q1 q2 q3 g m1 m2 m3 I1 I2 I3 'real'
+syms l1 l2 l3 lc2 lc3 q1 q2 q3 g m1 m2 m3 Iz1 Iz2 Iz3 'real'
 syms qd1 qd2 qd3 qdd1 qdd2 qdd3 'real'
 
 q = [q1; q2; q3];
@@ -30,6 +30,7 @@ qm = q1 - pi/2; %rotation to the mount
 
 % Formulate D(q)
 % Translational Kinetic Energy
+disp('Calculating Translational Kinetic Energy')
 Jvc1 = [0, 0, 0; ...
         0, 0, 0; ...
         0, 0, 0];
@@ -45,22 +46,25 @@ tke2 = m2*((Jvc2')*Jvc2);
 tke3 = m3*((Jvc3')*Jvc3);
 
 % Rotational Kinetic Energy
-rke1 = I1*[1, 0, 0; ...
+disp('Calculating Rotational Kinetic Energy')
+rke1 = Iz1*[1, 0, 0; ...
            0, 0, 0; ...
            0, 0, 0];
-rke2 = I2*[1, 1, 0; ...
+rke2 = Iz2*[1, 1, 0; ...
            1, 1, 0; ...
            0, 0, 0];
-rke3 = I3*[1, 1, 1; ...
+rke3 = Iz3*[1, 1, 1; ...
            1, 1, 1; ...
            1, 1, 1];
 
 % Total Inertia Matrix
+disp('Calculating Inertia Matrix')
 tke = tke1 + tke2 + tke3;
 rke = rke1 + rke2 + rke3;
 Dq = tke + rke;
 
 % Cristoffel Symbols
+disp('Calculating Cristoffel Symbols')
 %cijk= (1/2)*(diff(Dq(k,j), qi) + diff(Dq(k,i), qj) + diff(Dq(i,j), qk));
 %cijk=cjik
 %q1
@@ -125,7 +129,21 @@ c_sym(3,3,3) = c333;
 
 c_sym = simplify(c_sym);
 
+% Coriolis Matrix
+disp('Calculating Coriolis Matrix')
+% TODO: Find a better way of making this matrix
+Cqqd = [c_sym(1,1,1)*qd1 + c_sym(1,2,1)*qd2 + c_sym(1,3,1)*qd3, ...
+        c_sym(2,1,1)*qd1 + c_sym(2,2,1)*qd2 + c_sym(2,3,1)*qd3, ...
+        c_sym(3,1,1)*qd1 + c_sym(3,2,1)*qd2 + c_sym(3,3,1)*qd3; ...
+        c_sym(1,1,2)*qd1 + c_sym(1,2,2)*qd2 + c_sym(1,3,2)*qd3, ...
+        c_sym(2,1,2)*qd1 + c_sym(2,2,2)*qd2 + c_sym(2,3,2)*qd3, ...
+        c_sym(3,1,2)*qd1 + c_sym(3,2,2)*qd2 + c_sym(3,3,2)*qd3; ...
+        c_sym(1,1,3)*qd1 + c_sym(1,2,3)*qd2 + c_sym(1,3,3)*qd3, ...
+        c_sym(2,1,3)*qd1 + c_sym(2,2,3)*qd2 + c_sym(2,3,3)*qd3, ...
+        c_sym(3,1,3)*qd1 + c_sym(3,2,3)*qd2 + c_sym(3,3,3)*qd3];
+    
 % Potential Energy
+disp('Calculating Potential Energy')
 P1 = 0;
 P2 = m2*g*(l1*sin(qm) + lc2*sin(qm+q2));
 P3 = m3*g*(l1*sin(qm) + l2*sin(qm+q2) + lc3*sin(qm+q2+q3));
@@ -137,39 +155,28 @@ phi3 = diff(P,q3);
 
 phi = simplify([phi1; phi2; phi3]);
 
-% Coriolis Matrix
-% TODO: Find a better way of making this matrix
-Cqqd = [c_sym(1,1,1)*qd1 + c_sym(1,2,1)*qd2 + c_sym(1,3,1)*qd3, ...
-        c_sym(2,1,1)*qd1 + c_sym(2,2,1)*qd2 + c_sym(2,3,1)*qd3, ...
-        c_sym(3,1,1)*qd1 + c_sym(3,2,1)*qd2 + c_sym(3,3,1)*qd3; ...
-        c_sym(1,1,2)*qd1 + c_sym(1,2,2)*qd2 + c_sym(1,3,2)*qd3, ...
-        c_sym(2,1,2)*qd1 + c_sym(2,2,2)*qd2 + c_sym(2,3,2)*qd3, ...
-        c_sym(3,1,2)*qd1 + c_sym(3,2,2)*qd2 + c_sym(3,3,2)*qd3; ...
-        c_sym(1,1,3)*qd1 + c_sym(1,2,3)*qd2 + c_sym(1,3,3)*qd3, ...
-        c_sym(2,1,3)*qd1 + c_sym(2,2,3)*qd2 + c_sym(2,3,3)*qd3, ...
-        c_sym(3,1,3)*qd1 + c_sym(3,2,3)*qd2 + c_sym(3,3,3)*qd3];
-
-% Differential Equations
+%% Differential Equations
+disp('Calculating Differential Equations')
 %tau1 = Dq(1,:)*qdd + Cqqd(1,:)*qd + phi(1);
 %tau2 = Dq(2,:)*qdd + Cqqd(2,:)*qd + phi(2);
 %tau3 = Dq(3,:)*qdd + Cqqd(3,:)*qd + phi(3);
 
 tau = Dq*qdd + Cqqd*qd + phi;
 
-%Define States
-x = [q; qd; qdd];
-
 sub_vals = [l1, 0.1; ...
             l2, 0.25; ...
             l3, 0.25; ...
             lc2, 0.25/2; ...
             lc3, 0.25/2; ...
-            g, -9.80665; ...
+            g, 9.80665; ...
             m1, 2.0; ...
             m2, 0.2; ...
-            m3, 0.2];
+            m3, 0.2; ...
+            Iz1, 0.2*(0.25^2)/12; ...
+            Iz2, 0.2*(0.25^2)/12; ...
+            Iz3, 0.2*(0.25^2)/12];
         
-tau_sub =  subs(tau, sub_vals(:,1), sub_vals(:,2));
+tau_sub = subs(tau, sub_vals(:,1), sub_vals(:,2));
 
 % Formulate controller
 %A = [0 1 0 0;
@@ -192,39 +199,60 @@ tau_sub =  subs(tau, sub_vals(:,1), sub_vals(:,2));
 
 
 %% Run Simulation
+disp('Running Simulation')
 
 % Simulation time
-tspan = time_start:time_dt:time_end;
+tspan = [time_start, time_end];
 
 % Initial state
 % [ x; y; z; dx; dy; dz; ...
 %   phi; theta; psi; dphi; dtheta; dpsi; ...
 %   thetal1; thetal2; dthetal1; dthetal2 ]
 
-%y0 = [ 0; 0; 0; 0; 0; 0; ...
-%       0; 0; 0; 0; 0; 0; ...
-%       0; 0; 0; 0];
+% [q1, qd1, q2, qd2, q3, qd3]
+y0 = [ -pi/4; 0; 0; 0; pi/4; 0];
+
+%Define States
 
 % Final state
 %yf = mantis_goal([0,0,1], [0.2,0,0.6], params);
 
 % Controller input
 %u = -K*yf;
-u = 0;
+% [qdd1, qdd2, qdd3]
+%u = [0.1; 0.1; 0.1];
+u = zeros(3,1);
+
+% Organize to match states
+state_vars = [q(1); qd(1); q(2); qd(2); q(3); qd(3); qdd(1); qdd(2); qdd(3);];
 
 % Run the model
-%[t,y] = ode45(@(t,y)mantis_run(y, u, params),tspan,y0);
+%xd1 = x2;
+%xd2 = -(inv(Dq(1,:))*(Cqqd(1,:)*x2+phi(1))) + inv(Dq(1,:))*u(1);
+%xd3 = x4;
+%xd4 = -(inv(Dq(2,:))*(Cqqd(2,:)*x4+phi(2))) + inv(Dq(2,:))*u(2);
+%xd5 = x6;
+%xd6 = -(inv(Dq(3,:))*(Cqqd(3,:)*x6+phi(3))) + inv(Dq(3,:))*u(3);
+Dq_sub = subs(Dq, sub_vals(:,1), sub_vals(:,2));
+Cqqd_sub = subs(Cqqd, sub_vals(:,1), sub_vals(:,2));
+phi_sub = subs(phi, sub_vals(:,1), sub_vals(:,2));
+[t,y] = ode45(@(t,y)mantis_run_pitch_only(t, y, u, Dq_sub, Cqqd_sub, phi_sub, state_vars, tspan),tspan,y0);
 
 
 %% Render
 
-%figure(1);
+figure(1);
 
-%for k=1:length(t)
-%    mantis_draw(y(:,k), params);
-%    break;
+for k=1:length(t)
+% [ x; y; z; dx; dy; dz; ...
+%   phi; theta; psi; dphi; dtheta; dpsi; ...
+%   thetal1; thetal2; dthetal1; dthetal2 ]
+    viz = [0;0;1;0;0;0; ...
+           0;-y(k,1);0;0;-y(k,2);0; ...
+           y(k,3);y(k,5);y(k,4);y(k,6)];
+    mantis_draw(viz, params);
     %pause(time_dt)
-%end
+end
 
 
 
