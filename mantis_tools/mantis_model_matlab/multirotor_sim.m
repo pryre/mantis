@@ -7,7 +7,7 @@ clc;
 %% Setup Parameters
 % Simulation parameters
 time_start = 0;
-time_end = 5;
+time_end = 10;
 %time_dt = 0.01;
 
 %g = -9.80665; %m/s
@@ -16,67 +16,68 @@ time_end = 5;
 params = mantis_params('params.yaml');
 
 
+
+
+
+
+%% Thoughts
+
+% Define roll, pitch, yaw, and acceleration in the body frame
+
+% Control for acceleration in the world frame
+
+
+
+
+
+
+
 %% Generate the system model
 % Model is for a locked frame multirotor, such that only it can only pitch,
 % but cannot move in any other rotation or translation
-syms l1 l2 lc1 lc2 q1 q2 g m1 m2 Iz1 Iz2 fric 'real'
-syms qd1 qd2 qdd1 qdd2 'real'
+syms m1 g Ix1 Iy1 Iz1 'real'
+syms pos posd posdd phi phid phidd theta thetad thetadd psi psid psidd  'real'
 
-q = [q1; q2];
-qd = [qd1; qd2];
-qdd = [qdd1; qdd2];
+q = [pos; phi; theta; psi];
+qd = [posd; phi; thetad; psid];
+qdd = [posdd; phidd; thetadd; psidd];
 
 % Formulate D(q)
 % Translational Kinetic Energy
 disp('Calculating Translational Kinetic Energy')
-Jvc1 = [-lc1*sin(q1), 0; ...
-        lc1*cos(q1), 0; ...
-        0, 0];
-Jvc2 = [-l1*sin(q1) - lc2*sin(q1+q2), -lc2*sin(q1+q2); ...
-        l1*cos(q1) + lc2*cos(q1+q2), lc2*cos(q1+q2); ...
-        0, 0];
+Jvc1 = [1/(sin(phi)*sin(psi) + cos(phi)*cos(psi)*sin(theta)), 0, 0, 0; ...
+        1/(cos(phi)*sin(theta)*sin(psi) - cos(psi)*sin(phi)), 0, 0, 0; ...
+        1/(cos(theta)*cos(phi)), 0, 0, 0];
 
 tke1 = m1*((Jvc1')*Jvc1);
-tke2 = m2*((Jvc2')*Jvc2);
 
 % Rotational Kinetic Energy
 disp('Calculating Rotational Kinetic Energy')
-rke1 = Iz1*[1, 0; ...
-            0, 0];
-rke2 = Iz2*[1, 1; ...
-            1, 1];
+rkex1 = Ix1*[0, 0, 0, 0; ...
+             0, 1, 0, 0; ...
+             0, 0, 0, 0; ...
+             0, 0, 0, 0];
+         
+rkey1 = Iy1*[0, 0, 0, 0; ...
+             0, 0, 0, 0; ...
+             0, 0, 1, 0; ...
+             0, 0, 0, 0];
+         
+rkez1 = Iz1*[0, 0, 0, 0; ...
+             0, 0, 0, 0; ...
+             0, 0, 0, 0; ...
+             0, 0, 0, 1];
 
 % Total Inertia Matrix
 disp('Calculating Inertia Matrix')
-tke = tke1 + tke2;
-rke = rke1 + rke2;
+tke = tke1;
+rke = rkex1 + rkey1 + rkez1;
 Dq = tke + rke;
 
 % Cristoffel Symbols
 disp('Calculating Cristoffel Symbols')
-%cijk= (1/2)*(diff(Dq(k,j), qi) + diff(Dq(k,i), qj) + diff(Dq(i,j), qk));
-%cijk=cjik
-% %q1
-% c111 = (1/2)*(diff(Dq(1,1), q1) + diff(Dq(1,1), q1) - diff(Dq(1,1), q1));
-% c121 = (1/2)*(diff(Dq(1,2), q1) + diff(Dq(1,1), q2) - diff(Dq(1,2), q1));
-% c211 = c121;
-% c221 = (1/2)*(diff(Dq(1,2), q2) + diff(Dq(1,2), q2) - diff(Dq(2,2), q1));
-% %q2
-% c112 = (1/2)*(diff(Dq(2,1), q1) + diff(Dq(2,1), q1) - diff(Dq(1,1), q2));
-% c122 = (1/2)*(diff(Dq(2,2), q1) + diff(Dq(2,1), q2) - diff(Dq(1,2), q2));
-% c212 = c122;
-% c222 = (1/2)*(diff(Dq(2,2), q2) + diff(Dq(2,2), q2) - diff(Dq(2,2), q2));
-
-%c_col(i,j,k)
-% c_sym(1,1,1) = c111;
-% c_sym(1,2,1) = c121;
-% c_sym(2,1,1) = c211;
-% c_sym(2,2,1) = c221;
-% c_sym(1,1,2) = c112;
-% c_sym(1,2,2) = c122;
-% c_sym(2,1,2) = c212;
-% c_sym(2,2,2) = c222;
-
+%cijk = (1/2)*(diff(Dq(k,j), qi) + diff(Dq(k,i), qj) - diff(Dq(i,j), qk));
+%cijk = cjik
 for k = 1:length(q)
     for j = 1:length(q)
         for i = 1:length(q)
@@ -88,13 +89,8 @@ end
 c_sym = simplify(c_sym);
 
 % Coriolis Matrix
-disp('Calculating Coriolis Matrix')
-% Cqqd = [c_sym(1,1,1)*qd1 + c_sym(1,2,1)*qd2, ...
-%         c_sym(2,1,1)*qd1 + c_sym(2,2,1)*qd2; ...
-%         c_sym(1,1,2)*qd1 + c_sym(1,2,2)*qd2, ...
-%         c_sym(2,1,2)*qd1 + c_sym(2,2,2)*qd2];
-    
-        
+disp('Building Coriolis Matrix')
+
 for i = 1:length(q)
     for k = 1:length(q)
         c_sum = c_sym(k,1,i)*qd(1);
@@ -106,12 +102,12 @@ for i = 1:length(q)
         Cqqd(i,k) = c_sum;
     end
 end
-
+    
 % Potential Energy
 disp('Calculating Potential Energy')
-P1 = m1*g*lc1*sin(q1);
-P2 = m2*g*(l1*sin(q1) + lc2*sin(q1+q2));
-P = P1 + P2;
+P1 = m1*g/(cos(theta)*cos(phi)); %potential of link 1
+
+P = P1;
 
 for i = 1:size(q)
     phi(i,1) = diff(P,q(i));
@@ -120,29 +116,24 @@ end
 phi = simplify(phi);
 
 % Friction Losses
-disp('Calculating Friction Losses')
-K1 = fric*[1,0];
-K2 = fric*[0,1];
-
-Kqd = [K1; K2];
+% disp('Calculating Friction Losses')
+% K1 = fric*[1,0];
+% K2 = fric*[0,1];
+% 
+% Kqd = [K1; K2];
 
 %% Differential Equations
 disp('Calculating Differential Equations')
 %tau1 = Dq(1,:)*qdd + Cqqd(1,:)*qd + phi(1);
 %tau2 = Dq(2,:)*qdd + Cqqd(2,:)*qd + phi(2);
 
-tau = Dq*qdd + (Cqqd + Kqd)*qd + phi;
+tau = Dq*qdd + Cqqd*qd + phi;
 
-sub_vals = [l1, 0.25; ...
-            l2, 0.25; ...
-            lc1, 0.25/2; ...
-            lc2, 0.25/2; ...
+sub_vals = [m1, 1.0; ...
             g, 9.80665; ...
-            m1, 0.2; ...
-            m2, 0.2; ...
-            Iz1, 0.2*(0.25^2)/12; ...
-            Iz2, 0.2*(0.25^2)/12; ...
-            fric, 0.05];
+            Ix1, (1/12)*1.0*(3*0.1^2 + 0.05^2); ...
+            Iy1, (1/12)*1.0*(3*0.1^2 + 0.05^2); ...
+            Iz1, 0.5*1.0*0.1^2];
         
 tau_sub = subs(tau, sub_vals(:,1), sub_vals(:,2));
 
@@ -156,40 +147,47 @@ disp('Calculating Inverse Dynamics')
 % easy.
 % ======================================================================= %
 
-syms u1 u2
+syms u1 u2 u3 u4
 
-toruqe = [u1; u2];
+toruqe = [u1; u2; u3; u4];
 
-inv_dyn = -(inv(Dq)*(Cqqd*qd + Kqd*qd + phi)) + inv(Dq)*toruqe; % => gives qdd
-
+inv_dyn = -(inv(Dq)*(Cqqd*qd + phi)) + inv(Dq)*toruqe; % => gives qdd
 
 % Convert to state space
 disp('Calculating the State Space System')
 
-%X
-A = [0 1 0 0;
-     0 0 0 0;
-     0 0 0 1;
-     0 0 0 0];
-
-B = [0, 0;
-     1, 0;
-     0, 0;
-     0, 1];
+%X = [x; xd; y; yd; z; zd];
+A = [0, 1, 0, 0, 0, 0; ... %xd
+     0, 0, 0, 0, 0, 0; ... %xdd
+     0, 0, 0, 1, 0, 0; ... %yd
+     0, 0, 0, 0, 0, 0; ... %ydd
+     0, 0, 0, 0, 0, 1; ... %zd
+     0, 0, 0, 0, 0, 0];    %zdd
+     
+%U = [u1; u2; u3];
+B = [0, 0, 0; ... %xd
+     1, 0, 0; ... %xdd
+     0, 0, 0; ... %yd
+     0, 1, 0; ... %ydd
+     0, 0, 0; ... %zd
+     0, 0, 1];    %zdd
 
 %C = [1, 0, 0, 0];
 %sys = ss(A, B, C, 0);
 %minreal(sys)
 %pole(sys)
 %eig(A)
-
-Q = [1, 0, 0, 0;
-     0, 3, 0, 0;
-     0, 0, 1, 0;
-     0, 0, 0, 3];
  
-R = [1, 0;
-     0, 1];
+Q = [1, 0, 0, 0, 0, 0; ... %x
+     0, 5, 0, 0, 0, 0; ... %xd
+     0, 0, 1, 0, 0, 0; ... %y
+     0, 0, 0, 5, 0, 0; ... %yd
+     0, 0, 0, 0, 1, 0; ... %z
+     0, 0, 0, 0, 0, 5];    %zd
+ 
+R = [1, 0, 0;
+     0, 1, 0;
+     0, 0, 1];
 
 %N = zeros(4,2);
 %stab_mat = [Q, N;
@@ -232,26 +230,20 @@ disp('Running Simulation')
 % Simulation time
 tspan = [time_start, time_end];
 
-% Initial state
 % [ x; y; z; dx; dy; dz; ...
 %   phi; theta; psi; dphi; dtheta; dpsi; ...
 %   thetal1; thetal2; dthetal1; dthetal2 ]
 
-%[q1, qd1, q2, qd2]
-y0 = [ pi/2; 0; 0; 0];
-yf = [ pi/8; 0; pi/4; 0];
-
 %Define States
-
+%[q1, qd1, q2, qd2, q3, qd3, q4, qd4, q5, qd5, q6, qd6]
+% Initial state
+y0 = [ 0; 0; 0; 0; 0; 0];
 % Final state
-%yf = mantis_goal([0,0,1], [0.2,0,0.6], params);
-
-% Controller input
-%v = -K*yf;
-%v = [0;0];
+yf = [ 1; 0; 0; 0; 1; 0];
 
 % Organize to match states
-state_vars = [q(1); qd(1); q(2); qd(2)];
+syms px pxd py pyd pz pzd
+state_vars = [px; pxd; py; pyd; pz; pzd];
 
 % Run the model
 %xd1 = x2;
@@ -262,9 +254,8 @@ state_vars = [q(1); qd(1); q(2); qd(2)];
 %Pre-sub some values to save on time in the sim
 Dq_sub = subs(Dq, sub_vals(:,1), sub_vals(:,2));
 Cqqd_sub = subs(Cqqd, sub_vals(:,1), sub_vals(:,2));
-Kqd_sub = subs(Kqd, sub_vals(:,1), sub_vals(:,2));
 phi_sub = subs(phi, sub_vals(:,1), sub_vals(:,2));
-[t,y] = ode45(@(t,y)arm_run(t, y, -K*(y - yf), Dq_sub, Cqqd_sub, Kqd_sub, phi_sub, state_vars, tspan),tspan,y0);
+[t,y] = ode45(@(t,y)multirotor_run(t, y, -K*(y - yf), Dq_sub, Cqqd_sub, phi_sub, state_vars, tspan),tspan,y0);
 
 
 %% Render
@@ -273,7 +264,7 @@ figure(1);
 
 for k=1:length(t)
     %[q1, qd1, q2, qd2]
-    arm_draw(y(k,:));
+    multirotor_draw(y(k,:));
     %pause(time_dt)
 end
 
