@@ -36,37 +36,34 @@ params = mantis_params('params.yaml');
 % Model is for a locked frame multirotor, such that only it can only pitch,
 % but cannot move in any other rotation or translation
 syms m1 g Ix1 Iy1 Iz1 'real'
-syms pos posd posdd phi phid phidd theta thetad thetadd psi psid psidd  'real'
+syms phi phid phidd theta thetad thetadd psi psid psidd  'real'
 
-q = [pos; phi; theta; psi];
-qd = [posd; phi; thetad; psid];
-qdd = [posdd; phidd; thetadd; psidd];
+q = [phi; theta; psi];
+qd = [phi; thetad; psid];
+qdd = [phidd; thetadd; psidd];
 
 % Formulate D(q)
 % Translational Kinetic Energy
 disp('Calculating Translational Kinetic Energy')
-Jvc1 = [1/(sin(phi)*sin(psi) + cos(phi)*cos(psi)*sin(theta)), 0, 0, 0; ...
-        1/(cos(phi)*sin(theta)*sin(psi) - cos(psi)*sin(phi)), 0, 0, 0; ...
-        1/(cos(theta)*cos(phi)), 0, 0, 0];
+Jvc1 = [0, 0, 0; ...
+        0, 0, 0; ...
+        0, 0, 0];
 
 tke1 = m1*((Jvc1')*Jvc1);
 
 % Rotational Kinetic Energy
 disp('Calculating Rotational Kinetic Energy')
-rkex1 = Ix1*[0, 0, 0, 0; ...
-             0, 1, 0, 0; ...
-             0, 0, 0, 0; ...
-             0, 0, 0, 0];
+rkex1 = Ix1*[1, 0, 0; ...
+             0, 0, 0; ...
+             0, 0, 0];
          
-rkey1 = Iy1*[0, 0, 0, 0; ...
-             0, 0, 0, 0; ...
-             0, 0, 1, 0; ...
-             0, 0, 0, 0];
+rkey1 = Iy1*[0, 0, 0; ...
+             0, 1, 0; ...
+             0, 0, 0];
          
-rkez1 = Iz1*[0, 0, 0, 0; ...
-             0, 0, 0, 0; ...
-             0, 0, 0, 0; ...
-             0, 0, 0, 1];
+rkez1 = Iz1*[0, 0, 0; ...
+             0, 0, 0; ...
+             0, 0, 1];
 
 % Total Inertia Matrix
 disp('Calculating Inertia Matrix')
@@ -105,7 +102,7 @@ end
     
 % Potential Energy
 disp('Calculating Potential Energy')
-P1 = m1*g/(cos(theta)*cos(phi)); %potential of link 1
+P1 = 0; %potential of link 1
 
 P = P1;
 
@@ -147,9 +144,9 @@ disp('Calculating Inverse Dynamics')
 % easy.
 % ======================================================================= %
 
-syms u1 u2 u3 u4
+syms u1 u2 u3
 
-toruqe = [u1; u2; u3; u4];
+toruqe = [u1; u2; u3];
 
 inv_dyn = -(inv(Dq)*(Cqqd*qd + phi)) + inv(Dq)*toruqe; % => gives qdd
 
