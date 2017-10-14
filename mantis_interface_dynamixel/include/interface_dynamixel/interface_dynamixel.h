@@ -29,7 +29,7 @@ class InterfaceDynamixel {
 
 		sensor_msgs::JointState joint_states_;
 		sensor_msgs::JointState joint_setpoints_;
-		uint8_t motor_output_mode;
+		uint8_t motor_output_mode_;
 
 		//Parameters
 		std::string topic_input_setpoints_;
@@ -42,7 +42,7 @@ class InterfaceDynamixel {
 		std::string param_frame_id_;
 
 		//Flags
-		bool flag_setpoints_received_;
+		//bool flag_setpoints_received_;
 
 		// Dynamixel Workbench Parameters
 		//std::vector<dynamixel_driver::DynamixelInfo*> dynamixel_info_;
@@ -85,7 +85,7 @@ class InterfaceDynamixel {
 
 		void initSyncRead();
 		bool doSyncRead(std::vector<std::vector<std::int32_t>> *states);
-		void doSyncWrite();
+		void doSyncWrite(std::string addr_name);
 
 		//bool bulk_read_states(std::vector<std::string> *states, std::vector<std::vector<int32_t>> *result);
 

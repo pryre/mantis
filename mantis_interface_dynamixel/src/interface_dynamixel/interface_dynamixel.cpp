@@ -16,7 +16,7 @@ const double position_to_value_ratio = 1.0 / ( 0.088 * M_PI / 180.0 );
 
 InterfaceDynamixel::InterfaceDynamixel() :
 	nh_("~"),
-	motor_output_mode(MOTOR_MODE_INVALID),
+	motor_output_mode_(MOTOR_MODE_INVALID),
 	param_update_rate_(50.0),
 	topic_input_setpoints_("setpoints"),
 	topic_output_states_("states"),
@@ -24,10 +24,10 @@ InterfaceDynamixel::InterfaceDynamixel() :
 	param_port_buad_(57600),
 	param_port_version_(0.0),
 	param_num_motors_(0),
-	param_frame_id_("robot"),
 	//param_motor_model_(""),
 	//param_motor_id_(0),
-	flag_setpoints_received_(false) {
+	//flag_setpoints_received_(false),
+	param_frame_id_("robot") {
 
 
 	//ROS Setup
@@ -76,6 +76,8 @@ InterfaceDynamixel::InterfaceDynamixel() :
 			srv_enable_torque_ = nh_.advertiseService("enable_torque", &InterfaceDynamixel::enable_torque, this);
 
 			ROS_INFO("Dynamixel interface started successfully!");
+
+			//writeMotorState("id", 0, 1);
 		} else {
 			ROS_ERROR("Failed to contact motors!");
 			shutdown_node();
@@ -171,89 +173,13 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 	joint_states.position.clear();
 	joint_states.velocity.clear();
 	joint_states.effort.clear();
-	/*
-	readMotorState("torque_enable");
-	readMotorState("moving");
-	readMotorState("goal_position");
-	readMotorState("goal_velocity");
-	readMotorState("goal_current");
-	readMotorState("profile_velocity");
-	readMotorState("profile_acceleration");
-	readMotorState("present_position");
-	readMotorState("present_velocity");
-	readMotorState("present_current");
-	readMotorState("min_position_limit");
-	readMotorState("max_position_limit");
-	*/
-
-	//std::vector<std::string> states_to_read;
-	//std::vector<std::vector<std::int32_t>> states;
-	//states_to_read.push_back("torque_enable");
-	//states_to_read.push_back("present_position");
-	//states_to_read.push_back("present_velocity");
-	//states_to_read.push_back("present_current");
-
-	//if(bulk_read_states(&states_to_read, &states)) {
-		/*
-		for(int i=0; i<dynamixel_.size(); i++) {
-			joint_states.name.push_back("motor_" + std::to_string(i));
-			joint_states.position.push_back(convert_value_radian(states[1][i], i));
-			joint_states.velocity.push_back(convert_value_velocity(states[2][i], i));
-			joint_states.effort.push_back(convert_value_torque(states[3][i], i));
-		}
-		*/
-	//}
-
-	/*
-	for(int i=0; i<dynamixel_.size(); i++) {
-
-
-		int64_t reading_position = 0;
-		int64_t reading_velocity = 0;
-		int64_t reading_current = 0;
-
-		readMotorState("present_position", i, &reading_position);
-		readMotorState("present_velocity", i, &reading_velocity);
-		readMotorState("present_current", i, &reading_current);
-
-		joint_states.name.push_back("motor_" + std::to_string(i));
-		joint_states.position.push_back(convert_value_radian(reading_position, i));
-		joint_states.velocity.push_back(convert_value_velocity(reading_velocity, i));
-		joint_states.effort.push_back(convert_value_torque(reading_current, i));
-
-		int64_t torque_enabled;
-		readMotorState("torque_enable", i, &torque_enabled);
-
-		if(torque_enabled && (motor_output_mode != MOTOR_MODE_INVALID)) {
-			switch(motor_output_mode) {
-				case MOTOR_MODE_TORQUE: {
-					writeMotorState("goal_current", i, convert_torque_value(joint_setpoints_.effort[i], i));
-
-					break;
-				}
-				case MOTOR_MODE_VELOCITY: {
-					writeMotorState("goal_velocity", i, convert_velocity_value(joint_setpoints_.velocity[i], i));
-
-					break;
-				}
-				case MOTOR_MODE_POSITION: {
-					writeMotorState("goal_position", i, convert_radian_value(joint_setpoints_.position[i], i));
-
-					break;
-				}
-				default: {
-					ROS_ERROR("Setpoint has not been received yet, but motors are on!");
-				}
-			}
-		}
-	}
-	*/
 
 
 	//Allocated as MxN vector of motor states
 	//	M is motor_id's
 	//	N is [torque_enable, position, velocity, current]
 	std::vector<std::vector<std::int32_t>> states;
+
 	if( doSyncRead(&states) ) {
 		for(int i=0; i<dynamixel_.size(); i++) {
 			joint_states.name.push_back("motor_" + std::to_string(i));
@@ -261,6 +187,7 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 			joint_states.velocity.push_back(convert_value_velocity(states[i][2], i));
 			joint_states.effort.push_back(convert_value_torque(states[i][3], i));
 
+			/*
 			if(states[i][0] && (motor_output_mode != MOTOR_MODE_INVALID)) {
 				switch(motor_output_mode) {
 					case MOTOR_MODE_TORQUE: {
@@ -283,11 +210,37 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 					}
 				}
 			}
+			*/
 		}
 
 		pub_states_.publish(joint_states);
 	}
 
+	if(motor_output_mode_ != MOTOR_MODE_INVALID) {
+		switch(motor_output_mode_) {
+			case MOTOR_MODE_TORQUE: {
+				doSyncWrite("goal_current");
+				//writeMotorState("goal_current", i, convert_torque_value(joint_setpoints_.effort[i], i));
+
+				break;
+			}
+			case MOTOR_MODE_VELOCITY: {
+				doSyncWrite("goal_velocity");
+				//writeMotorState("goal_velocity", i, convert_velocity_value(joint_setpoints_.velocity[i], i));
+
+				break;
+			}
+			case MOTOR_MODE_POSITION: {
+				doSyncWrite("goal_position");
+				//writeMotorState("goal_position", i, convert_radian_value(joint_setpoints_.position[i], i));
+
+				break;
+			}
+			default: {
+				ROS_ERROR("Mode write error: unknown mode!");
+			}
+		}
+	}
 }
 
 void InterfaceDynamixel::initSyncRead() {
@@ -378,31 +331,97 @@ bool InterfaceDynamixel::doSyncRead(std::vector<std::vector<std::int32_t>> *stat
 }
 
 
-void InterfaceDynamixel::doSyncWrite() {
+void InterfaceDynamixel::doSyncWrite(std::string addr_name) {
+	bool do_write = false;
 
+	// Initialize GroupSyncWrite instance
+	//XXX: Need to do this to hardcode this to get anything working
+	dynamixel_[0].item_ = dynamixel_[0].ctrl_table_[addr_name];
+	dynamixel::GroupSyncWrite groupSyncWrite(portHandler_, packetHandler_, dynamixel_[0].item_->address, dynamixel_[0].item_->data_length);
+
+	if(addr_name == "goal_current") {
+		for(int i=0; i<dynamixel_.size(); i++) {
+			dynamixel_[i].item_ = dynamixel_[i].ctrl_table_[addr_name];
+
+			// Allocate goal position value into byte array
+			uint8_t param_goal_current[2];
+			uint16_t goal_current = convert_torque_value(joint_setpoints_.effort[i], i);
+
+			param_goal_current[0] = DXL_LOBYTE(goal_current);
+			param_goal_current[1] = DXL_HIBYTE(goal_current);
+
+			// Add Dynamixel goal position value to the Syncwrite parameter storage
+			uint8_t dxl_addparam_result = groupSyncWrite.addParam(dynamixel_[i].id_, param_goal_current);
+
+			if(!dxl_addparam_result) {
+				ROS_ERROR("ID:%d] groupSyncRead addparam failed", dynamixel_[i].id_);
+				//success = false;
+			}
+		}
+
+		do_write = true;
+	}
+	/*
+	if(addr_name == "goal_velocity") {
+		for(int i=0; i<dynamixel_.size(); i++) {
+			dynamixel_[i].item_ = dynamixel_[i].ctrl_table_[addr_name];
+
+			// Allocate goal position value into byte array
+			uint8_t param_goal_current[4];
+			uint16_t goal_current = convert_torque_value(joint_setpoints_.effort[i], i);
+
+			param_goal_current[0] = DXL_LOBYTE(goal_current);
+			param_goal_current[1] = DXL_HIBYTE(goal_current);
+
+			// Add Dynamixel goal position value to the Syncwrite parameter storage
+			uint8_t dxl_addparam_result = groupSyncWrite.addParam(dynamixel_[i].id_, param_goal_current);
+
+			if(!dxl_addparam_result) {
+				ROS_ERROR("ID:%d] groupSyncRead addparam failed", dynamixel_[i].id_);
+				//success = false;
+			}
+		}
+
+		do_write = true;
+	}
+	*/
+	if(addr_name == "goal_position") {
+		for(int i=0; i<dynamixel_.size(); i++) {
+			dynamixel_[i].item_ = dynamixel_[i].ctrl_table_[addr_name];
+
+			// Allocate goal position value into byte array
+			uint8_t param_goal_position[4];
+			int32_t goal_position = convert_radian_value(joint_setpoints_.position[i], i);
+
+			param_goal_position[0] = DXL_LOBYTE(DXL_LOWORD(goal_position));
+			param_goal_position[1] = DXL_HIBYTE(DXL_LOWORD(goal_position));
+			param_goal_position[2] = DXL_LOBYTE(DXL_HIWORD(goal_position));
+			param_goal_position[3] = DXL_HIBYTE(DXL_HIWORD(goal_position));
+
+			// Add Dynamixel goal position value to the Syncwrite parameter storage
+			uint8_t dxl_addparam_result = groupSyncWrite.addParam(dynamixel_[i].id_, param_goal_position);
+
+			if(!dxl_addparam_result) {
+				ROS_ERROR("ID:%d] groupSyncRead addparam failed", dynamixel_[i].id_);
+				//success = false;
+			}
+		}
+
+		do_write = true;
+	}
+
+	if(do_write) {
+		// Syncwrite goal position
+		groupSyncWrite.txPacket();
+		// Clear syncwrite parameter storage
+		groupSyncWrite.clearParam();
+	}
 }
 
-	/*
-	// Initialize GroupSyncWrite instance
-	dynamixel::GroupSyncWrite groupSyncWrite(portHandler, packetHandler, ADDR_MX_GOAL_POSITION, LEN_MX_GOAL_POSITION);
-
-	// Allocate goal position value into byte array
-	param_goal_position[0] = DXL_LOBYTE(dxl_goal_position);
-	param_goal_position[1] = DXL_HIBYTE(dxl_goal_position);
-
-	// Add Dynamixel goal position value to the Syncwrite parameter storage
-	groupSyncWrite.addParam(DXL1_ID, param_goal_position);
-	groupSyncWrite.addParam(DXL2_ID, param_goal_position);
-
-	// Syncwrite goal position
-	groupSyncWrite.txPacket();
-
-	// Clear syncwrite parameter storage
-	groupSyncWrite.clearParam();
-	*/
 void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::ConstPtr& msg_in) {
 	//TODO: expect a stream?
 
+	bool success = true;
 	int num_motors = dynamixel_.size();
 
 	//Checks to make sure that at least one input is of the right size
@@ -413,33 +432,58 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 
 	bool input_ok = input_size_name_ok && (input_size_position_ok || input_size_velocity_ok || input_size_effort_ok);
 
+	std::string failure_reason;
+
 	if( input_ok ) {
 		joint_setpoints_ = *msg_in;
 
 		for(int i=0; i<dynamixel_.size(); i++) {
 			//Use the lowest level mode that has been sent
 			if(input_size_effort_ok) {
-				ROS_DEBUG("Torque control setpoint accepted");
-				if(motor_output_mode != MOTOR_MODE_TORQUE) {
+				if(motor_output_mode_ != MOTOR_MODE_TORQUE) {
+					ROS_INFO("Torque control setpoint accepted");
+					set_torque_enable(i, false);
 					writeMotorState("operating_mode", i, MOTOR_MODE_TORQUE);
-					motor_output_mode = MOTOR_MODE_TORQUE;
+					motor_output_mode_ = MOTOR_MODE_TORQUE;
 				}
 			} else if( input_size_velocity_ok ) {
-				ROS_DEBUG("Velocity control setpoint accepted");
-				if(motor_output_mode != MOTOR_MODE_VELOCITY) {
+				if(motor_output_mode_ != MOTOR_MODE_VELOCITY) {
+					ROS_INFO("Velocity control setpoint accepted");
+					set_torque_enable(i, false);
 					writeMotorState("operating_mode", i, MOTOR_MODE_VELOCITY);
-					motor_output_mode = MOTOR_MODE_VELOCITY;
+					motor_output_mode_ = MOTOR_MODE_VELOCITY;
 				}
 			} else if( input_size_position_ok ) {
-				ROS_DEBUG("Position control setpoint accepted");
-				if(motor_output_mode != MOTOR_MODE_POSITION) {
+				if(motor_output_mode_ != MOTOR_MODE_POSITION) {
+					ROS_INFO("Position control setpoint accepted");
+					set_torque_enable(i, false);
 					writeMotorState("operating_mode", i, MOTOR_MODE_POSITION);
-					motor_output_mode = MOTOR_MODE_POSITION;
+					motor_output_mode_ = MOTOR_MODE_POSITION;
 				}
 			} else {
-				ROS_ERROR("Something went wrong when selecting setpoint mode!");
+				failure_reason = "Something went wrong when selecting setpoint mode!";
+				success = false;
 			}
 		}
+	} else {
+		if(!input_size_name_ok) {
+			//TODO: We should probably actual match motor inputs with the specified names
+			failure_reason = "Name vector length doesn't match motors avaliable";
+		} else if ( (msg_in->effort.size() > 0) && !input_size_effort_ok) {
+			failure_reason = "Effort vector length doesn't match motors avaliable";
+		} else if ( (msg_in->velocity.size() > 0) && !input_size_velocity_ok) {
+			failure_reason = "Velocity vector length doesn't match motors avaliable";
+		} else if ( (msg_in->position.size() > 0) && !input_size_position_ok) {
+			failure_reason = "Position vector length doesn't match motors avaliable";
+		} else {
+			failure_reason = "Unkown sepoint error!";
+		}
+
+		success = false;
+	}
+
+	if(!success) {
+		ROS_WARN_THROTTLE(1.0, "Ignoring setpoint: %s", failure_reason.c_str());
 	}
 }
 
@@ -562,7 +606,7 @@ double InterfaceDynamixel::convert_value_radian(int value, int motor_number) {
 	double radian = (double) value / position_to_value_ratio;
 
 	//Constrain angle from -M_PI to +M_PI
-    radian = fmod(radian + M_PI, 2*M_PI);
+    radian = fmod(radian, 2*M_PI);
 
     if (radian < 0)
         radian += 2 * M_PI;
