@@ -1,5 +1,5 @@
 # Motors
-num_motors: 1
+num_motors: 2
 
 motors:
   motor_0:
