@@ -7,7 +7,7 @@ clc;
 %% Setup Parameters
 % Simulation parameters
 time_start = 0;
-time_end = 5;
+time_end = 2;
 %time_dt = 0.01;
 
 %g = -9.80665; %m/s
@@ -18,9 +18,11 @@ time_end = 5;
 
 %% Generate the system model
 
+disp('Generating Parameters')
+
 % Forward Kinematic Model
 %Parameters
-syms la km kt l1 l2 l3 'real'
+syms g la km kt l1 l2 l3 m0 m1 m2 m3 'real'
 %Base link states
 syms x y z xd yd zd xdd ydd zdd 'real'
 %Arm links
@@ -35,8 +37,8 @@ Rphi = [1, 0, 0;
 Rtheta = [cos(theta), 0, sin(theta);
           0, 1, 0;
           -sin(theta), 0, cos(theta)];
-Rpsi = [cos(phi), -sin(phi), 0;
-        sin(phi), cos(phi), 0;
+Rpsi = [cos(psi), -sin(psi), 0;
+        sin(psi), cos(psi), 0;
         0, 0, 1];
 
 R0 = Rphi + Rtheta + Rpsi;
@@ -48,8 +50,8 @@ g0inv = [R0', -R0'*p0; ...
 
      
 R0dot = [0, -psid, thetad;
-         psid, 0, -phi;
-         -thetad, phi, 0];
+         psid, 0, -phid;
+         -thetad, phid, 0];
 p0dot = [xd; yd; zd];
 g0dot = [R0dot, p0dot; ...
          zeros(1,3), 1];
@@ -68,12 +70,14 @@ Vhat = g0inv*g0dot;
 %Vhat = [w_hat, [V(4); V(5); V(6)]; ... % Velocity in ineratial frame
 %        zeros(1,3), 0];
     
-q = [phi; theta; phi; x; y; z; r1; r2; r3];
-qd = [phid; thetad; phid; xd; yd; zd; r1d; r2d; r3d];
-qdd = [phidd; thetadd; phidd; xdd; ydd; zdd; r1dd; r2dd; r3dd];
+q = [phi; theta; psi; x; y; z; r1; r2; r3];
+qd = [phid; thetad; psid; xd; yd; zd; r1d; r2d; r3d];
+qdd = [phidd; thetadd; psidd; xdd; ydd; zdd; r1dd; r2dd; r3dd];
      
     
 %%
+disp('Calculating Kinematics')
+
 % Mount Link (mounted directly downwards, -pi/2 pitch)
 R01 = [cos(r1), 0, sin(r1); ...
        0, 1, 0; ...
@@ -101,6 +105,8 @@ R23 = [cos(r3), 0, sin(r3); ...
 p23 = [l3; 0; 0];
 g23 = [R23, p23; ...
        zeros(1,3), 1];
+g23inv = [R23', -R23'*p23; ...
+          zeros(1,3), 1];
    
 
 % Full kinematic solutions
@@ -158,8 +164,9 @@ J(:,3) = [J3_sum(3,2); J3_sum(1,3); J3_sum(2,1); 0; 0; 0];
 
 
 %% Equations of Motion
+
+disp('Defining Inertials')
 % Define inertials
-syms m0 m1 m2 m3 'real'
 
 % Base link
 IJ0 = [1, 0, 0; ... %Rotational Inertial Tensor
@@ -207,13 +214,17 @@ M_J_J = J'*I1*J + J'*I2*J+ J'*I3*J;
 Dq = [M_A_A, M_A_J; ...
       M_J_A, M_J_J];
 
-
+for i = 1:numel(Dq)
+    Dq(i) = simplify(Dq(i));
+    disp(['... ', num2str(100*i/numel(Dq)), '%'])
+end
+  
 %%
 
 % Cristoffel Symbols
 disp('Calculating Cristoffel Symbols')
 
-disp('...0%')
+disp('... 0%')
 for k = 1:length(q)
     for j = 1:length(q)
         for i = 1:length(q)
@@ -226,32 +237,32 @@ end
 
 %%
 
-disp('Simplifying Cristoffel Symbols')
+%disp('Simplifying Cristoffel Symbols')
 
-c_sym_simple = sym('t', size(c_sym));
-simplify_steps_len = numel(c_sym);
+%c_sym_simple = sym('t', size(c_sym));
+%simplify_steps_len = numel(c_sym);
 
-fprintf('Progress:\n');
-fprintf(['\n' repmat('.',1,simplify_steps_len) '\n\n']);
+%fprintf('Progress:\n');
+%fprintf(['\n' repmat('.',1,simplify_steps_len) '\n\n']);
 
-parfor i = 1:simplify_steps_len
-    c_sym_simple(i) = simplify(c_sym(i));
-    fprintf('\b|\n');
-    %disp(['... ', num2str(100*i/simplify_steps_len), '%'])
-end
+%parfor i = 1:simplify_steps_len
+%    c_sym_simple(i) = simplify(c_sym(i));
+%    fprintf('\b|\n');
+%    %disp(['... ', num2str(100*i/simplify_steps_len), '%'])
+%end
 
 %%
 
 % Coriolis Matrix
 disp('Calculating Coriolis Matrix')
 
-disp('...0%')
+disp('... 0%')
 for i = 1:length(q)
     for k = 1:length(q)
-        c_sum = c_sym_simple(k,1,i)*qd(1);
+        c_sum = c_sym(k,1,i)*qd(1);
         
         for j = 2:length(q)
-            c_sum = c_sum + c_sym_simple(k,j,i)*qd(j);
+            c_sum = c_sum + c_sym(k,j,i)*qd(j);
         end
         
         Cqqd(i,k) = c_sum;
@@ -260,46 +271,83 @@ for i = 1:length(q)
     disp(['... ', num2str(100*i/length(q)), '%'])
 end
 
-save('mantis_sim_basic.mat');
-
-error('break!');
+%save('mantis_sim_basic.mat');
 
 %%
 
 % Potential Energy
 disp('Calculating Potential Energy')
-P1 = 0;
-P2 = m2*g*(l1*sin(qm) + lc2*sin(qm+q2));
-P3 = m3*g*(l1*sin(qm) + l2*sin(qm+q2) + lc3*sin(qm+q2+q3));
-P = P1 + P2 + P3;
 
-phi1 = diff(P,q1);
-phi2 = diff(P,q2);
-phi3 = diff(P,q3);
+% Gravity effect on links
 
-phi = simplify([phi1; phi2; phi3]);
+P = zeros(size(q));
+P = sym(P);
+
+gcg = sym(diag(ones(4,1)));
+
+
+P(6) = m0*g; %z
+
+gcg(1,4) = l1;
+center_height = g0*gcg;
+P(7) = m1*g*center_height(3,4); %r1
+
+gcg(1,4) = l2;
+center_height = g0*g01*gcg;
+P(8) = m1*g*center_height(3,4); %r2
+
+gcg(1,4) = l3;
+center_height = g0*g01*g12*gcg;
+P(9) = m1*g*center_height(3,4); %r3
+
+P_sum = sum(P);
+
+
+N = zeros(size(q));
+N = sym(N);
+
+for i = 1:length(q)
+    N(i) = simplify(diff(P_sum,q(i)));
+end
+
+
+%% Friction Losses
+disp('Calculating Friction Losses')
+fric = 0.05;
+
+%Losses on last 2 links only
+K1 = zeros(1,9);
+K2 = zeros(1,9);
+K3 = zeros(1,9);
+K4 = zeros(1,9);
+K5 = zeros(1,9);
+K6 = zeros(1,9);
+K7 = zeros(1,9);
+K8 = fric*[0,0,0,0,0,0,0,1,0];
+K9 = fric*[0,0,0,0,0,0,0,0,1];
+
+Kqd = [K1; K2; K3; K4; K5; K6; K7; K8; K9];
 
 
 %% Differential Equations
-disp('Calculating Differential Equations')
+disp('Calculating Equations of Motion')
 %tau1 = Dq(1,:)*qdd + Cqqd(1,:)*qd + phi(1);
 %tau2 = Dq(2,:)*qdd + Cqqd(2,:)*qd + phi(2);
 %tau3 = Dq(3,:)*qdd + Cqqd(3,:)*qd + phi(3);
 
-tau = Dq*qdd + Cqqd*qd + phi;
+tau = Dq*qdd + (Cqqd + Kqd)*qd + N;
 
-sub_vals = [l1, 0.1; ...
-            l2, 0.25; ...
-            l3, 0.25; ...
-            lc2, 0.25/2; ...
-            lc3, 0.25/2; ...
-            g, 9.80665; ...
-            m1, 2.0; ...
+sub_vals = [km, 0; ...
+            kt, 0; ...
+            la, 0.275; ...
+            l1, 0.05; ...
+            l2, 0.2; ...
+            l3, 0.2; ...
+            m0, 2.0; ...
+            m1, 0.005; ...
             m2, 0.2; ...
-            m3, 0.2; ...
-            Iz1, 2.0*(0.25^2)/12; ...
-            Iz2, 0.2*(0.25^2)/12; ...
-            Iz3, 0.2*(0.25^2)/12];
+            m3, 0.2;
+            g, 9.80665];
         
 tau_sub = subs(tau, sub_vals(:,1), sub_vals(:,2));
 
@@ -324,18 +372,31 @@ tau_sub = subs(tau, sub_vals(:,1), sub_vals(:,2));
 
 
 %% Run Simulation
-disp('Running Simulation')
+disp('Preparing Simulation')
 
 % Simulation time
 tspan = [time_start, time_end];
 
 % Initial state
-% [ x; y; z; dx; dy; dz; ...
-%   phi; theta; psi; dphi; dtheta; dpsi; ...
-%   thetal1; thetal2; dthetal1; dthetal2 ]
+% [ phi; phid;
+%   theta; thetad;
+%   psi; dpsi; 
+%   x; xd; 
+%   y; yd;
+%   z; zd;
+%   r1; r1d; 
+%   r2; r2d; 
+%   r3; r3d ]
 
-% [q1, qd1, q2, qd2, q3, qd3]
-y0 = [ -pi/4; 0; 0; 0; pi/4; 0];
+y0 = [ 0; 0;
+       0; 0;
+       0; 0; 
+       0; 0;
+       1; 0;
+       0; 0;
+       0; 0;
+       0; 0;
+       0; 0];
 
 %Define States
 
@@ -346,35 +407,69 @@ y0 = [ -pi/4; 0; 0; 0; pi/4; 0];
 %u = -K*yf;
 % [qdd1, qdd2, qdd3]
 %u = [0.1; 0.1; 0.1];
-u = zeros(3,1);
-
-% Organize to match states
-state_vars = [q(1); qd(1); q(2); qd(2); q(3); qd(3); qdd(1); qdd(2); qdd(3);];
+u = zeros(size(q));
 
 % Run the model
-%xd1 = x2;
-%xd2 = -(inv(Dq(1,:))*(Cqqd(1,:)*x2+phi(1))) + inv(Dq(1,:))*u(1);
-%xd3 = x4;
-%xd4 = -(inv(Dq(2,:))*(Cqqd(2,:)*x4+phi(2))) + inv(Dq(2,:))*u(2);
-%xd5 = x6;
-%xd6 = -(inv(Dq(3,:))*(Cqqd(3,:)*x6+phi(3))) + inv(Dq(3,:))*u(3);
 Dq_sub = subs(Dq, sub_vals(:,1), sub_vals(:,2));
 Cqqd_sub = subs(Cqqd, sub_vals(:,1), sub_vals(:,2));
-phi_sub = subs(phi, sub_vals(:,1), sub_vals(:,2));
-[t,y] = ode45(@(t,y)mantis_run_pitch_only(t, y, u, Dq_sub, Cqqd_sub, phi_sub, state_vars, tspan),tspan,y0);
+N_sub = subs(N, sub_vals(:,1), sub_vals(:,2));
+
+Dq_eq = cell(size(Dq));
+Cqqd_eq = cell(size(Cqqd));
+N_eq = cell(size(N));
+
+%TODO: Losses
+
+state_vars =[q'; qd'];
+state_vars = state_vars(:);
+
+%%
+disp('    Preparing Dq solver')
+fprintf('    Progress:\n');
+fprintf(['    ' repmat('.',1,numel(Dq)) '\n    \n']);
+parfor i = 1:numel(Dq)
+    Dq_eq(i) = {matlabFunction(Dq_sub(i), 'Vars', state_vars)};
+    fprintf('\b|\n');
+    %disp(['    ... ', num2str(100*i/numel(Dq)), '%'])
+end
+
+disp('    Preparing Cqqd solver')
+fprintf('    Progress:\n');
+fprintf(['    ' repmat('.',1,numel(Dq)) '\n    \n']);
+parfor i = 1:numel(Cqqd)
+    Cqqd_eq(i) = {matlabFunction(Cqqd_sub(i), 'Vars', state_vars)};
+    fprintf('\b|\n');
+end
+
+disp('    Preparing N solver')
+fprintf('    Progress:\n');
+fprintf(['    ' repmat('.',1,numel(Dq)) '\n    \n']);
+parfor i = 1:numel(N)
+    N_eq(i) = {matlabFunction(N_sub(i), 'Vars', state_vars)};
+    fprintf('\b|\n');
+end
+
+
+%%
+
+disp('Running Simulation')
+
+do_control = 0;
+
+[ts,ys] = ode45(@(tfb,yfb)mantis_run(tfb, yfb, u, Dq_eq, Cqqd_eq, N_eq, tspan, do_control),tspan,y0);
 
 
 %% Render
 
 figure(1);
 
-for k=1:length(t)
+for k=1:length(ts)
 % [ x; y; z; dx; dy; dz; ...
 %   phi; theta; psi; dphi; dtheta; dpsi; ...
 %   thetal1; thetal2; dthetal1; dthetal2 ]
     viz = [0;0;1;0;0;0; ...
-           0;-y(k,1);0;0;-y(k,2);0; ...
-           y(k,3);y(k,5);y(k,4);y(k,6)];
+           0;-ys(k,1);0;0;-ys(k,2);0; ...
+           ys(k,3);ys(k,5);ys(k,4);ys(k,6)];
     mantis_draw(viz, params);
     %pause(time_dt)
 end

@@ -238,7 +238,7 @@ tspan = [time_start, time_end];
 %   thetal1; thetal2; dthetal1; dthetal2 ]
 
 %[q1, qd1, q2, qd2]
-y0 = [ pi/2; 0; 0; 0];
+y0 = [ pi/2+0.01; 0; 0; 0];
 yf = [ pi/8; 0; pi/4; 0];
 
 %Define States
@@ -264,7 +264,11 @@ Dq_sub = subs(Dq, sub_vals(:,1), sub_vals(:,2));
 Cqqd_sub = subs(Cqqd, sub_vals(:,1), sub_vals(:,2));
 Kqd_sub = subs(Kqd, sub_vals(:,1), sub_vals(:,2));
 phi_sub = subs(phi, sub_vals(:,1), sub_vals(:,2));
-[t,y] = ode45(@(t,y)arm_run(t, y, -K*(y - yf), Dq_sub, Cqqd_sub, Kqd_sub, phi_sub, state_vars, tspan),tspan,y0);
+
+do_control = 0;
+
+% Control input simulation
+[t,yt] = ode45(@(t,y)arm_run(t, y, -K*(y - yf), Dq_sub, Cqqd_sub, Kqd_sub, phi_sub, state_vars, tspan, do_control),tspan,y0);
 
 
 %% Render
@@ -273,7 +277,7 @@ figure(1);
 
 for k=1:length(t)
     %[q1, qd1, q2, qd2]
-    arm_draw(y(k,:));
+    arm_draw(yt(k,:));
     %pause(time_dt)
 end
 
