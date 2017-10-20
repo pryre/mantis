@@ -22,21 +22,23 @@ disp('Generating Parameters')
 
 % Forward Kinematic Model
 %Parameters
-syms g la km kt l1 l2 l3 m0 m1 m2 m3 'real'
+syms g la km kt l1 l2 m0 m1 m2 'positive'
 %Base link states
 syms x y z xd yd zd xdd ydd zdd 'real'
 %Arm links
-syms r1 r2 r3 r1d r2d r3d r1dd r2dd r3dd 'real'
+syms r1 r2 r1d r2d r1dd r2dd 'real'
 
 % Base Link
 syms phi theta psi phid thetad psid phidd thetadd psidd 'real'
 
+
+% Mount Link (mounted directly downwards, pi/2 pitch)
 Rphi = [1, 0, 0;
         0, cos(phi), -sin(phi);
         0, sin(phi), cos(phi)];
-Rtheta = [cos(theta), 0, sin(theta);
+Rtheta = [cos(theta + pi/2), 0, sin(theta + pi/2);
           0, 1, 0;
-          -sin(theta), 0, cos(theta)];
+          -sin(theta + pi/2), 0, cos(theta + pi/2)];
 Rpsi = [cos(psi), -sin(psi), 0;
         sin(psi), cos(psi), 0;
         0, 0, 1];
@@ -70,15 +72,14 @@ Vhat = g0inv*g0dot;
 %Vhat = [w_hat, [V(4); V(5); V(6)]; ... % Velocity in ineratial frame
 %        zeros(1,3), 0];
     
-q = [phi; theta; psi; x; y; z; r1; r2; r3];
-qd = [phid; thetad; psid; xd; yd; zd; r1d; r2d; r3d];
-qdd = [phidd; thetadd; psidd; xdd; ydd; zdd; r1dd; r2dd; r3dd];
+q = [phi; theta; psi; x; y; z; r1; r2];
+qd = [phid; thetad; psid; xd; yd; zd; r1d; r2d];
+qdd = [phidd; thetadd; psidd; xdd; ydd; zdd; r1dd; r2dd];
      
     
 %%
 disp('Calculating Kinematics')
 
-% Mount Link (mounted directly downwards, -pi/2 pitch)
 R01 = [cos(r1), 0, sin(r1); ...
        0, 1, 0; ...
        -sin(r1), 0, cos(r1)];
@@ -97,16 +98,6 @@ g12 = [R12, p12; ...
        zeros(1,3), 1];
 g12inv = [R12', -R12'*p12; ...
           zeros(1,3), 1];
-
-% Arm link B
-R23 = [cos(r3), 0, sin(r3); ...
-       0, 1, 0; ...
-       -sin(r3), 0, cos(r3)];
-p23 = [l3; 0; 0];
-g23 = [R23, p23; ...
-       zeros(1,3), 1];
-g23inv = [R23', -R23'*p23; ...
-          zeros(1,3), 1];
    
 
 % Full kinematic solutions
@@ -120,11 +111,12 @@ g1phat = [0, -g1p(1), g1p(2); ...
           -g1p(2), g1p(1), 0];
 A1 = [g1R', -g1R'*g1phat; ...
       zeros(3), g1R'];
+A1 = simplify(A1);
+
 %Maybe supposed to be diffg1, then multi
 J1_1 = diff(g1,r1)*g1inv;
 J1_2 = diff(g1,r2)*g1inv;
-J1_3 = diff(g1,r3)*g1inv;
-J1_sum = J1_1 + J1_2 + J1_3;
+J1_sum = J1_1 + J1_2;
 J(:,1) = [J1_sum(3,2); J1_sum(1,3); J1_sum(2,1); 0; 0; 0];
   
 g2 = g0*g01*g12;
@@ -137,30 +129,13 @@ g2phat = [0, -g2p(1), g2p(2); ...
           -g2p(2), g2p(1), 0];
 A2 = [g2R', -g2R'*g2phat; ...
       zeros(3), g2R'];
+A2 = simplify(A2);
+
 %Maybe supposed to be diffg1, then multi
 J2_1 = diff(g2,r1)*g2inv;
 J2_2 = diff(g2,r2)*g2inv;
-J2_3 = diff(g2,r3)*g2inv;
-J2_sum = J2_1 + J2_2 + J2_3;
+J2_sum = J2_1 + J2_2;
 J(:,2) = [J2_sum(3,2); J2_sum(1,3); J2_sum(2,1); 0; 0; 0];
-     
-g3 = g0*g01*g12*g23;
-g3p = g3(1:3,4);
-g3R = g3(1:3,1:3);
-g3inv = [g3R', -g3R'*g3p; ...
-         zeros(1,3), 1];
-g3phat = [0, -g3p(1), g3p(2); ...
-          g3p(3), 0, -g3p(1); ...
-          -g3p(2), g3p(1), 0];
-A3 = [g3R', -g3R'*g3phat; ...
-      zeros(3), g3R'];
-%Maybe supposed to be diffg1, then multi
-J3_1 = diff(g3,r1)*g3inv;
-J3_2 = diff(g3,r2)*g3inv;
-J3_3 = diff(g3,r3)*g3inv;
-J3_sum = J3_1 + J3_2 + J3_3;
-J(:,3) = [J3_sum(3,2); J3_sum(1,3); J3_sum(2,1); 0; 0; 0];
-
 
 
 %% Equations of Motion
@@ -190,33 +165,55 @@ IT2 = m2*diag(ones(3,1)); %Translational Inertial
 I2 = [IJ2, zeros(3); ... %Pose Inertial Tensor
       zeros(3), IT2];
 
-IJ3 = [1, 0, 0; ... %Rotational Inertial Tensor
-      0, 1, 0; ...
-      0, 0, 1];
-IT3 = m3*diag(ones(3,1)); %Translational Inertial
-I3 = [IJ3, zeros(3); ... %Pose Inertial Tensor
-      zeros(3), IT3];
-
 % Formulate M(r)
 
 disp('Calculating Inertia Matrix')
 
+disp('Simplify step 1')
 % M_A_A is I0 plus sum of all other links
-M_A_A = I0 + A1'*I1*A1 + A2'*I2*A2 + A3'*I3*A3;
 
-M_A_J = A1'*I1*J + A2'*I2*J + A3'*I3*J;
+I1s = A1'*I1*A1;
+I2s = A2'*I2*A2;
 
-M_J_A = J'*I1*A1 + J'*I2*A2 + J'*I3*A3;
+disp('    Simplifing I1s')
+fprintf('    Progress:\n');
+fprintf(['    ' repmat('.',1,numel(I1s)) '\n    \n']);
+parfor i = 1:numel(I1s)
+    I1s(i) = simplify(I1s(i));
+    fprintf('\b|\n');
+end
 
-M_J_J = J'*I1*J + J'*I2*J+ J'*I3*J;
+disp('    Simplifing I2s')
+fprintf('    Progress:\n');
+fprintf(['    ' repmat('.',1,numel(I2s)) '\n    \n']);
+parfor i = 1:numel(I2s)
+    I2s(i) = simplify(I2s(i));
+    fprintf('\b|\n');
+end
+
+M_A_A = I0 + I1s + I2s;
+
+disp('Simplify step 2')
+M_A_J = simplify(A1'*I1*J) + simplify(A2'*I2*J);
+
+disp('Simplify step 3')
+M_J_A = simplify(J'*I1*A1) + simplify(J'*I2*A2);
+
+disp('Simplify step 4')
+M_J_J = simplify(J'*I1*J) + simplify(J'*I2*J);
 
 %Same as M(r)
 Dq = [M_A_A, M_A_J; ...
       M_J_A, M_J_J];
 
-for i = 1:numel(Dq)
+  %%
+  
+disp('    Simplifing Dq')
+fprintf('    Progress:\n');
+fprintf(['    ' repmat('.',1,numel(Dq)) '\n    \n']);
+parfor i = 1:numel(Dq)
     Dq(i) = simplify(Dq(i));
-    disp(['... ', num2str(100*i/numel(Dq)), '%'])
+    fprintf('\b|\n');
 end
   
 %%
@@ -296,10 +293,6 @@ gcg(1,4) = l2;
 center_height = g0*g01*gcg;
 P(8) = m1*g*center_height(3,4); %r2
 
-gcg(1,4) = l3;
-center_height = g0*g01*g12*gcg;
-P(9) = m1*g*center_height(3,4); %r3
-
 P_sum = sum(P);
 
 
@@ -316,17 +309,16 @@ disp('Calculating Friction Losses')
 fric = 0.05;
 
 %Losses on last 2 links only
-K1 = zeros(1,9);
-K2 = zeros(1,9);
-K3 = zeros(1,9);
-K4 = zeros(1,9);
-K5 = zeros(1,9);
-K6 = zeros(1,9);
-K7 = zeros(1,9);
-K8 = fric*[0,0,0,0,0,0,0,1,0];
-K9 = fric*[0,0,0,0,0,0,0,0,1];
+K1 = zeros(1,8);
+K2 = zeros(1,8);
+K3 = zeros(1,8);
+K4 = zeros(1,8);
+K5 = zeros(1,8);
+K6 = zeros(1,8);
+K7 = fric*[0,0,0,0,0,0,1,0];
+K8 = fric*[0,0,0,0,0,0,0,1];
 
-Kqd = [K1; K2; K3; K4; K5; K6; K7; K8; K9];
+Kqd = [K1; K2; K3; K4; K5; K6; K7; K8];
 
 
 %% Differential Equations
@@ -340,13 +332,11 @@ tau = Dq*qdd + (Cqqd + Kqd)*qd + N;
 sub_vals = [km, 0; ...
             kt, 0; ...
             la, 0.275; ...
-            l1, 0.05; ...
+            l1, 0.2; ...
             l2, 0.2; ...
-            l3, 0.2; ...
             m0, 2.0; ...
             m1, 0.005; ...
             m2, 0.2; ...
-            m3, 0.2;
             g, 9.80665];
         
 tau_sub = subs(tau, sub_vals(:,1), sub_vals(:,2));
@@ -385,15 +375,13 @@ tspan = [time_start, time_end];
 %   y; yd;
 %   z; zd;
 %   r1; r1d; 
-%   r2; r2d; 
-%   r3; r3d ]
+%   r2; r2d ]
 
 y0 = [ 0; 0;
        0; 0;
        0; 0; 
        0; 0;
        1; 0;
-       0; 0;
        0; 0;
        0; 0;
        0; 0];
@@ -435,7 +423,7 @@ end
 
 disp('    Preparing Cqqd solver')
 fprintf('    Progress:\n');
-fprintf(['    ' repmat('.',1,numel(Dq)) '\n    \n']);
+fprintf(['    ' repmat('.',1,numel(Cqqd)) '\n    \n']);
 parfor i = 1:numel(Cqqd)
     Cqqd_eq(i) = {matlabFunction(Cqqd_sub(i), 'Vars', state_vars)};
     fprintf('\b|\n');
@@ -443,18 +431,18 @@ end
 
 disp('    Preparing N solver')
 fprintf('    Progress:\n');
-fprintf(['    ' repmat('.',1,numel(Dq)) '\n    \n']);
+fprintf(['    ' repmat('.',1,numel(N)) '\n    \n']);
 parfor i = 1:numel(N)
     N_eq(i) = {matlabFunction(N_sub(i), 'Vars', state_vars)};
     fprintf('\b|\n');
 end
 
-
 %%
 
 disp('Running Simulation')
-
+    
 do_control = 0;
+vel_body_rot = 0;
 
 [ts,ys] = ode45(@(tfb,yfb)mantis_run(tfb, yfb, u, Dq_eq, Cqqd_eq, N_eq, tspan, do_control),tspan,y0);
 
