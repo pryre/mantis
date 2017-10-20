@@ -229,15 +229,16 @@ end
 disp('Simplifying Cristoffel Symbols')
 
 c_sym_simple = sym('t', size(c_sym));
-simplify_steps_len = numel(c_sym);
 
-fprintf('Progress:\n');
-fprintf(['\n' repmat('.',1,simplify_steps_len) '\n\n']);
+disp('...0%')
+
+simplify_steps = zeros(size(c_sym));
+simplify_steps_len = numel(c_sym);
 
 parfor i = 1:simplify_steps_len
     c_sym_simple(i) = simplify(c_sym(i));
-    fprintf('\b|\n');
-    %disp(['... ', num2str(100*i/simplify_steps_len), '%'])
+    simplify_steps(i) = 1;
+    disp(['... ', num2str(100*sum(sum(sum(simplify_steps==1)))/simplify_steps_len), '%'])
 end
 
 %%
@@ -260,7 +261,6 @@ for i = 1:length(q)
     disp(['... ', num2str(100*i/length(q)), '%'])
 end
 
-save('mantis_sim_basic.mat');
 
 error('break!');
 
