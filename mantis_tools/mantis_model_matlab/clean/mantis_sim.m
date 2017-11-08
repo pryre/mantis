@@ -341,7 +341,7 @@ K6 = zeros(1,8);
 K7 = fric*[0,0,0,0,0,0,1,0];
 K8 = fric*[0,0,0,0,0,0,0,1];
 
-Kqd = [K1; K2; K3; K4; K5; K6; K7; K8];
+Lqd = [K1; K2; K3; K4; K5; K6; K7; K8];
 
 
 %% Differential Equations
@@ -350,7 +350,7 @@ disp('Calculating Equations of Motion')
 %tau2 = Dq(2,:)*qdd + Cqqd(2,:)*qd + phi(2);
 %tau3 = Dq(3,:)*qdd + Cqqd(3,:)*qd + phi(3);
 
-tau = Dq*qdd + (Cqqd + Kqd)*qd + N;
+tau = Dq*qdd + (Cqqd + Lqd)*qd + N;
 
 sub_vals = [km, 0; ...
             kt, 0; ...
@@ -447,14 +447,6 @@ end
 %% Run Simulation
 disp('Preparing Simulation')
 
-% Simulation time
-tspan = [time_start, time_end];
-
-% Initial state
-% [ g; gd;
-%   r1; r1d; 
-%   r2; r2d ]
-
 phi0 = 0;
 theta0 = 0;
 psi0 = 0;
@@ -477,12 +469,13 @@ py0 = [x; y; z];
 gy0 = [Ry0, py0; ...
        zeros(1,3), 1];
 
-gdy0 = zeros(16,1);
+gdy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
    
-r0 = [0; 0; %r1, r2
-      0; 0]; %r1d, r2d
+r0 = [0; 0]; %r1, r2
 
-y0 = [gy0(:); gdy0; r0];
+rd0 = [0; 0]; %r1d, r2d
+
+y0 = [gy0(:); r0; gdy0; rd0];
          
 %Define States
 
@@ -496,22 +489,53 @@ y0 = [gy0(:); gdy0; r0];
 u = zeros(size(6));
 
 %%
-
 disp('Running Simulation')
-    
-do_control = 0;
 
 %[ts,ys] = ode45(@(tfb,yfb)mantis_run(tfb, yfb, u, Dq_eq, Cqqd_eq, Kqd, N_eq, tspan, do_control),tspan,y0);
 
-t = linspace(ts,te,dt);
+t = ts:dt:te;
+y = zeros(length(y0), length(t));
+y(:,1) = y0;
 
-for k=1:length(t)
+for k = 1:2%(length(t)-1)
+    gk = reshape(y(1:16,k),[4,4]);
+    rk = y(17:18,k);
+    vk = y(19:26,k);
     
-    %B*uk = M(rk)*(bvkp1 - bvk)/dt + b(qk,vk)
+    D = zeros(size(Dq_eq));
+    C = zeros(size(Cqqd_eq));
+    N = zeros(size(N_eq));
     
-    %gkp1 = gk*cay(dt*Vkp1)
-    %rkp1 = rk*dt*drkp1
+    for i = 1:numel(Dq_eq)
+                        %r1, r2, bw1, bw2, bw3, bvx, bvy, bvz, r1d, r2d
+        D(i) = Dq_eq{i}(rk(1), rk(2), vk(1), vk(2), vk(3), vk(4), vk(5), vk(6), vk(7), vk(8));
+    end
+
+    for i = 1:numel(C)
+                          %r1, r2, bw1, bw2, bw3, bvx, bvy, bvz, r1d, r2d
+        C(i) = Cqqd_eq{i}(rk(1), rk(2), vk(1), vk(2), vk(3), vk(4), vk(5), vk(6), vk(7), vk(8));
+    end
+    
+    L = Lqd;
+   
+    for i = 1:numel(N)
+        %g, r1, r2
+        %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
+        N(i) = N_eq{i}(gk(1,1), gk(2,1), gk(3,1), gk(4,1), ...
+                       gk(1,2), gk(2,2), gk(3,2), gk(4,2), ...
+                       gk(1,3), gk(2,3), gk(3,3), gk(4,3), ...
+                       gk(1,4), gk(2,4), gk(3,4), gk(4,4), ...
+                       rk(1), rk(2));
+    end
+    
+    N
+    
+    % Simulate 1 time step
+    y(:,k+1)= mantis_run(dt, y(:,k), D, C, L, N);
+    
+    disp([num2str(100*(k/length(t))), '%'])
 end
+disp('100%')
 
 
 %% Render
@@ -522,10 +546,10 @@ for k=1:length(ts)
 % [ x; y; z; dx; dy; dz; ...
 %   phi; theta; psi; dphi; dtheta; dpsi; ...
 %   thetal1; thetal2; dthetal1; dthetal2 ]
-    viz = [0;0;1;0;0;0; ...
-           0;-ys(k,1);0;0;-ys(k,2);0; ...
-           ys(k,3);ys(k,5);ys(k,4);ys(k,6)];
-    mantis_draw(viz, params);
+%     viz = [0;0;1;0;0;0; ...
+%            0;-ys(k,1);0;0;-ys(k,2);0; ...
+%            ys(k,3);ys(k,5);ys(k,4);ys(k,6)];
+%     mantis_draw(viz, params);
     %pause(time_dt)
 end
 
