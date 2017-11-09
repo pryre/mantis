@@ -7,7 +7,7 @@ clc;
 %% Setup Parameters
 % Simulation parameters
 ts = 0;
-te = 0.1;
+te = 1;
 dt = 0.005;
 
 %g = -9.80665; %m/s
@@ -104,9 +104,7 @@ for i = 1:length(q)
 end
 
 
-%%
-
-% Potential Energy
+%% Potential Energy
 disp('Calculating Potential Energy')
 
 % Gravity effect on links
@@ -114,14 +112,14 @@ disp('Calculating Potential Energy')
 P = zeros(size(q));
 P = sym(P);
 
-ggrav = sym(diag(ones(4,1)));
-ggrav(3,4) = g;
-ggrav(4,4) = 1;
-f_grav = g0*ggrav;
-P(4) = bx*m0*f_grav(1,4); %bx
-P(5) = by*m0*f_grav(2,4); %by
-P(6) = bz*m0*f_grav(3,4); %bz
+Pgrav = [0;0;g0(3,4)];
+Rgrav = g0(1:3,1:3);
+f_grav = Rgrav'*Pgrav;
+P(4) = g*m0*f_grav(1); %bx
+P(5) = g*m0*f_grav(2); %by
+P(6) = g*m0*f_grav(3); %bz
 
+q(4:6) = [bx;by;bz];
 
 P_sum = sum(P);
 
@@ -238,7 +236,7 @@ end
 %% Run Simulation
 disp('Preparing Simulation')
 
-phi0 = 0.57;
+phi0 = pi/4;
 theta0 = 0;
 psi0 = 0;
 x = 0;
@@ -285,7 +283,7 @@ t = ts:dt:te;
 y = zeros(length(y0), length(t));
 y(:,1) = y0;
 
-for k = 1:1%(length(t)-1)
+for k = 1:(length(t)-1)
     gk = reshape(y(1:16,k),[4,4]);
     vk = y(17:22,k);
     
@@ -305,18 +303,17 @@ for k = 1:1%(length(t)-1)
     
     L = Lqd;
    
-%     for i = 1:numel(N)
-%         %g, r1, r2
-%         %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
-%         N(i) = N_eq{i}(gk(1,1), gk(2,1), gk(3,1), gk(4,1), ...
-%                        gk(1,2), gk(2,2), gk(3,2), gk(4,2), ...
-%                        gk(1,3), gk(2,3), gk(3,3), gk(4,3), ...
-%                        gk(1,4), gk(2,4), gk(3,4), gk(4,4), ...
-%                        rk(1), rk(2));
-%     end
+    for i = 1:numel(N)
+        %g, r1, r2
+        %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
+        N(i) = N_eq{i}(gk(1,1), gk(2,1), gk(3,1), gk(4,1), ...
+                       gk(1,2), gk(2,2), gk(3,2), gk(4,2), ...
+                       gk(1,3), gk(2,3), gk(3,3), gk(4,3), ...
+                       gk(1,4), gk(2,4), gk(3,4), gk(4,4));
+    end
     
     % Simulate 1 time step
-    y(:,k+1)= mantis_run(dt, y(:,k), D, C, L, N);
+    y(:,k+1)= multirotor_run(dt, y(:,k), D, C, L, N);
     
     disp([num2str(100*(k/length(t))), '%'])
 end
@@ -329,7 +326,7 @@ figure(1);
 
 for k=1:length(t)
     %% Prep
-    gk = reshape(y(1:16,k),[4,4]);
+    gk = reshape(y(1:16,k),[4,4])
     fl = params.frame.motor_arm_length;
     al = params.arm.length;
     

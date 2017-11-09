@@ -7,13 +7,13 @@ clc;
 %% Setup Parameters
 % Simulation parameters
 ts = 0;
-te = 5;
+te = 0.1;
 dt = 0.005;
 
 %g = -9.80665; %m/s
 
 % Load system parameters
-%params = mantis_params('params.yaml');
+params = mantis_params('params.yaml');
 
 
 %% Generate the system model
@@ -298,7 +298,7 @@ P = sym(P);
 ggrav = sym(diag(ones(4,1)));
 ggrav(3,4) = g;
 ggrav(4,4) = 1;
-f_grav = g0inv*ggrav;
+f_grav = g0*ggrav;
 P(4) = bx*m0*f_grav(1,4); %bx
 P(5) = by*m0*f_grav(2,4); %by
 P(6) = bz*m0*f_grav(3,4); %bz
@@ -307,24 +307,24 @@ P(6) = bz*m0*f_grav(3,4); %bz
 gcg = sym(diag(ones(4,1)));
 
 gcg(1,4) = l1/2;
-center_height = g01*gcg;
+center_height = g0*g01*gcg;
 P(7) = m1*g*center_height(3,4); %r1
 
 gcg(1,4) = l2/2;
-center_height = g01*g12*gcg;
-P(8) = simplify(m2*g*center_height(3,4)); %r2
+center_height = g0*g01*g12*gcg;
+P(8) = m2*g*center_height(3,4); %r2
+
 
 P_sum = sum(P);
 
-
-N = zeros(size(q));
-N = sym(N);
+Nq = zeros(size(q));
+Nq = sym(Nq);
 
 for i = 1:length(q)
-    N(i) = simplify(diff(P_sum,q(i)));
+    Nq(i) = simplify(diff(P_sum,q(i)));
 end
 
-disp(N)
+disp(Nq)
 
 
 %% Friction Losses
@@ -350,7 +350,7 @@ disp('Calculating Equations of Motion')
 %tau2 = Dq(2,:)*qdd + Cqqd(2,:)*qd + phi(2);
 %tau3 = Dq(3,:)*qdd + Cqqd(3,:)*qd + phi(3);
 
-tau = Dq*qdd + (Cqqd + Lqd)*qd + N;
+tau = Dq*qdd + (Cqqd + Lqd)*qd + Nq;
 
 sub_vals = [km, 0; ...
             kt, 0; ...
@@ -397,10 +397,10 @@ tau_sub = subs(tau, sub_vals(:,1), sub_vals(:,2));
 
 Dq_sub = subs(Dq, sub_vals(:,1), sub_vals(:,2));
 Cqqd_sub = subs(Cqqd, sub_vals(:,1), sub_vals(:,2));
-N_sub = subs(N, sub_vals(:,1), sub_vals(:,2));
+Nq_sub = subs(Nq, sub_vals(:,1), sub_vals(:,2));
 Dq_sub = subs(Dq_sub, sub_vals(:,1), sub_vals(:,2));
 Cqqd_sub = subs(Cqqd_sub, sub_vals(:,1), sub_vals(:,2));
-N_sub = subs(N_sub, sub_vals(:,1), sub_vals(:,2));
+Nq_sub = subs(Nq_sub, sub_vals(:,1), sub_vals(:,2));
 
 
 %disp('Testing Dq Inverse')
@@ -413,7 +413,7 @@ N_sub = subs(N_sub, sub_vals(:,1), sub_vals(:,2));
 
 Dq_eq = cell(size(Dq));
 Cqqd_eq = cell(size(Cqqd));
-N_eq = cell(size(N));
+N_eq = cell(size(Nq));
 
 %rot_var = g0(1:3, 1:3);
 
@@ -438,16 +438,16 @@ end
 
 disp('    Preparing N solver')
 fprintf('    Progress:\n');
-fprintf(['    ' repmat('.',1,numel(N)) '\n    \n']);
-parfor i = 1:numel(N)
-    N_eq(i) = {matlabFunction(N_sub(i), 'Vars', [g0(:);r1;r2])};
+fprintf(['    ' repmat('.',1,numel(Nq)) '\n    \n']);
+parfor i = 1:numel(Nq)
+    N_eq(i) = {matlabFunction(Nq_sub(i), 'Vars', [g0(:);r1;r2])};
     fprintf('\b|\n');
 end
 
 %% Run Simulation
 disp('Preparing Simulation')
 
-phi0 = 0;
+phi0 = 0.57;
 theta0 = 0;
 psi0 = 0;
 x = 0;
@@ -469,9 +469,10 @@ py0 = [x; y; z];
 gy0 = [Ry0, py0; ...
        zeros(1,3), 1];
 
-gdy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
-   
-r0 = [0; 0]; %r1, r2
+%gdy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
+gdy0 = [0.1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
+
+r0 = [pi/2; 0]; %r1, r2
 
 rd0 = [0; 0]; %r1d, r2d
 
@@ -497,7 +498,7 @@ t = ts:dt:te;
 y = zeros(length(y0), length(t));
 y(:,1) = y0;
 
-for k = 1:2%(length(t)-1)
+for k = 1:(length(t)-1)
     gk = reshape(y(1:16,k),[4,4]);
     rk = y(17:18,k);
     vk = y(19:26,k);
@@ -518,17 +519,15 @@ for k = 1:2%(length(t)-1)
     
     L = Lqd;
    
-    for i = 1:numel(N)
-        %g, r1, r2
-        %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
-        N(i) = N_eq{i}(gk(1,1), gk(2,1), gk(3,1), gk(4,1), ...
-                       gk(1,2), gk(2,2), gk(3,2), gk(4,2), ...
-                       gk(1,3), gk(2,3), gk(3,3), gk(4,3), ...
-                       gk(1,4), gk(2,4), gk(3,4), gk(4,4), ...
-                       rk(1), rk(2));
-    end
-    
-    N
+%     for i = 1:numel(N)
+%         %g, r1, r2
+%         %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
+%         N(i) = N_eq{i}(gk(1,1), gk(2,1), gk(3,1), gk(4,1), ...
+%                        gk(1,2), gk(2,2), gk(3,2), gk(4,2), ...
+%                        gk(1,3), gk(2,3), gk(3,3), gk(4,3), ...
+%                        gk(1,4), gk(2,4), gk(3,4), gk(4,4), ...
+%                        rk(1), rk(2));
+%     end
     
     % Simulate 1 time step
     y(:,k+1)= mantis_run(dt, y(:,k), D, C, L, N);
@@ -542,7 +541,75 @@ disp('100%')
 
 figure(1);
 
-for k=1:length(ts)
+for k=1:length(t)
+    %% Prep
+    gk = reshape(y(1:16,k),[4,4]);
+    fl = params.frame.motor_arm_length;
+    al = params.arm.length;
+    
+    hold off; % Clean the display area
+    plot3([0,0.5], [0,0], [0,0], 'color', 'r', 'linewidth', 1);
+    hold on;
+    plot3([0,0], [0,0.5], [0,0], 'color', 'g', 'linewidth', 1);
+    plot3([0,0], [0,0], [0,0.5], 'color', 'b', 'linewidth', 1);
+    
+    
+    %% Base
+    
+    %frame_base = [eye(3), [x;y;z]; zeros(1,3), 1];
+    gf1 = [eye(3), [fl;0;0]; zeros(1,3), 1];
+    gf2 = [eye(3), [-fl;0;0]; zeros(1,3), 1];
+    gf3 = [eye(3), [0;fl;0]; zeros(1,3), 1];
+    gf4 = [eye(3), [0;-fl;0]; zeros(1,3), 1];
+    
+    pf1 = gk*gf1;
+    pf2 = gk*gf2;
+    pf3 = gk*gf3;
+    pf4 = gk*gf4;
+    
+    plot3([gk(1,4),pf1(1,4)], [gk(2,4),pf1(2,4)], [gk(3,4),pf1(3,4)], 'color', 'k', 'linewidth', 2);
+    plot3([gk(1,4),pf2(1,4)], [gk(2,4),pf2(2,4)], [gk(3,4),pf2(3,4)], 'color', 'k', 'linewidth', 2);
+    plot3([gk(1,4),pf3(1,4)], [gk(2,4),pf3(2,4)], [gk(3,4),pf3(3,4)], 'color', 'k', 'linewidth', 2);
+    plot3([gk(1,4),pf4(1,4)], [gk(2,4),pf4(2,4)], [gk(3,4),pf4(3,4)], 'color', 'k', 'linewidth', 2);
+    
+    
+    %% Arm Links
+    rk = y(17:18,k);
+    
+    gl0 = [  cos(rk(1)), 0, sin(rk(1)),  0; ...
+                      0, 1,          0,  0; ...
+            -sin(rk(1)), 0, cos(rk(1)),  0; ...
+                      0, 0,          0,  1];
+    gl1 = [  cos(rk(2)), 0, sin(rk(2)), al; ...
+                      0, 1,          0,  0; ...
+            -sin(rk(2)), 0, cos(rk(2)),  0; ...
+                      0, 0,          0,  1];
+    gl2 = [           1, 0,          0, al; ...
+                      0, 1,          0,  0; ...
+                      0, 0,          1,  0; ...
+                      0, 0,          0,  1];
+               
+    pa1 = gk*gl0*gl1;
+    pa2 = gk*gl0*gl1*gl2;
+    
+    plot3([gk(1,4),pa1(1,4)], [gk(2,4),pa1(2,4)], [gk(3,4),pa1(3,4)], 'color', 'b', 'linewidth', 2);
+    plot3([pa1(1,4),pa2(1,4)], [pa1(2,4),pa2(2,4)], [pa1(3,4),pa2(3,4)], 'color', 'g', 'linewidth', 2);
+    
+    %% Link 2
+    
+    
+    %% Draw
+    
+    ax_s = params.plot.size / 2;
+    
+    axis([-ax_s, ax_s, -ax_s, ax_s, 0, 2*ax_s]);
+    axis('square')
+    
+    drawnow;
+    
+    %%
+    disp([num2str(100*(k/length(t))), '%'])
+    %% Old
 % [ x; y; z; dx; dy; dz; ...
 %   phi; theta; psi; dphi; dtheta; dpsi; ...
 %   thetal1; thetal2; dthetal1; dthetal2 ]
