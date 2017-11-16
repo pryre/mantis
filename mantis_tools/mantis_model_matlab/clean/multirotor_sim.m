@@ -115,9 +115,10 @@ P = sym(P);
 Pgrav = [0;0;g0(3,4)];
 Rgrav = g0(1:3,1:3);
 f_grav = Rgrav'*Pgrav;
-P(4) = g*m0*f_grav(1); %bx
-P(5) = g*m0*f_grav(2); %by
-P(6) = g*m0*f_grav(3); %bz
+%f_grav = Pgrav;
+P(4) = bx*g*m0*f_grav(1); %bx
+P(5) = by*g*m0*f_grav(2); %by
+P(6) = bz*g*m0*f_grav(3); %bz
 
 q(4:6) = [bx;by;bz];
 
@@ -259,7 +260,7 @@ gy0 = [Ry0, py0; ...
        zeros(1,3), 1];
 
 %gdy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
-gdy0 = [0;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
+gdy0 = [1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
 
 y0 = [gy0(:); gdy0];
          
@@ -326,7 +327,7 @@ figure(1);
 
 for k=1:length(t)
     %% Prep
-    gk = reshape(y(1:16,k),[4,4])
+    gk = reshape(y(1:16,k),[4,4]);
     fl = params.frame.motor_arm_length;
     al = params.arm.length;
     

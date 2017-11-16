@@ -23,9 +23,9 @@ function [ yn ] = multirotor_run( dt, y, D, C, L, N, varargin )
 
     %% Control
     %Check for control input or just free response
-    if isempty(varargin)
-        ci = zeros(size(D,2),1);
-    else
+    ci = zeros(size(D,2),1);
+        
+    if ~isempty(varargin)
        % Constant control matrix
        B = varargin{1};
        
@@ -44,7 +44,6 @@ function [ yn ] = multirotor_run( dt, y, D, C, L, N, varargin )
     
     % Integrate acceleration to get next body velocity
     vn = v + dv*dt;
-
     Vn = vn(1:6);
     
     % Step forward to calculate current pose and angles

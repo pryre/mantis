@@ -265,7 +265,7 @@ Cqqd_sub = subs(Cqqd, sub_vals(:,1), sub_vals(:,2));
 Kqd_sub = subs(Kqd, sub_vals(:,1), sub_vals(:,2));
 phi_sub = subs(phi, sub_vals(:,1), sub_vals(:,2));
 
-do_control = 0;
+do_control = 1;
 
 % Control input simulation
 [t,yt] = ode45(@(t,y)arm_run(t, y, -K*(y - yf), Dq_sub, Cqqd_sub, Kqd_sub, phi_sub, state_vars, tspan, do_control),tspan,y0);
