@@ -1,4 +1,4 @@
-function [ yn ] = multirotor_run( dt, y, M, N, varargin )
+function [ yn ] = multirotor_run( dt, y, M, N, G, F, A, varargin )
 %MANTIS_RUN Runs a simulation for the Mantis MM-UAV
 %   Description
 %   Additional Arguments:
@@ -7,7 +7,7 @@ function [ yn ] = multirotor_run( dt, y, M, N, varargin )
 %%
 
     %Check for control input or just free response
-    ci = zeros(size(D,2),1);
+    ci = zeros(size(M,2),1);
         
     if ~isempty(varargin)
        % Constant control matrix
@@ -19,6 +19,25 @@ function [ yn ] = multirotor_run( dt, y, M, N, varargin )
        % Calculate control input here
        % ci = B*u;
     end
+    
+    
+    ysplit = reshape(y, [length(y)/2,2]);
+    q = ysplit(:,1);
+    qd = ysplit(:,2);
+    
+    
+    % A(M*qdd + N*qd) = A(M*G + U + F)
+    %RHS = A*(M*G + ci + F);
+    %qdd = M\(A\RHS - N*qd);
+    RHS = M*G + ci + F;
+    qdd = M\(RHS - N*qd);
+    
+    qdn = qd + dt*qdd;
+    qn = q + dt*qdn;
+    
+    
+    yn = [qn(:); qdn(:)];
+    
 
 
 %% Old

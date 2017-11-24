@@ -1,13 +1,13 @@
-function [ x_vee ] = vee_up( x )
+function [ w_vee ] = vee_up( w )
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
-    if size(x) ~= size([0;0;0])
+    if size(w) ~= size([0;0;0])
         error('Input vector must be of size 3x1')
     end
     
-    x_vee = [0, -x(3), x(2); ...
-             x(3), 0, -x(1); ...
-             -x(2), x(1), 0];
+    w_vee = [    0, -w(3),  w(3); ...
+              w(3),     0, -w(1); ...
+             -w(2),  w(1),    0];
 end
 

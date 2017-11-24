@@ -40,7 +40,7 @@ function [ yn ] = multirotor_run( dt, y, D, C, L, N, varargin )
     % Calculate acceleration (dv) from dynamics
     % This is semi-implicity due to the propegation
     % M(rk)*dv + b(qk,vk) = Bu
-    dv = -(D\((C + L)*v + N)) + D\ci;
+    dv = -(D\((C + L)*v + N)) + D\ci + ;
     
     % Integrate acceleration to get next body velocity
     vn = v + dv*dt;
