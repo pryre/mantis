@@ -27,7 +27,7 @@ function [ yn ] = multirotor_run( dt, y, M, N, G, F, A, varargin )
     
     
     % A(M*qdd + N*qd) = A(M*G + U + F)
-    %RHS = A*(M*G + ci + F);
+    %RHS = A*(M*G + ci + F)
     %qdd = M\(A\RHS - N*qd);
     RHS = M*G + ci + F;
     qdd = M\(RHS - N*qd);

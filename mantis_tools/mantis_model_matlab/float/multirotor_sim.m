@@ -36,9 +36,13 @@ xdd0 = sym('xdd0_',[3,1], 'real');
 % rd0 = sym('rd0_',[3,3], 'real');
 % rdd0 = sym('rdd0_',[3,3], 'real');
 % Base Rotation (SO(3) defined as a quaternion)
-r0 = sym('r0_',[4,1], 'real');
-rd0 = sym('rd0_',[4,1], 'real');
-rdd0 = sym('rdd0_',[4,1], 'real');
+% r0 = sym('r0_',[4,1], 'real');
+% rd0 = sym('rd0_',[4,1], 'real');
+% rdd0 = sym('rdd0_',[4,1], 'real');
+% Base Rotation (SO(3) defined as a RPY)
+r0 = sym('r0_',[3,1], 'real');
+rd0 = sym('rd0_',[3,1], 'real');
+rdd0 = sym('rdd0_',[3,1], 'real');
 % Joint Rotations
 qh = sym('qh_',[k-1,1], 'real');
 qhd = sym('qhd_',[k-1,1], 'real');
@@ -72,9 +76,23 @@ ns = numel(q); % number of states (3+d+m)
 
 % Base Link Position Jacobian
 % R0 = r0;
-R0 = [2*(r0(1)^2 + r0(2)^2) - 1, 2*(r0(2)*r0(3) - r0(1)*r0(4)), 2*(r0(2)*r0(4) + r0(1)*r0(3)); ...
-      2*(r0(2)*r0(3) + r0(1)*r0(4)), 2*(r0(1)^2 + r0(3)^2) - 1, 2*(r0(3)*r0(4) - r0(1)*r0(2)); ...
-      2*(r0(2)*r0(4) - r0(1)*r0(3)), 2*(r0(3)*r0(4) + r0(1)*r0(2)), 2*(r0(1)^2 + r0(4)^2) - 1];
+
+R0 = [1 - 2*(r0(3)^2 + r0(4)^2), 2*(r0(2)*r0(3) - r0(4)*r0(1)), 2*(r0(2)*r0(4) + r0(3)*r0(1)); ...
+      2*(r0(2)*r0(3) + r0(4)*r0(1)), 1 - 2*(r0(2)^2 + r0(4)^2), 2*(r0(3)*r0(4) - r0(2)*r0(1)); ...
+      2*(r0(2)*r0(4) - r0(3)*r0(1)), 2*(r0(3)*r0(4) + r0(2)*r0(1)), 1 - 2*(r0(2)^2 + r0(3)^2)];
+
+% R0x = [1,          0,           0; ...
+%        0, cos(r0(1)), -sin(r0(1)); ...
+%        0, sin(r0(1)), cos(r0(1))];
+%    
+% R0y = [ cos(r0(2)), 0, sin(r0(2)); ...
+%                  0, 1,          0; ...
+%        -sin(r0(2)), 0, cos(r0(2))];
+% 
+%    R0z = [cos(r0(3)), -sin(r0(3)), 0; ...
+%        sin(r0(3)),  cos(r0(3)), 0; ...
+%                 0,           0, 1];
+% R0 = R0z*R0y*R0x;
 
 pd_R0_1 = sym(zeros(3,d));
 pd_R0_2 = sym(zeros(3,d));
@@ -125,10 +143,25 @@ Jgrk{1} = R0*Jlrk{1};
 
 % Base Link Velocity Jacobian
 % Rd0 = rd0;
-Rd0 = [2*(rd0(1)^2 + rd0(2)^2) - 1, 2*(rd0(2)*rd0(3) - rd0(1)*rd0(4)), 2*(rd0(2)*rd0(4) + rd0(1)*rd0(3)); ...
-       2*(rd0(2)*rd0(3) + rd0(1)*rd0(4)), 2*(rd0(1)^2 + rd0(3)^2) - 1, 2*(rd0(3)*rd0(4) - rd0(1)*rd0(2)); ...
-       2*(rd0(2)*rd0(4) - rd0(1)*rd0(3)), 2*(rd0(3)*rd0(4) + rd0(1)*rd0(2)), 2*(rd0(1)^2 + rd0(4)^2) - 1];
 
+R0 = [1 - 2*(rd0(3)^2 + rd0(4)^2), 2*(rd0(2)*rd0(3) - rd0(4)*rd0(1)), 2*(rd0(2)*rd0(4) + rd0(3)*rd0(1)); ...
+      2*(rd0(2)*rd0(3) + rd0(4)*rd0(1)), 1 - 2*(rd0(2)^2 + rd0(4)^2), 2*(rd0(3)*rd0(4) - rd0(2)*rd0(1)); ...
+      2*(rd0(2)*rd0(4) - rd0(3)*rd0(1)), 2*(rd0(3)*rd0(4) + rd0(2)*rd0(1)), 1 - 2*(rd0(2)^2 + rd0(3)^2)];
+
+% Rd0x = [1,           0,            0; ...
+%         0, cos(rd0(1)), -sin(rd0(1)); ...
+%         0, sin(rd0(1)), cos(rd0(1))];
+%    
+% Rd0y = [ cos(rd0(2)), 0, sin(rd0(2)); ...
+%                    0, 1,           0; ...
+%         -sin(rd0(2)), 0, cos(rd0(2))];
+% 
+% Rd0z = [cos(rd0(3)), -sin(rd0(3)), 0; ...
+%         sin(rd0(3)),  cos(rd0(3)), 0; ...
+%                   0,            0, 1];
+% Rd0 = Rd0z*Rd0y*Rd0x;
+   
+   
 pd_Rd0_1 = sym(zeros(3,d));
 pd_Rd0_2 = sym(zeros(3,d));
 pd_Rd0_3 = sym(zeros(3,d));
@@ -269,16 +302,17 @@ end
 disp('Preparing Simulation')
 
 % Initial State
-phi0 = pi/4;
+phi0 = 0;
 theta0 = 0;
 psi0 = 0;
 x = 0;
 y = 0;
 z = 1.0;
 
-Ry0 = angle2quat(psi0, theta0, phi0);
-%Ry0 = euler2rotm([psi0, theta0, phi0]);
 py0 = [x; y; z];
+%Ry0 = euler2rotm([psi0, theta0, phi0]);
+Ry0 = angle2quat(psi0, theta0, phi0);
+%Ry0 = [0,0,0];
 q0 = [py0(:);Ry0(:)];
 
 qd0 = zeros(size(q0));
@@ -303,7 +337,7 @@ t = ts:dt:te;
 y = zeros(length(y0), length(t));
 y(:,1) = y0;
 
-for i = 1:1%(length(t)-1)
+for i = 1:(length(t)-1)
     yi = reshape(y(:,i), [length(y(:,i))/2,2]);
     qi = yi(:,1);
     qdi = yi(:,2);
@@ -315,8 +349,12 @@ for i = 1:1%(length(t)-1)
     
     for j = 1:numel(M_eq)
         Mq(j) = M_eq{j}(qi(1),qi(2),qi(3), ...
-                         qi(4),qi(5),qi(6), ...
-                         qi(7));
+                         qi(4),qi(5),qi(6));
+
+%         Mq(j) = M_eq{j}(qi(1),qi(2),qi(3), ...
+%                          qi(4),qi(5),qi(6), ...
+%                          qi(7));
+
 %         Mq(j) = M_eq{j}(qi(1),qi(2),qi(3), ...
 %                          qi(4),qi(5),qi(6), ...
 %                          qi(7),qi(8),qi(9), ...
@@ -324,6 +362,11 @@ for i = 1:1%(length(t)-1)
     end
 
     for j = 1:numel(N_eq)
+%         Nqqd(j) = N_eq{j}(qi(1),qi(2),qi(3), ...
+%                           qi(4),qi(5),qi(6), ...
+%                           qdi(1),qdi(2),qdi(3), ...
+%                           qdi(4),qdi(5),qdi(6));
+        
         Nqqd(j) = N_eq{j}(qi(1),qi(2),qi(3), ...
                           qi(4),qi(5),qi(6), ...
                           qi(7), ...
@@ -344,6 +387,9 @@ for i = 1:1%(length(t)-1)
     Gc = double(G_sub); % gravity constant acceleration
     
     for j = 1:numel(A_eq)
+%         Aq(j) = A_eq{j}(qi(1),qi(2),qi(3), ...
+%                         qi(4),qi(5),qi(6));
+                    
         Aq(j) = A_eq{j}(qi(1),qi(2),qi(3), ...
                         qi(4),qi(5),qi(6), ...
                         qi(7));
