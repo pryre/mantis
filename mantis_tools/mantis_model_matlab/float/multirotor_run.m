@@ -6,6 +6,10 @@ function [ yn ] = multirotor_run( dt, y, M, N, G, F, A, varargin )
     
 %%
 
+    if det(M) == 0
+        error('Inertia matrix (M) is not invertable')
+    end
+
     %Check for control input or just free response
     ci = zeros(size(M,2),1);
         
