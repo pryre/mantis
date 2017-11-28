@@ -32,17 +32,17 @@ x0 = sym('x0_',[3,1], 'real');
 xd0 = sym('xd0_',[3,1], 'real');
 xdd0 = sym('xdd0_',[3,1], 'real');
 % Base Rotation (SO(3) defined as a rotation matrix)
-% r0 = sym('r0_',[3,3], 'real');
-% rd0 = sym('rd0_',[3,3], 'real');
-% rdd0 = sym('rdd0_',[3,3], 'real');
+r0 = sym('r0_',[3,3], 'real');
+rd0 = sym('rd0_',[3,3], 'real');
+rdd0 = sym('rdd0_',[3,3], 'real');
 % Base Rotation (SO(3) defined as a quaternion)
 % r0 = sym('r0_',[4,1], 'real');
 % rd0 = sym('rd0_',[4,1], 'real');
 % rdd0 = sym('rdd0_',[4,1], 'real');
 % Base Rotation (SO(3) defined as a RPY)
-r0 = sym('r0_',[3,1], 'real');
-rd0 = sym('rd0_',[3,1], 'real');
-rdd0 = sym('rdd0_',[3,1], 'real');
+%r0 = sym('r0_',[3,1], 'real');
+%rd0 = sym('rd0_',[3,1], 'real');
+%rdd0 = sym('rdd0_',[3,1], 'real');
 % Joint Rotations
 qh = sym('qh_',[k-1,1], 'real');
 qhd = sym('qhd_',[k-1,1], 'real');
@@ -52,13 +52,14 @@ q = [x0(:); r0(:); qh(:)];
 qd = [xd0(:); rd0(:); qhd(:)];
 qdd = [xdd0(:); rdd0(:); qhdd(:)];
 
-
 % Model parameters
 d = numel(r0); % dimensions of rotational parameters
 m = numel(qh); % number additional of joints
 ns = numel(q); % number of states (3+d+m)
 
-%% Rotation Jacobians
+%% Jacobians
+
+disp('Calculating Jacobians')
 
 % Rotation Matrix example 
 % syms r0_a r0_b r0_c r0_d r0_e r0_f r0_g r0_h r0_i 'real';
@@ -75,12 +76,6 @@ ns = numel(q); % number of states (3+d+m)
 %           2*(r0_b*r0_d - r0_a*r0_c), 2*(r0_c*r0_d + r0_a*r0_b), 2*(r0_a^2 + r0_d^2) - 1];
 
 % Base Link Position Jacobian
-% R0 = r0;
-
-R0 = [1 - 2*(r0(3)^2 + r0(4)^2), 2*(r0(2)*r0(3) - r0(4)*r0(1)), 2*(r0(2)*r0(4) + r0(3)*r0(1)); ...
-      2*(r0(2)*r0(3) + r0(4)*r0(1)), 1 - 2*(r0(2)^2 + r0(4)^2), 2*(r0(3)*r0(4) - r0(2)*r0(1)); ...
-      2*(r0(2)*r0(4) - r0(3)*r0(1)), 2*(r0(3)*r0(4) + r0(2)*r0(1)), 1 - 2*(r0(2)^2 + r0(3)^2)];
-
 % R0x = [1,          0,           0; ...
 %        0, cos(r0(1)), -sin(r0(1)); ...
 %        0, sin(r0(1)), cos(r0(1))];
@@ -93,6 +88,13 @@ R0 = [1 - 2*(r0(3)^2 + r0(4)^2), 2*(r0(2)*r0(3) - r0(4)*r0(1)), 2*(r0(2)*r0(4) +
 %        sin(r0(3)),  cos(r0(3)), 0; ...
 %                 0,           0, 1];
 % R0 = R0z*R0y*R0x;
+
+% R0 = [1 - 2*(r0(3)^2 + r0(4)^2), 2*(r0(2)*r0(3) - r0(4)*r0(1)), 2*(r0(2)*r0(4) + r0(3)*r0(1)); ...
+%       2*(r0(2)*r0(3) + r0(4)*r0(1)), 1 - 2*(r0(2)^2 + r0(4)^2), 2*(r0(3)*r0(4) - r0(2)*r0(1)); ...
+%       2*(r0(2)*r0(4) - r0(3)*r0(1)), 2*(r0(3)*r0(4) + r0(2)*r0(1)), 1 - 2*(r0(2)^2 + r0(3)^2)];
+
+R0 = r0;
+
 
 pd_R0_1 = sym(zeros(3,d));
 pd_R0_2 = sym(zeros(3,d));
@@ -142,12 +144,6 @@ Jgrk{1} = R0*Jlrk{1};
 
 
 % Base Link Velocity Jacobian
-% Rd0 = rd0;
-
-R0 = [1 - 2*(rd0(3)^2 + rd0(4)^2), 2*(rd0(2)*rd0(3) - rd0(4)*rd0(1)), 2*(rd0(2)*rd0(4) + rd0(3)*rd0(1)); ...
-      2*(rd0(2)*rd0(3) + rd0(4)*rd0(1)), 1 - 2*(rd0(2)^2 + rd0(4)^2), 2*(rd0(3)*rd0(4) - rd0(2)*rd0(1)); ...
-      2*(rd0(2)*rd0(4) - rd0(3)*rd0(1)), 2*(rd0(3)*rd0(4) + rd0(2)*rd0(1)), 1 - 2*(rd0(2)^2 + rd0(3)^2)];
-
 % Rd0x = [1,           0,            0; ...
 %         0, cos(rd0(1)), -sin(rd0(1)); ...
 %         0, sin(rd0(1)), cos(rd0(1))];
@@ -160,6 +156,12 @@ R0 = [1 - 2*(rd0(3)^2 + rd0(4)^2), 2*(rd0(2)*rd0(3) - rd0(4)*rd0(1)), 2*(rd0(2)*
 %         sin(rd0(3)),  cos(rd0(3)), 0; ...
 %                   0,            0, 1];
 % Rd0 = Rd0z*Rd0y*Rd0x;
+
+% R0 = [1 - 2*(rd0(3)^2 + rd0(4)^2), 2*(rd0(2)*rd0(3) - rd0(4)*rd0(1)), 2*(rd0(2)*rd0(4) + rd0(3)*rd0(1)); ...
+%       2*(rd0(2)*rd0(3) + rd0(4)*rd0(1)), 1 - 2*(rd0(2)^2 + rd0(4)^2), 2*(rd0(3)*rd0(4) - rd0(2)*rd0(1)); ...
+%       2*(rd0(2)*rd0(4) - rd0(3)*rd0(1)), 2*(rd0(3)*rd0(4) + rd0(2)*rd0(1)), 1 - 2*(rd0(2)^2 + rd0(3)^2)];
+
+Rd0 = rd0;
    
    
 pd_Rd0_1 = sym(zeros(3,d));
@@ -218,6 +220,7 @@ I{1} = [I0x,   0,   0; ...
 
 
 %% Dynamics
+disp('Building dynamics equations')
 
 M = sym(zeros(ns));
 N = sym(zeros(ns));
@@ -230,12 +233,32 @@ for i = 1:k
     N = N + Jtk{i}'*mk*Jdtk{i} + Jlrk{i}'*Ick*Jdlrk{i} - Jlrk{i}'*vee_up(Ick*Jlrk{i}*qd)*Jlrk{i};
 end
 
-S = sym([zeros(d,3), ones(d), zeros(d,m)]);
-A = ones(ns) - (S'*S*q)*q';
+
+S = sym([zeros(d,3), eye(d), zeros(d,m)]);
+A = eye(ns) - (S'*S*q)*q';
 
 G = [0;0;-g;zeros(d+m,1)]; % Gravity state acceleration
 U = [zeros(3,1); zeros(d,1); zeros(m,1)]; % Control input
 F = zeros(ns,1); % Additional contact forces
+
+
+disp('Symplifying dynamics equations')
+
+disp('    Preparing M dynamics')
+fprintf('    Progress:\n');
+fprintf(['    ' repmat('.',1,numel(M)) '\n    \n']);
+parfor i = 1:numel(M)
+    M(i) = simplify(M(i));
+    fprintf('\b|\n');
+end
+
+% disp('    Preparing N dynamics')
+% fprintf('    Progress:\n');
+% fprintf(['    ' repmat('.',1,numel(N)) '\n    \n']);
+% parfor i = 1:numel(N)
+%     N(i) = simplify(N(i));
+%     fprintf('\b|\n');
+% end
 
 disp('Formulated dynamics:');
 disp('    A(M*qdd + N*qd) = A(M*G + U + F)');
@@ -278,7 +301,6 @@ fprintf(['    ' repmat('.',1,numel(M)) '\n    \n']);
 parfor i = 1:numel(M)
     M_eq(i) = {matlabFunction(M_sub(i), 'Vars', M_state_vars)};
     fprintf('\b|\n');
-    %disp(['    ... ', num2str(100*i/numel(Dq)), '%'])
 end
 
 disp('    Preparing N solver')
@@ -298,7 +320,7 @@ parfor i = 1:numel(A)
 end
 
 
-%% Run Simulation
+%% Prepare Simulation
 disp('Preparing Simulation')
 
 % Initial State
@@ -310,9 +332,9 @@ y = 0;
 z = 1.0;
 
 py0 = [x; y; z];
-%Ry0 = euler2rotm([psi0, theta0, phi0]);
-Ry0 = angle2quat(psi0, theta0, phi0);
 %Ry0 = [0,0,0];
+%Ry0 = angle2quat(psi0, theta0, phi0);
+Ry0 = angle2dcm(psi0, theta0, phi0);
 q0 = [py0(:);Ry0(:)];
 
 qd0 = zeros(size(q0));
@@ -329,6 +351,8 @@ y0 = [q0(:); qd0(:)];
 u = zeros(size(6));
 
 
+%% Run Simulation
+
 disp('Running Simulation')
 
 %[ts,ys] = ode45(@(tfb,yfb)mantis_run(tfb, yfb, u, Dq_eq, Cqqd_eq, Kqd, N_eq, tspan, do_control),tspan,y0);
@@ -337,7 +361,7 @@ t = ts:dt:te;
 y = zeros(length(y0), length(t));
 y(:,1) = y0;
 
-for i = 1:(length(t)-1)
+for i = 1:1%(length(t)-1)
     yi = reshape(y(:,i), [length(y(:,i))/2,2]);
     qi = yi(:,1);
     qdi = yi(:,2);
@@ -348,17 +372,17 @@ for i = 1:(length(t)-1)
     Aq = zeros(size(A_eq));
     
     for j = 1:numel(M_eq)
+%         Mq(j) = M_eq{j}(qi(1),qi(2),qi(3), ...
+%                         qi(4),qi(5),qi(6));
+
+%         Mq(j) = M_eq{j}(qi(1),qi(2),qi(3), ...
+%                         qi(4),qi(5),qi(6), ...
+%                         qi(7));
+
         Mq(j) = M_eq{j}(qi(1),qi(2),qi(3), ...
-                         qi(4),qi(5),qi(6));
-
-%         Mq(j) = M_eq{j}(qi(1),qi(2),qi(3), ...
-%                          qi(4),qi(5),qi(6), ...
-%                          qi(7));
-
-%         Mq(j) = M_eq{j}(qi(1),qi(2),qi(3), ...
-%                          qi(4),qi(5),qi(6), ...
-%                          qi(7),qi(8),qi(9), ...
-%                          qi(10),qi(11),qi(12));
+                        qi(4),qi(5),qi(6), ...
+                        qi(7),qi(8),qi(9), ...
+                        qi(10),qi(11),qi(12));
     end
 
     for j = 1:numel(N_eq)
@@ -367,21 +391,21 @@ for i = 1:(length(t)-1)
 %                           qdi(1),qdi(2),qdi(3), ...
 %                           qdi(4),qdi(5),qdi(6));
         
-        Nqqd(j) = N_eq{j}(qi(1),qi(2),qi(3), ...
-                          qi(4),qi(5),qi(6), ...
-                          qi(7), ...
-                          qdi(1),qdi(2),qdi(3), ...
-                          qdi(4),qdi(5),qdi(6), ...
-                          qdi(7));
-
 %         Nqqd(j) = N_eq{j}(qi(1),qi(2),qi(3), ...
 %                           qi(4),qi(5),qi(6), ...
-%                           qi(7),qi(8),qi(9), ...
-%                           qi(10),qi(11),qi(12), ...
+%                           qi(7), ...
 %                           qdi(1),qdi(2),qdi(3), ...
 %                           qdi(4),qdi(5),qdi(6), ...
-%                           qdi(7),qdi(8),qdi(9), ...
-%                           qdi(10),qdi(11),qdi(12));
+%                           qdi(7));
+
+        Nqqd(j) = N_eq{j}(qi(1),qi(2),qi(3), ...
+                          qi(4),qi(5),qi(6), ...
+                          qi(7),qi(8),qi(9), ...
+                          qi(10),qi(11),qi(12), ...
+                          qdi(1),qdi(2),qdi(3), ...
+                          qdi(4),qdi(5),qdi(6), ...
+                          qdi(7),qdi(8),qdi(9), ...
+                          qdi(10),qdi(11),qdi(12));
     end
     
     Gc = double(G_sub); % gravity constant acceleration
@@ -390,14 +414,14 @@ for i = 1:(length(t)-1)
 %         Aq(j) = A_eq{j}(qi(1),qi(2),qi(3), ...
 %                         qi(4),qi(5),qi(6));
                     
-        Aq(j) = A_eq{j}(qi(1),qi(2),qi(3), ...
-                        qi(4),qi(5),qi(6), ...
-                        qi(7));
-                    
 %         Aq(j) = A_eq{j}(qi(1),qi(2),qi(3), ...
 %                         qi(4),qi(5),qi(6), ...
-%                         qi(7),qi(8),qi(9), ...
-%                         qi(10),qi(11),qi(12));
+%                         qi(7));
+                    
+        Aq(j) = A_eq{j}(qi(1),qi(2),qi(3), ...
+                        qi(4),qi(5),qi(6), ...
+                        qi(7),qi(8),qi(9), ...
+                        qi(10),qi(11),qi(12));
     end
     
     Fc = F; % Additional contact forces
