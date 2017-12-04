@@ -16,6 +16,6 @@ function [ w ] = vee_down( w_vee )
 %     end
     
     %x = [x_vee(3,2); x_vee(1,3); x_vee(2,1)];
-    w = [w_vee(3,2); -w_vee(3,1); w_vee(2,1)];
+    w = [w_vee(3,2); w_vee(1,3); w_vee(2,1)];
 end
 

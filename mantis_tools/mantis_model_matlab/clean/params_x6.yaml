@@ -1,7 +1,7 @@
 #Paramter file for the Mantis MM-UAV
 
 frame:
-  layout: "X4"
+  layout: "X6"
   motor_arm_length: 0.275 # m
   mass: 2.2 # kg
 
@@ -11,7 +11,7 @@ control:
         reserve: 0.25 # %
 
 motor:
-  max_thrust: 6.865 # N
+  max_thrust: 0.7 # N
 
 arm:
   mount:

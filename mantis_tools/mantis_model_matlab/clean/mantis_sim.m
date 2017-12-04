@@ -292,40 +292,50 @@ disp('Calculating Potential Energy')
 
 % Gravity effect on links
 
-P = zeros(size(q));
-P = sym(P);
+% P = zeros(size(q));
+% P = sym(P);
+% 
+% ggrav = sym(diag(ones(4,1)));
+% ggrav(3,4) = g;
+% ggrav(4,4) = 1;
+% f_grav = g0*ggrav;
+% P(4) = bx*m0*f_grav(1,4); %bx
+% P(5) = by*m0*f_grav(2,4); %by
+% P(6) = bz*m0*f_grav(3,4); %bz
+% 
+% 
+% gcg = sym(diag(ones(4,1)));
+% 
+% gcg(1,4) = l1/2;
+% center_height = g0*g01*gcg;
+% P(7) = m1*g*center_height(3,4); %r1
+% 
+% gcg(1,4) = l2/2;
+% center_height = g0*g01*g12*gcg;
+% P(8) = m2*g*center_height(3,4); %r2
+% 
+% 
+% P_sum = sum(P);
+% 
+% Nq = zeros(size(q));
+% Nq = sym(Nq);
+% 
+% for i = 1:length(q)
+%     Nq(i) = simplify(diff(P_sum,q(i)));
+% end
+% 
+% disp(Nq)
 
-ggrav = sym(diag(ones(4,1)));
-ggrav(3,4) = g;
-ggrav(4,4) = 1;
-f_grav = g0*ggrav;
-P(4) = bx*m0*f_grav(1,4); %bx
-P(5) = by*m0*f_grav(2,4); %by
-P(6) = bz*m0*f_grav(3,4); %bz
 
+% Gravity can be simulated as an acceleration on the base link
+%Nq = sym(zeros(size(q)));
 
-gcg = sym(diag(ones(4,1)));
+world_grav = [0;0;g];
+body_rot = g0(1:3,1:3)';
+body_grav = body_rot*world_grav;
 
-gcg(1,4) = l1/2;
-center_height = g0*g01*gcg;
-P(7) = m1*g*center_height(3,4); %r1
-
-gcg(1,4) = l2/2;
-center_height = g0*g01*g12*gcg;
-P(8) = m2*g*center_height(3,4); %r2
-
-
-P_sum = sum(P);
-
-Nq = zeros(size(q));
-Nq = sym(Nq);
-
-for i = 1:length(q)
-    Nq(i) = simplify(diff(P_sum,q(i)));
-end
-
-disp(Nq)
-
+accel_grav = [0;0;0;body_grav;0;0];
+Nq = Dq*accel_grav;
 
 %% Friction Losses
 disp('Calculating Friction Losses')
@@ -350,30 +360,22 @@ disp('Calculating Equations of Motion')
 %tau2 = Dq(2,:)*qdd + Cqqd(2,:)*qd + phi(2);
 %tau3 = Dq(3,:)*qdd + Cqqd(3,:)*qd + phi(3);
 
-tau = Dq*qdd + (Cqqd + Lqd)*qd + Nq;
+tauq = Dq*qdd + (Cqqd + Lqd)*qd + Nq;
 
-sub_vals = [km, 0; ...
-            kt, 0; ...
-            la, 0.275; ...
-            l1, 0.2; ...
-            l2, 0.2; ...
-            m0, 2.0; ...
-            m1, 0.005; ...
-            m2, 0.2; ...
-            g, 9.80665; ...
-            IT0x, (0.05^2 + la^2)/12; ...
-            IT0y, (0.05^2 + la^2)/12; ...
-            IT0z, la^2/2; ...
-            IJ1x, (0.05^2 + l1^2)/12; ...
-            IJ1y, (0.05^2 + l1^2)/12; ...
-            IJ1z, (2*0.05^2)/12; ...
-            IJ2x, (0.05^2 + l1^2)/12; ...
-            IJ2y, (0.05^2 + l1^2)/12; ...
-            IJ2z, (2*0.05^2)/12];
-        
-tau_sub = subs(tau, sub_vals(:,1), sub_vals(:,2));
 
-% Formulate controller
+%% Formulate controller
+
+% M is a motor map, (num_motors + num_servos)x(6 + num_servos)
+mr = cos(pi/4);
+alen = params.arm.length;
+motor_map = [-mr*alen*kt, -mr*alen*kt,  km, 0, 0, kt; ... % TODO: CHANGE HERE
+              mr*alen*kt,  mr*alen*kt,  km, 0, 0, kt; ...
+              mr*alen*kt, -mr*alen*kt, -km, 0, 0, kt; ...
+              mr*alen*kt,  mr*alen*kt, -km, 0, 0, kt];
+
+Mm = [motor_map, zeros(params.motor.num, params.arm.links); ...
+      zeros(params.arm.links,6), eye(params.arm.links)];
+
 %A = [0 1 0 0;
 %    0 -d/M -m*g/M 0;
 %    0 0 0 1;
@@ -395,30 +397,41 @@ tau_sub = subs(tau, sub_vals(:,1), sub_vals(:,2));
 
 %% Prep equations for faster calculations
 
-Dq_sub = subs(Dq, sub_vals(:,1), sub_vals(:,2));
-Cqqd_sub = subs(Cqqd, sub_vals(:,1), sub_vals(:,2));
-Nq_sub = subs(Nq, sub_vals(:,1), sub_vals(:,2));
-Dq_sub = subs(Dq_sub, sub_vals(:,1), sub_vals(:,2));
-Cqqd_sub = subs(Cqqd_sub, sub_vals(:,1), sub_vals(:,2));
-Nq_sub = subs(Nq_sub, sub_vals(:,1), sub_vals(:,2));
+sub_vals = [km, 0.5; ...
+            kt, 1/(params.motor.num*params.motor.max_thrust); ... % TODO: CHANGE HERE AS WELL
+            la, 0.275; ...
+            l1, 0.2; ...
+            l2, 0.2; ...
+            m0, 2.0; ...
+            m1, 0.005; ...
+            m2, 0.2; ...
+            g, 9.80665; ...
+            IT0x, (0.05^2 + la^2)/12; ...
+            IT0y, (0.05^2 + la^2)/12; ...
+            IT0z, la^2/2; ...
+            IJ1x, (0.05^2 + l1^2)/12; ...
+            IJ1y, (0.05^2 + l1^2)/12; ...
+            IJ1z, (2*0.05^2)/12; ...
+            IJ2x, (0.05^2 + l1^2)/12; ...
+            IJ2y, (0.05^2 + l1^2)/12; ...
+            IJ2z, (2*0.05^2)/12];
+        
+tauq_sub = subs(subs(tauq, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_vals(:,2));
+
+Dq_sub = subs(subs(Dq, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_vals(:,2));
+Cqqd_sub = subs(subs(Cqqd, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_vals(:,2));
+Nq_sub = subs(subs(Nq, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_vals(:,2));
+Mm_sub = subs(subs(Mm, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_vals(:,2));
 
 
-%disp('Testing Dq Inverse')
-%inv_test = inv(Dq_sub);
-
-%if ~inv_test
-%    disp(inv_test);
-%    error('Dq cannot be inversed!')
-%end
+%% Prepare Matrix solvers
 
 Dq_eq = cell(size(Dq));
 Cqqd_eq = cell(size(Cqqd));
 N_eq = cell(size(Nq));
 
-%rot_var = g0(1:3, 1:3);
-
 state_vars =[r1; r2; qd];
-%%
+
 disp('    Preparing Dq solver')
 fprintf('    Progress:\n');
 fprintf(['    ' repmat('.',1,numel(Dq)) '\n    \n']);
@@ -447,7 +460,7 @@ end
 %% Run Simulation
 disp('Preparing Simulation')
 
-phi0 = 0.57;
+phi0 = 0;
 theta0 = 0;
 psi0 = 0;
 x = 0;
@@ -469,14 +482,14 @@ py0 = [x; y; z];
 gy0 = [Ry0, py0; ...
        zeros(1,3), 1];
 
-%gdy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
-gdy0 = [0.1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
+vy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
+%gdy0 = [0.1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
 
-r0 = [pi/2; 0]; %r1, r2
+r0 = [0; 0]; %r1, r2
 
 rd0 = [0; 0]; %r1d, r2d
 
-y0 = [gy0(:); r0; gdy0; rd0];
+y0 = [gy0(:); r0; vy0; rd0];
          
 %Define States
 
@@ -487,7 +500,12 @@ y0 = [gy0(:); r0; gdy0; rd0];
 %u = -K*yf;
 % [qdd1, qdd2, qdd3]
 %u = [0.1; 0.1; 0.1];
-u = zeros(size(6));
+
+% Input accelerations
+ua = zeros(size(q));
+
+
+
 
 %%
 disp('Running Simulation')
@@ -496,6 +514,7 @@ disp('Running Simulation')
 
 t = ts:dt:te;
 y = zeros(length(y0), length(t));
+u = zeros(params.motor.num + params.arm.links, length(t));
 y(:,1) = y0;
 
 for k = 1:(length(t)-1)
@@ -519,18 +538,26 @@ for k = 1:(length(t)-1)
     
     L = Lqd;
    
-%     for i = 1:numel(N)
-%         %g, r1, r2
-%         %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
-%         N(i) = N_eq{i}(gk(1,1), gk(2,1), gk(3,1), gk(4,1), ...
-%                        gk(1,2), gk(2,2), gk(3,2), gk(4,2), ...
-%                        gk(1,3), gk(2,3), gk(3,3), gk(4,3), ...
-%                        gk(1,4), gk(2,4), gk(3,4), gk(4,4), ...
-%                        rk(1), rk(2));
-%     end
+    for i = 1:numel(N)
+        %g, r1, r2
+        %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
+        N(i) = N_eq{i}(gk(1,1), gk(2,1), gk(3,1), gk(4,1), ...
+                       gk(1,2), gk(2,2), gk(3,2), gk(4,2), ...
+                       gk(1,3), gk(2,3), gk(3,3), gk(4,3), ...
+                       gk(1,4), gk(2,4), gk(3,4), gk(4,4), ...
+                       rk(1), rk(2));
+    end
+    
+    M = double(Mm_sub);
+    
+    % Inverse Dynamics control
+    tau = D*ua + (C + L)*vk + N;
+    u(:,k) = M*tau;
     
     % Simulate 1 time step
-    y(:,k+1)= mantis_run(dt, y(:,k), D, C, L, N);
+    %y(:,k+1)= mantis_run(dt, y(:,k), D, C, L, N);
+    
+    y(:,k+1) = y(:,k);
     
     disp([num2str(100*(k/length(t))), '%'])
 end
