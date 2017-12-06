@@ -95,85 +95,108 @@ qdd = [bw1d; bw2d; bw3d; bvxd; bvyd; bvzd; r1dd; r2dd];
 %%
 disp('Calculating Kinematics')
 
-ewr1 = [cos(r1), 0, sin(r1); ...
-       0, 1, 0; ...
-       -sin(r1), 0, cos(r1)];
-ewr2 = [cos(r2), 0, sin(r2); ...
-       0, 1, 0; ...
-       -sin(r2), 0, cos(r2)];
-
-g01_0 = [eye(3), [0;0;0]; ...
-         zeros(1,3), 1];
-g02_0 = [eye(3), [0;0;-l1]; ...
-         zeros(1,3), 1];
-g0e_0 = [eye(3), [0;0;-l1-l2]; ...
-         zeros(1,3), 1];
-   
-% w1 = [0;1;0];
-% w2 = [0;1;0];
+% ewr1 = [cos(r1), 0, sin(r1); ...
+%        0, 1, 0; ...
+%        -sin(r1), 0, cos(r1)];
+% ewr2 = [cos(r2), 0, sin(r2); ...
+%        0, 1, 0; ...
+%        -sin(r2), 0, cos(r2)];
 % 
-% q1 = [0;0;0];
-% q2 = [0;0;-l1];
+% g01_0 = [eye(3), [0;0;0]; ...
+%          zeros(1,3), 1];
+% g02_0 = [eye(3), [0;0;-l1]; ...
+%          zeros(1,3), 1];
+% g0e_0 = [eye(3), [0;0;-l1-l2]; ...
+%          zeros(1,3), 1];
+%    
+% % w1 = [0;1;0];
+% % w2 = [0;1;0];
+% % 
+% % q1 = [0;0;0];
+% % q2 = [0;0;-l1];
+% % 
+% % eta1 = [cross(-w1,q1);w1];
+% % eta2 = [cross(-w2,q2);w2];
+% etr1 = [ewr1, zeros(3,1); ...
+%        zeros(1,3), 1];
+% etr2 = [ewr2, zeros(3,1); ...
+%        zeros(1,3), 1];
 % 
-% eta1 = [cross(-w1,q1);w1];
-% eta2 = [cross(-w2,q2);w2];
-etr1 = [ewr1, zeros(3,1); ...
-       zeros(1,3), 1];
-etr2 = [ewr2, zeros(3,1); ...
-       zeros(1,3), 1];
-
-g01 = etr1*g01_0;
-g02 = etr1*etr2*g02_0;
-g0e = etr1*etr2*g0e_0; %TODO Understand this process more!!
+% g01 = etr1*g01_0;
+% g02 = etr1*etr2*g02_0;
+% g0e = etr1*etr2*g0e_0; %TODO Understand this process more!!
 
 
-%%
-g01q = [l1; 0; 0];
-g01 = [ewr1, g01p; ...
-       zeros(1,3), 1];
-g01inv = [g01R', -g01R'*g01p; ...
-         zeros(1,3), 1];
+g01 = [ cos(r1), 0, sin(r1),  l1*cos(r1); ...
+              0, 1,       0,           0; ...
+       -sin(r1), 0, cos(r1), -l1*sin(r1); ...
+              0, 0,       0,           1];
+g12 = [ cos(r2), 0, sin(r2),  l2*cos(r2); ...
+              0, 1,       0,           0; ...
+       -sin(r2), 0, cos(r2), -l2*sin(r2); ...
+              0, 0,       0,           1];
+          
+%Geometries to the center of each link
+g1 = [ cos(r1), 0, sin(r1),  l1*cos(r1)/2; ...
+             0, 1,       0,             0; ...
+      -sin(r1), 0, cos(r1), -l1*sin(r1)/2; ...
+             0, 0,       0,             1];
 
-%Inverse Adjoint g01
-A1 = [g01R', -g01R'*vee_up(g01p); ...
-      zeros(3), g01R'];
+g2 = g01*[ cos(r2), 0, sin(r2),  l2*cos(r2)/2; ...
+                 0, 1,       0,             0; ...
+          -sin(r2), 0, cos(r2), -l2*sin(r2)/2; ...
+                 0, 0,       0,             1];
+             
+ge = g01*g12; %End Effector
+
+%Simplify geometries
+g1 = simplify(g1);
+g2 = simplify(g2);
+ge = simplify(ge);
+
+%Calculate inverse geometries
+g1p = g1(1:3,4);
+g1R = g1(1:3,1:3);
+g1inv = [      g1R', -g1R'*g1p; ...
+         zeros(1,3),         1];
+     
+g2p = g2(1:3,4);
+g2R = g2(1:3,1:3);
+g2inv = [      g2R', -g2R'*g2p; ...
+         zeros(1,3),         1];
+     
+%Simplify inverse geometries
+g1inv = simplify(g1inv);
+g2inv = simplify(g2inv);
+     
+%Inverse Adjoint for each link
+A1 = [g1R', -g1R'*vee_up(g1p); ...
+      zeros(3), g1R'];
+
+A2 = [    g2R', -g2R'*vee_up(g2p); ...
+      zeros(3),              g2R'];
+
+%Simplify Adjoints
 A1 = simplify(A1);
+A2 = simplify(A2);
 
-%Maybe supposed to be diffg1, then multi
+%Maybe supposed to be diffgX, then multiply
 % J1_1 = diff(g01,r1)*g01inv;
 % J1_2 = diff(g01,r2)*g01inv;
-J1_1 = g01inv*diff(g01,r1);
-J1_2 = g01inv*diff(g01,r2);
+J1_1 = g1inv*diff(g1,r1);
+J1_2 = g1inv*diff(g1,r2);
 J1_sum = J1_1 + J1_2;
 J(:,1) = [vee_down(J1_sum(1:3,1:3)); 0; 0; 0];
 
-% Arm link A
-R12 = [cos(r2), 0, sin(r2); ...
-       0, 1, 0; ...
-       -sin(r2), 0, cos(r2)];
-p12 = [l2; 0; 0];
-g12 = [R12, p12; ...
-       zeros(1,3), 1];
-g12inv = [R12', -R12'*p12; ...
-          zeros(1,3), 1];
-
-g02 = g01*g12;
-g02p = g02(1:3,4);
-g02R = g02(1:3,1:3);
-g02inv = [g02R', -g02R'*g02p; ...
-         zeros(1,3), 1];
-%Inverse Adjoint g02
-A2 = [g02R', -g02R'*vee_up(g02p); ...
-      zeros(3), g02R'];
-A2 = simplify(A2);
-
-%Maybe supposed to be diffg1, then multi
 % J2_1 = diff(g02,r1)*g02inv;
 % J2_2 = diff(g02,r2)*g02inv;
-J2_1 = g02inv*diff(g02,r1);
-J2_2 = g02inv*diff(g02,r2);
+J2_1 = g2inv*diff(g2,r1);
+J2_2 = g2inv*diff(g2,r2);
 J2_sum = J2_1 + J2_2;
 J(:,2) = [vee_down(J2_sum(1:3,1:3)); 0; 0; 0];
+
+%Simplify Geometric Jacobian
+J = simplify(J);
 
 
 %% Equations of Motion
@@ -208,7 +231,7 @@ I2 = [IJ2, zeros(3); ... %Pose Inertial Tensor
 
 disp('Calculating Inertia Matrix')
 
-disp('Simplify step 1')
+%disp('Simplify step 1')
 % M_A_A is I0 plus sum of all other links
 
 I1s = A1'*I1*A1;
@@ -511,7 +534,7 @@ gy0 = [Ry0, py0; ...
 vy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
 %gdy0 = [0.1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
 
-r0 = [pi/2; 0]; %r1, r2
+r0 = [0; 0]; %r1, r2
 
 rd0 = [0; 0]; %r1d, r2d
 
