@@ -6,8 +6,11 @@ clc;
 
 %% Setup Parameters
 % Simulation parameters
+% ts = 0;
+% te = 0.1;
+% dt = 0.005;
 ts = 0;
-te = 0.1;
+te = 0.005;
 dt = 0.005;
 
 %g = -9.80665; %m/s
@@ -29,7 +32,7 @@ syms bx by bz bvx bvxd bvy bvyd bvz bvzd 'real'
 syms r1 r2 r1d r2d r1dd r2dd 'real'
 %%
 % Base Link
-g0 = sym('g0', 4, 'real');
+g0 = sym('g0_', 4, 'real');
 g0inv = [g0(1:3,1:3)', -g0(1:3,1:3)'*g0(1:3,4); ...
          zeros(1,3), 1];
 %g0d = sym('g0d', 4, 'real');
@@ -92,14 +95,57 @@ qdd = [bw1d; bw2d; bw3d; bvxd; bvyd; bvzd; r1dd; r2dd];
 %%
 disp('Calculating Kinematics')
 
-R01 = [cos(r1), 0, sin(r1); ...
+ewr1 = [cos(r1), 0, sin(r1); ...
        0, 1, 0; ...
        -sin(r1), 0, cos(r1)];
-p01 = [l1; 0; 0];
-g01 = [R01, p01; ...
-       zeros(1,3), 1];
-g01inv = [R01', -R01'*p01; ...
+ewr2 = [cos(r2), 0, sin(r2); ...
+       0, 1, 0; ...
+       -sin(r2), 0, cos(r2)];
+
+g01_0 = [eye(3), [0;0;0]; ...
          zeros(1,3), 1];
+g02_0 = [eye(3), [0;0;-l1]; ...
+         zeros(1,3), 1];
+g0e_0 = [eye(3), [0;0;-l1-l2]; ...
+         zeros(1,3), 1];
+   
+% w1 = [0;1;0];
+% w2 = [0;1;0];
+% 
+% q1 = [0;0;0];
+% q2 = [0;0;-l1];
+% 
+% eta1 = [cross(-w1,q1);w1];
+% eta2 = [cross(-w2,q2);w2];
+etr1 = [ewr1, zeros(3,1); ...
+       zeros(1,3), 1];
+etr2 = [ewr2, zeros(3,1); ...
+       zeros(1,3), 1];
+
+g01 = etr1*g01_0;
+g02 = etr1*etr2*g02_0;
+g0e = etr1*etr2*g0e_0; %TODO Understand this process more!!
+
+
+%%
+g01q = [l1; 0; 0];
+g01 = [ewr1, g01p; ...
+       zeros(1,3), 1];
+g01inv = [g01R', -g01R'*g01p; ...
+         zeros(1,3), 1];
+
+%Inverse Adjoint g01
+A1 = [g01R', -g01R'*vee_up(g01p); ...
+      zeros(3), g01R'];
+A1 = simplify(A1);
+
+%Maybe supposed to be diffg1, then multi
+% J1_1 = diff(g01,r1)*g01inv;
+% J1_2 = diff(g01,r2)*g01inv;
+J1_1 = g01inv*diff(g01,r1);
+J1_2 = g01inv*diff(g01,r2);
+J1_sum = J1_1 + J1_2;
+J(:,1) = [vee_down(J1_sum(1:3,1:3)); 0; 0; 0];
 
 % Arm link A
 R12 = [cos(r2), 0, sin(r2); ...
@@ -110,44 +156,24 @@ g12 = [R12, p12; ...
        zeros(1,3), 1];
 g12inv = [R12', -R12'*p12; ...
           zeros(1,3), 1];
-   
 
-% Full kinematic solutions
-g1 = g01;
-g1p = g1(1:3,4);
-g1R = g1(1:3,1:3);
-g1inv = [g1R', -g1R'*g1p; ...
+g02 = g01*g12;
+g02p = g02(1:3,4);
+g02R = g02(1:3,1:3);
+g02inv = [g02R', -g02R'*g02p; ...
          zeros(1,3), 1];
-g1phat = [0, -g1p(1), g1p(2); ...
-          g1p(3), 0, -g1p(1); ...
-          -g1p(2), g1p(1), 0];
-A1 = [g1R', -g1R'*g1phat; ...
-      zeros(3), g1R'];
-A1 = simplify(A1);
-
-%Maybe supposed to be diffg1, then multi
-J1_1 = diff(g1,r1)*g1inv;
-J1_2 = diff(g1,r2)*g1inv;
-J1_sum = J1_1 + J1_2;
-J(:,1) = [J1_sum(3,2); J1_sum(1,3); J1_sum(2,1); 0; 0; 0];
-  
-g2 = g01*g12;
-g2p = g2(1:3,4);
-g2R = g2(1:3,1:3);
-g2inv = [g2R', -g2R'*g2p; ...
-         zeros(1,3), 1];
-g2phat = [0, -g2p(1), g2p(2); ...
-          g2p(3), 0, -g2p(1); ...
-          -g2p(2), g2p(1), 0];
-A2 = [g2R', -g2R'*g2phat; ...
-      zeros(3), g2R'];
+%Inverse Adjoint g02
+A2 = [g02R', -g02R'*vee_up(g02p); ...
+      zeros(3), g02R'];
 A2 = simplify(A2);
 
 %Maybe supposed to be diffg1, then multi
-J2_1 = diff(g2,r1)*g2inv;
-J2_2 = diff(g2,r2)*g2inv;
+% J2_1 = diff(g02,r1)*g02inv;
+% J2_2 = diff(g02,r2)*g02inv;
+J2_1 = g02inv*diff(g02,r1);
+J2_2 = g02inv*diff(g02,r2);
 J2_sum = J2_1 + J2_2;
-J(:,2) = [J2_sum(3,2); J2_sum(1,3); J2_sum(2,1); 0; 0; 0];
+J(:,2) = [vee_down(J2_sum(1:3,1:3)); 0; 0; 0];
 
 
 %% Equations of Motion
@@ -163,23 +189,20 @@ syms IJ2x IJ2y IJ2z 'positive'
 IJ0 = [IT0x, 0, 0; ... %Rotational Inertial Tensor
        0, IT0y, 0; ...
        0, 0, IT0z];
-IT0 = diag(ones(3,1)); %Translational Inertial
-I0 = [m0*IJ0, zeros(3); ... %Pose Inertial Tensor
-      zeros(3), m0*IT0];
+I0 = [IJ0, zeros(3); ... %Pose Inertial Tensor
+      zeros(3), m0*eye(3)];
 
 IJ1 = [IJ1x, 0, 0; ... %Rotational Inertial Tensor
       0, IJ1y, 0; ...
       0, 0, IJ1z];
-IT1 = diag(ones(3,1)); %Translational Inertial
-I1 = [m1*IJ1, zeros(3); ... %Pose Inertial Tensor
-      zeros(3), m1*IT1];
+I1 = [IJ1, zeros(3); ... %Pose Inertial Tensor
+      zeros(3), m1*eye(3)];
 
 IJ2 = [IJ2x, 0, 0; ... %Rotational Inertial Tensor
       0, IJ2y, 0; ...
       0, 0, IJ2z];
-IT2 = diag(ones(3,1)); %Translational Inertial
-I2 = [m2*IJ2, zeros(3); ... %Pose Inertial Tensor
-      zeros(3), m2*IT2];
+I2 = [IJ2, zeros(3); ... %Pose Inertial Tensor
+      zeros(3), m2*eye(3)];
 
 % Formulate M(r)
 
@@ -191,32 +214,35 @@ disp('Simplify step 1')
 I1s = A1'*I1*A1;
 I2s = A2'*I2*A2;
 
-disp('    Simplifing I1s')
-fprintf('    Progress:\n');
-fprintf(['    ' repmat('.',1,numel(I1s)) '\n    \n']);
-parfor i = 1:numel(I1s)
-    I1s(i) = simplify(I1s(i));
-    fprintf('\b|\n');
-end
-
-disp('    Simplifing I2s')
-fprintf('    Progress:\n');
-fprintf(['    ' repmat('.',1,numel(I2s)) '\n    \n']);
-parfor i = 1:numel(I2s)
-    I2s(i) = simplify(I2s(i));
-    fprintf('\b|\n');
-end
+% disp('    Simplifing I1s')
+% fprintf('    Progress:\n');
+% fprintf(['    ' repmat('.',1,numel(I1s)) '\n    \n']);
+% parfor i = 1:numel(I1s)
+%     I1s(i) = simplify(I1s(i));
+%     fprintf('\b|\n');
+% end
+% 
+% disp('    Simplifing I2s')
+% fprintf('    Progress:\n');
+% fprintf(['    ' repmat('.',1,numel(I2s)) '\n    \n']);
+% parfor i = 1:numel(I2s)
+%     I2s(i) = simplify(I2s(i));
+%     fprintf('\b|\n');
+% end
 
 M_A_A = I0 + I1s + I2s;
+M_A_J = A1'*I1*J + A2'*I2*J;
+M_J_A = J'*I1*A1 + J'*I2*A2;
+M_J_J = J'*I1*J + J'*I2*J;
 
-disp('Simplify step 2')
-M_A_J = simplify(A1'*I1*J) + simplify(A2'*I2*J);
-
-disp('Simplify step 3')
-M_J_A = simplify(J'*I1*A1) + simplify(J'*I2*A2);
-
-disp('Simplify step 4')
-M_J_J = simplify(J'*I1*J) + simplify(J'*I2*J);
+% disp('Simplify step 2')
+% M_A_J = simplify(A1'*I1*J) + simplify(A2'*I2*J);
+% 
+% disp('Simplify step 3')
+% M_J_A = simplify(J'*I1*A1) + simplify(J'*I2*A2);
+% 
+% disp('Simplify step 4')
+% M_J_J = simplify(J'*I1*J) + simplify(J'*I2*J);
 
 %Same as M(r)
 Dq = [M_A_A, M_A_J; ...
@@ -485,7 +511,7 @@ gy0 = [Ry0, py0; ...
 vy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
 %gdy0 = [0.1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
 
-r0 = [0; 0]; %r1, r2
+r0 = [pi/2; 0]; %r1, r2
 
 rd0 = [0; 0]; %r1d, r2d
 
@@ -562,6 +588,8 @@ for k = 1:(length(t)-1)
     disp([num2str(100*(k/length(t))), '%'])
 end
 disp('100%')
+
+disp(u)
 
 
 %% Render
