@@ -125,16 +125,8 @@ include_directories(
 )
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}_spawner
-  src/spawner/spawner.cpp
-)
-
-add_library(${PROJECT_NAME}_controller
-  src/controller/controller.cpp
-)
-
-add_library(${PROJECT_NAME}_pid_controller
-  src/pidController/pidController.cpp
+add_library(${PROJECT_NAME}
+  src/controller_id/controller_id.cpp
 )
 
 ## Add cmake target dependencies of the library

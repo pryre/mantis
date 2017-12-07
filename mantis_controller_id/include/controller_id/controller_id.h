@@ -2,8 +2,10 @@
 
 #include <ros/ros.h>
 
-#include <controller_id/GoalPose.h>
+#include <mantis_controller_id/GoalPose.h>
 #include <nav_msgs/Odometry.h>
+
+#include <string>
 
 class ControllerID {
 	private:
@@ -14,11 +16,11 @@ class ControllerID {
 		ros::Subscriber sub_goal_;
 
 		nav_msgs::Odometry msg_odom_;
-		controller_id::GoalPose msg_goal_pose_;
+		mantis_controller_id::GoalPose msg_goal_;
 
-		param_model_name_;
-		param_pwm_min_;
-		param_pwm_max_;
+		std::string param_model_name_;
+		uint16_t param_pwm_min_;
+		uint16_t param_pwm_max_;
 
 	public:
 		ControllerID( void );
@@ -27,5 +29,5 @@ class ControllerID {
 
 		void callback_control(const ros::TimerEvent& e);
 		void callback_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
-		void callback_goal(const controller_id::GoalPose::ConstPtr& msg_in);
+		void callback_goal(const mantis_controller_id::GoalPose::ConstPtr& msg_in);
 };

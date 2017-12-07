@@ -9,11 +9,11 @@
 #include <controller_id/calc_G1.h>
 #include <controller_id/calc_G2.h>
 
-#include <controller_id/GoalPose.h>
+#include <mantis_controller_id/GoalPose.h>
 #include <mavros_msgs/RCOut.h>
 #include <nav_msgs/Odometry.h>
 
-#include <Eigen3/Dense>
+#include <eigen3/Eigen/Dense>
 
 //TODO: use params
 #define NUM_MOTORS 6
@@ -27,7 +27,7 @@ ControllerID::ControllerID() :
 	pub_rc_ = nh_.advertise<mavros_msgs::RCOut>("rc", 10);
 
 	sub_odom_ = nh_.subscribe<nav_msgs::Odometry>( "odom", 10, &ControllerID::callback_odom, this );
-	sub_goal_ = nh_.subscribe<controller_id::GoalPose>( "goal", 10, &ControllerID::callback_goal, this );
+	sub_goal_ = nh_.subscribe<mantis_controller_id::GoalPose>( "goal", 10, &ControllerID::callback_goal, this );
 
 	timer_ = nh_.createTimer(ros::Duration(1.0), &ControllerID::callback_control, this );
 }
@@ -37,7 +37,7 @@ ControllerID::~ControllerID() {
 
 void ControllerID::callback_control(const ros::TimerEvent& e) {
 	mavros_msgs::RCOut msg_rc_out;
-	msg_rc_out.header.stamp = event.current_real;
+	msg_rc_out.header.stamp = e.current_real;
 	msg_rc_out.header.frame_id = "map";
 	msg_rc_out.channels.reserve(NUM_MOTORS);	//Allocate space for the number of motors
 
@@ -56,7 +56,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		Eigen::MatrixXd Lqd(8,8);
 		Eigen::MatrixXd Nq(8,1);
 
-		tau = D*ua + (C + L)*qd + N;
+		tau = Dq*ua + (Cqqd + Lqd)*qd + Nq;
 		//u = M*tau;
 	} else {
 		//Output nothing until the input info is available
@@ -72,6 +72,6 @@ void ControllerID::callback_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
 	msg_odom_ = *msg_in;
 }
 
-void ControllerID::callback_goal(const controller_id::GoalPose::ConstPtr& msg_in) {
+void ControllerID::callback_goal(const mantis_controller_id::GoalPose::ConstPtr& msg_in) {
 	msg_goal_ = *msg_in;
 }
