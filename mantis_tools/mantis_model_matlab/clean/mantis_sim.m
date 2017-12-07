@@ -66,7 +66,7 @@ g0inv = [g0(1:3,1:3)', -g0(1:3,1:3)'*g0(1:3,4); ...
 %g0inv = [R0', -R0'*p0; ...
 %         zeros(1,3), 1];
 
-     
+
 %R0dot = [0, -psid, thetad;
 %         psid, 0, -phid;
 %         -thetad, phid, 0];
@@ -75,7 +75,7 @@ g0inv = [g0(1:3,1:3)', -g0(1:3,1:3)'*g0(1:3,4); ...
 %         zeros(1,3), 1];
 
 %Vhat = g0inv*g0dot;
-     
+
 % Body frame velocity
 %syms vbx vby vbz w1 w2 w3 w1d w2d w3d 'real'
 %V = [w1; w2; w3; vbx; vby; vbz];
@@ -91,8 +91,8 @@ g0inv = [g0(1:3,1:3)', -g0(1:3,1:3)'*g0(1:3,4); ...
 q = [phi; theta; psi; bx; by; bz; r1; r2];
 qd = [bw1; bw2; bw3; bvx; bvy; bvz; r1d; r2d];
 qdd = [bw1d; bw2d; bw3d; bvxd; bvyd; bvzd; r1dd; r2dd];
-     
-    
+
+
 %%
 disp('Calculating Kinematics')
 
@@ -102,27 +102,27 @@ disp('Calculating Kinematics')
 % ewr2 = [cos(r2), 0, sin(r2); ...
 %        0, 1, 0; ...
 %        -sin(r2), 0, cos(r2)];
-% 
+%
 % g01_0 = [eye(3), [0;0;0]; ...
 %          zeros(1,3), 1];
 % g02_0 = [eye(3), [0;0;-l1]; ...
 %          zeros(1,3), 1];
 % g0e_0 = [eye(3), [0;0;-l1-l2]; ...
 %          zeros(1,3), 1];
-%    
+%
 % % w1 = [0;1;0];
 % % w2 = [0;1;0];
-% % 
+% %
 % % q1 = [0;0;0];
 % % q2 = [0;0;-l1];
-% % 
+% %
 % % eta1 = [cross(-w1,q1);w1];
 % % eta2 = [cross(-w2,q2);w2];
 % etr1 = [ewr1, zeros(3,1); ...
 %        zeros(1,3), 1];
 % etr2 = [ewr2, zeros(3,1); ...
 %        zeros(1,3), 1];
-% 
+%
 % g01 = etr1*g01_0;
 % g02 = etr1*etr2*g02_0;
 % g0e = etr1*etr2*g0e_0; %TODO Understand this process more!!
@@ -136,7 +136,7 @@ g12 = [ cos(r2), 0, sin(r2),  l2*cos(r2); ...
               0, 1,       0,           0; ...
        -sin(r2), 0, cos(r2), -l2*sin(r2); ...
               0, 0,       0,           1];
-          
+
 %Geometries to the center of each link
 g1 = [ cos(r1), 0, sin(r1),  l1*cos(r1)/2; ...
              0, 1,       0,             0; ...
@@ -147,7 +147,7 @@ g2 = g01*[ cos(r2), 0, sin(r2),  l2*cos(r2)/2; ...
                  0, 1,       0,             0; ...
           -sin(r2), 0, cos(r2), -l2*sin(r2)/2; ...
                  0, 0,       0,             1];
-             
+
 ge = g01*g12; %End Effector
 
 %Simplify geometries
@@ -160,16 +160,16 @@ g1p = g1(1:3,4);
 g1R = g1(1:3,1:3);
 g1inv = [      g1R', -g1R'*g1p; ...
          zeros(1,3),         1];
-     
+
 g2p = g2(1:3,4);
 g2R = g2(1:3,1:3);
 g2inv = [      g2R', -g2R'*g2p; ...
          zeros(1,3),         1];
-     
+
 %Simplify inverse geometries
 g1inv = simplify(g1inv);
 g2inv = simplify(g2inv);
-     
+
 %Inverse Adjoint for each link
 A1 = [g1R', -g1R'*vee_up(g1p); ...
       zeros(3), g1R'];
@@ -205,14 +205,14 @@ J = simplify(J);
 disp('Defining Inertials')
 % Define inertials
 
-syms IT0x IT0y IT0z 'positive'
+syms IJ0x IJ0y IJ0z 'positive'
 syms IJ1x IJ1y IJ1z 'positive'
 syms IJ2x IJ2y IJ2z 'positive'
 
 % Base link
-IJ0 = [IT0x, 0, 0; ... %Rotational Inertial Tensor
-       0, IT0y, 0; ...
-       0, 0, IT0z];
+IJ0 = [IJ0x, 0, 0; ... %Rotational Inertial Tensor
+       0, IJ0y, 0; ...
+       0, 0, IJ0z];
 I0 = [IJ0, zeros(3); ... %Pose Inertial Tensor
       zeros(3), m0*eye(3)];
 
@@ -245,7 +245,7 @@ I2s = A2'*I2*A2;
 %     I1s(i) = simplify(I1s(i));
 %     fprintf('\b|\n');
 % end
-% 
+%
 % disp('    Simplifing I2s')
 % fprintf('    Progress:\n');
 % fprintf(['    ' repmat('.',1,numel(I2s)) '\n    \n']);
@@ -261,17 +261,17 @@ M_J_J = J'*I1*J + J'*I2*J;
 
 % disp('Simplify step 2')
 % M_A_J = simplify(A1'*I1*J) + simplify(A2'*I2*J);
-% 
+%
 % disp('Simplify step 3')
 % M_J_A = simplify(J'*I1*A1) + simplify(J'*I2*A2);
-% 
+%
 % disp('Simplify step 4')
 % M_J_J = simplify(J'*I1*J) + simplify(J'*I2*J);
 
 %Same as M(r)
 Dq = [M_A_A, M_A_J; ...
       M_J_A, M_J_J];
-  
+
 disp('    Simplifing Dq')
 fprintf('    Progress:\n');
 fprintf(['    ' repmat('.',1,numel(Dq)) '\n    \n']);
@@ -280,7 +280,7 @@ parfor i = 1:numel(Dq)
     fprintf('\b|\n');
 end
 
-  
+
 %% Cristoffel Symbols
 
 disp('Calculating Cristoffel Symbols')
@@ -292,7 +292,7 @@ for k = 1:length(q)
             c_sym(i,j,k) = (1/2)*(diff(Dq(k,j), q(i)) + diff(Dq(k,i), q(j)) - diff(Dq(i,j), q(k)));
         end
     end
-    
+
     disp(['... ', num2str(100*k/length(q)), '%'])
 end
 
@@ -321,14 +321,14 @@ disp('... 0%')
 for i = 1:length(q)
     for k = 1:length(q)
         c_sum = c_sym(k,1,i)*qd(1);
-        
+
         for j = 2:length(q)
             c_sum = c_sum + c_sym(k,j,i)*qd(j);
         end
-        
+
         Cqqd(i,k) = c_sum;
     end
-    
+
     disp(['... ', num2str(100*i/length(q)), '%'])
 end
 
@@ -343,7 +343,7 @@ disp('Calculating Potential Energy')
 
 % P = zeros(size(q));
 % P = sym(P);
-% 
+%
 % ggrav = sym(diag(ones(4,1)));
 % ggrav(3,4) = g;
 % ggrav(4,4) = 1;
@@ -351,28 +351,28 @@ disp('Calculating Potential Energy')
 % P(4) = bx*m0*f_grav(1,4); %bx
 % P(5) = by*m0*f_grav(2,4); %by
 % P(6) = bz*m0*f_grav(3,4); %bz
-% 
-% 
+%
+%
 % gcg = sym(diag(ones(4,1)));
-% 
+%
 % gcg(1,4) = l1/2;
 % center_height = g0*g01*gcg;
 % P(7) = m1*g*center_height(3,4); %r1
-% 
+%
 % gcg(1,4) = l2/2;
 % center_height = g0*g01*g12*gcg;
 % P(8) = m2*g*center_height(3,4); %r2
-% 
-% 
+%
+%
 % P_sum = sum(P);
-% 
+%
 % Nq = zeros(size(q));
 % Nq = sym(Nq);
-% 
+%
 % for i = 1:length(q)
 %     Nq(i) = simplify(diff(P_sum,q(i)));
 % end
-% 
+%
 % disp(Nq)
 
 
@@ -424,7 +424,7 @@ motor_map = [-mr*alen*kt, -mr*alen*kt,  km, 0, 0, kt; ... % TODO: CHANGE HERE
 
 Mm = [motor_map, zeros(params.motor.num, params.arm.links); ...
       zeros(params.arm.links,6), eye(params.arm.links)];
-  
+
 %Build pose solvers
 Gq = cell(params.arm.links + 1, 1);
 Gq(1) = {g0}; %Base link
@@ -437,18 +437,18 @@ end
 %    0 -d/M -m*g/M 0;
 %    0 0 0 1;
 %    0 -s*d/(M*L) -s*(m+M)*g/(M*L) 0];
-%  
+%
 %B = [0; 1/M; 0; s*1/(M*L)];
 %eig(A)
-% 
+%
 %Q = [1 0 0 0;
 %    0 1 0 0;
 %    0 0 10 0;
 %    0 0 0 100];
 %R = .0001;
-% 
+%
 %det(ctrb(A,B))
-% 
+%
 %K = lqr(A,B,Q,R);
 
 
@@ -469,10 +469,10 @@ sub_vals = [km, 0.5; ...
             IJ1x, (0.05^2 + l1^2)/12; ...
             IJ1y, (0.05^2 + l1^2)/12; ...
             IJ1z, (2*0.05^2)/12; ...
-            IJ2x, (0.05^2 + l1^2)/12; ...
-            IJ2y, (0.05^2 + l1^2)/12; ...
+            IJ2x, (0.05^2 + l2^2)/12; ...
+            IJ2y, (0.05^2 + l2^2)/12; ...
             IJ2z, (2*0.05^2)/12];
-        
+
 tauq_sub = subs(subs(tauq, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_vals(:,2));
 
 Dq_sub = subs(subs(Dq, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_vals(:,2));
@@ -577,7 +577,7 @@ r0 = [pi/2 + 0.1; 0]; %r1, r2
 rd0 = [0; 0]; %r1d, r2d
 
 y0 = [gy0(:); r0; vy0; rd0];
-         
+
 %Define States
 
 % Final state
@@ -608,11 +608,11 @@ for k = 1:(length(t)-1)
     gk = reshape(y(1:16,k),[4,4]);
     rk = y(17:18,k);
     vk = y(19:26,k);
-    
+
     D = zeros(size(Dq_eq));
     C = zeros(size(Cqqd_eq));
     N = zeros(size(N_eq));
-    
+
     for i = 1:numel(Dq_eq)
                         %r1, r2, bw1, bw2, bw3, bvx, bvy, bvz, r1d, r2d
         D(i) = Dq_eq{i}(rk(1), rk(2), vk(1), vk(2), vk(3), vk(4), vk(5), vk(6), vk(7), vk(8));
@@ -622,9 +622,9 @@ for k = 1:(length(t)-1)
                           %r1, r2, bw1, bw2, bw3, bvx, bvy, bvz, r1d, r2d
         C(i) = Cqqd_eq{i}(rk(1), rk(2), vk(1), vk(2), vk(3), vk(4), vk(5), vk(6), vk(7), vk(8));
     end
-    
+
     L = Lqd;
-   
+
     for i = 1:numel(N)
         %g, r1, r2
         %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
@@ -634,18 +634,18 @@ for k = 1:(length(t)-1)
                        gk(1,4), gk(2,4), gk(3,4), gk(4,4), ...
                        rk(1), rk(2));
     end
-    
+
     M = double(Mm_sub);
-    
+
     % Inverse Dynamics control
     tau = D*ua + (C + L)*vk + N;
     u(:,k) = M*tau;
-    
+
     % Simulate 1 time step
     %y(:,k+1)= mantis_run(dt, y(:,k), D, C, L, N);
-    
+
     y(:,k+1) = y(:,k);
-    
+
     disp([num2str(100*(k/length(t))), '%'])
 end
 disp('100%')
@@ -661,21 +661,21 @@ for k=1:length(t)
     gk = reshape(y(1:16,k),[4,4]);
     rk = y(17:18,k);
     fl = params.frame.motor_arm_length;
-    
+
     hold off; % Clean the display area
     plot3([0,0.5], [0,0], [0,0], 'color', 'r', 'linewidth', 1);
     hold on;
     plot3([0,0], [0,0.5], [0,0], 'color', 'g', 'linewidth', 1);
-    plot3([0,0], [0,0], [0,0.5], 'color', 'b', 'linewidth', 1); 
-    
+    plot3([0,0], [0,0], [0,0.5], 'color', 'b', 'linewidth', 1);
+
     %Calculate endpoint poses
     G = cell(size(G_eq));
-    
+
     for i = 1:numel(G)
         %g, r1, r2
         %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
         G{i} = zeros(size(G_eq{i}));
-        
+
         for j = 1:numel(G_eq{i})
             G{i}(j) = G_eq{i}{j}(gk(1,1), gk(2,1), gk(3,1), gk(4,1), ...
                                  gk(1,2), gk(2,2), gk(3,2), gk(4,2), ...
@@ -684,12 +684,12 @@ for k=1:length(t)
                                  rk(1), rk(2));
         end
     end
-    
+
     %Plot frame
     for i = 1:params.motor.num
         ra = params.frame.map(i);
         len_a = params.frame.motor_arm_length;
-        
+
         ga = [cos(ra), -sin(ra), 0, len_a*cos(ra); ...
               sin(ra),  cos(ra), 0, len_a*sin(ra); ...
                     0,        0, 1,             0; ...
@@ -699,20 +699,20 @@ for k=1:length(t)
 
         plot3([G{1}(1,4),pa(1,4)], [G{1}(2,4),pa(2,4)], [G{1}(3,4),pa(3,4)], 'color', 'k', 'linewidth', 2);
     end
-    
+
     %Plot arm links
     for i = 1:(params.arm.links)
         plot3([G{i}(1,4),G{i+1}(1,4)], [G{i}(2,4),G{i+1}(2,4)], [G{i}(3,4),G{i+1}(3,4)], 'color', 'b', 'linewidth', 2);
     end
-    
+
     %Draw figure
     ax_s = params.plot.size / 2;
-    
+
     axis([-ax_s, ax_s, -ax_s, ax_s, 0, 2*ax_s]);
     axis('square')
-    
+
     drawnow;
-    
+
     disp([num2str(100*(k/length(t))), '%'])
 
 end

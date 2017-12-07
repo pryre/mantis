@@ -42,6 +42,26 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	msg_rc_out.channels.reserve(NUM_MOTORS);	//Allocate space for the number of motors
 
 
+	//TODO: LOAD THROUGH PARAMS
+	double la = 0.275;
+	double l1 = 0.2;
+	double l2 = 0.2;
+	double m0 = 2.0;
+	double m1 = 0.005;
+	double m2 = 0.2;
+	double g = 9.80665;
+	double IJ0x = (0.05*0.05 + la*la)/12;
+	double IJ0y = (0.05*0.05 + la*la)/12;
+	double IJ0z = la*la/2;
+	double IJ1x = (0.05*0.05 + l1*l1)/12;
+	double IJ1y = (0.05*0.05 + l1*l1)/12;
+	double IJ1z = (2*0.05*0.05)/12;
+	double IJ2x = (0.05*0.05 + l2*l2)/12;
+	double IJ2y = (0.05*0.05 + l2*l2)/12;
+	double IJ2z = (2*0.05*0.05)/12;
+	//TODO: LOAD THROUGH PARAMS
+
+
 	if( ( msg_odom_.header.stamp != ros::Time(0) ) &&
 		( msg_goal_.header.stamp != ros::Time(0) ) ) {
 
@@ -51,12 +71,14 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		Eigen::MatrixXd tau(8,1);	//base torque, base force, arm torque
 		Eigen::MatrixXd u(8,1);		//Motor outputs (6), arm links
 
-		Eigen::MatrixXd Dq(8,8);
-		Eigen::MatrixXd Cqqd(8,8);
-		Eigen::MatrixXd Lqd(8,8);
-		Eigen::MatrixXd Nq(8,1);
+		Eigen::MatrixXd D(8,8);
+		Eigen::MatrixXd C(8,8);
+		Eigen::MatrixXd L(8,8);
+		Eigen::MatrixXd N(8,1);
 
-		tau = Dq*ua + (Cqqd + Lqd)*qd + Nq;
+		calc_Dq(D, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, IJ0x, IJ0y, IJ0z, l1, l2, m0, m1, m2, q(16,1), q(17,1));
+
+		tau = D*ua + (C + L)*qd + N;
 		//u = M*tau;
 	} else {
 		//Output nothing until the input info is available
