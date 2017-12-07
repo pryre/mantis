@@ -17,13 +17,19 @@ function [ p ] = mantis_params( filepath )
         case 'X4'
             disp('Using PixHawk X4 motor layout')
             
-            p.motor.num = 4;
-            p.frame.arm_angle = deg2rad(45);
+            p.frame.arm_angle = pi/4;
             
             thrust_scale = p.control.base_link.thrust.reserve;
             arm_len = p.frame.motor_arm_length;
             arm_ang = p.frame.arm_angle;
             max_thrust = p.motor.max_thrust;
+            
+            p.frame.map = [  -arm_ang; ...
+                            3*arm_ang; ...
+                              arm_ang; ...
+                           -3*arm_ang];
+                       
+            p.motor.num = numel(p.frame.map);
             
             t_x = thrust_scale * max_thrust * ( ...
                       2 * ( cos(arm_ang) * arm_len  ) ...
@@ -42,17 +48,24 @@ function [ p ] = mantis_params( filepath )
         case 'X6'
             disp('Using PixHawk X6 motor layout')
             
-            p.motor.num = 6;
-            p.frame.arm_angle = deg2rad(60);
+            p.frame.arm_angle = pi/3;
             
             thrust_scale = p.control.base_link.thrust.reserve;
             arm_len = p.frame.motor_arm_length;
             arm_ang = p.frame.arm_angle;
             max_thrust = p.motor.max_thrust;
-            r90 = deg2rad(90);
+            
+            p.frame.map = [  -(arm_ang + arm_ang/2); ...
+                                arm_ang + arm_ang/2; ...
+                              arm_ang/2; ...
+                              -(pi - arm_ang/2); ...
+                              -arm_ang/2; ...
+                              pi - arm_ang/2];
+                          
+            p.motor.num = numel(p.frame.map);
             
             t_x = thrust_scale * max_thrust * ( ...
-                      2 * ( cos(r90 - arm_ang) * arm_len ) ...
+                      2 * ( cos(pi/2 - arm_ang) * arm_len ) ...
                       + ( arm_len ) ...
                   );
               

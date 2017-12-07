@@ -16,7 +16,8 @@ dt = 0.005;
 %g = -9.80665; %m/s
 
 % Load system parameters
-params = mantis_params('params.yaml');
+params = mantis_params('params_x4.yaml');
+%params = mantis_params('params_x6.yaml');
 
 
 %% Generate the system model
@@ -280,9 +281,8 @@ parfor i = 1:numel(Dq)
 end
 
   
-%%
+%% Cristoffel Symbols
 
-% Cristoffel Symbols
 disp('Calculating Cristoffel Symbols')
 
 disp('... 0%')
@@ -424,7 +424,15 @@ motor_map = [-mr*alen*kt, -mr*alen*kt,  km, 0, 0, kt; ... % TODO: CHANGE HERE
 
 Mm = [motor_map, zeros(params.motor.num, params.arm.links); ...
       zeros(params.arm.links,6), eye(params.arm.links)];
-
+  
+%Build pose solvers
+Gq = cell(params.arm.links + 1, 1);
+Gq(1) = {g0}; %Base link
+Gq(2) = {g0*g01}; %End of link 1
+Gq(3) = {g0*g01*g12}; %End of link 2
+for i = 1:numel(Gq)
+    Gq{i} = simplify(Gq{i});
+end
 %A = [0 1 0 0;
 %    0 -d/M -m*g/M 0;
 %    0 0 0 1;
@@ -448,9 +456,9 @@ Mm = [motor_map, zeros(params.motor.num, params.arm.links); ...
 
 sub_vals = [km, 0.5; ...
             kt, 1/(params.motor.num*params.motor.max_thrust); ... % TODO: CHANGE HERE AS WELL
-            la, 0.275; ...
-            l1, 0.2; ...
-            l2, 0.2; ...
+            la, params.frame.motor_arm_length; ...
+            l1, params.arm.length; ...
+            l2, params.arm.length; ...
             m0, 2.0; ...
             m1, 0.005; ...
             m2, 0.2; ...
@@ -470,7 +478,12 @@ tauq_sub = subs(subs(tauq, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_val
 Dq_sub = subs(subs(Dq, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_vals(:,2));
 Cqqd_sub = subs(subs(Cqqd, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_vals(:,2));
 Nq_sub = subs(subs(Nq, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_vals(:,2));
+
 Mm_sub = subs(subs(Mm, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_vals(:,2));
+Gq_sub = cell(size(Gq));
+for i = 1:numel(Gq)
+    Gq_sub{i} = subs(subs(Gq{i}, sub_vals(:,1), sub_vals(:,2)), sub_vals(:,1), sub_vals(:,2));
+end
 
 
 %% Prepare Matrix solvers
@@ -479,7 +492,10 @@ Dq_eq = cell(size(Dq));
 Cqqd_eq = cell(size(Cqqd));
 N_eq = cell(size(Nq));
 
+G_eq = cell(size(Gq));
+
 state_vars =[r1; r2; qd];
+pose_vars = [g0(:);r1;r2];
 
 disp('    Preparing Dq solver')
 fprintf('    Progress:\n');
@@ -487,7 +503,6 @@ fprintf(['    ' repmat('.',1,numel(Dq)) '\n    \n']);
 parfor i = 1:numel(Dq)
     Dq_eq(i) = {matlabFunction(Dq_sub(i), 'Vars', state_vars)};
     fprintf('\b|\n');
-    %disp(['    ... ', num2str(100*i/numel(Dq)), '%'])
 end
 
 disp('    Preparing Cqqd solver')
@@ -502,9 +517,32 @@ disp('    Preparing N solver')
 fprintf('    Progress:\n');
 fprintf(['    ' repmat('.',1,numel(Nq)) '\n    \n']);
 parfor i = 1:numel(Nq)
-    N_eq(i) = {matlabFunction(Nq_sub(i), 'Vars', [g0(:);r1;r2])};
+    N_eq(i) = {matlabFunction(Nq_sub(i), 'Vars', pose_vars)};
     fprintf('\b|\n');
 end
+
+disp('    Preparing Pose solver')
+fprintf('    Progress:\n');
+fprintf(['    ' repmat('.',1,numel(Gq)) '\n    \n']);
+parfor i = 1:numel(Gq)
+    G_eq{i} = cell(size(Gq{i}));
+    for j = 1:numel(Gq{i})
+        G_eq{i}(j) = {matlabFunction(Gq_sub{i}(j), 'Vars', pose_vars)};
+    end
+    fprintf('\b|\n');
+end
+
+
+%% Generate C Code
+function_gen_mat(Dq, 'Dq');
+function_gen_mat(Cqqd, 'Cqqd');
+function_gen_mat(sym(Lqd), 'Lqd');
+function_gen_mat(Nq, 'Nq');
+
+for i = 1:numel(Gq)
+    function_gen_mat(Gq{i}, ['G', num2str(i-1)]);
+end
+
 
 %% Run Simulation
 disp('Preparing Simulation')
@@ -534,7 +572,7 @@ gy0 = [Ry0, py0; ...
 vy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
 %gdy0 = [0.1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
 
-r0 = [0; 0]; %r1, r2
+r0 = [pi/2 + 0.1; 0]; %r1, r2
 
 rd0 = [0; 0]; %r1d, r2d
 
@@ -620,64 +658,54 @@ disp(u)
 figure(1);
 
 for k=1:length(t)
-    %% Prep
     gk = reshape(y(1:16,k),[4,4]);
+    rk = y(17:18,k);
     fl = params.frame.motor_arm_length;
-    al = params.arm.length;
     
     hold off; % Clean the display area
     plot3([0,0.5], [0,0], [0,0], 'color', 'r', 'linewidth', 1);
     hold on;
     plot3([0,0], [0,0.5], [0,0], 'color', 'g', 'linewidth', 1);
-    plot3([0,0], [0,0], [0,0.5], 'color', 'b', 'linewidth', 1);
+    plot3([0,0], [0,0], [0,0.5], 'color', 'b', 'linewidth', 1); 
     
+    %Calculate endpoint poses
+    G = cell(size(G_eq));
     
-    %% Base
+    for i = 1:numel(G)
+        %g, r1, r2
+        %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
+        G{i} = zeros(size(G_eq{i}));
+        
+        for j = 1:numel(G_eq{i})
+            G{i}(j) = G_eq{i}{j}(gk(1,1), gk(2,1), gk(3,1), gk(4,1), ...
+                                 gk(1,2), gk(2,2), gk(3,2), gk(4,2), ...
+                                 gk(1,3), gk(2,3), gk(3,3), gk(4,3), ...
+                                 gk(1,4), gk(2,4), gk(3,4), gk(4,4), ...
+                                 rk(1), rk(2));
+        end
+    end
     
-    %frame_base = [eye(3), [x;y;z]; zeros(1,3), 1];
-    gf1 = [eye(3), [fl;0;0]; zeros(1,3), 1];
-    gf2 = [eye(3), [-fl;0;0]; zeros(1,3), 1];
-    gf3 = [eye(3), [0;fl;0]; zeros(1,3), 1];
-    gf4 = [eye(3), [0;-fl;0]; zeros(1,3), 1];
+    %Plot frame
+    for i = 1:params.motor.num
+        ra = params.frame.map(i);
+        len_a = params.frame.motor_arm_length;
+        
+        ga = [cos(ra), -sin(ra), 0, len_a*cos(ra); ...
+              sin(ra),  cos(ra), 0, len_a*sin(ra); ...
+                    0,        0, 1,             0; ...
+                    0,        0, 0,             1];
+
+        pa = G{1}*ga;
+
+        plot3([G{1}(1,4),pa(1,4)], [G{1}(2,4),pa(2,4)], [G{1}(3,4),pa(3,4)], 'color', 'k', 'linewidth', 2);
+    end
     
-    pf1 = gk*gf1;
-    pf2 = gk*gf2;
-    pf3 = gk*gf3;
-    pf4 = gk*gf4;
+    %Plot arm links
+    for i = 1:(params.arm.links)
+        plot3([G{i}(1,4),G{i+1}(1,4)], [G{i}(2,4),G{i+1}(2,4)], [G{i}(3,4),G{i+1}(3,4)], 'color', 'b', 'linewidth', 2);
+    end
     
-    plot3([gk(1,4),pf1(1,4)], [gk(2,4),pf1(2,4)], [gk(3,4),pf1(3,4)], 'color', 'k', 'linewidth', 2);
-    plot3([gk(1,4),pf2(1,4)], [gk(2,4),pf2(2,4)], [gk(3,4),pf2(3,4)], 'color', 'k', 'linewidth', 2);
-    plot3([gk(1,4),pf3(1,4)], [gk(2,4),pf3(2,4)], [gk(3,4),pf3(3,4)], 'color', 'k', 'linewidth', 2);
-    plot3([gk(1,4),pf4(1,4)], [gk(2,4),pf4(2,4)], [gk(3,4),pf4(3,4)], 'color', 'k', 'linewidth', 2);
-    
-    
-    %% Arm Links
-    rk = y(17:18,k);
-    
-    gl0 = [  cos(rk(1)), 0, sin(rk(1)),  0; ...
-                      0, 1,          0,  0; ...
-            -sin(rk(1)), 0, cos(rk(1)),  0; ...
-                      0, 0,          0,  1];
-    gl1 = [  cos(rk(2)), 0, sin(rk(2)), al; ...
-                      0, 1,          0,  0; ...
-            -sin(rk(2)), 0, cos(rk(2)),  0; ...
-                      0, 0,          0,  1];
-    gl2 = [           1, 0,          0, al; ...
-                      0, 1,          0,  0; ...
-                      0, 0,          1,  0; ...
-                      0, 0,          0,  1];
-               
-    pa1 = gk*gl0*gl1;
-    pa2 = gk*gl0*gl1*gl2;
-    
-    plot3([gk(1,4),pa1(1,4)], [gk(2,4),pa1(2,4)], [gk(3,4),pa1(3,4)], 'color', 'b', 'linewidth', 2);
-    plot3([pa1(1,4),pa2(1,4)], [pa1(2,4),pa2(2,4)], [pa1(3,4),pa2(3,4)], 'color', 'g', 'linewidth', 2);
-    
-    %% Link 2
-    
-    
-    %% Draw
-    
+    %Draw figure
     ax_s = params.plot.size / 2;
     
     axis([-ax_s, ax_s, -ax_s, ax_s, 0, 2*ax_s]);
@@ -685,17 +713,8 @@ for k=1:length(t)
     
     drawnow;
     
-    %%
     disp([num2str(100*(k/length(t))), '%'])
-    %% Old
-% [ x; y; z; dx; dy; dz; ...
-%   phi; theta; psi; dphi; dtheta; dpsi; ...
-%   thetal1; thetal2; dthetal1; dthetal2 ]
-%     viz = [0;0;1;0;0;0; ...
-%            0;-ys(k,1);0;0;-ys(k,2);0; ...
-%            ys(k,3);ys(k,5);ys(k,4);ys(k,6)];
-%     mantis_draw(viz, params);
-    %pause(time_dt)
+
 end
 
 
