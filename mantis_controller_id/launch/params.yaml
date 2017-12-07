@@ -1,0 +1,31 @@
+#Paramter file for the Mantis MM-UAV
+
+frame:
+  layout: "X6"
+  motor_arm_length: 0.275 # m
+  mass: 2.2 # kg
+
+control:
+  base_link:
+    thrust:
+        reserve: 0.25 # %
+
+motor:
+  max_thrust: 0.7 # N
+
+arm:
+  mount:
+    point:
+      x: 0.0
+      y: 0.0
+      z: -0.05
+    rotation: -1.570796326794897 # radians
+  links: 2
+  length: 0.25 # m
+  link_mass: 0.1 # kg
+  servo:
+    max_torque: 2.0 # N
+    max_rot: 1.570796326794897 # radians
+
+plot:
+  size: 2

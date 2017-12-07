@@ -1,4 +1,6 @@
-void calc_G1(Eigen::Vector3d& m, g0_1_1, g0_1_2, g0_1_3, g0_1_4, g0_2_1, g0_2_2, g0_2_3, g0_2_4, g0_3_1, g0_3_2, g0_3_3, g0_3_4, g0_4_1, g0_4_2, g0_4_3, g0_4_4, l1, r1) {
+#include <Eigen3/Dense>
+
+inline void calc_G1(Eigen3::MatrixXd& m, double g0_1_1, double g0_1_2, double g0_1_3, double g0_1_4, double g0_2_1, double g0_2_2, double g0_2_3, double g0_2_4, double g0_3_1, double g0_3_2, double g0_3_3, double g0_3_4, double g0_4_1, double g0_4_2, double g0_4_3, double g0_4_4, double l1, double r1) {
 	m[0][0] = g0_1_1*cos(r1)-g0_1_3*sin(r1);
 	m[0][1] = g0_1_2;
 	m[0][2] = g0_1_3*cos(r1)+g0_1_1*sin(r1);
