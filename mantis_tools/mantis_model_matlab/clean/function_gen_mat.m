@@ -3,23 +3,32 @@ function [  ] = function_gen_mat( m, m_name )
 %   Detailed explanation goes here
 
     var_str = symvar(m);
+    t = char(9);
+    n = char(10);
 
     %Generate function call
-    fun_str = ['#include <Eigen3/Dense>', newline, newline, 'inline void calc_', m_name, '(Eigen::Vector3d& m'];
+    fun_str = ['#include <Eigen3/Dense>', n, n, 'inline void calc_', m_name, '(Eigen::Vector3d& m'];
     for i = 1:numel(var_str)
         fun_str = [fun_str, ', double ', char(var_str(i))];
     end
-    fun_str = [fun_str, ') {', newline];
-
+    fun_str = [fun_str, ') {', n];
+    
     %Generate function code
-    fun_str = [fun_str, ccode(m)];
-
+    for i = 1:numel(m)
+        [j,k] = ind2sub(size(m),i);
+        j = num2str(j);
+        k = num2str(k);
+        code = strsplit(ccode(m(i)),'=');
+        code_str = code{2};
+        
+        %Don't bother adding 'zero' strings
+        if ~strcmp(code_str,' 0.0;')
+            fun_str = [fun_str, t, m_name, '(', j, ',', k, ') =', code_str, n];
+        end
+    end
+    
     %Close function call
-    fun_str = [fun_str, newline, '}'];
-
-    %Clean
-    fun_str = regexprep(fun_str, '  ', '\t');
-
+    fun_str = [fun_str, '}', n];
 
     %Save function to disk
     filename = ['./gen_code/calc_', m_name, '.h'];
