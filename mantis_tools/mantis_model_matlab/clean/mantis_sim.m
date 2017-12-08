@@ -573,7 +573,7 @@ gy0 = [Ry0, py0; ...
 vy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
 %gdy0 = [0.1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
 
-r0 = [pi/2 + 0.1; 0]; %r1, r2
+r0 = [pi/2; 0]; %r1, r2
 
 rd0 = [0; 0]; %r1d, r2d
 
@@ -591,8 +591,6 @@ y0 = [gy0(:); r0; vy0; rd0];
 
 % Input accelerations
 ua = zeros(size(q));
-
-
 
 
 %%
@@ -715,7 +713,6 @@ for k=1:length(t)
     drawnow;
 
     disp([num2str(100*(k/length(t))), '%'])
-
 end
 
 

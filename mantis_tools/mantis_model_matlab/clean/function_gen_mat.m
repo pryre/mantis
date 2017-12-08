@@ -7,7 +7,7 @@ function [  ] = function_gen_mat( m, m_name )
     n = char(10);
 
     %Generate function call
-    fun_str = ['#include <Eigen3/Dense>', n, n, 'inline void calc_', m_name, '(Eigen::Vector3d& m'];
+    fun_str = ['#include <Eigen3/Dense>', n, n, 'inline void calc_', m_name, '(Eigen::Vector3d& ', m_name];
     for i = 1:numel(var_str)
         fun_str = [fun_str, ', double ', char(var_str(i))];
     end
