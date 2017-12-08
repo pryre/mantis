@@ -7,8 +7,8 @@
 		<remap from="/controller_id/odom" to="/mantis_uav/odom" />
 
 		<remap from="/controller_id/rc" to="/mantis_uav/command/motor_pwm" />
-		<remap from="/controller_id/r1" to="/mantis_uav/command/servo/shoulder" />
-		<remap from="/controller_id/r2" to="/mantis_uav/command/servo/elbow" />
+		<remap from="/controller_id/r1" to="/mantis_uav/command/servo/torque/shoulder" />
+		<remap from="/controller_id/r2" to="/mantis_uav/command/servo/torque/elbow" />
 
 		<!-- rosparam command="load" file="$(find mantis_controller_servos)/launch/params.yaml"/ -->
 	</node>

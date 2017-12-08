@@ -79,6 +79,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		( msg_joints_.header.stamp != ros::Time(0) ) ) { //TODO: &&
 		//TODO: ( msg_goal_.header.stamp != ros::Time(0) ) ) {
 
+		ROS_INFO_ONCE("Inverse dynamics controller running!");
+
 		Eigen::MatrixXd q = Eigen::MatrixXd::Constant(18, 1, 0.0);	//g(4,4) + r(2,1)
 		Eigen::MatrixXd qd = Eigen::MatrixXd::Constant(8, 1, 0.0);	//v(6,1) + rd(2,1)
 		Eigen::MatrixXd ua = Eigen::MatrixXd::Constant(8, 1, 0.0);	//vd(6,1) + rdd(2,1)
@@ -120,9 +122,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		calc_Dq(D, IJ0x, IJ0y, IJ0z, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, l1, l2, m0, m1, m2, r1, r2);
 		calc_Cqqd(C, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, bvx, bvy, bvz, bwx, bwy, bwz, l1, l2, r1, r1d, r2, r2d);
-
-		//calc_Lqd(Eigen::MatrixXd& m);
-		calc_Nq(L, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, g, gr(2,0), gr(2,1), gr(2,2), l1, l2, m0, m1, m2, r1, r2);
+		calc_Lqd(L);
+		calc_Nq(N, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, g, gr(2,0), gr(2,1), gr(2,2), l1, l2, m0, m1, m2, r1, r2);
 
 		tau = D*ua + (C + L)*qd + N;
 
@@ -144,7 +145,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		Eigen::MatrixXd u = M*tau;
 
 		for(int i=0; i<NUM_MOTORS; i++) {
-			msg_rc_out.channels[i] = u(i,0);
+			msg_rc_out.channels[i] = map_pwm(u(i,0));
 		}
 
 		msg_r1_out.data = u(NUM_MOTORS,0);
@@ -162,6 +163,14 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	pub_rc_.publish(msg_rc_out);
 	pub_r1_.publish(msg_r1_out);
 	pub_r2_.publish(msg_r2_out);
+}
+
+int16_t ControllerID::map_pwm(double val) {
+	//Constrain from 0 -> 1
+	double c = (val > 1.0) ? 1.0 : (val < 0.0) ? 0.0 : val;
+
+	//Scale c to the pwm values
+	return int16_t((param_pwm_max_ - param_pwm_min_)*c) + param_pwm_min_;
 }
 
 void ControllerID::callback_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {

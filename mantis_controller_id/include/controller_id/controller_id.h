@@ -34,6 +34,8 @@ class ControllerID {
 
 		~ControllerID( void );
 
+		int16_t map_pwm(double val);
+
 		void callback_control(const ros::TimerEvent& e);
 		void callback_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
 		void callback_joints(const sensor_msgs::JointState::ConstPtr& msg_in);

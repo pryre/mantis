@@ -12,21 +12,22 @@ function [  ] = function_gen_mat( m, m_name )
         fun_str = [fun_str, ', double ', char(var_str(i))];
     end
     fun_str = [fun_str, ') {', n];
-    
+
     %Generate function code
     for i = 1:numel(m)
         [j,k] = ind2sub(size(m),i);
-        j = num2str(j);
-        k = num2str(k);
+        j = num2str(j-1);
+        k = num2str(k-1);
+
         code = strsplit(ccode(m(i)),'=');
         code_str = code{2};
-        
+
         %Don't bother adding 'zero' strings
         if ~strcmp(code_str,' 0.0;')
             fun_str = [fun_str, t, m_name, '(', j, ',', k, ') =', code_str, n];
         end
     end
-    
+
     %Close function call
     fun_str = [fun_str, '}', n];
 
