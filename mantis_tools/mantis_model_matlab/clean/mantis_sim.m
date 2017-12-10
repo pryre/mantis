@@ -127,7 +127,6 @@ disp('Calculating Kinematics')
 % g02 = etr1*etr2*g02_0;
 % g0e = etr1*etr2*g0e_0; %TODO Understand this process more!!
 
-
 g01 = [ cos(r1), 0, sin(r1),  l1*cos(r1); ...
               0, 1,       0,           0; ...
        -sin(r1), 0, cos(r1), -l1*sin(r1); ...
@@ -573,7 +572,7 @@ gy0 = [Ry0, py0; ...
 vy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
 %gdy0 = [0.1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
 
-r0 = [pi/2; 0]; %r1, r2
+r0 = [0; pi/2]; %r1, r2
 
 rd0 = [0; 0]; %r1d, r2d
 
