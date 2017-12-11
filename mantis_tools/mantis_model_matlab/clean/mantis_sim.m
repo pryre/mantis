@@ -136,7 +136,7 @@ g12 = [ cos(r2), 0, sin(r2),  l2*cos(r2); ...
        -sin(r2), 0, cos(r2), -l2*sin(r2); ...
               0, 0,       0,           1];
 
-%Geometries to the center of each link
+%Geometries to the center of each link, relative to the base link
 g1 = [ cos(r1), 0, sin(r1),  l1*cos(r1)/2; ...
              0, 1,       0,             0; ...
       -sin(r1), 0, cos(r1), -l1*sin(r1)/2; ...
@@ -180,16 +180,23 @@ A2 = [    g2R', -g2R'*vee_up(g2p); ...
 A1 = simplify(A1);
 A2 = simplify(A2);
 
+
+% ========================= %
+% THESE JACOBIANS ARE WRONG %
+% ========================= %
+
+
+
 %Maybe supposed to be diffgX, then multiply
-% J1_1 = diff(g01,r1)*g01inv;
-% J1_2 = diff(g01,r2)*g01inv;
+% J1_1 = diff(g1,r1)*g1inv;
+% J1_2 = diff(g1,r2)*g1inv;
 J1_1 = g1inv*diff(g1,r1);
 J1_2 = g1inv*diff(g1,r2);
 J1_sum = J1_1 + J1_2;
 J(:,1) = [vee_down(J1_sum(1:3,1:3)); 0; 0; 0];
 
-% J2_1 = diff(g02,r1)*g02inv;
-% J2_2 = diff(g02,r2)*g02inv;
+% J2_1 = diff(g2,r1)*g2inv; 
+% J2_2 = diff(g2,r2)*g2inv;
 J2_1 = g2inv*diff(g2,r1);
 J2_2 = g2inv*diff(g2,r2);
 J2_sum = J2_1 + J2_2;
@@ -589,7 +596,8 @@ y0 = [gy0(:); r0; vy0; rd0];
 %u = [0.1; 0.1; 0.1];
 
 % Input accelerations
-ua = zeros(size(q));
+ua = [0;0;0;0;0;0;0;0];
+
 
 
 %%
