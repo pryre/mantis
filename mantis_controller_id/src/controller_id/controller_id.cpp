@@ -22,6 +22,7 @@
 
 //TODO: use params
 #define NUM_MOTORS 6
+#define ANG_MOUNT M_PI/2
 
 ControllerID::ControllerID() :
 	nh_("~"),
@@ -98,7 +99,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		gq.z() = msg_odom_.pose.pose.orientation.z;
 		gq.w() = msg_odom_.pose.pose.orientation.w;
 		Eigen::Matrix3d gr = gq.normalized().toRotationMatrix();
-		double r1 = msg_joints_.position[0];
+		double r1 = msg_joints_.position[0] + ANG_MOUNT;
 		double r2 = msg_joints_.position[1];
 
 		double bvx = msg_odom_.twist.twist.linear.x;
