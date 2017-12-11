@@ -121,7 +121,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		ua(7,0) = 0.2*(0.0 - r2d);
 
 		calc_Dq(D, IJ0x, IJ0y, IJ0z, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, l1, l2, m0, m1, m2, r1, r2);
-		calc_Cqqd(C, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, bvx, bvy, bvz, bwx, bwy, bwz, l1, l2, r1, r1d, r2, r2d);
+		calc_Cqqd(C, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, bvx, bvy, bvz, bwx, bwy, bwz, l1, l2, m1, m2, r1, r1d, r2, r2d);
 		calc_Lqd(L);
 		calc_Nq(N, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, g, gr(2,0), gr(2,1), gr(2,2), l1, l2, m0, m1, m2, r1, r2);
 
