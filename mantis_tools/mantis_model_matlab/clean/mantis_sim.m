@@ -192,18 +192,23 @@ A2 = simplify(A2);
 % J1_2 = diff(g1,r2)*g1inv;
 J1_1 = g1inv*diff(g1,r1);
 J1_2 = g1inv*diff(g1,r2);
-J1_sum = J1_1 + J1_2;
-J(:,1) = [vee_down(J1_sum(1:3,1:3)); 0; 0; 0];
+J1(:,1) = [vee_down(J1_1(1:3,1:3)); J1_1(1:3,4)];
+J1(:,2) = [vee_down(J1_2(1:3,1:3)); J1_2(1:3,4)];
+% J1_sum = J1_1 + J1_2;
+% J(:,1) = [vee_down(J1_sum(1:3,1:3)); 0; 0; 0];
 
 % J2_1 = diff(g2,r1)*g2inv; 
 % J2_2 = diff(g2,r2)*g2inv;
 J2_1 = g2inv*diff(g2,r1);
 J2_2 = g2inv*diff(g2,r2);
-J2_sum = J2_1 + J2_2;
-J(:,2) = [vee_down(J2_sum(1:3,1:3)); 0; 0; 0];
+J2(:,1) = [vee_down(J2_1(1:3,1:3)); J2_1(1:3,4)];
+J2(:,2) = [vee_down(J2_2(1:3,1:3)); J2_2(1:3,4)];
+% J2_sum = J2_1 + J2_2;
+% J(:,2) = [vee_down(J2_sum(1:3,1:3)); 0; 0; 0];
 
 %Simplify Geometric Jacobian
-J = simplify(J);
+J1 = simplify(J1);
+J2 = simplify(J2);
 
 
 %% Equations of Motion
@@ -240,10 +245,10 @@ disp('Calculating Inertia Matrix')
 
 %disp('Simplify step 1')
 % M_A_A is I0 plus sum of all other links
-
-I1s = A1'*I1*A1;
-I2s = A2'*I2*A2;
-
+% 
+% I1s = A1'*I1*A1;
+% I2s = A2'*I2*A2;
+%
 % disp('    Simplifing I1s')
 % fprintf('    Progress:\n');
 % fprintf(['    ' repmat('.',1,numel(I1s)) '\n    \n']);
@@ -260,10 +265,10 @@ I2s = A2'*I2*A2;
 %     fprintf('\b|\n');
 % end
 
-M_A_A = I0 + I1s + I2s;
-M_A_J = A1'*I1*J + A2'*I2*J;
-M_J_A = J'*I1*A1 + J'*I2*A2;
-M_J_J = J'*I1*J + J'*I2*J;
+M_A_A = I0 + A1'*I1*A1 + A2'*I2*A2;
+M_A_J = A1'*I1*J1 + A2'*I2*J2;
+M_J_A = J1'*I1*A1 + J2'*I2*A2;
+M_J_J = J1'*I1*J1 + J2'*I2*J2;
 
 % disp('Simplify step 2')
 % M_A_J = simplify(A1'*I1*J) + simplify(A2'*I2*J);
@@ -579,7 +584,7 @@ gy0 = [Ry0, py0; ...
 vy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
 %gdy0 = [0.1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
 
-r0 = [0; pi/2]; %r1, r2
+r0 = [0;pi/2]; %r1, r2
 
 rd0 = [0; 0]; %r1d, r2d
 
