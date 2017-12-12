@@ -1,6 +1,6 @@
-#include <Eigen3/Dense>
+#include <eigen3/Eigen/Dense>
 
-inline void calc_G1(Eigen::Vector3d& G1, double g0_1_1, double g0_1_2, double g0_1_3, double g0_1_4, double g0_2_1, double g0_2_2, double g0_2_3, double g0_2_4, double g0_3_1, double g0_3_2, double g0_3_3, double g0_3_4, double g0_4_1, double g0_4_2, double g0_4_3, double g0_4_4, double l1, double r1) {
+inline void calc_G1(Eigen::MatrixXd& G1, double g0_1_1, double g0_1_2, double g0_1_3, double g0_1_4, double g0_2_1, double g0_2_2, double g0_2_3, double g0_2_4, double g0_3_1, double g0_3_2, double g0_3_3, double g0_3_4, double g0_4_1, double g0_4_2, double g0_4_3, double g0_4_4, double l1, double r1) {
 	G1(0,0) = g0_1_1*cos(r1)-g0_1_3*sin(r1);
 	G1(1,0) = g0_2_1*cos(r1)-g0_2_3*sin(r1);
 	G1(2,0) = g0_3_1*cos(r1)-g0_3_3*sin(r1);

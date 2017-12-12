@@ -1,6 +1,6 @@
-#include <Eigen3/Dense>
+#include <eigen3/Eigen/Dense>
 
-inline void calc_Nq(Eigen::Vector3d& Nq, double IJ1y, double IJ1z, double IJ2x, double IJ2y, double IJ2z, double g, double g0_3_1, double g0_3_2, double g0_3_3, double l1, double l2, double m0, double m1, double m2, double r1, double r2) {
+inline void calc_Nq(Eigen::MatrixXd& Nq, double IJ1y, double IJ1z, double IJ2x, double IJ2y, double IJ2z, double g, double g0_3_1, double g0_3_2, double g0_3_3, double l1, double l2, double m0, double m1, double m2, double r1, double r2) {
 	Nq(0,0) = -g*g0_3_2*(IJ2z*sin(r1+r2)*(l2*(1.0/2.0)+l1*cos(r2))+IJ1z*l1*sin(r1)*(1.0/2.0)-IJ2x*l1*cos(r1+r2)*sin(r2));
 	Nq(1,0) = g*g0_3_3*(IJ2y*(l2*cos(r1+r2)*(1.0/2.0)+l1*cos(r1))+IJ1y*l1*cos(r1)*(1.0/2.0))+g*g0_3_1*(IJ2y*(l2*sin(r1+r2)*(1.0/2.0)+l1*sin(r1))+IJ1y*l1*sin(r1)*(1.0/2.0));
 	Nq(2,0) = -g*g0_3_2*(IJ2z*cos(r1+r2)*(l2*(1.0/2.0)+l1*cos(r2))+IJ1z*l1*cos(r1)*(1.0/2.0)+IJ2x*l1*sin(r1+r2)*sin(r2));

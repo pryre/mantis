@@ -1,6 +1,6 @@
-#include <Eigen3/Dense>
+#include <eigen3/Eigen/Dense>
 
-inline void calc_Cqqd(Eigen::Vector3d& Cqqd, double IJ1x, double IJ1y, double IJ1z, double IJ2x, double IJ2y, double IJ2z, double bvx, double bvy, double bvz, double bw1, double bw2, double bw3, double l1, double l2, double m1, double m2, double r1, double r1d, double r2, double r2d) {
+inline void calc_Cqqd(Eigen::MatrixXd& Cqqd, double IJ1x, double IJ1y, double IJ1z, double IJ2x, double IJ2y, double IJ2z, double bvx, double bvy, double bvz, double bw1, double bw2, double bw3, double l1, double l2, double m1, double m2, double r1, double r1d, double r2, double r2d) {
 	Cqqd(0,0) = -r1d*(IJ2x*cos(r1+r2)*sin(r1+r2)-IJ2z*cos(r1+r2)*sin(r1+r2)+IJ1x*cos(r1)*sin(r1)-IJ1z*cos(r1)*sin(r1))-r2d*(IJ2x*cos(r1+r2)*sin(r1+r2)-IJ2z*cos(r1+r2)*sin(r1+r2));
 	Cqqd(2,0) = -r1d*(IJ2x*cos(r1*2.0+r2*2.0)*(1.0/2.0)-IJ2z*cos(r1*2.0+r2*2.0)*(1.0/2.0)+IJ1x*cos(r1*2.0)*(1.0/2.0)-IJ1z*cos(r1*2.0)*(1.0/2.0))-r2d*(IJ2x*cos(r1*2.0+r2*2.0)*(1.0/2.0)-IJ2z*cos(r1*2.0+r2*2.0)*(1.0/2.0));
 	Cqqd(4,0) = -r2d*(IJ2z*cos(r1+r2)*(l2*(1.0/2.0)+l1*cos(r2))*(1.0/2.0)-IJ2x*l1*cos(r1+r2)*cos(r2)*(1.0/2.0)+IJ2x*l1*sin(r1+r2)*sin(r2)*(1.0/2.0)-IJ2z*l1*sin(r1+r2)*sin(r2)*(1.0/2.0))-r1d*(IJ2z*cos(r1+r2)*(l2*(1.0/2.0)+l1*cos(r2))*(1.0/2.0)+IJ1z*l1*cos(r1)*(1.0/4.0)+IJ2x*l1*sin(r1+r2)*sin(r2)*(1.0/2.0));

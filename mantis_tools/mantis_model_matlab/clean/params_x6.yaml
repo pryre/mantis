@@ -19,7 +19,7 @@ arm:
       x: 0.0
       y: 0.0
       z: -0.05
-    rotation: -1.570796326794897 # radians
+    rotation: 1.570796326794897 # radians
   links: 2
   length: 0.25 # m
   link_mass: 0.1 # kg

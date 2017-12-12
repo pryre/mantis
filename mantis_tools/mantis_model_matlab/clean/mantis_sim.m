@@ -170,11 +170,14 @@ g1inv = simplify(g1inv);
 g2inv = simplify(g2inv);
 
 %Inverse Adjoint for each link
-A1 = [g1R', -g1R'*vee_up(g1p); ...
-      zeros(3), g1R'];
+% A1 = [g1R', -g1R'*vee_up(g1p); ...
+%       zeros(3), g1R'];
+% 
+% A2 = [    g2R', -g2R'*vee_up(g2p); ...
+%       zeros(3),              g2R'];
 
-A2 = [    g2R', -g2R'*vee_up(g2p); ...
-      zeros(3),              g2R'];
+A1 = adjoint_trans(g1inv);
+A2 = adjoint_trans(g2inv);
 
 %Simplify Adjoints
 A1 = simplify(A1);
@@ -192,6 +195,8 @@ A2 = simplify(A2);
 % J1_2 = diff(g1,r2)*g1inv;
 J1_1 = g1inv*diff(g1,r1);
 J1_2 = g1inv*diff(g1,r2);
+% J1_1 = diff(g1inv,r1)*g1;
+% J1_2 = diff(g1inv,r2)*g1;
 J1(:,1) = [vee_down(J1_1(1:3,1:3)); J1_1(1:3,4)];
 J1(:,2) = [vee_down(J1_2(1:3,1:3)); J1_2(1:3,4)];
 % J1_sum = J1_1 + J1_2;
@@ -201,6 +206,8 @@ J1(:,2) = [vee_down(J1_2(1:3,1:3)); J1_2(1:3,4)];
 % J2_2 = diff(g2,r2)*g2inv;
 J2_1 = g2inv*diff(g2,r1);
 J2_2 = g2inv*diff(g2,r2);
+% J2_1 = diff(g2inv,r1)*g2;
+% J2_2 = diff(g2inv,r2)*g2;
 J2(:,1) = [vee_down(J2_1(1:3,1:3)); J2_1(1:3,4)];
 J2(:,2) = [vee_down(J2_2(1:3,1:3)); J2_2(1:3,4)];
 % J2_sum = J2_1 + J2_2;
@@ -508,6 +515,7 @@ G_eq = cell(size(Gq));
 
 state_vars =[r1; r2; qd];
 pose_vars = [g0(:);r1;r2];
+grav_vars = [g0(3,1:3)';r1;r2];
 
 disp('    Preparing Dq solver')
 fprintf('    Progress:\n');
@@ -529,7 +537,7 @@ disp('    Preparing N solver')
 fprintf('    Progress:\n');
 fprintf(['    ' repmat('.',1,numel(Nq)) '\n    \n']);
 parfor i = 1:numel(Nq)
-    N_eq(i) = {matlabFunction(Nq_sub(i), 'Vars', pose_vars)};
+    N_eq(i) = {matlabFunction(Nq_sub(i), 'Vars', grav_vars)};
     fprintf('\b|\n');
 end
 
@@ -639,11 +647,7 @@ for k = 1:(length(t)-1)
     for i = 1:numel(N)
         %g, r1, r2
         %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
-        N(i) = N_eq{i}(gk(1,1), gk(2,1), gk(3,1), gk(4,1), ...
-                       gk(1,2), gk(2,2), gk(3,2), gk(4,2), ...
-                       gk(1,3), gk(2,3), gk(3,3), gk(4,3), ...
-                       gk(1,4), gk(2,4), gk(3,4), gk(4,4), ...
-                       rk(1), rk(2));
+        N(i) = N_eq{i}(gk(3,1), gk(3,2), gk(3,3), rk(1), rk(2));
     end
 
     M = double(Mm_sub);
@@ -661,6 +665,9 @@ for k = 1:(length(t)-1)
 end
 disp('100%')
 
+disp('tau:')
+disp(tau)
+disp('u:')
 disp(u)
 
 
