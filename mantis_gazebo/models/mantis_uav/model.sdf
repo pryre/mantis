@@ -822,11 +822,11 @@
 
 
 	<joint type="revolute" name="joint_shoulder_upperarm_servo">
-      <pose>0 0 0.09 0 0 0</pose>
+      <pose>0 0 0.09 1.570796327 0 0</pose>
       <parent>arm_link_shoulder_servo</parent>
       <child>arm_link_upperarm</child>
       <axis>
-        <xyz>0 1 0</xyz>
+        <xyz>0 0 1</xyz>
         <dynamics>
           <damping>0.01</damping>
           <spring_reference>0.0</spring_reference>
@@ -921,11 +921,11 @@
 
 
 	<joint type="revolute" name="joint_elbow_forearm_servo">
-      <pose>0 0 0.09 0 0 0</pose>
+      <pose>0 0 0.09 1.570796327 0 0</pose>
       <parent>arm_link_elbow_servo</parent>
       <child>arm_link_forearm</child>
       <axis>
-        <xyz>0 1 0</xyz>
+        <xyz>0 0 1</xyz>
         <dynamics>
           <damping>0.01</damping>
           <spring_reference>0.0</spring_reference>
