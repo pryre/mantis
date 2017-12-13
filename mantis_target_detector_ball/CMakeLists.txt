@@ -21,6 +21,7 @@ add_definitions(-std=c++11)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package(OpenCV REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -154,6 +155,7 @@ add_dependencies(mantis_target_detector_node ${${PROJECT_NAME}_EXPORTED_TARGETS}
 ## Specify libraries to link a library or executable target against
 target_link_libraries(mantis_target_detector_node
   ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
 )
 
 #############

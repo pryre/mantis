@@ -129,7 +129,7 @@ bool InterfaceDynamixel::enable_torque(mantis_interface_dynamixel::EnableTorque:
 }
 
 void InterfaceDynamixel::init_motor(std::string motor_model, uint8_t motor_id, double protocol_version) {
-	dynamixel_tool::DynamixelTool dynamixel_motor(motor_id, motor_model, protocol_version);
+	dynamixel_tool::DynamixelTool dynamixel_motor(motor_id, motor_model);
 	dynamixel_.push_back(dynamixel_motor);
 }
 
