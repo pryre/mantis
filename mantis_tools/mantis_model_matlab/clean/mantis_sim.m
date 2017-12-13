@@ -158,13 +158,13 @@ gb(4,:) = [zeros(1,3), 1];
 gbinv = inverse_trans(gb);
 
 %Joint geometries
-gjb0 = dh_gen(l0, 0, 0, pi/2);
-gj01 = dh_gen(0, r1, l1, 0);
-gj12 = dh_gen(0, r2, l2, 0);
+gjb0 = dh_gen(l0,         0,  0, pi/2);
+gj01 = dh_gen( 0, r1 - pi/2, l1,    0);
+gj12 = dh_gen( 0,        r2, l2,    0);
 
 %Link CoM geometries
-gj0l1 = dh_gen(0, r1, l1/2, 0);
-gj1l2 = dh_gen(0, r2, l2/2, 0);
+gj0l1 = dh_gen(0, r1 - pi/2, l1/2, 0);
+gj1l2 = dh_gen(0,        r2, l2/2, 0);
 
 %Link base-relative geometries
 g1 = gjb0*gj0l1;
@@ -620,9 +620,9 @@ gy0 = [Ry0, py0; ...
 vy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
 %gdy0 = [0.1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
 
-r0 = [0;-3*pi/4]; %r1, r2
+r0 = [0;0]; %r1, r2
 
-rd0 = [0; 0]; %r1d, r2d
+rd0 = [0;0]; %r1d, r2d
 
 y0 = [gy0(:); r0; vy0; rd0];
 
