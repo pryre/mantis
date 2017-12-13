@@ -26,23 +26,26 @@ disp('Generating Parameters')
 
 % Forward Kinematic Model
 %Parameters
-syms g la km kt l1 l2 m0 m1 m2 'positive'
+syms g la km kt l0 l1 l2 m0 m1 m2 'positive'
 %Arm links
 syms phi bw1 bw1d theta bw2 bw2d psi bw3 bw3d 'real'
 syms bx by bz bvx bvxd bvy bvyd bvz bvzd 'real'
 syms r1 r2 r1d r2d r1dd r2dd 'real'
 %%
-% Base Link
-g0 = sym('g0_', 4, 'real');
-g0inv = [g0(1:3,1:3)', -g0(1:3,1:3)'*g0(1:3,4); ...
-         zeros(1,3), 1];
-%g0d = sym('g0d', 4, 'real');
-%g0dd = sym('g0dd', 4, 'real');
+% % Base Link
+% gb = sym('gb_', 4, 'real');
+% gbinv = inverse_trans(gb);
+% gbinv = [gb(1:3,1:3)', -gb(1:3,1:3)'*gb(1:3,4); ...
+%          zeros(1,3), 1];
+%      
 
-%g0(4,1:3) = 0;
-%g0(4,4) = 1;
-%g0d(4,1:3) = 0;
-%g0dd(4,1:3) = 0;
+%gbd = sym('gbd', 4, 'real');
+%gbdd = sym('gbdd', 4, 'real');
+
+%gb(4,1:3) = 0;
+%gb(4,4) = 1;
+%gbd(4,1:3) = 0;
+%gbdd(4,1:3) = 0;
 
 % Mount Link (mounted directly downwards, pi/2 pitch)
 %Rphi = [1, 0, 0;
@@ -57,13 +60,13 @@ g0inv = [g0(1:3,1:3)', -g0(1:3,1:3)'*g0(1:3,4); ...
 
 %R0 = Rphi*Rtheta*Rpsi;
 
-%g0(1:3,1:3) = R0;
-%g0(1:3,4) = [bx;by;bz];
+%gb(1:3,1:3) = R0;
+%gb(1:3,4) = [bx;by;bz];
 
 %p0 = [x; y; z];
-%g0 = [R0, p0; ...
+%gb = [R0, p0; ...
 %      zeros(1,3), 1];
-%g0inv = [R0', -R0'*p0; ...
+%gbinv = [R0', -R0'*p0; ...
 %         zeros(1,3), 1];
 
 
@@ -71,10 +74,10 @@ g0inv = [g0(1:3,1:3)', -g0(1:3,1:3)'*g0(1:3,4); ...
 %         psid, 0, -phid;
 %         -thetad, phid, 0];
 %p0dot = [xd; yd; zd];
-%g0dot = [R0dot, p0dot; ...
+%gbdot = [R0dot, p0dot; ...
 %         zeros(1,3), 1];
 
-%Vhat = g0inv*g0dot;
+%Vhat = gbinv*gbdot;
 
 % Body frame velocity
 %syms vbx vby vbz w1 w2 w3 w1d w2d w3d 'real'
@@ -103,11 +106,11 @@ disp('Calculating Kinematics')
 %        0, 1, 0; ...
 %        -sin(r2), 0, cos(r2)];
 %
-% g01_0 = [eye(3), [0;0;0]; ...
+% gb1_0 = [eye(3), [0;0;0]; ...
 %          zeros(1,3), 1];
-% g02_0 = [eye(3), [0;0;-l1]; ...
+% gb2_0 = [eye(3), [0;0;-l1]; ...
 %          zeros(1,3), 1];
-% g0e_0 = [eye(3), [0;0;-l1-l2]; ...
+% gbe_0 = [eye(3), [0;0;-l1-l2]; ...
 %          zeros(1,3), 1];
 %
 % % w1 = [0;1;0];
@@ -123,47 +126,67 @@ disp('Calculating Kinematics')
 % etr2 = [ewr2, zeros(3,1); ...
 %        zeros(1,3), 1];
 %
-% g01 = etr1*g01_0;
-% g02 = etr1*etr2*g02_0;
-% g0e = etr1*etr2*g0e_0; %TODO Understand this process more!!
+% gb1 = etr1*gb1_0;
+% gb2 = etr1*etr2*gb2_0;
+% gbe = etr1*etr2*gbe_0; %TODO Understand this process more!!
 
-g01 = [ cos(r1), 0, sin(r1),  l1*cos(r1); ...
-              0, 1,       0,           0; ...
-       -sin(r1), 0, cos(r1), -l1*sin(r1); ...
-              0, 0,       0,           1];
-g12 = [ cos(r2), 0, sin(r2),  l2*cos(r2); ...
-              0, 1,       0,           0; ...
-       -sin(r2), 0, cos(r2), -l2*sin(r2); ...
-              0, 0,       0,           1];
+% 
+% gb1 = [ cos(r1), 0, sin(r1),  l1*cos(r1); ...
+%               0, 1,       0,           0; ...
+%        -sin(r1), 0, cos(r1), -l1*sin(r1); ...
+%               0, 0,       0,           1];
+% g12 = [ cos(r2), 0, sin(r2),  l2*cos(r2); ...
+%               0, 1,       0,           0; ...
+%        -sin(r2), 0, cos(r2), -l2*sin(r2); ...
+%               0, 0,       0,           1];
+% 
+% %Geometries to the center of each link, relative to the base link
+% g1 = [ cos(r1), 0, sin(r1),  l1*cos(r1)/2; ...
+%              0, 1,       0,             0; ...
+%       -sin(r1), 0, cos(r1), -l1*sin(r1)/2; ...
+%              0, 0,       0,             1];
+% 
+% g2 = gb1*[ cos(r2), 0, sin(r2),  l2*cos(r2)/2; ...
+%                  0, 1,       0,             0; ...
+%           -sin(r2), 0, cos(r2), -l2*sin(r2)/2; ...
+%                  0, 0,       0,             1];
+% 
+% ge = gb1*g12; %End Effector
 
-%Geometries to the center of each link, relative to the base link
-g1 = [ cos(r1), 0, sin(r1),  l1*cos(r1)/2; ...
-             0, 1,       0,             0; ...
-      -sin(r1), 0, cos(r1), -l1*sin(r1)/2; ...
-             0, 0,       0,             1];
+gb = sym('gb_', 4, 'real');
+gb(4,:) = [zeros(1,3), 1];
+gbinv = inverse_trans(gb);
 
-g2 = g01*[ cos(r2), 0, sin(r2),  l2*cos(r2)/2; ...
-                 0, 1,       0,             0; ...
-          -sin(r2), 0, cos(r2), -l2*sin(r2)/2; ...
-                 0, 0,       0,             1];
+%Joint geometries
+gjb0 = dh_gen(l0, 0, 0, pi/2);
+gj01 = dh_gen(0, r1, l1, 0);
+gj12 = dh_gen(0, r2, l2, 0);
 
-ge = g01*g12; %End Effector
+%Link CoM geometries
+gj0l1 = dh_gen(0, r1, l1/2, 0);
+gj1l2 = dh_gen(0, r2, l2/2, 0);
+
+%Link base-relative geometries
+g1 = gjb0*gj0l1;
+g2 = gjb0*gj01*gj1l2;
 
 %Simplify geometries
 g1 = simplify(g1);
 g2 = simplify(g2);
-ge = simplify(ge);
 
 %Calculate inverse geometries
-g1p = g1(1:3,4);
-g1R = g1(1:3,1:3);
-g1inv = [      g1R', -g1R'*g1p; ...
-         zeros(1,3),         1];
-
-g2p = g2(1:3,4);
-g2R = g2(1:3,1:3);
-g2inv = [      g2R', -g2R'*g2p; ...
-         zeros(1,3),         1];
+% g1p = g1(1:3,4);
+% g1R = g1(1:3,1:3);
+% g1inv = [      g1R', -g1R'*g1p; ...
+%          zeros(1,3),         1];
+% 
+% g2p = g2(1:3,4);
+% g2R = g2(1:3,1:3);
+% g2inv = [      g2R', -g2R'*g2p; ...
+%          zeros(1,3),         1];
+    
+g1inv = inverse_trans(g1);
+g2inv = inverse_trans(g2);
 
 %Simplify inverse geometries
 g1inv = simplify(g1inv);
@@ -365,7 +388,7 @@ disp('Calculating Potential Energy')
 % ggrav = sym(diag(ones(4,1)));
 % ggrav(3,4) = g;
 % ggrav(4,4) = 1;
-% f_grav = g0*ggrav;
+% f_grav = gb*ggrav;
 % P(4) = bx*m0*f_grav(1,4); %bx
 % P(5) = by*m0*f_grav(2,4); %by
 % P(6) = bz*m0*f_grav(3,4); %bz
@@ -374,11 +397,11 @@ disp('Calculating Potential Energy')
 % gcg = sym(diag(ones(4,1)));
 %
 % gcg(1,4) = l1/2;
-% center_height = g0*g01*gcg;
+% center_height = gb*gb1*gcg;
 % P(7) = m1*g*center_height(3,4); %r1
 %
 % gcg(1,4) = l2/2;
-% center_height = g0*g01*g12*gcg;
+% center_height = gb*gb1*g12*gcg;
 % P(8) = m2*g*center_height(3,4); %r2
 %
 %
@@ -398,7 +421,7 @@ disp('Calculating Potential Energy')
 %Nq = sym(zeros(size(q)));
 
 world_grav = [0;0;g];
-body_rot = g0(1:3,1:3)';
+body_rot = gb(1:3,1:3)';
 body_grav = body_rot*world_grav;
 
 accel_grav = [0;0;0;body_grav;0;0];
@@ -446,9 +469,10 @@ Mm = [motor_map, zeros(params.motor.num, params.arm.links); ...
 
 %Build pose solvers
 Gq = cell(params.arm.links + 1, 1);
-Gq(1) = {g0}; %Base link
-Gq(2) = {g0*g01}; %End of link 1
-Gq(3) = {g0*g01*g12}; %End of link 2
+Gq(1) = {gb}; %Base link
+Gq(2) = {gb*gjb0}; %Base link
+Gq(3) = {gb*gjb0*gj01}; %End of link 1
+Gq(4) = {gb*gjb0*gj01*gj12}; %End of link 2
 for i = 1:numel(Gq)
     Gq{i} = simplify(Gq{i});
 end
@@ -476,6 +500,7 @@ end
 sub_vals = [km, 0.5; ...
             kt, 1/(params.motor.num*params.motor.max_thrust); ... % TODO: CHANGE HERE AS WELL
             la, params.frame.motor_arm_length; ...
+            l0, -0.05; ...
             l1, params.arm.length; ...
             l2, params.arm.length; ...
             m0, 2.0; ...
@@ -514,8 +539,8 @@ N_eq = cell(size(Nq));
 G_eq = cell(size(Gq));
 
 state_vars =[r1; r2; qd];
-pose_vars = [g0(:);r1;r2];
-grav_vars = [g0(3,1:3)';r1;r2];
+pose_vars = [symvar(gb)';r1;r2];
+grav_vars = [gb(3,1:3)';r1;r2];
 
 disp('    Preparing Dq solver')
 fprintf('    Progress:\n');
@@ -592,7 +617,7 @@ gy0 = [Ry0, py0; ...
 vy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
 %gdy0 = [0.1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
 
-r0 = [0;pi/2]; %r1, r2
+r0 = [0;-3*pi/4]; %r1, r2
 
 rd0 = [0; 0]; %r1d, r2d
 
@@ -646,7 +671,7 @@ for k = 1:(length(t)-1)
 
     for i = 1:numel(N)
         %g, r1, r2
-        %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
+        %gb1_1,gb2_1,gb3_1,gb4_1,gb1_2,gb2_2,gb3_2,gb4_2,gb1_3,gb2_3,gb3_3,gb4_3,gb1_4,gb2_4,gb3_4,gb4_4,r1,r2
         N(i) = N_eq{i}(gk(3,1), gk(3,2), gk(3,3), rk(1), rk(2));
     end
 
@@ -691,14 +716,13 @@ for k=1:length(t)
 
     for i = 1:numel(G)
         %g, r1, r2
-        %g01_1,g02_1,g03_1,g04_1,g01_2,g02_2,g03_2,g04_2,g01_3,g02_3,g03_3,g04_3,g01_4,g02_4,g03_4,g04_4,r1,r2
+        %gb1_1,gb2_1,gb3_1,gb4_1,gb1_2,gb2_2,gb3_2,gb4_2,gb1_3,gb2_3,gb3_3,gb4_3,gb1_4,gb2_4,gb3_4,gb4_4,r1,r2
         G{i} = zeros(size(G_eq{i}));
 
         for j = 1:numel(G_eq{i})
-            G{i}(j) = G_eq{i}{j}(gk(1,1), gk(2,1), gk(3,1), gk(4,1), ...
-                                 gk(1,2), gk(2,2), gk(3,2), gk(4,2), ...
-                                 gk(1,3), gk(2,3), gk(3,3), gk(4,3), ...
-                                 gk(1,4), gk(2,4), gk(3,4), gk(4,4), ...
+            G{i}(j) = G_eq{i}{j}(gk(1,1), gk(1,2), gk(1,3), gk(1,4), ...
+                                 gk(2,1), gk(2,2), gk(2,3), gk(2,4), ...
+                                 gk(3,1), gk(3,2), gk(3,3), gk(3,4), ...
                                  rk(1), rk(2));
         end
     end
@@ -719,7 +743,7 @@ for k=1:length(t)
     end
 
     %Plot arm links
-    for i = 1:(params.arm.links)
+    for i = 1:(numel(G)-1)
         plot3([G{i}(1,4),G{i+1}(1,4)], [G{i}(2,4),G{i+1}(2,4)], [G{i}(3,4),G{i+1}(3,4)], 'color', 'b', 'linewidth', 2);
     end
 
