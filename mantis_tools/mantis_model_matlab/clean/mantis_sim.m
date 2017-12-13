@@ -424,7 +424,7 @@ world_grav = [0;0;g];
 body_rot = gb(1:3,1:3)';
 body_grav = body_rot*world_grav;
 
-accel_grav = [0;0;0;body_grav;0;0];
+accel_grav = [0;0;0;0;0;body_grav(3);0;0];
 Nq = Dq*accel_grav;
 
 
@@ -593,7 +593,7 @@ end
 disp('Preparing Simulation')
 
 phi0 = 0;
-theta0 = 0;
+theta0 = pi/2;
 psi0 = 0;
 x = 0;
 y = 0;
