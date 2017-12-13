@@ -11,7 +11,8 @@
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
-#include <mantis_controller_id/GoalPose.h>
+#include <geometry_msgs/AccelStamped.h>
+//#include <mantis_controller_id/GoalPose.h>
 
 #include <mavros_msgs/RCOut.h>
 #include <std_msgs/Float64.h>
@@ -35,9 +36,11 @@ ControllerID::ControllerID() :
 	pub_r1_ = nh_.advertise<std_msgs::Float64>("r1", 10);
 	pub_r2_ = nh_.advertise<std_msgs::Float64>("r2", 10);
 
-	sub_odom_ = nh_.subscribe<nav_msgs::Odometry>( "odom", 10, &ControllerID::callback_odom, this );
-	sub_joints_ = nh_.subscribe<sensor_msgs::JointState>( "joint_state", 10, &ControllerID::callback_joints, this );
-	sub_goal_ = nh_.subscribe<mantis_controller_id::GoalPose>( "goal", 10, &ControllerID::callback_goal, this );
+	sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
+	sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
+
+	sub_goal_accel_ = nh_.subscribe<geometry_msgs::AccelStamped>( "goal/accel", 10, &ControllerID::callback_goal_accel, this );
+	sub_goal_joints_ = nh_.subscribe<sensor_msgs::JointState>( "goal/joints", 10, &ControllerID::callback_goal_joints, this );
 
 	timer_ = nh_.createTimer(ros::Duration(1.0/param_rate_), &ControllerID::callback_control, this );
 }
@@ -56,6 +59,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 	//TODO: LOAD THROUGH PARAMS
 	double la = 0.275;
+	double l0 = -0.05;
 	double l1 = 0.2;
 	double l2 = 0.2;
 	double m0 = 2.0;
@@ -76,9 +80,10 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	//TODO: LOAD THROUGH PARAMS
 
 
-	if( ( msg_odom_.header.stamp != ros::Time(0) ) &&
-		( msg_joints_.header.stamp != ros::Time(0) ) ) { //TODO: &&
-		//TODO: ( msg_goal_.header.stamp != ros::Time(0) ) ) {
+	if( ( msg_state_odom_.header.stamp != ros::Time(0) ) &&
+		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
+		( msg_goal_accel_.header.stamp != ros::Time(0) ) &&
+		( msg_goal_joints_.header.stamp != ros::Time(0) ) ) {
 
 		ROS_INFO_ONCE("Inverse dynamics controller running!");
 
@@ -90,43 +95,83 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		Eigen::MatrixXd D = Eigen::MatrixXd::Constant(8, 8, 0.0);
 		Eigen::MatrixXd C = Eigen::MatrixXd::Constant(8, 8, 0.0);
 		Eigen::MatrixXd L = Eigen::MatrixXd::Constant(8, 8, 0.0);
-		Eigen::MatrixXd N = Eigen::MatrixXd::Constant(8, 1, 0.0);
+		//Eigen::MatrixXd N = Eigen::MatrixXd::Constant(8, 1, 0.0);
 
 		//XXX: Quick init for states
 		Eigen::Quaterniond gq;
-		gq.x() = msg_odom_.pose.pose.orientation.x;
-		gq.y() = msg_odom_.pose.pose.orientation.y;
-		gq.z() = msg_odom_.pose.pose.orientation.z;
-		gq.w() = msg_odom_.pose.pose.orientation.w;
+		gq.x() = msg_state_odom_.pose.pose.orientation.x;
+		gq.y() = msg_state_odom_.pose.pose.orientation.y;
+		gq.z() = msg_state_odom_.pose.pose.orientation.z;
+		gq.w() = msg_state_odom_.pose.pose.orientation.w;
 		Eigen::Matrix3d gr = gq.normalized().toRotationMatrix();
-		double r1 = msg_joints_.position[0] + ANG_MOUNT;
-		double r2 = msg_joints_.position[1];
+		double r1 = msg_state_joints_.position[0];
+		double r2 = msg_state_joints_.position[1];
 
-		double bvx = msg_odom_.twist.twist.linear.x;
-		double bvy = msg_odom_.twist.twist.linear.y;
-		double bvz = msg_odom_.twist.twist.linear.z;
-		double bwx = msg_odom_.twist.twist.angular.x;
-		double bwy = msg_odom_.twist.twist.angular.y;
-		double bwz = msg_odom_.twist.twist.angular.z;
-		double r1d = msg_joints_.velocity[0];
-		double r2d = msg_joints_.velocity[1];
+		double bvx = msg_state_odom_.twist.twist.linear.x;
+		double bvy = msg_state_odom_.twist.twist.linear.y;
+		double bvz = msg_state_odom_.twist.twist.linear.z;
+		double bwx = msg_state_odom_.twist.twist.angular.x;
+		double bwy = msg_state_odom_.twist.twist.angular.y;
+		double bwz = msg_state_odom_.twist.twist.angular.z;
+		double r1d = msg_state_joints_.velocity[0];
+		double r2d = msg_state_joints_.velocity[1];
 
-		//XXX: Zero velocity for now
-		ua(0,0) = 0.2*(0.0 - bwx);
-		ua(1,0) = 0.2*(0.0 - bwy);
-		ua(2,0) = 0.2*(0.0 - bwz);
-		ua(3,0) = 0.2*(0.0 - bvx);
-		ua(4,0) = 0.2*(0.0 - bvy);
-		ua(5,0) = 0.2*(0.0 - bvz);
-		ua(6,0) = 0.2*(0.0 - r1d);
-		ua(7,0) = 0.2*(0.0 - r2d);
+		//Do conversions from world to body frame
+		//Acceleration vectors for hover
+		//TODO: Need to rotate the acceleration vector to match body yaw first
 
-		calc_Dq(D, IJ0x, IJ0y, IJ0z, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, l1, l2, m0, m1, m2, r1, r2);
-		calc_Cqqd(C, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, bvx, bvy, bvz, bwx, bwy, bwz, l1, l2, m1, m2, r1, r1d, r2, r2d);
+		double ax = msg_goal_accel_.accel.linear.x;
+		double ay = msg_goal_accel_.accel.linear.y;
+		double az = g + msg_goal_accel_.accel.linear.z;
+		Eigen::Vector3d Ax(ax, 0.0, 0.0);
+		Eigen::Vector3d Ay(0.0, ay, 0.0);
+		Eigen::Vector3d Az(0.0, 0.0, az);
+		Eigen::Vector3d A(ax, ay, az);
+
+		/* TODO:
+		//Limit horizontal thrust by z thrust
+			double thrust_xy_max = gThrust.getZ() * std::tan( param_tilt_max_ );
+
+			//If thrust_sp_xy_len > thrust_xy_max
+			if( xyThrust.length() > thrust_xy_max ) {
+				//Scale the XY thrust setpoint down
+				double k = thrust_xy_max / xyThrust.length();
+				gThrust.setX( k*gThrust.getX() );
+				gThrust.setY( k*gThrust.getY() );
+				xyThrust.setX( gThrust.getX() );
+				xyThrust.setY( gThrust.getY() );
+			}
+		*/
+
+		 //TODO: This whole part is a hack
+		double phi = std::acos(Eigen::Vector3d::UnitZ().dot(Ax.normalized()));
+		double theta = std::acos(Eigen::Vector3d::UnitZ().dot(Ay.normalized()));
+
+		Eigen::Vector3d euler = gr.eulerAngles(2,1,0);
+
+		double goal_wx = 0.5*(phi - euler[2]);
+		double goal_wy = 0.5*(theta - euler[1]);
+		double goal_wz = 0.1*(0.0 - euler[0]);	//XXX: Hold with zero yaw for now
+
+		double goal_r1d = 0.2*(msg_goal_joints_.position[0] - r1);
+		double goal_r2d = 0.2*(msg_goal_joints_.position[1] - r2);
+
+		ua(0,0) = 0.2*(goal_wx - bwx);
+		ua(1,0) = 0.2*(goal_wy - bwy);
+		ua(2,0) = 0.2*(goal_wz - bwz);
+		ua(3,0) = 0.0;
+		ua(4,0) = 0.0;
+		ua(5,0) = A.norm();
+		ua(6,0) = 0.2*(goal_r1d - r1d);
+		ua(7,0) = 0.2*(goal_r2d - r2d);
+
+		//Calculate the
+		calc_Dq(D, IJ0x, IJ0y, IJ0z, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, l0, l1, l2, m0, m1, m2, r1, r2);
+		calc_Cqqd(C, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, bvx, bvy, bvz, bwx, bwy, bwz, l0, l1, l2, m1, m2, r1, r1d, r2, r2d);
 		calc_Lqd(L);
-		calc_Nq(N, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, g, gr(2,0), gr(2,1), gr(2,2), l1, l2, m0, m1, m2, r1, r2);
+		//calc_Nq(N, IJ1z, IJ2z, g, gr(2,2), l0, l1, l2, m0, m1, m2, r1, r2);
 
-		tau = D*ua + (C + L)*qd + N;
+		tau = D*ua + (C + L)*qd;// + N;
 
 		//XXX: Hardcoded for hex because lazy
 		Eigen::MatrixXd M = Eigen::MatrixXd::Constant(8, 8, 0.0);
@@ -174,14 +219,22 @@ int16_t ControllerID::map_pwm(double val) {
 	return int16_t((param_pwm_max_ - param_pwm_min_)*c) + param_pwm_min_;
 }
 
-void ControllerID::callback_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
-	msg_odom_ = *msg_in;
+void ControllerID::goal_rates(void) {
+
 }
 
-void ControllerID::callback_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
-	msg_joints_ = *msg_in;
+void ControllerID::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
+	msg_state_odom_ = *msg_in;
 }
 
-void ControllerID::callback_goal(const mantis_controller_id::GoalPose::ConstPtr& msg_in) {
-	msg_goal_ = *msg_in;
+void ControllerID::callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
+	msg_state_joints_ = *msg_in;
+}
+
+void ControllerID::callback_goal_accel(const geometry_msgs::AccelStamped::ConstPtr& msg_in) {
+	msg_goal_accel_ = *msg_in;
+}
+
+void ControllerID::callback_goal_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
+	msg_goal_joints_ = *msg_in;
 }

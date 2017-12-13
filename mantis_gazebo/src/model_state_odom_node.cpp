@@ -27,7 +27,7 @@ class ModelStatesOdom {
 		ModelStatesOdom() :
 			nh_( "~" ),
 			model_name_("mantis_uav"),
-			parent_name_("world"),
+			parent_name_("map"),
 			topic_model_states_("/gazebo/model_states"),
 			topic_odom_("/mantis_uav/odom") {
 

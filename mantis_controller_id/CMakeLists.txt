@@ -140,6 +140,7 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(controller_id_node src/controller_id_node.cpp)
+add_executable(pose_test_node src/pose_test_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -150,6 +151,7 @@ add_executable(controller_id_node src/controller_id_node.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(controller_id_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(pose_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 
@@ -159,6 +161,10 @@ target_link_libraries(${PROJECT_NAME}
 
 target_link_libraries(controller_id_node
   ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(pose_test_node
   ${catkin_LIBRARIES}
 )
 
