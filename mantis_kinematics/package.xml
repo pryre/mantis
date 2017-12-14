@@ -2,9 +2,9 @@
 <package>
   <name>mantis_kinematics</name>
   <version>0.0.0</version>
-  <description>The mantis_ik package</description>
+  <description>The mantis_kinematics package</description>
 
-  <!-- One maintainer tag required, multiple allowed, one person per tag --> 
+  <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
   <maintainer email="pryre@todo.todo">pryre</maintainer>
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/mantis_ik</url> -->
+  <!-- <url type="website">http://wiki.ros.org/kinetic_sample_sub_cpp</url> -->
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->
@@ -40,25 +40,24 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  
-  <build_depend>std_msgs</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>ml_msgs</build_depend>
-  <build_depend>dynamixel_msgs</build_depend>
+
   <build_depend>roscpp</build_depend>
-  <build_depend>message_filters</build_depend>
-  <build_depend>tf2_ros</build_depend>
+  <build_depend>eigen</build_depend>
   <build_depend>tf2</build_depend>
-  
-  
-  <run_depend>std_msgs</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>ml_msgs</run_depend>
-  <run_depend>dynamixel_msgs</run_depend>
+  <build_depend>tf2_ros</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+
   <run_depend>roscpp</run_depend>
-  <run_depend>message_filters</run_depend>
-  <run_depend>tf2_ros</run_depend>
+  <run_depend>eigen</run_depend>
   <run_depend>tf2</run_depend>
+  <run_depend>tf2_ros</run_depend>
+  <run_depend>nav_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>visualization_msgs</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

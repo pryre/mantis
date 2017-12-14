@@ -5,9 +5,6 @@
 #include <controller_id/calc_Cqqd.h>
 #include <controller_id/calc_Lqd.h>
 #include <controller_id/calc_Nq.h>
-#include <controller_id/calc_G0.h>
-#include <controller_id/calc_G1.h>
-#include <controller_id/calc_G2.h>
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
