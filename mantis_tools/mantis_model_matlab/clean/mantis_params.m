@@ -20,7 +20,7 @@ function [ p ] = mantis_params( filepath )
             p.frame.arm_angle = pi/4;
             
             thrust_scale = p.control.base_link.thrust.reserve;
-            arm_len = p.frame.motor_arm_length;
+            arm_len = p.frame.motor_radius;
             arm_ang = p.frame.arm_angle;
             max_thrust = p.motor.max_thrust;
             
@@ -51,7 +51,7 @@ function [ p ] = mantis_params( filepath )
             p.frame.arm_angle = pi/3;
             
             thrust_scale = p.control.base_link.thrust.reserve;
-            arm_len = p.frame.motor_arm_length;
+            arm_len = p.frame.motor_radius;
             arm_ang = p.frame.arm_angle;
             max_thrust = p.motor.max_thrust;
             
