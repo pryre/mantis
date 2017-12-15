@@ -5,6 +5,7 @@
 #include <controller_id/calc_Cqqd.h>
 #include <controller_id/calc_Lqd.h>
 #include <controller_id/calc_Nq.h>
+#include <controller_id/calc_Mm.h>
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
@@ -153,18 +154,19 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		double goal_r1d = 0.2*(msg_goal_joints_.position[0] - r1);
 		double goal_r2d = 0.2*(msg_goal_joints_.position[1] - r2);
 
-		ua(0,0) = 0.2*(goal_wx - bwx);
-		ua(1,0) = 0.2*(goal_wy - bwy);
-		ua(2,0) = 0.2*(goal_wz - bwz);
-		ua(3,0) = 0.0;
-		ua(4,0) = 0.0;
-		ua(5,0) = A.norm();
+		ua(0,0) = 0.0;
+		ua(1,0) = 0.0;
+		ua(2,0) = A.norm();
+		ua(3,0) = 0.2*(goal_wx - bwx);
+		ua(4,0) = 0.2*(goal_wy - bwy);
+		ua(5,0) = 0.2*(goal_wz - bwz);
 		ua(6,0) = 0.2*(goal_r1d - r1d);
 		ua(7,0) = 0.2*(goal_r2d - r2d);
 
 		//Calculate the
 		calc_Dq(D, IJ0x, IJ0y, IJ0z, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, l0, l1, l2, m0, m1, m2, r1, r2);
-		calc_Cqqd(C, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, bvx, bvy, bvz, bwx, bwy, bwz, l0, l1, l2, m1, m2, r1, r1d, r2, r2d);
+		//calc_Cqqd(C, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, bvx, bvy, bvz, bwx, bwy, bwz, l0, l1, l2, m1, m2, r1, r1d, r2, r2d);
+		calc_Cqqd(C, IJ1x, IJ1y, IJ2x, IJ2y, bvx, bvy, bvz, bwx, bwy, bwz, l0, l1, l2, m1, m2, r1, r1d, r2, r2d);
 		calc_Lqd(L);
 		//calc_Nq(N, IJ1z, IJ2z, g, gr(2,2), l0, l1, l2, m0, m1, m2, r1, r2);
 
@@ -172,7 +174,9 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		//XXX: Hardcoded for hex because lazy
 		Eigen::MatrixXd M = Eigen::MatrixXd::Constant(8, 8, 0.0);
+		calc_Mm(M);
 
+		/*
 		double mr30 = std::cos(M_PI/6.0);
 		double mr60 = std::cos(M_PI/3.0);
 		M <<      -la*kt,           0,  km, 0, 0, kt, 0, 0,
@@ -184,6 +188,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			           0,           0,   0, 0, 0,  0, 1, 0,
 			  	       0,           0,   0, 0, 0,  0, 0, 1;
 		//XXX: Hardcoded for hex because lazy
+		*/
 
 		Eigen::MatrixXd u = M*tau;
 

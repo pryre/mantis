@@ -54,8 +54,8 @@ PoseTest::PoseTest() :
 	msg_joints_.header.frame_id = "map";
 	msg_joints_.name.push_back("shoulder");
 	msg_joints_.name.push_back("elbow");
-	msg_joints_.position.push_back(M_PI/2.0);
-	msg_joints_.position.push_back(M_PI/2.0);
+	msg_joints_.position.push_back(M_PI/4.0);
+	msg_joints_.position.push_back(M_PI/4.0);
 
 	timer_ = nh_.createTimer(ros::Duration(0.01), &PoseTest::callback, this );
 

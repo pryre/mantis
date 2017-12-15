@@ -44,6 +44,4 @@
   <group if="$(arg gui)">
     <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen"/>
   </group>
-
-  <node name="model_odom" pkg="mantis_gazebo" type="model_state_odom_node" respawn="$(arg respawn_gazebo)" output="screen"/>
 </launch>
