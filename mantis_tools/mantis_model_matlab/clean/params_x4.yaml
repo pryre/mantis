@@ -13,6 +13,7 @@ control:
 
 motor:
   max_thrust: 6.865 # N
+  prop_drag: 0.05
 
 arm:
   mount:

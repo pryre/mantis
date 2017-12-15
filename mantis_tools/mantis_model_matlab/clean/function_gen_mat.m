@@ -2,9 +2,20 @@ function [  ] = function_gen_mat( m, m_name )
 %FUNCTION_GEN_MAT Generates a C++ function to calculate matrices
 %   Detailed explanation goes here
 
-    var_str = symvar(m);
     t = char(9);
     n = char(10);
+    
+    var_str = [];
+    
+    try
+        var_str = symvar(m); %Try to get out the variables in the matrix
+    catch ex
+        if ~strcmp(ex.identifier, 'MATLAB:catenate:dimensionMismatch')
+            error(ex) %If it's not the error we expect, error
+        else    
+            m = sym(m); %else, the function was probably passed a static matrix
+        end
+    end
 
     %Generate function call
     fun_str = ['#include <eigen3/Eigen/Dense>', n, n, 'inline void calc_', m_name, '(Eigen::MatrixXd& ', m_name];

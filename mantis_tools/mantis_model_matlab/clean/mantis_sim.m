@@ -16,8 +16,8 @@ dt = 0.005;
 %g = -9.80665; %m/s
 
 % Load system parameters
-params = mantis_params('params_x4.yaml');
-%params = mantis_params('params_x6.yaml');
+%params = mantis_params('params_x4.yaml');
+params = mantis_params('params_x6.yaml');
 
 
 %% Generate the system model
@@ -26,7 +26,7 @@ disp('Generating Parameters')
 
 % Forward Kinematic Model
 %Parameters
-syms g la km kt l0 l1 l2 m0 m1 m2 'positive'
+syms  g l0 l1 l2 m0 m1 m2 'positive'
 %Arm links
 syms phi bw1 bw1d theta bw2 bw2d psi bw3 bw3d 'real'
 syms bx by bz bvx bvxd bvy bvyd bvz bvzd 'real'
@@ -206,34 +206,30 @@ A2 = adjoint_trans(g2inv);
 A1 = simplify(A1);
 A2 = simplify(A2);
 
-
-% ========================= %
-% THESE JACOBIANS ARE WRONG %
-% ========================= %
-
-
 %Maybe supposed to be diffgX, then multiply
 % J1_1 = diff(g1,r1)*g1inv;
 % J1_2 = diff(g1,r2)*g1inv;
-J1_1 = g1inv*diff(g1,r1);
-J1_2 = g1inv*diff(g1,r2);
 % J1_1 = diff(g1inv,r1)*g1;
 % J1_2 = diff(g1inv,r2)*g1;
-J1(:,1) = [vee_down(J1_1(1:3,1:3)); J1_1(1:3,4)];
-J1(:,2) = [vee_down(J1_2(1:3,1:3)); J1_2(1:3,4)];
+% J1_1 = g1inv*diff(g1,r1);
+% J1_2 = g1inv*diff(g1,r2);
+% J1(:,1) = [vee_down(J1_1(1:3,1:3)); J1_1(1:3,4)];
+% J1(:,2) = [vee_down(J1_2(1:3,1:3)); J1_2(1:3,4)];
 % J1_sum = J1_1 + J1_2;
 % J(:,1) = [vee_down(J1_sum(1:3,1:3)); 0; 0; 0];
 
 % J2_1 = diff(g2,r1)*g2inv; 
 % J2_2 = diff(g2,r2)*g2inv;
-J2_1 = g2inv*diff(g2,r1);
-J2_2 = g2inv*diff(g2,r2);
 % J2_1 = diff(g2inv,r1)*g2;
 % J2_2 = diff(g2inv,r2)*g2;
-J2(:,1) = [vee_down(J2_1(1:3,1:3)); J2_1(1:3,4)];
-J2(:,2) = [vee_down(J2_2(1:3,1:3)); J2_2(1:3,4)];
+% J2_1 = g2inv*diff(g2,r1);
+% J2_2 = g2inv*diff(g2,r2);
+% J2(:,1) = [vee_down(J2_1(1:3,1:3)); J2_1(1:3,4)];
+% J2(:,2) = [vee_down(J2_2(1:3,1:3)); J2_2(1:3,4)];
 % J2_sum = J2_1 + J2_2;
 % J(:,2) = [vee_down(J2_sum(1:3,1:3)); 0; 0; 0];
+J1 = jacobian_gen(g1,[r1;r2]);
+J2 = jacobian_gen(g2,[r1;r2]);
 
 %Simplify Geometric Jacobian
 J1 = simplify(J1);
@@ -250,23 +246,27 @@ syms IJ1x IJ1y IJ1z 'positive'
 syms IJ2x IJ2y IJ2z 'positive'
 
 % Base link
-IJ0 = [IJ0x, 0, 0; ... %Rotational Inertial Tensor
-       0, IJ0y, 0; ...
-       0, 0, IJ0z];
-I0 = [IJ0, zeros(3); ... %Pose Inertial Tensor
-      zeros(3), m0*eye(3)];
+% IJ0 = [IJ0x, 0, 0; ... %Rotational Inertial Tensor
+%        0, IJ0y, 0; ...
+%        0, 0, IJ0z];
+% I0 = [IJ0, zeros(3); ... %Pose Inertial Tensor
+%       zeros(3), m0*eye(3)];
+% 
+% IJ1 = [IJ1x, 0, 0; ... %Rotational Inertial Tensor
+%       0, IJ1y, 0; ...
+%       0, 0, IJ1z];
+% I1 = [IJ1, zeros(3); ... %Pose Inertial Tensor
+%       zeros(3), m1*eye(3)];
+% 
+% IJ2 = [IJ2x, 0, 0; ... %Rotational Inertial Tensor
+%       0, IJ2y, 0; ...
+%       0, 0, IJ2z];
+% I2 = [IJ2, zeros(3); ... %Pose Inertial Tensor
+%       zeros(3), m2*eye(3)];
 
-IJ1 = [IJ1x, 0, 0; ... %Rotational Inertial Tensor
-      0, IJ1y, 0; ...
-      0, 0, IJ1z];
-I1 = [IJ1, zeros(3); ... %Pose Inertial Tensor
-      zeros(3), m1*eye(3)];
-
-IJ2 = [IJ2x, 0, 0; ... %Rotational Inertial Tensor
-      0, IJ2y, 0; ...
-      0, 0, IJ2z];
-I2 = [IJ2, zeros(3); ... %Pose Inertial Tensor
-      zeros(3), m2*eye(3)];
+I0 = inertial_gen(m0,IJ0x,IJ0y,IJ0z);
+I1 = inertial_gen(m1,IJ1x,IJ1y,IJ1z);
+I2 = inertial_gen(m2,IJ2x,IJ2y,IJ2z);
 
 % Formulate M(r)
 
@@ -426,7 +426,7 @@ bgv = gb(1:3,1:3)*wgv;
 bgz = g/(dot(wgv,bgv));
 
 
-accel_grav = [0;0;0;0;0;bgz;0;0];
+accel_grav = [0;0;bgz;0;0;0;0;0];
 Nq = Dq*accel_grav;
 
 
@@ -459,14 +459,7 @@ tauq = Dq*qdd + (Cqqd + Lqd)*qd + Nq;
 %% Formulate controller
 
 % M is a motor map, (num_motors + num_servos)x(6 + num_servos)
-mr = cos(pi/4);
-alen = params.arm.length;
-motor_map = [-mr*alen*kt, -mr*alen*kt,  km, 0, 0, kt; ... % TODO: CHANGE HERE
-              mr*alen*kt,  mr*alen*kt,  km, 0, 0, kt; ...
-              mr*alen*kt, -mr*alen*kt, -km, 0, 0, kt; ...
-              mr*alen*kt,  mr*alen*kt, -km, 0, 0, kt];
-
-Mm = [motor_map, zeros(params.motor.num, params.arm.links); ...
+Mm = [params.motor_map, zeros(params.motor.num, params.arm.links); ...
       zeros(params.arm.links,6), eye(params.arm.links)];
 
 %Build pose solvers
@@ -499,19 +492,16 @@ end
 
 %% Prep equations for faster calculations
 
-sub_vals = [km, 0.5; ...
-            kt, 1/(params.motor.num*params.motor.max_thrust); ... % TODO: CHANGE HERE AS WELL
-            la, params.frame.motor_radius; ...
-            l0, params.arm.mount.distance; ...
+sub_vals = [l0, params.arm.mount.distance; ...
             l1, params.arm.length; ...
             l2, params.arm.length; ...
             m0, params.frame.mass; ...
             m1, params.arm.mass; ...
             m2, params.arm.mass; ...
             g, 9.80665; ...
-            IJ0x, m0*(params.frame.height^2 + 3*la^2)/12; ...
-            IJ0y, m0*(params.frame.height^2 + 3*la^2)/12; ...
-            IJ0z, m0*la^2/2; ...
+            IJ0x, m0*(params.frame.height^2 + 3*params.frame.motor_radius^2)/12; ...
+            IJ0y, m0*(params.frame.height^2 + 3*params.frame.motor_radius^2)/12; ...
+            IJ0z, m0*params.frame.motor_radius^2/2; ...
             IJ1x, m1*(params.arm.radius^2)/12; ...
             IJ1y, m1*(3*params.arm.radius^2 + l1^2)/12; ...
             IJ1z, m1*(3*params.arm.radius^2 + l1^2)/12; ...
@@ -581,10 +571,12 @@ end
 
 
 %% Generate C Code
+disp('Generating C Code')
 function_gen_mat(Dq, 'Dq');
 function_gen_mat(Cqqd, 'Cqqd');
 function_gen_mat(sym(Lqd), 'Lqd');
 function_gen_mat(Nq, 'Nq');
+function_gen_mat(Mm, 'Mm');
 
 for i = 1:numel(Gq)
     function_gen_mat(Gq{i}, ['G', num2str(i-1)]);
@@ -616,10 +608,10 @@ py0 = [x; y; z];
 gy0 = [Ry0, py0; ...
        zeros(1,3), 1];
 
-vy0 = zeros(6,1); % w1, w2, w3, bvx, bvy, bvz
-%gdy0 = [0.1;0;0;0;0;0]; % w1, w2, w3, bvx, bvy, bvz
+vy0 = zeros(6,1); % bvx, bvy, bvz, w1, w2, w3,
+%gdy0 = [0.1;0;0;0;0;0]; % bvx, bvy, bvz, w1, w2, w3,
 
-r0 = [pi/2;0]; %r1, r2
+r0 = [-pi/2;0]; %r1, r2
 
 rd0 = [0;0]; %r1d, r2d
 

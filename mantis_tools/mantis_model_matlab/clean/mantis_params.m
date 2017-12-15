@@ -17,43 +17,48 @@ function [ p ] = mantis_params( filepath )
         case 'X4'
             disp('Using PixHawk X4 motor layout')
             
-            p.frame.arm_angle = pi/4;
-            
-            thrust_scale = p.control.base_link.thrust.reserve;
-            arm_len = p.frame.motor_radius;
-            arm_ang = p.frame.arm_angle;
-            max_thrust = p.motor.max_thrust;
+            arm_ang = pi/4;
             
             p.frame.map = [  -arm_ang; ...
                             3*arm_ang; ...
                               arm_ang; ...
                            -3*arm_ang];
                        
-            p.motor.num = numel(p.frame.map);
+            nm = numel(p.frame.map);
+            
+            thrust_scale = p.control.base_link.thrust.reserve;
+            la = p.frame.motor_radius;
+            max_thrust = p.motor.max_thrust;
+            p.motor.num = nm;
             
             t_x = thrust_scale * max_thrust * ( ...
-                      2 * ( cos(arm_ang) * arm_len  ) ...
+                      2 * ( cos(arm_ang) * la  ) ...
                   );
               
             t_y = thrust_scale * max_thrust * ( ...
-                      2 * ( sin(arm_ang) * arm_len ) ...
+                      2 * ( sin(arm_ang) * la ) ...
                   );
 
             p.control.base_link.torque.x_max = t_x;
             p.control.base_link.torque.y_max = t_y;
             
-            p.control.base_link.thrust.max = p.motor.num * max_thrust * ...
+            p.control.base_link.thrust.max = nm * max_thrust * ...
                                              ( 1.0 - p.control.base_link.thrust.reserve );
             p.control.base_link.thrust.min = 0; % This could be potentially used for negative thrust platforms
+            
+            kT = 1/(nm*max_thrust);
+            kt = 1/(4*la*cos(arm_ang)*max_thrust);
+            km = 1/(nm*p.motor.prop_drag);
+
+            p.motor_map = [0, 0, kT, -kt, -kt,  km; ...
+                           0, 0, kT,  kt,  kt,  km; ...
+                           0, 0, kT,  kt, -kt, -km; ...
+                           0, 0, kT, -kt,  kt, -km];
+        
         case 'X6'
             disp('Using PixHawk X6 motor layout')
             
-            p.frame.arm_angle = pi/3;
-            
-            thrust_scale = p.control.base_link.thrust.reserve;
-            arm_len = p.frame.motor_radius;
-            arm_ang = p.frame.arm_angle;
-            max_thrust = p.motor.max_thrust;
+            arm_ang = pi/3;
             
             p.frame.map = [  -(arm_ang + arm_ang/2); ...
                                 arm_ang + arm_ang/2; ...
@@ -62,23 +67,43 @@ function [ p ] = mantis_params( filepath )
                               -arm_ang/2; ...
                               pi - arm_ang/2];
                           
-            p.motor.num = numel(p.frame.map);
+            nm = numel(p.frame.map);
+            
+            thrust_scale = p.control.base_link.thrust.reserve;
+            la = p.frame.motor_radius;
+            p.frame.arm_angle = arm_ang;
+            max_thrust = p.motor.max_thrust;
+            p.motor.num = nm;
             
             t_x = thrust_scale * max_thrust * ( ...
-                      2 * ( cos(pi/2 - arm_ang) * arm_len ) ...
-                      + ( arm_len ) ...
+                      2 * ( cos(pi/2 - arm_ang) * la ) ...
+                      + ( la ) ...
                   );
               
             t_y = thrust_scale * max_thrust * ( ...
-                      2 * ( cos(arm_ang) * arm_len  ) ...
+                      2 * ( cos(arm_ang) * la  ) ...
                   );
 
             p.control.base_link.torque.x_max = t_x;
             p.control.base_link.torque.y_max = t_y;
             
-            p.control.base_link.thrust.max = p.motor.num * max_thrust * ...
+            p.control.base_link.thrust.max = nm * max_thrust * ...
                                              ( 1.0 - p.control.base_link.thrust.reserve );
             p.control.base_link.thrust.min = 0; % This could be potentially used for negative thrust platforms
+                    
+            kT = 1/(nm*max_thrust);
+            ktx = 1/(2*la*(2*sin(arm_ang/2)+1)*max_thrust);
+            kty = 1/(4*la*cos(arm_ang)*max_thrust);
+            km = 1/(nm*p.motor.prop_drag);
+
+            p.motor_map = [0, 0, kT, -ktx,    0, -km; ...
+                           0, 0, kT,  ktx,    0,  km; ...
+                           0, 0, kT,  ktx, -kty, -km; ...
+                           0, 0, kT, -ktx,  kty,  km; ...
+                           0, 0, kT, -ktx, -kty,  km; ...
+                           0, 0, kT,  ktx,  kty, -km];
+        
+        
         otherwise
             error('Unsupported motor layout')
     end
