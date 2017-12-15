@@ -17,6 +17,12 @@ function [ p ] = mantis_params( filepath )
         case 'X4'
             disp('Using PixHawk X4 motor layout')
             
+            % 3     1
+            %  \   /
+            %    x
+            %  /   \
+            % 2     4
+            
             arm_ang = pi/4;
             
             p.frame.map = [  -arm_ang; ...
@@ -57,6 +63,12 @@ function [ p ] = mantis_params( filepath )
         
         case 'X6'
             disp('Using PixHawk X6 motor layout')
+            
+            %   3   6
+            %    \ /
+            % 2---x---1
+            %    / \
+            %   5   4
             
             arm_ang = pi/3;
             

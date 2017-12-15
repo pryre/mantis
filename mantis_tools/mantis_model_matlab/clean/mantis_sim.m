@@ -611,7 +611,7 @@ gy0 = [Ry0, py0; ...
 vy0 = zeros(6,1); % bvx, bvy, bvz, w1, w2, w3,
 %gdy0 = [0.1;0;0;0;0;0]; % bvx, bvy, bvz, w1, w2, w3,
 
-r0 = [-pi/2;0]; %r1, r2
+r0 = [0;-pi/2]; %r1, r2
 
 rd0 = [0;0]; %r1d, r2d
 
@@ -630,14 +630,12 @@ y0 = [gy0(:); r0; vy0; rd0];
 % Input accelerations
 ua = [0;0;0;0;0;0;0;0];
 
-
-
-%%
 disp('Running Simulation')
 
 %[ts,ys] = ode45(@(tfb,yfb)mantis_run(tfb, yfb, u, Dq_eq, Cqqd_eq, Kqd, N_eq, tspan, do_control),tspan,y0);
 
-t = ts:dt:te;
+%t = ts:dt:te;
+t = [dt,2*dt];
 y = zeros(length(y0), length(t));
 u = zeros(params.motor.num + params.arm.links, length(t));
 y(:,1) = y0;
@@ -690,11 +688,11 @@ disp('u:')
 disp(u)
 
 
-%% Render
+% Render
 
 figure(1);
 
-for k=1:length(t)
+for k=1:1length(t)
     gk = reshape(y(1:16,k),[4,4]);
     rk = y(17:18,k);
     fl = params.frame.motor_radius;
