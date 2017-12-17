@@ -9,6 +9,7 @@
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/AccelStamped.h>
 //#include <mantis_controller_id/GoalPose.h>
 
@@ -21,7 +22,6 @@
 
 //TODO: use params
 #define NUM_MOTORS 6
-#define ANG_MOUNT M_PI/2
 
 ControllerID::ControllerID() :
 	nh_("~"),
@@ -33,6 +33,8 @@ ControllerID::ControllerID() :
 	pub_rc_ = nh_.advertise<mavros_msgs::RCOut>("rc", 10);
 	pub_r1_ = nh_.advertise<std_msgs::Float64>("r1", 10);
 	pub_r2_ = nh_.advertise<std_msgs::Float64>("r2", 10);
+	pub_twist_ = nh_.advertise<geometry_msgs::TwistStamped>("feedback/twist", 10);
+	pub_accel_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel", 10);
 
 	sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
 	sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
@@ -50,31 +52,41 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	mavros_msgs::RCOut msg_rc_out;
 	std_msgs::Float64 msg_r1_out;
 	std_msgs::Float64 msg_r2_out;
+	geometry_msgs::TwistStamped msg_twist_out_;
+	geometry_msgs::AccelStamped msg_accel_out_;
 
 	msg_rc_out.header.stamp = e.current_real;
 	msg_rc_out.header.frame_id = "map";
 	msg_rc_out.channels.resize(NUM_MOTORS);	//Allocate space for the number of motors
+	msg_twist_out_.header.stamp = e.current_real;
+	msg_twist_out_.header.frame_id = param_model_name_;
+	msg_accel_out_.header.stamp = e.current_real;
+	msg_accel_out_.header.frame_id = param_model_name_;
+
 
 	//TODO: LOAD THROUGH PARAMS
+	double frame_height = 0.05;
+	double arm_radius = 0.01;
+
 	double la = 0.275;
 	double l0 = -0.05;
-	double l1 = 0.2;
-	double l2 = 0.2;
-	double m0 = 2.0;
-	double m1 = 0.005;
-	double m2 = 0.2;
+	double l1 = 0.25;
+	double l2 = 0.25;
+	double m0 = 1.6;
+	double m1 = 0.1;
+	double m2 = 0.1;
 	double g = 9.80665;
 	double kt = 1.0/(NUM_MOTORS*0.7*g);
 	double km = 0.5;
-	double IJ0x = (0.05*0.05 + la*la)/12;
-	double IJ0y = (0.05*0.05 + la*la)/12;
-	double IJ0z = la*la/2;
-	double IJ1x = (0.05*0.05 + l1*l1)/12;
-	double IJ1y = (0.05*0.05 + l1*l1)/12;
-	double IJ1z = (2*0.05*0.05)/12;
-	double IJ2x = (0.05*0.05 + l2*l2)/12;
-	double IJ2y = (0.05*0.05 + l2*l2)/12;
-	double IJ2z = (2*0.05*0.05)/12;
+	double IJ0x = m0*(frame_height*frame_height + 3*la*la)/12;
+	double IJ0y = m0*(frame_height*frame_height + 3*la*la)/12;
+	double IJ0z = m0*la*la/2;
+	double IJ1x = m1*(arm_radius*arm_radius)/12;
+	double IJ1y = m1*(3*arm_radius*arm_radius + l1*l1)/12;
+	double IJ1z = m1*(3*arm_radius*arm_radius + l1*l1)/12;
+	double IJ2x = m2*(arm_radius*arm_radius)/12;
+	double IJ2y = m2*(3*arm_radius*arm_radius + l2*l2)/12;
+	double IJ2z = m2*(3*arm_radius*arm_radius + l2*l2)/12;
 	//TODO: LOAD THROUGH PARAMS
 
 
@@ -125,41 +137,43 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		Eigen::Vector3d Ay(0.0, ay, 0.0);
 		Eigen::Vector3d Az(0.0, 0.0, az);
 		Eigen::Vector3d A(ax, ay, az);
+		Eigen::Vector3d Ab = gr*A; //Acceleration in the body frame
 
 		/* TODO:
 		//Limit horizontal thrust by z thrust
-			double thrust_xy_max = gThrust.getZ() * std::tan( param_tilt_max_ );
+		double thrust_xy_max = gThrust.getZ() * std::tan( param_tilt_max_ );
 
-			//If thrust_sp_xy_len > thrust_xy_max
-			if( xyThrust.length() > thrust_xy_max ) {
-				//Scale the XY thrust setpoint down
-				double k = thrust_xy_max / xyThrust.length();
-				gThrust.setX( k*gThrust.getX() );
-				gThrust.setY( k*gThrust.getY() );
-				xyThrust.setX( gThrust.getX() );
-				xyThrust.setY( gThrust.getY() );
-			}
+		//If thrust_sp_xy_len > thrust_xy_max
+		if( xyThrust.length() > thrust_xy_max ) {
+			//Scale the XY thrust setpoint down
+			double k = thrust_xy_max / xyThrust.length();
+			gThrust.setX( k*gThrust.getX() );
+			gThrust.setY( k*gThrust.getY() );
+			xyThrust.setX( gThrust.getX() );
+			xyThrust.setY( gThrust.getY() );
+		}
 		*/
 
 		 //TODO: This whole part is a hack
-		double phi = std::acos(Eigen::Vector3d::UnitZ().dot(Ax.normalized()));
-		double theta = std::acos(Eigen::Vector3d::UnitZ().dot(Ay.normalized()));
+		double g_phi = std::acos(Eigen::Vector3d::UnitZ().dot(Ay.normalized()));
+		double g_theta = std::acos(Eigen::Vector3d::UnitZ().dot(Ax.normalized()));
 
-		Eigen::Vector3d euler = gr.eulerAngles(2,1,0);
+		double c_phi = std::acos(Eigen::Vector3d::UnitZ().dot(gr.col(1).normalized()));
+		double c_theta = std::acos(Eigen::Vector3d::UnitZ().dot(gr.col(0).normalized()));
 
-		double goal_wx = 0.5*(phi - euler[2]);
-		double goal_wy = 0.5*(theta - euler[1]);
-		double goal_wz = 0.1*(0.0 - euler[0]);	//XXX: Hold with zero yaw for now
+		double goal_wx = 6.0*(g_phi - c_phi);
+		double goal_wy = 6.0*(g_theta - c_theta);
+		double goal_wz = 6.0*(0.0 - 0.0);	//XXX: Hold with zero for now
 
 		double goal_r1d = 0.2*(msg_goal_joints_.position[0] - r1);
 		double goal_r2d = 0.2*(msg_goal_joints_.position[1] - r2);
 
 		ua(0,0) = 0.0;
 		ua(1,0) = 0.0;
-		ua(2,0) = A.norm();
-		ua(3,0) = 0.2*(goal_wx - bwx);
-		ua(4,0) = 0.2*(goal_wy - bwy);
-		ua(5,0) = 0.2*(goal_wz - bwz);
+		ua(2,0) = Ab(2,0);	//Z acceleration in body frame
+		ua(3,0) = 0.05*(goal_wx - bwx);
+		ua(4,0) = 0.05*(goal_wy - bwy);
+		ua(5,0) = 0.1*(goal_wz - bwz);
 		ua(6,0) = 0.2*(goal_r1d - r1d);
 		ua(7,0) = 0.2*(goal_r2d - r2d);
 
@@ -198,6 +212,16 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		msg_r1_out.data = u(NUM_MOTORS,0);
 		msg_r2_out.data = u(NUM_MOTORS+1,0);
+
+		msg_twist_out_.twist.angular.x = goal_wx;
+		msg_twist_out_.twist.angular.y = goal_wy;
+		msg_twist_out_.twist.angular.z = goal_wz;
+		msg_accel_out_.accel.linear.x = ua(0,0);
+		msg_accel_out_.accel.linear.y = ua(1,0);
+		msg_accel_out_.accel.linear.z = ua(2,0);
+		msg_accel_out_.accel.angular.x = ua(3,0);
+		msg_accel_out_.accel.angular.y = ua(4,0);
+		msg_accel_out_.accel.angular.z = ua(5,0);
 	} else {
 		//Output nothing until the input info is available
 		for(int i=0; i<NUM_MOTORS; i++) {
@@ -211,6 +235,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	pub_rc_.publish(msg_rc_out);
 	pub_r1_.publish(msg_r1_out);
 	pub_r2_.publish(msg_r2_out);
+	pub_twist_.publish(msg_twist_out_);
 }
 
 int16_t ControllerID::map_pwm(double val) {

@@ -5,8 +5,10 @@
 //#include <mantis_controller_id/GoalPose.h>
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/AccelStamped.h>
 
+#include <eigen3/Eigen/Dense>
 #include <string>
 
 class ControllerID {
@@ -21,6 +23,8 @@ class ControllerID {
 		ros::Publisher pub_rc_;
 		ros::Publisher pub_r1_;
 		ros::Publisher pub_r2_;
+		ros::Publisher pub_twist_;
+		ros::Publisher pub_accel_;
 
 		nav_msgs::Odometry msg_state_odom_;
 		sensor_msgs::JointState msg_state_joints_;
@@ -38,6 +42,7 @@ class ControllerID {
 
 		~ControllerID( void );
 
+		Eigen::Vector3d rot2euler(Eigen::Matrix3d r);
 		int16_t map_pwm(double val);
 		void goal_rates(void);
 
