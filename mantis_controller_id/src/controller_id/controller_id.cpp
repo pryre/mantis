@@ -133,11 +133,19 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		double ax = msg_goal_accel_.accel.linear.x;
 		double ay = msg_goal_accel_.accel.linear.y;
 		double az = g + msg_goal_accel_.accel.linear.z;
-		Eigen::Vector3d Ax(ax, 0.0, 0.0);
-		Eigen::Vector3d Ay(0.0, ay, 0.0);
-		Eigen::Vector3d Az(0.0, 0.0, az);
+
+		az = (az < 0.0) ? 0.0 : az;
+
+		Eigen::Vector3d Ax(ax, 0.0, az);
+		Eigen::Vector3d Ay(0.0, ay, az);
+		//Eigen::Vector3d Az(0.0, 0.0, az);
 		Eigen::Vector3d A(ax, ay, az);
 		Eigen::Vector3d Ab = gr*A; //Acceleration in the body frame
+
+		Eigen::Vector3d ucx = gr*Eigen::Vector3d::UnitZ();
+		Eigen::Vector3d ucy = gr*Eigen::Vector3d::UnitZ();
+		Eigen::Vector3d Cx(ucx(0), 0.0, ucx(2));
+		Eigen::Vector3d Cy(0.0, ucy(1), ucy(2));
 
 		/* TODO:
 		//Limit horizontal thrust by z thrust
@@ -154,12 +162,21 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		}
 		*/
 
-		 //TODO: This whole part is a hack
+		//Calculate thrust vector angles from goal accels
 		double g_phi = std::acos(Eigen::Vector3d::UnitZ().dot(Ay.normalized()));
 		double g_theta = std::acos(Eigen::Vector3d::UnitZ().dot(Ax.normalized()));
 
-		double c_phi = std::acos(Eigen::Vector3d::UnitZ().dot(gr.col(1).normalized()));
-		double c_theta = std::acos(Eigen::Vector3d::UnitZ().dot(gr.col(0).normalized()));
+		double c_phi = std::acos(Eigen::Vector3d::UnitZ().dot(Cy.normalized()));
+		double c_theta = std::acos(Eigen::Vector3d::UnitZ().dot(Cx.normalized()));
+
+		//Correct for frame rotations
+		g_phi = (ay > 0.0) ? -g_phi : g_phi;
+		g_theta = (ax < 0.0) ? -g_theta : g_theta;
+		c_phi = (ucy(1) > 0.0) ? -c_phi : c_phi;
+		c_theta = (ucx(0) < 0.0) ? -c_theta : c_theta;
+
+		std::cout << "Current: [" << c_phi << ";" << c_theta << "]" << std::endl;
+		std::cout << "Goal: [" << g_phi << ";" << g_theta << "]" << std::endl << std::endl;
 
 		double goal_wx = 6.0*(g_phi - c_phi);
 		double goal_wy = 6.0*(g_theta - c_theta);
@@ -236,6 +253,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	pub_r1_.publish(msg_r1_out);
 	pub_r2_.publish(msg_r2_out);
 	pub_twist_.publish(msg_twist_out_);
+	pub_accel_.publish(msg_accel_out_);
 }
 
 int16_t ControllerID::map_pwm(double val) {
