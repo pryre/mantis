@@ -37,7 +37,7 @@ syms r1 r2 r1d r2d r1dd r2dd 'real'
 % gbinv = inverse_trans(gb);
 % gbinv = [gb(1:3,1:3)', -gb(1:3,1:3)'*gb(1:3,4); ...
 %          zeros(1,3), 1];
-%      
+%
 
 %gbd = sym('gbd', 4, 'real');
 %gbdd = sym('gbdd', 4, 'real');
@@ -130,7 +130,7 @@ disp('Calculating Kinematics')
 % gb2 = etr1*etr2*gb2_0;
 % gbe = etr1*etr2*gbe_0; %TODO Understand this process more!!
 
-% 
+%
 % gb1 = [ cos(r1), 0, sin(r1),  l1*cos(r1); ...
 %               0, 1,       0,           0; ...
 %        -sin(r1), 0, cos(r1), -l1*sin(r1); ...
@@ -139,68 +139,68 @@ disp('Calculating Kinematics')
 %               0, 1,       0,           0; ...
 %        -sin(r2), 0, cos(r2), -l2*sin(r2); ...
 %               0, 0,       0,           1];
-% 
+%
 % %Geometries to the center of each link, relative to the base link
 % g1 = [ cos(r1), 0, sin(r1),  l1*cos(r1)/2; ...
 %              0, 1,       0,             0; ...
 %       -sin(r1), 0, cos(r1), -l1*sin(r1)/2; ...
 %              0, 0,       0,             1];
-% 
+%
 % g2 = gb1*[ cos(r2), 0, sin(r2),  l2*cos(r2)/2; ...
 %                  0, 1,       0,             0; ...
 %           -sin(r2), 0, cos(r2), -l2*sin(r2)/2; ...
 %                  0, 0,       0,             1];
-% 
+%
 % ge = gb1*g12; %End Effector
 
 gb = sym('gb_', 4, 'real');
 gb(4,:) = [zeros(1,3), 1];
 gbinv = inverse_trans(gb);
-gjb0 = dh_gen(l0,         0,  0, pi/2);
+gb1 = dh_gen(l0,         0,  0, pi/2);
 
 %Joint geometries
-gj01 = dh_gen( 0, r1 - pi/2, l1,    0);
-gj12 = dh_gen( 0,        r2, l2,    0);
+g12 = dh_gen( 0, r1 - pi/2, l1,    0);
+g23 = dh_gen( 0,        r2, l2,    0);
 
 %Link CoM geometries
-gj0l1 = dh_gen(0, r1 - pi/2, l1/2, 0);
-gj1l2 = dh_gen(0,        r2, l2/2, 0);
+g1l1 = dh_gen(0, r1 - pi/2, l1/2, 0);
+g2l2 = dh_gen(0,        r2, l2/2, 0);
 
 %Link base-relative geometries
-g1 = gjb0*gj0l1;
-g2 = gjb0*gj01*gj1l2;
+gbl1 = gb1*g1l1;
+gbl2 = gb1*g12*g2l2;
 
 %Simplify geometries
-g1 = simplify(g1);
-g2 = simplify(g2);
+gbl1 = simplify(gbl1);
+gbl2 = simplify(gbl2);
 
 %Calculate inverse geometries
 % g1p = g1(1:3,4);
 % g1R = g1(1:3,1:3);
 % g1inv = [      g1R', -g1R'*g1p; ...
 %          zeros(1,3),         1];
-% 
+%
 % g2p = g2(1:3,4);
 % g2R = g2(1:3,1:3);
 % g2inv = [      g2R', -g2R'*g2p; ...
 %          zeros(1,3),         1];
-    
-g1inv = inverse_trans(g1);
-g2inv = inverse_trans(g2);
+
+gbl1inv = inverse_trans(gbl1);
+gbl2inv = inverse_trans(gbl2);
 
 %Simplify inverse geometries
-g1inv = simplify(g1inv);
-g2inv = simplify(g2inv);
+gbl1inv = simplify(gbl1inv);
+gbl2inv = simplify(gbl2inv);
 
 %Inverse Adjoint for each link
 % A1 = [g1R', -g1R'*vee_up(g1p); ...
 %       zeros(3), g1R'];
-% 
+%
 % A2 = [    g2R', -g2R'*vee_up(g2p); ...
 %       zeros(3),              g2R'];
 
-A1 = adjoint_trans(g1inv);
-A2 = adjoint_trans(g2inv);
+A1 = adjoint_trans(gbl1inv);
+A2 = adjoint_trans(gbl2inv);
 
 %Simplify Adjoints
 A1 = simplify(A1);
@@ -218,7 +218,7 @@ A2 = simplify(A2);
 % J1_sum = J1_1 + J1_2;
 % J(:,1) = [vee_down(J1_sum(1:3,1:3)); 0; 0; 0];
 
-% J2_1 = diff(g2,r1)*g2inv; 
+% J2_1 = diff(g2,r1)*g2inv;
 % J2_2 = diff(g2,r2)*g2inv;
 % J2_1 = diff(g2inv,r1)*g2;
 % J2_2 = diff(g2inv,r2)*g2;
@@ -228,8 +228,8 @@ A2 = simplify(A2);
 % J2(:,2) = [vee_down(J2_2(1:3,1:3)); J2_2(1:3,4)];
 % J2_sum = J2_1 + J2_2;
 % J(:,2) = [vee_down(J2_sum(1:3,1:3)); 0; 0; 0];
-J1 = jacobian_gen(g1,[r1;r2]);
-J2 = jacobian_gen(g2,[r1;r2]);
+J1 = jacobian_gen(gbl1,[r1;r2]);
+J2 = jacobian_gen(gbl2,[r1;r2]);
 
 %Simplify Geometric Jacobian
 J1 = simplify(J1);
@@ -251,13 +251,13 @@ syms IJ2x IJ2y IJ2z 'positive'
 %        0, 0, IJ0z];
 % I0 = [IJ0, zeros(3); ... %Pose Inertial Tensor
 %       zeros(3), m0*eye(3)];
-% 
+%
 % IJ1 = [IJ1x, 0, 0; ... %Rotational Inertial Tensor
 %       0, IJ1y, 0; ...
 %       0, 0, IJ1z];
 % I1 = [IJ1, zeros(3); ... %Pose Inertial Tensor
 %       zeros(3), m1*eye(3)];
-% 
+%
 % IJ2 = [IJ2x, 0, 0; ... %Rotational Inertial Tensor
 %       0, IJ2y, 0; ...
 %       0, 0, IJ2z];
@@ -274,7 +274,7 @@ disp('Calculating Inertia Matrix')
 
 %disp('Simplify step 1')
 % M_A_A is I0 plus sum of all other links
-% 
+%
 % I1s = A1'*I1*A1;
 % I2s = A2'*I2*A2;
 %
@@ -465,9 +465,9 @@ Mm = [params.motor_map, zeros(params.motor.num, params.arm.links); ...
 %Build pose solvers
 Gq = cell(params.arm.links + 1, 1);
 Gq(1) = {gb}; %Base link
-Gq(2) = {gb*gjb0}; %Base link
-Gq(3) = {gb*gjb0*gj01}; %End of link 1
-Gq(4) = {gb*gjb0*gj01*gj12}; %End of link 2
+Gq(2) = {gb*gb1}; %Base link
+Gq(3) = {gb*gb1*g12}; %End of link 1
+Gq(4) = {gb*gb1*g12*g23}; %End of link 2
 for i = 1:numel(Gq)
     Gq{i} = simplify(Gq{i});
 end
@@ -692,7 +692,7 @@ disp(u)
 
 figure(1);
 
-for k=1:1length(t)
+for k=1:length(t)
     gk = reshape(y(1:16,k),[4,4]);
     rk = y(17:18,k);
     fl = params.frame.motor_radius;

@@ -1,5 +1,5 @@
 function [ ad ] = adjoint_trans( g )
-%ADJOINT The 6 × 6 matrix which transforms twists by the spacial
+%ADJOINT The 6x6 matrix which transforms twists by the spacial
 %transformation of g
 %   Detailed explanation goes here
 
