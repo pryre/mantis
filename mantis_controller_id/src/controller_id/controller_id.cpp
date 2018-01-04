@@ -22,6 +22,12 @@
 
 //TODO: use params
 #define NUM_MOTORS 6
+#define PARAM_ROLL_ANG_P 6.5
+#define PARAM_PITCH_ANG_P 6.5
+#define PARAM_YAW_ANG_P 6.5
+#define PPARAM_ROLL_R_P 0.05
+#define PPARAM_PITCH_R_P 0.05
+#define PPARAM_YAW_R_P 0.2
 
 ControllerID::ControllerID() :
 	nh_("~"),
@@ -133,9 +139,11 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		double ax = msg_goal_accel_.accel.linear.x;
 		double ay = msg_goal_accel_.accel.linear.y;
 		double az = g + msg_goal_accel_.accel.linear.z;
+		az = (az < 0.0) ? 0.0 : az;	//Can't accelerate downward
 
-		az = (az < 0.0) ? 0.0 : az;
-
+		Eigen::Matrix3d gr_sp;
+		Eigen::Vector3d A(ax, ay, az);
+		/* TODO:
 		Eigen::Vector3d Ax(ax, 0.0, az);
 		Eigen::Vector3d Ay(0.0, ay, az);
 		//Eigen::Vector3d Az(0.0, 0.0, az);
@@ -147,7 +155,6 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		Eigen::Vector3d Cx(ucx(0), 0.0, ucx(2));
 		Eigen::Vector3d Cy(0.0, ucy(1), ucy(2));
 
-		/* TODO:
 		//Limit horizontal thrust by z thrust
 		double thrust_xy_max = gThrust.getZ() * std::tan( param_tilt_max_ );
 
@@ -160,7 +167,6 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			xyThrust.setX( gThrust.getX() );
 			xyThrust.setY( gThrust.getY() );
 		}
-		*/
 
 		//Calculate thrust vector angles from goal accels
 		double g_phi = std::acos(Eigen::Vector3d::UnitZ().dot(Ay.normalized()));
@@ -177,20 +183,22 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		std::cout << "Current: [" << c_phi << ";" << c_theta << "]" << std::endl;
 		std::cout << "Goal: [" << g_phi << ";" << g_theta << "]" << std::endl << std::endl;
+		*/
 
-		double goal_wx = 6.0*(g_phi - c_phi);
-		double goal_wy = 6.0*(g_theta - c_theta);
-		double goal_wz = 6.0*(0.0 - 0.0);	//XXX: Hold with zero for now
 
+		Eigen::Vector3d goal_w = calc_goal_rates( gr_sp, gr);
+		//double goal_wx = 6.0*(g_phi - c_phi);
+		//double goal_wy = 6.0*(g_theta - c_theta);
+		//double goal_wz = 6.0*(0.0 - 0.0);	//XXX: Hold with zero for now
 		double goal_r1d = 0.2*(msg_goal_joints_.position[0] - r1);
 		double goal_r2d = 0.2*(msg_goal_joints_.position[1] - r2);
 
 		ua(0,0) = 0.0;
 		ua(1,0) = 0.0;
-		ua(2,0) = Ab(2,0);	//Z acceleration in body frame
-		ua(3,0) = 0.05*(goal_wx - bwx);
-		ua(4,0) = 0.05*(goal_wy - bwy);
-		ua(5,0) = 0.1*(goal_wz - bwz);
+		ua(2,0) = A.norm();	//TODO: Something else, maybe: Ab(2,0);	//Z acceleration in body frame
+		ua(3,0) = PPARAM_ROLL_R_P*(goal_w.x() - bwx);
+		ua(4,0) = PPARAM_PITCH_R_P*(goal_w.y() - bwy);
+		ua(5,0) = PPARAM_YAW_R_P*(goal_w.z() - bwz);
 		ua(6,0) = 0.2*(goal_r1d - r1d);
 		ua(7,0) = 0.2*(goal_r2d - r2d);
 
@@ -230,9 +238,9 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		msg_r1_out.data = u(NUM_MOTORS,0);
 		msg_r2_out.data = u(NUM_MOTORS+1,0);
 
-		msg_twist_out_.twist.angular.x = goal_wx;
-		msg_twist_out_.twist.angular.y = goal_wy;
-		msg_twist_out_.twist.angular.z = goal_wz;
+		msg_twist_out_.twist.angular.x = goal_w.x();
+		msg_twist_out_.twist.angular.y = goal_w.y();
+		msg_twist_out_.twist.angular.z = goal_w.z();
 		msg_accel_out_.accel.linear.x = ua(0,0);
 		msg_accel_out_.accel.linear.y = ua(1,0);
 		msg_accel_out_.accel.linear.z = ua(2,0);
@@ -264,8 +272,107 @@ int16_t ControllerID::map_pwm(double val) {
 	return int16_t((param_pwm_max_ - param_pwm_min_)*c) + param_pwm_min_;
 }
 
-void ControllerID::goal_rates(void) {
+Eigen::Vector3d ControllerID::calc_goal_rates(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R) {
+	Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
 
+	//Method derived from px4 attitude controller:
+	//DCM from for state and setpoint
+
+	/*
+	Eigen::Matrix3d R = q_current->normalized().toRotationMatrix();
+	Eigen::Matrix3d R_sp = q_sp->normalized().toRotationMatrix();
+	*/
+
+	//Calculate shortest path to goal rotation without yaw (as it's slower than roll/pitch)
+	Eigen::Vector3d R_z = R.col(2);
+	Eigen::Vector3d R_sp_z = R_sp.col(2);
+
+	//px4: axis and sin(angle) of desired rotation
+	//px4: math::Vector<3> e_R = R.transposed() * (R_z % R_sp_z);
+	Eigen::Vector3d e_R = R.transpose() * R_z.cross(R_sp_z);
+
+	double e_R_z_sin = e_R.norm();
+	double e_R_z_cos = R_z.dot(R_sp_z);
+
+	//px4: calculate weight for yaw control
+	double yaw_w = R_sp(2,2)*R_sp(2,2);
+
+	//px4: calculate rotation matrix after roll/pitch only rotation
+	Eigen::Matrix3d R_rp;
+
+	e_R_z_sin = 0;	//TODO: XXX: Seems to fix issues somewhere
+
+	if(e_R_z_sin > 0) {
+		//px4: get axis-angle representation
+		Eigen::Vector3d e_R_z_axis = e_R / e_R_z_sin;
+		e_R = e_R_z_axis * std::atan2(e_R_z_sin, e_R_z_cos);
+
+		//px4: cross product matrix for e_R_axis
+		Eigen::Matrix3d e_R_cp;
+		e_R_cp(0,1) = -e_R_z_axis.z();
+		e_R_cp(0,2) = e_R_z_axis.y();
+		e_R_cp(1,0) = e_R_z_axis.z();
+		e_R_cp(1,2) = -e_R_z_axis.x();
+		e_R_cp(2,0) = -e_R_z_axis.y();
+		e_R_cp(2,1) = e_R_z_axis.x();
+
+		//px4: rotation matrix for roll/pitch only rotation
+		R_rp = R * ( I + (e_R_cp * e_R_z_sin) + ( (e_R_cp * e_R_cp) * (1.0 - e_R_z_cos) ) );
+	} else {
+		//px4: zero roll/pitch rotation
+		R_rp = R;
+	}
+
+	//XXX: R_rp = R;
+
+	//px4: R_rp and R_sp has the same Z axis, calculate yaw error
+	Eigen::Vector3d R_sp_x = R_sp.col(0);
+	Eigen::Vector3d R_rp_x = R_rp.col(0);
+
+	Eigen::Vector3d R_rp_c_sp = R_rp_x.cross(R_sp_x);
+
+	//e_R(2) = atan2f(R_rp_c_sp * R_sp_z, R_rp_x * R_sp_x) * yaw_w;
+	e_R(2) = std::atan2(R_rp_c_sp.dot(R_sp_z), R_rp_x.dot(R_sp_x)) * yaw_w;
+
+	if(e_R_z_cos < 0) {
+		//px4: for large thrust vector rotations use another rotation method:
+		//px4: calculate angle and axis for R -> R_sp rotation directly
+		Eigen::Vector3d e_R_d;
+		Eigen::Quaterniond q_error(R.transpose() * R_sp);
+
+		if(q_error.w() >= 0) {
+			Eigen::Vector3d temp_vec;
+			temp_vec.x() = q_error.x();
+			temp_vec.y() = q_error.y();
+			temp_vec.z() = q_error.z();
+
+			e_R_d = temp_vec * 2.0;
+		} else {
+			Eigen::Vector3d temp_vec;
+			temp_vec.x() = -q_error.x();
+			temp_vec.y() = -q_error.y();
+			temp_vec.z() = -q_error.z();
+
+			e_R_d = temp_vec * 2.0;
+		}
+
+		//px4: use fusion of Z axis based rotation and direct rotation
+		double direct_w = e_R_z_cos * e_R_z_cos * yaw_w;
+
+		//px4: e_R = e_R * (1.0f - direct_w) + e_R_d * direct_w;
+		e_R = e_R * (1.0 - direct_w) + e_R_d * direct_w;
+	}
+
+	//px4: calculate angular rates setpoint
+	Eigen::Vector3d rates_sp;
+	rates_sp(0) = PARAM_ROLL_ANG_P * e_R.x();
+	rates_sp(1) = PARAM_PITCH_ANG_P * e_R.y();
+	rates_sp(2) = PARAM_YAW_ANG_P * e_R.z();
+
+	//px4: feed forward yaw setpoint rate	//TODO:?
+	//rates_sp.z += _v_att_sp.yaw_sp_move_rate * yaw_w * _params.yaw_ff;
+
+	return rates_sp;
 }
 
 void ControllerID::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {

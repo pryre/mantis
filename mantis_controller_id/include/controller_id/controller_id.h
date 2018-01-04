@@ -44,7 +44,7 @@ class ControllerID {
 
 		Eigen::Vector3d rot2euler(Eigen::Matrix3d r);
 		int16_t map_pwm(double val);
-		void goal_rates(void);
+		Eigen::Vector3d calc_goal_rates(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R);
 
 		void callback_control(const ros::TimerEvent& e);
 		void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
