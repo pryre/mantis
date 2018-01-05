@@ -10,7 +10,7 @@
 		<remap from="/controller_id/state/odom" to="/mantis_uav/odom" />
 		<remap from="/controller_id/state/joints" to="/mantis_uav/state/joint_states" />
 
-		<remap from="/controller_id/goal/accel" to="/mavel/goal/acceleration" />
+		<!-- <remap from="/controller_id/goal/accel" to="/mavel/goal/acceleration" /> -->
 
 		<remap from="/controller_id/rc" to="/mantis_uav/command/motor_pwm" />
 		<remap from="/controller_id/r1" to="/mantis_uav/command/servo/torque/shoulder" />
