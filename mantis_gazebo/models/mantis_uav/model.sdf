@@ -976,6 +976,46 @@
       </visual>
     </link>
 
+	<joint type="fixed" name="joint_forearm_wrist">
+      <parent>arm_link_forearm</parent>
+      <child>arm_link_wrist_servo</child>
+    </joint>
+
+	<link name="arm_link_wrist_servo">
+      <pose>0 0 0.09125 0 0 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.082</mass>
+        <inertia>
+          <ixx>2.26747e-05</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.03258e-05</iyy>
+          <iyz>0</iyz>
+          <izz>1.34497e-05</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_wrist_servo">
+        <geometry>
+          <box>
+            <size>0.0285 0.034 0.0465</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <visual name="visual_wrist_servo">
+        <geometry>
+          <box>
+            <size>0.0285 0.034 0.0465</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+
 
     <plugin name="mantis_gazebo_servo" filename="libmantis_gazebo_servo.so"/>
 

@@ -12,6 +12,9 @@
     <include>
       <uri>model://mantis_uav</uri>
     </include>
+    <include>
+      <uri>model://uav_stand</uri>
+    </include>
     <!--<include>
       <uri>model://uneven_ground</uri>
     </include>-->

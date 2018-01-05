@@ -25,6 +25,7 @@ class ControllerID {
 		ros::Publisher pub_r2_;
 		ros::Publisher pub_twist_;
 		ros::Publisher pub_accel_;
+		ros::Publisher pub_joints_;
 
 		nav_msgs::Odometry msg_state_odom_;
 		sensor_msgs::JointState msg_state_joints_;

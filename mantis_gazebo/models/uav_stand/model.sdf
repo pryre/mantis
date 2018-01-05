@@ -1,0 +1,59 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='uav_stand'>
+  <static>true</static>
+
+    <link name='base_link'>
+      <pose>0 0 0.1625 0 0 0</pose>
+      <collision name='collision_left'>
+        <pose>0 0.2 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.6 0.2 0.325</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <collision name='collision_base_right'>
+        <pose>0 -0.2 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.6 0.2 0.325</size>
+          </box>
+        </geometry>
+      </collision>
+
+	  <visual name='visual_left'>
+        <pose>0 0.2 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.6 0.2 0.325</size>
+          </box>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+			  <script>
+			    <name>Gazebo/BlueTransparent</name>
+				<uri>file://media/materials/scripts/gazebo.material</uri>
+			  </script>
+        </material>
+      </visual>
+
+	  <visual name='visual_right'>
+        <pose>0 -0.2 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.6 0.2 0.325</size>
+          </box>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+			  <script>
+			    <name>Gazebo/BlueTransparent</name>
+				<uri>file://media/materials/scripts/gazebo.material</uri>
+			  </script>
+        </material>
+      </visual>
+	</link>
+  </model>
+</sdf>
