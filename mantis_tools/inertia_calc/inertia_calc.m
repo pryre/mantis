@@ -28,6 +28,10 @@ body = add_body_link(body, 'skid_3', 'cylinder_h', 0.008, [0.2382;0.1375;-0.075]
 body = add_body_link(body, 'skid_4', 'cylinder_h', 0.008, [-0.2382;-0.1375;-0.075], angle2quat(0,0,0), [0.007,0.008,0.12]);
 body = add_body_link(body, 'skid_5', 'cylinder_h', 0.008, [0.2382;-0.1375;-0.075], angle2quat(0,0,0), [0.007,0.008,0.12]);
 body = add_body_link(body, 'skid_6', 'cylinder_h', 0.008, [-0.2382;0.1375;-0.075], angle2quat(0,0,0), [0.007,0.008,0.12]);
+body = add_body_link(body, 'servo', 'cuboid', 0.082, [0;0;-0.03825], angle2quat(0,0,0), [0.0285,0.034,0.0465]);
+
+% body = add_body_link(body, 'arm', 'cylinder', 0.008, [-0.00825;0;0], angle2quat(0,pi/2,0), [0.008,0.12]);
+% body = add_body_link(body, 'servo', 'cuboid', 0.082, [0.09;0;0], angle2quat(0,0,0), [0.0465,0.0285,0.034]);
 
 %% Calc
 body_inertial = zeros(3,3);

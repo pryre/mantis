@@ -80,14 +80,15 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 	double la = 0.275;
 	double l0 = -0.05;
-	double l1 = 0.25;
-	double l2 = 0.25;
-	double m0 = 1.6;
+	double l1 = 0.1965;
+	double l2 = 0.1965;
+	double m0 = 1.63;
 	double m1 = 0.09;
 	double m2 = 0.09;
 	double g = 9.80665;
 	//double kt = 1.0/(NUM_MOTORS*0.7*g);
 	//double km = 0.5;
+	/*
 	double IJ0x = m0*(frame_height*frame_height + 3*la*la)/12;
 	double IJ0y = m0*(frame_height*frame_height + 3*la*la)/12;
 	double IJ0z = m0*la*la/2;
@@ -97,6 +98,16 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	double IJ2x = m2*(arm_radius*arm_radius)/12;
 	double IJ2y = m2*(3*arm_radius*arm_radius + l2*l2)/12;
 	double IJ2z = m2*(3*arm_radius*arm_radius + l2*l2)/12;
+	*/
+	double IJ0x = 0.015399592102914;
+	double IJ0y = 0.014552318824581;
+	double IJ0z = 0.027781409055000;
+	double IJ1x = 0.00002317770833333334;
+	double IJ1y = 0.0001027628083333333;
+	double IJ1z = 0.00009094185000000001;
+	double IJ2x = 0.00002317770833333334;
+	double IJ2y = 0.0001027628083333333;
+	double IJ2z = 0.00009094185000000001;
 	//TODO: LOAD THROUGH PARAMS
 
 
