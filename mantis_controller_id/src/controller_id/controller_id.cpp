@@ -83,11 +83,11 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	double l1 = 0.25;
 	double l2 = 0.25;
 	double m0 = 1.6;
-	double m1 = 0.1;
-	double m2 = 0.1;
+	double m1 = 0.09;
+	double m2 = 0.09;
 	double g = 9.80665;
-	double kt = 1.0/(NUM_MOTORS*0.7*g);
-	double km = 0.5;
+	//double kt = 1.0/(NUM_MOTORS*0.7*g);
+	//double km = 0.5;
 	double IJ0x = m0*(frame_height*frame_height + 3*la*la)/12;
 	double IJ0y = m0*(frame_height*frame_height + 3*la*la)/12;
 	double IJ0z = m0*la*la/2;
