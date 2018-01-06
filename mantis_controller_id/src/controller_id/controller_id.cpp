@@ -102,12 +102,12 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	double IJ0x = 0.015399592102914;
 	double IJ0y = 0.014552318824581;
 	double IJ0z = 0.027781409055000;
-	double IJ1x = 0.00002317770833333334;
-	double IJ1y = 0.0001027628083333333;
-	double IJ1z = 0.00009094185000000001;
-	double IJ2x = 0.00002317770833333334;
-	double IJ2y = 0.0001027628083333333;
-	double IJ2z = 0.00009094185000000001;
+	double IJ1x = 0.00001345;
+	double IJ1y = 0.00048403;
+	double IJ1z = 0.00048168;
+	double IJ2x = 0.00001345;
+	double IJ2y = 0.00048403;
+	double IJ2z = 0.00048168;
 	//TODO: LOAD THROUGH PARAMS
 
 
@@ -231,8 +231,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		ua(3,0) = PPARAM_ROLL_R_P*(goal_w.x() - bwx);
 		ua(4,0) = PPARAM_PITCH_R_P*(goal_w.y() - bwy);
 		ua(5,0) = PPARAM_YAW_R_P*(goal_w.z() - bwz);
-		ua(6,0) = 0.5*(goal_r1d - r1d);
-		ua(7,0) = 0.5*(goal_r2d - r2d);
+		ua(6,0) = 1.0*(goal_r1d - r1d);
+		ua(7,0) = 1.0*(goal_r2d - r2d);
 
 		//Calculate the
 		calc_Dq(D, IJ0x, IJ0y, IJ0z, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, l0, l1, l2, m0, m1, m2, r1, r2);
