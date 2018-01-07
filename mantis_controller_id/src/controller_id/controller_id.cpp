@@ -1,11 +1,12 @@
 #include <ros/ros.h>
 
 #include <controller_id/controller_id.h>
-#include <controller_id/calc_Dq.h>
-#include <controller_id/calc_Cqqd.h>
-#include <controller_id/calc_Lqd.h>
-#include <controller_id/calc_Nq.h>
-#include <controller_id/calc_Mm.h>
+#include <controller_id/controller_id_params.h>
+#include <dynamics/calc_Dq.h>
+#include <dynamics/calc_Cqqd.h>
+#include <dynamics/calc_Lqd.h>
+#include <dynamics/calc_Nq.h>
+#include <dynamics/calc_Mm.h>
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
@@ -20,21 +21,13 @@
 #include <math.h>
 #include <iostream>
 
-//TODO: use params
-#define NUM_MOTORS 6
-#define PARAM_ROLL_ANG_P 6.5
-#define PARAM_PITCH_ANG_P 6.5
-#define PARAM_YAW_ANG_P 6.5
-#define PPARAM_ROLL_R_P 0.05
-#define PPARAM_PITCH_R_P 0.05
-#define PPARAM_YAW_R_P 0.2
-
 ControllerID::ControllerID() :
 	nh_("~"),
+	p_(&nh_),
 	param_model_name_("mantis_uav"),
-	param_rate_(100),
-	param_pwm_min_(1000),
-	param_pwm_max_(2000) {
+	param_rate_(100) {
+
+	p_.load();
 
 	pub_rc_ = nh_.advertise<mavros_msgs::RCOut>("rc", 10);
 	pub_r1_ = nh_.advertise<std_msgs::Float64>("r1", 10);
@@ -65,7 +58,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 	msg_rc_out.header.stamp = e.current_real;
 	msg_rc_out.header.frame_id = "map";
-	msg_rc_out.channels.resize(NUM_MOTORS);	//Allocate space for the number of motors
+	msg_rc_out.channels.resize(p_.num_motors);	//Allocate space for the number of motors
 	msg_twist_out.header.stamp = e.current_real;
 	msg_twist_out.header.frame_id = param_model_name_;
 	msg_accel_out.header.stamp = e.current_real;
@@ -74,42 +67,42 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	msg_joints_out.header.frame_id = param_model_name_;
 
 
-	//TODO: LOAD THROUGH PARAMS
-	double frame_height = 0.05;
-	double arm_radius = 0.01;
+	double g = 9.80665;
+
+	/*
+	//double frame_height = 0.05;
+	//double arm_radius = 0.01;
+	//double kt = 1.0/(NUM_MOTORS*0.7*g);
+	//double km = 0.5;
+	//double IJ0x = m0*(frame_height*frame_height + 3*la*la)/12;
+	//double IJ0y = m0*(frame_height*frame_height + 3*la*la)/12;
+	//double IJ0z = m0*la*la/2;
+	//double IJ1x = m1*(arm_radius*arm_radius)/12;
+	//double IJ1y = m1*(3*arm_radius*arm_radius + l1*l1)/12;
+	//double IJ1z = m1*(3*arm_radius*arm_radius + l1*l1)/12;
+	//double IJ2x = m2*(arm_radius*arm_radius)/12;
+	//double IJ2y = m2*(3*arm_radius*arm_radius + l2*l2)/12;
+	//double IJ2z = m2*(3*arm_radius*arm_radius + l2*l2)/12;
 
 	double la = 0.275;
 	double l0 = -0.05;
 	double l1 = 0.1965;
 	double l2 = 0.1965;
+	double lc1 = 0.1638;
+	double lc2 = 0.1638;
 	double m0 = 1.63;
 	double m1 = 0.09;
 	double m2 = 0.09;
-	double g = 9.80665;
-	//double kt = 1.0/(NUM_MOTORS*0.7*g);
-	//double km = 0.5;
-	/*
-	double IJ0x = m0*(frame_height*frame_height + 3*la*la)/12;
-	double IJ0y = m0*(frame_height*frame_height + 3*la*la)/12;
-	double IJ0z = m0*la*la/2;
-	double IJ1x = m1*(arm_radius*arm_radius)/12;
-	double IJ1y = m1*(3*arm_radius*arm_radius + l1*l1)/12;
-	double IJ1z = m1*(3*arm_radius*arm_radius + l1*l1)/12;
-	double IJ2x = m2*(arm_radius*arm_radius)/12;
-	double IJ2y = m2*(3*arm_radius*arm_radius + l2*l2)/12;
-	double IJ2z = m2*(3*arm_radius*arm_radius + l2*l2)/12;
-	*/
 	double IJ0x = 0.015399592102914;
 	double IJ0y = 0.014552318824581;
 	double IJ0z = 0.027781409055000;
-	double IJ1x = 0.00001345;
-	double IJ1y = 0.00048403;
-	double IJ1z = 0.00048168;
+	double IJ1x = 0.00001371;
+	double IJ1y = 0.00008292;
+	double IJ1z = 0.00008075;
 	double IJ2x = 0.00001345;
-	double IJ2y = 0.00048403;
-	double IJ2z = 0.00048168;
-	//TODO: LOAD THROUGH PARAMS
-
+	double IJ2y = 0.00008292;
+	double IJ2z = 0.00008075;
+	*/
 
 	if( ( msg_state_odom_.header.stamp != ros::Time(0) ) &&
 		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
@@ -222,22 +215,35 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		//double goal_wx = 6.0*(g_phi - c_phi);
 		//double goal_wy = 6.0*(g_theta - c_theta);
 		//double goal_wz = 6.0*(0.0 - 0.0);	//XXX: Hold with zero for now
-		double goal_r1d = 0.2*(msg_goal_joints_.position[0] - r1);
-		double goal_r2d = 0.2*(msg_goal_joints_.position[1] - r2);
+		double goal_r1d = p_.gain_ang_r1_p*(msg_goal_joints_.position[0] - r1);
+		double goal_r2d = p_.gain_ang_r2_p*(msg_goal_joints_.position[1] - r2);
 
 		ua(0,0) = 0.0;
 		ua(1,0) = 0.0;
 		ua(2,0) = Ab.z();	//TODO: Something else, maybe: Ab(2,0);	//Z acceleration in body frame
-		ua(3,0) = PPARAM_ROLL_R_P*(goal_w.x() - bwx);
-		ua(4,0) = PPARAM_PITCH_R_P*(goal_w.y() - bwy);
-		ua(5,0) = PPARAM_YAW_R_P*(goal_w.z() - bwz);
-		ua(6,0) = 1.0*(goal_r1d - r1d);
-		ua(7,0) = 1.0*(goal_r2d - r2d);
+		ua(3,0) = p_.gain_rate_roll_p*(goal_w.x() - bwx);
+		ua(4,0) = p_.gain_rate_pitch_p*(goal_w.y() - bwy);
+		ua(5,0) = p_.gain_rate_yaw_p*(goal_w.z() - bwz);
+		ua(6,0) = p_.gain_rate_r1_p*(goal_r1d - r1d);
+		ua(7,0) = p_.gain_rate_r2_p*(goal_r2d - r2d);
 
 		//Calculate the
-		calc_Dq(D, IJ0x, IJ0y, IJ0z, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, l0, l1, l2, m0, m1, m2, r1, r2);
-		//calc_Cqqd(C, IJ1x, IJ1y, IJ1z, IJ2x, IJ2y, IJ2z, bvx, bvy, bvz, bwx, bwy, bwz, l0, l1, l2, m1, m2, r1, r1d, r2, r2d);
-		calc_Cqqd(C, IJ1x, IJ1y, IJ2x, IJ2y, bvx, bvy, bvz, bwx, bwy, bwz, l0, l1, l2, m1, m2, r1, r1d, r2, r2d);
+		calc_Dq(D,
+				p_.I0x, p_.I0y, p_.I0z,
+				p_.I1x, p_.I1y, p_.I1z,
+				p_.I2x, p_.I2y, p_.I2z,
+				p_.l0, p_.l1, p_.lc1, p_.lc2,
+				p_.m0, p_.m1, p_.m2,
+				r1, r2);
+
+		calc_Cqqd(C,
+				  p_.I1x, p_.I1y,
+				  p_.I2x, p_.I2y,
+				  bvx, bvy, bvz, bwx, bwy, bwz,
+				  p_.l0, p_.l1, p_.lc1, p_.lc2,
+				  p_.m1, p_.m2,
+				  r1, r1d, r2, r2d);
+
 		calc_Lqd(L);
 		//calc_Nq(N, IJ1z, IJ2z, g, gr(2,2), l0, l1, l2, m0, m1, m2, r1, r2);
 
@@ -249,12 +255,12 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		Eigen::MatrixXd u = M*tau;
 
-		for(int i=0; i<NUM_MOTORS; i++) {
+		for(int i=0; i<p_.num_motors; i++) {
 			msg_rc_out.channels[i] = map_pwm(u(i,0));
 		}
 
-		msg_r1_out.data = u(NUM_MOTORS,0);
-		msg_r2_out.data = u(NUM_MOTORS+1,0);
+		msg_r1_out.data = u(p_.num_motors,0);
+		msg_r2_out.data = u(p_.num_motors+1,0);
 
 		msg_twist_out.twist.angular.x = goal_w.x();
 		msg_twist_out.twist.angular.y = goal_w.y();
@@ -274,8 +280,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		msg_joints_out.effort.push_back(ua(7,0));
 	} else {
 		//Output nothing until the input info is available
-		for(int i=0; i<NUM_MOTORS; i++) {
-			msg_rc_out.channels[i] = param_pwm_min_;
+		for(int i=0; i<p_.num_motors; i++) {
+			msg_rc_out.channels[i] = p_.pwm_min;
 		}
 
 		msg_r1_out.data = 0.0;
@@ -295,7 +301,7 @@ int16_t ControllerID::map_pwm(double val) {
 	double c = (val > 1.0) ? 1.0 : (val < 0.0) ? 0.0 : val;
 
 	//Scale c to the pwm values
-	return int16_t((param_pwm_max_ - param_pwm_min_)*c) + param_pwm_min_;
+	return int16_t((p_.pwm_max - p_.pwm_min)*c) + p_.pwm_min;
 }
 
 Eigen::Vector3d ControllerID::calc_goal_rates(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R) {
@@ -391,9 +397,9 @@ Eigen::Vector3d ControllerID::calc_goal_rates(const Eigen::Matrix3d &R_sp, const
 
 	//px4: calculate angular rates setpoint
 	Eigen::Vector3d rates_sp;
-	rates_sp(0) = PARAM_ROLL_ANG_P * e_R.x();
-	rates_sp(1) = PARAM_PITCH_ANG_P * e_R.y();
-	rates_sp(2) = PARAM_YAW_ANG_P * e_R.z();
+	rates_sp(0) = p_.gain_ang_roll_p * e_R.x();
+	rates_sp(1) = p_.gain_ang_pitch_p * e_R.y();
+	rates_sp(2) = p_.gain_ang_yaw_p * e_R.z();
 
 	//px4: feed forward yaw setpoint rate	//TODO:?
 	//rates_sp.z += _v_att_sp.yaw_sp_move_rate * yaw_w * _params.yaw_ff;

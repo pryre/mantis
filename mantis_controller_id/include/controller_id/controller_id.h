@@ -2,6 +2,7 @@
 
 #include <ros/ros.h>
 
+#include <controller_id/controller_id_params.h>
 //#include <mantis_controller_id/GoalPose.h>
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
@@ -35,8 +36,7 @@ class ControllerID {
 
 		std::string param_model_name_;
 		double param_rate_;
-		uint16_t param_pwm_min_;
-		uint16_t param_pwm_max_;
+		ControllerIDParams p_;
 
 	public:
 		ControllerID( void );

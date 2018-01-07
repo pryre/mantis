@@ -434,7 +434,231 @@
           </script>
         </material>
       </visual>
+
+	  <collision name="collision_shoulder_servo">
+        <pose>0 0 -0.03825 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0285 0.034 0.0465</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <visual name="visual_shoulder_servo">
+        <pose>0.01425 0.019 -0.015 -1.570796327 0 3.141592654</pose>
+        <geometry>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/X-430_IDLE.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+        </material>
+      </visual>
 	</link>
+
+
+	<joint type="revolute" name="joint_shoulder">
+      <pose>-0.15047991 0 0 0 0 0</pose>
+      <parent>base_link</parent>
+      <child>arm_link_upperarm</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <dynamics>
+          <damping>0.05</damping>
+          <spring_reference>0.0</spring_reference>
+          <spring_stiffness>0.0</spring_stiffness>
+        </dynamics>
+        <limit>
+          <lower>-1.57</lower>
+          <upper>1.57</upper>
+        </limit>
+      </axis>
+    </joint>
+
+
+    <link name="arm_link_upperarm">
+      <pose>0 0 0.29927009 1.570796327 1.570796327 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.10022841</mass>
+        <inertia>
+          <ixx>1.678e-05</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.5428e-04</iyy>
+          <iyz>0</iyz>
+          <izz>2.4944e-04</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_upperarm">
+        <pose>-0.05197991 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.197 0.0285 0.041</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <visual name="visual_upperarm_bracket">
+        <pose>-0.15297991 0.012 0.0205 1.570796327 1.570796327 0</pose>
+        <geometry>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/FR12-H101.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Grey</name>
+          </script>
+        </material>
+      </visual>
+
+      <visual name="visual_upperarm_rod">
+        <pose>-0.12247991 -0.008 -0.008 0 0 0</pose>
+        <geometry>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/rod.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Black</name>
+          </script>
+        </material>
+      </visual>
+
+      <visual name="visual_upperarm_servo">
+        <pose>-0.00247991 0.01425 -0.019 0 0 -1.570796327</pose>
+        <geometry>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/X-430_IDLE.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+        </material>
+      </visual>
+    </link>
+
+
+	<joint type="revolute" name="joint_elbow">
+      <pose>-0.15047991 0 0 0 0 0</pose>
+      <parent>arm_link_upperarm</parent>
+      <child>arm_link_forearm</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <dynamics>
+          <damping>0.05</damping>
+          <spring_reference>0.0</spring_reference>
+          <spring_stiffness>0.0</spring_stiffness>
+        </dynamics>
+        <limit>
+          <lower>-1.57</lower>
+          <upper>1.57</upper>
+        </limit>
+      </axis>
+    </joint>
+
+
+    <link name="arm_link_forearm">
+      <pose>0 0 0.11602009 1.570796327 1.570796327 0</pose>
+      <gravity>1</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+
+	  <inertial>
+        <mass>0.10022841</mass>
+        <inertia>
+          <ixx>1.678e-05</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.5428e-04</iyy>
+          <iyz>0</iyz>
+          <izz>2.4944e-04</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision_forearm">
+        <pose>-0.05197991 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.197 0.0285 0.041</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <visual name="visual_forearm_bracket">
+        <pose>-0.15297991 0.012 0.0205 1.570796327 1.570796327 0</pose>
+        <geometry>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/FR12-H101.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Grey</name>
+          </script>
+        </material>
+      </visual>
+
+      <visual name="visual_forearm_rod">
+        <pose>-0.12247991 -0.008 -0.008 0 0 0</pose>
+        <geometry>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/rod.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Black</name>
+          </script>
+        </material>
+      </visual>
+
+      <visual name="visual_forearm_servo">
+        <pose>-0.00247991 0.01425 -0.019 0 0 -1.570796327</pose>
+        <geometry>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/X-430_IDLE.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
+        </geometry>
+        <material>
+          <lighting>1</lighting>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+        </material>
+      </visual>
+    </link>
 
 
     <link name='rotor_1'>
@@ -777,244 +1001,6 @@
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
-
-
-	<joint type="fixed" name="joint_body_shoulder">
-      <parent>base_link</parent>
-      <child>arm_link_shoulder_servo</child>
-    </joint>
-
-
-    <link name="arm_link_shoulder_servo">
-      <pose>0 0 0.46175 0 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.082</mass>
-        <inertia>
-          <ixx>2.26747e-05</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>2.03258e-05</iyy>
-          <iyz>0</iyz>
-          <izz>1.34497e-05</izz>
-        </inertia>
-      </inertial>
-
-      <collision name="collision_shoulder">
-        <geometry>
-          <box>
-            <size>0.0285 0.034 0.0465</size>
-          </box>
-        </geometry>
-      </collision>
-
-      <visual name="visual_shoulder">
-        <geometry>
-          <box>
-            <size>0.0285 0.034 0.0465</size>
-          </box>
-        </geometry>
-      </visual>
-    </link>
-
-
-	<joint type="revolute" name="joint_shoulder_upperarm_servo">
-      <pose>0 0 0.09 1.570796327 0 0</pose>
-      <parent>arm_link_shoulder_servo</parent>
-      <child>arm_link_upperarm</child>
-      <axis>
-        <xyz>0 0 1</xyz>
-        <dynamics>
-          <damping>0.05</damping>
-          <spring_reference>0.0</spring_reference>
-          <spring_stiffness>0.0</spring_stiffness>
-        </dynamics>
-        <limit>
-          <lower>-1.57</lower>
-          <upper>1.57</upper>
-        </limit>
-      </axis>
-    </joint>
-
-
-    <link name="arm_link_upperarm">
-      <pose>0 0 0.35975 0 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.008</mass>
-        <inertia>
-          <ixx>9.826e-06</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>9.826e-06</iyy>
-          <iyz>0</iyz>
-          <izz>4.52e-07</izz>
-        </inertia>
-      </inertial>
-
-      <collision name="collision_upperarm">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
-      <visual name="visual_upperarm">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </visual>
-    </link>
-
-
-	<joint type="fixed" name="joint_upperarm_elbow">
-      <parent>arm_link_upperarm</parent>
-      <child>arm_link_elbow_servo</child>
-    </joint>
-
-
-    <link name="arm_link_elbow_servo">
-      <pose>0 0 0.2765 0 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.082</mass>
-        <inertia>
-          <ixx>2.26747e-05</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>2.03258e-05</iyy>
-          <iyz>0</iyz>
-          <izz>1.34497e-05</izz>
-        </inertia>
-      </inertial>
-
-      <collision name="collision_elbow_servo">
-        <geometry>
-          <box>
-            <size>0.0285 0.034 0.0465</size>
-          </box>
-        </geometry>
-      </collision>
-
-      <visual name="visual_elbow_servo">
-        <geometry>
-          <box>
-            <size>0.0285 0.034 0.0465</size>
-          </box>
-        </geometry>
-      </visual>
-    </link>
-
-
-	<joint type="revolute" name="joint_elbow_forearm_servo">
-      <pose>0 0 0.09 1.570796327 0 0</pose>
-      <parent>arm_link_elbow_servo</parent>
-      <child>arm_link_forearm</child>
-      <axis>
-        <xyz>0 0 1</xyz>
-        <dynamics>
-          <damping>0.05</damping>
-          <spring_reference>0.0</spring_reference>
-          <spring_stiffness>0.0</spring_stiffness>
-        </dynamics>
-        <limit>
-          <lower>-1.57</lower>
-          <upper>1.57</upper>
-        </limit>
-      </axis>
-    </joint>
-
-
-    <link name="arm_link_forearm">
-      <pose>0 0 0.1745 0 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.008</mass>
-        <inertia>
-          <ixx>9.826e-06</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>9.826e-06</iyy>
-          <iyz>0</iyz>
-          <izz>4.52e-07</izz>
-        </inertia>
-      </inertial>
-
-      <collision name="collision_forearm">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
-      <visual name="visual_forearm">
-        <geometry>
-          <cylinder>
-            <radius>0.008</radius>
-            <length>0.12</length>
-          </cylinder>
-        </geometry>
-      </visual>
-    </link>
-
-	<joint type="fixed" name="joint_forearm_wrist">
-      <parent>arm_link_forearm</parent>
-      <child>arm_link_wrist_servo</child>
-    </joint>
-
-	<link name="arm_link_wrist_servo">
-      <pose>0 0 0.09125 0 0 0</pose>
-      <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
-
-	  <inertial>
-        <mass>0.082</mass>
-        <inertia>
-          <ixx>2.26747e-05</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>2.03258e-05</iyy>
-          <iyz>0</iyz>
-          <izz>1.34497e-05</izz>
-        </inertia>
-      </inertial>
-
-      <collision name="collision_wrist_servo">
-        <geometry>
-          <box>
-            <size>0.0285 0.034 0.0465</size>
-          </box>
-        </geometry>
-      </collision>
-
-      <visual name="visual_wrist_servo">
-        <geometry>
-          <box>
-            <size>0.0285 0.034 0.0465</size>
-          </box>
-        </geometry>
-      </visual>
-    </link>
 
 
     <plugin name="mantis_gazebo_servo" filename="libmantis_gazebo_servo.so"/>

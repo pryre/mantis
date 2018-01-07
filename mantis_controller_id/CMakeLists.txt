@@ -127,6 +127,10 @@ include_directories(
 )
 
 ## Declare a C++ library
+add_library(${PROJECT_NAME}_params
+  src/controller_id/controller_id_params.cpp
+)
+
 add_library(${PROJECT_NAME}
   src/controller_id/controller_id.cpp
 )
@@ -134,6 +138,7 @@ add_library(${PROJECT_NAME}
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
+add_dependencies(${PROJECT_NAME}_params ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
@@ -155,7 +160,11 @@ add_dependencies(pose_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXP
 
 ## Specify libraries to link a library or executable target against
 
+target_link_libraries(${PROJECT_NAME}_params
+  ${catkin_LIBRARIES}
+)
 target_link_libraries(${PROJECT_NAME}
+  ${PROJECT_NAME}_params
   ${catkin_LIBRARIES}
 )
 

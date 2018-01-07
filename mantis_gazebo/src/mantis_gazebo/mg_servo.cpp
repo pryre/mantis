@@ -24,8 +24,8 @@ class MantisGazeboServo : public ModelPlugin
 
 			model_ = _parent;
 			updateConnection_ = event::Events::ConnectWorldUpdateBegin( boost::bind( &MantisGazeboServo::OnUpdate, this, _1 ) );
-			joint_shoulder_upperarm_servo_ = model_->GetJoint("joint_shoulder_upperarm_servo");
-			joint_elbow_forearm_servo_ = model_->GetJoint("joint_elbow_forearm_servo");
+			joint_shoulder_upperarm_servo_ = model_->GetJoint("joint_shoulder");
+			joint_elbow_forearm_servo_ = model_->GetJoint("joint_elbow");
 
 			joint_shoulder_upperarm_servo_->SetPosition(0, -1.570796327);
 

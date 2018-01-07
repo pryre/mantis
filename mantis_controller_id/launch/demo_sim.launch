@@ -16,7 +16,7 @@
 		<remap from="/controller_id/r1" to="/mantis_uav/command/servo/torque/shoulder" />
 		<remap from="/controller_id/r2" to="/mantis_uav/command/servo/torque/elbow" />
 
-		<!-- rosparam command="load" file="$(find mantis_controller_servos)/launch/robot_params.yaml"/ -->
+		<rosparam command="load" file="$(find mantis_controller_id)/launch/robot_params.yaml"/>
 	</node>
 
 	<node pkg="mavel" type="mavel_node" name="mavel" clear_params="true" output="screen">
