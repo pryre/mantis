@@ -42,7 +42,7 @@ ControllerIDParams::~ControllerIDParams() {
 
 void ControllerIDParams::load( void ) {
 	nh_->param("pwm/min", pwm_min, pwm_min);
-	nh_->param("pwm/max", pwm_min, pwm_max);
+	nh_->param("pwm/max", pwm_max, pwm_max);
 	nh_->param("num_motors", num_motors, num_motors);
 	nh_->param("gain/ang/roll/p", gain_ang_roll_p, gain_ang_roll_p);
 	nh_->param("gain/ang/pitch/p", gain_ang_pitch_p, gain_ang_pitch_p);

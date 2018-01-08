@@ -12,7 +12,7 @@ control:
         reserve: 0.25 # %
 
 motor:
-  max_thrust: 6.865 # N
+  max_thrust: 10.5225 # N
   prop_drag: 0.05
 
 arm:

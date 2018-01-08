@@ -20,7 +20,7 @@ class MantisGazeboPWMMotor : public ModelPlugin
 		MantisGazeboPWMMotor() : ModelPlugin(),
 								 param_pwm_min_(1000),
 								 param_pwm_max_(2000),
-								 param_motor_vel_max_(1200),
+								 param_motor_vel_max_(1618),
 								 param_motor_vel_armed_(100),
 								 safety_armed_(false) {
 		}
@@ -50,14 +50,13 @@ class MantisGazeboPWMMotor : public ModelPlugin
 			msg_motor_velocity_.data.resize( msg_in->channels.size() );
 
 			for(int i=0; i<msg_in->channels.size(); i++){
-				double pwm = param_pwm_min_;
-
 				if( safety_armed_ ) {
-					pwm = int32_constrain( msg_in->channels[i], param_pwm_min_, param_pwm_max_);
+					double pwm = int32_constrain( msg_in->channels[i], param_pwm_min_, param_pwm_max_);
 
 					double norm_ref = ( pwm - param_pwm_min_ ) / ( param_pwm_max_ - param_pwm_min_ );
+					double cmd_vel = norm_ref * param_motor_vel_max_;
 
-					msg_motor_velocity_.data[i] = ( norm_ref * param_motor_vel_max_ ) + param_motor_vel_armed_;
+					msg_motor_velocity_.data[i] =  (cmd_vel < param_motor_vel_armed_) ? param_motor_vel_armed_ : cmd_vel;
 				} else {
 					msg_motor_velocity_.data[i] = 0;
 				}

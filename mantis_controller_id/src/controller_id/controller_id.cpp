@@ -244,7 +244,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 				  p_.m1, p_.m2,
 				  r1, r1d, r2, r2d);
 
-		calc_Lqd(L);
+		//calc_Lqd(L);
 		//calc_Nq(N, IJ1z, IJ2z, g, gr(2,2), l0, l1, l2, m0, m1, m2, r1, r2);
 
 		tau = D*ua + (C + L)*qd;// + N;
@@ -254,6 +254,9 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		calc_Mm(M);
 
 		Eigen::MatrixXd u = M*tau;
+
+		//ROS_INFO_STREAM("t:" << std::endl << tau);
+		//ROS_INFO_STREAM("u:" << std::endl << u);
 
 		for(int i=0; i<p_.num_motors; i++) {
 			msg_rc_out.channels[i] = map_pwm(u(i,0));
