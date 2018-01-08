@@ -6,7 +6,12 @@ ControllerIDParams::ControllerIDParams(ros::NodeHandle *nh) :
 	nh_(nh),
 	pwm_min(1000),
 	pwm_max(2000),
-	num_motors(4),
+	motor_num(4),
+	motor_thrust_max(0.0),
+	motor_drag_max(0.0),
+	link_num(2),
+	link_servo_torque_max(0.0),
+	link_servo_ang_max(0.0),
 	gain_ang_roll_p(0.0),
 	gain_ang_pitch_p(0.0),
 	gain_ang_yaw_p(0.0),
@@ -43,7 +48,15 @@ ControllerIDParams::~ControllerIDParams() {
 void ControllerIDParams::load( void ) {
 	nh_->param("pwm/min", pwm_min, pwm_min);
 	nh_->param("pwm/max", pwm_max, pwm_max);
-	nh_->param("num_motors", num_motors, num_motors);
+
+	nh_->param("motor/num", motor_num, motor_num);
+	nh_->param("motor/thrust_max", motor_thrust_max, motor_thrust_max);
+	nh_->param("motor/drag_max", motor_drag_max, motor_drag_max);
+
+	nh_->param("link/num", link_num, link_num);
+	nh_->param("link/servo/torque_max", link_servo_torque_max, link_servo_torque_max);
+	nh_->param("link/servo/ang_max", link_servo_ang_max, link_servo_ang_max);
+
 	nh_->param("gain/ang/roll/p", gain_ang_roll_p, gain_ang_roll_p);
 	nh_->param("gain/ang/pitch/p", gain_ang_pitch_p, gain_ang_pitch_p);
 	nh_->param("gain/ang/yaw/p", gain_ang_yaw_p, gain_ang_yaw_p);

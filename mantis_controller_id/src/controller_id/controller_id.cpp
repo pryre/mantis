@@ -5,8 +5,8 @@
 #include <dynamics/calc_Dq.h>
 #include <dynamics/calc_Cqqd.h>
 #include <dynamics/calc_Lqd.h>
-#include <dynamics/calc_Nq.h>
-#include <dynamics/calc_Mm.h>
+//#include <dynamics/calc_Nq.h>
+//#include <dynamics/calc_Mm.h>
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
@@ -58,7 +58,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 	msg_rc_out.header.stamp = e.current_real;
 	msg_rc_out.header.frame_id = "map";
-	msg_rc_out.channels.resize(p_.num_motors);	//Allocate space for the number of motors
+	msg_rc_out.channels.resize(p_.motor_num);	//Allocate space for the number of motors
 	msg_twist_out.header.stamp = e.current_real;
 	msg_twist_out.header.frame_id = param_model_name_;
 	msg_accel_out.header.stamp = e.current_real;
@@ -111,14 +111,16 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		ROS_INFO_ONCE("Inverse dynamics controller running!");
 
-		Eigen::MatrixXd q = Eigen::MatrixXd::Constant(18, 1, 0.0);	//g(4,4) + r(2,1)
-		Eigen::MatrixXd qd = Eigen::MatrixXd::Constant(8, 1, 0.0);	//v(6,1) + rd(2,1)
-		Eigen::MatrixXd ua = Eigen::MatrixXd::Constant(8, 1, 0.0);	//vd(6,1) + rdd(2,1)
-		Eigen::MatrixXd tau = Eigen::MatrixXd::Constant(8, 1, 0.0);	//base torque, base force, arm torque
+		double num_states = 6 + p_.link_num;
 
-		Eigen::MatrixXd D = Eigen::MatrixXd::Constant(8, 8, 0.0);
-		Eigen::MatrixXd C = Eigen::MatrixXd::Constant(8, 8, 0.0);
-		Eigen::MatrixXd L = Eigen::MatrixXd::Constant(8, 8, 0.0);
+		Eigen::MatrixXd q = Eigen::MatrixXd::Zero(18, 1);	//g(4,4) + r(2,1)
+		Eigen::MatrixXd qd = Eigen::MatrixXd::Zero(num_states, 1);	//v(6,1) + rd(2,1)
+		Eigen::MatrixXd ua = Eigen::MatrixXd::Zero(num_states, 1);	//vd(6,1) + rdd(2,1)
+		Eigen::MatrixXd tau = Eigen::MatrixXd::Zero(num_states, 1);	//base torque, base force, arm torque
+
+		Eigen::MatrixXd D = Eigen::MatrixXd::Zero(num_states, num_states);
+		Eigen::MatrixXd C = Eigen::MatrixXd::Zero(num_states, num_states);
+		Eigen::MatrixXd L = Eigen::MatrixXd::Zero(num_states, num_states);
 		//Eigen::MatrixXd N = Eigen::MatrixXd::Constant(8, 1, 0.0);
 
 		//XXX: Quick init for states
@@ -251,19 +253,20 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		//XXX: Hardcoded for hex because lazy
 		Eigen::MatrixXd M = Eigen::MatrixXd::Constant(8, 8, 0.0);
-		calc_Mm(M);
+		calc_motor_map(M);
 
 		Eigen::MatrixXd u = M*tau;
 
 		//ROS_INFO_STREAM("t:" << std::endl << tau);
+		//ROS_INFO_STREAM("M:" << std::endl << M);
 		//ROS_INFO_STREAM("u:" << std::endl << u);
 
-		for(int i=0; i<p_.num_motors; i++) {
+		for(int i=0; i<p_.motor_num; i++) {
 			msg_rc_out.channels[i] = map_pwm(u(i,0));
 		}
 
-		msg_r1_out.data = u(p_.num_motors,0);
-		msg_r2_out.data = u(p_.num_motors+1,0);
+		msg_r1_out.data = u(p_.motor_num,0);
+		msg_r2_out.data = u(p_.motor_num+1,0);
 
 		msg_twist_out.twist.angular.x = goal_w.x();
 		msg_twist_out.twist.angular.y = goal_w.y();
@@ -283,7 +286,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		msg_joints_out.effort.push_back(ua(7,0));
 	} else {
 		//Output nothing until the input info is available
-		for(int i=0; i<p_.num_motors; i++) {
+		for(int i=0; i<p_.motor_num; i++) {
 			msg_rc_out.channels[i] = p_.pwm_min;
 		}
 
@@ -305,6 +308,29 @@ int16_t ControllerID::map_pwm(double val) {
 
 	//Scale c to the pwm values
 	return int16_t((p_.pwm_max - p_.pwm_min)*c) + p_.pwm_min;
+}
+
+void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
+	//TODO: This all needs to be better defined generically
+	double arm_ang = M_PI / 3.0;
+
+	double kT = 1.0 / (p_.motor_num * p_.motor_thrust_max);
+	double ktx = 1.0 / (2.0 * p_.la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * p_.motor_thrust_max);
+	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang) * p_.motor_thrust_max);
+	double km = 1.0 / (p_.motor_num * p_.motor_drag_max);
+	km = 0;
+
+	//Generate the copter map
+	Eigen::MatrixXd cm = Eigen::MatrixXd::Zero(p_.motor_num, 6);
+	cm << 0.0, 0.0,  kT, -ktx,  0.0, -km,
+		  0.0, 0.0,  kT,  ktx,  0.0,  km,
+		  0.0, 0.0,  kT,  ktx, -kty, -km,
+		  0.0, 0.0,  kT, -ktx,  kty,  km,
+		  0.0, 0.0,  kT, -ktx, -kty,  km,
+		  0.0, 0.0,  kT,  ktx,  kty, -km;
+
+	M << cm, Eigen::MatrixXd::Zero(p_.motor_num, p_.link_num),
+		 Eigen::MatrixXd::Zero(p_.link_num, 6), Eigen::MatrixXd::Identity(p_.link_num, p_.link_num);
 }
 
 Eigen::Vector3d ControllerID::calc_goal_rates(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R) {

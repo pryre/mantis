@@ -1,1 +1,1 @@
-../../../mantis_tools/mantis_model_matlab/clean/gen_code/calc_Cqqd.h
+../../../mantis_tools/mantis_model_matlab/gen_code/calc_Cqqd.h

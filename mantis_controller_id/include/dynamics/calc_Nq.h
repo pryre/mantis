@@ -1,1 +1,1 @@
-../../../mantis_tools/mantis_model_matlab/clean/gen_code/calc_Nq.h
+../../../mantis_tools/mantis_model_matlab/gen_code/calc_Nq.h

@@ -1,6 +1,9 @@
 #Paramter file for the Mantis MM-UAV
 
-num_motors: 6
+motor:
+  num: 6
+  thrust_max: 10.5225 # N
+  drag_max: 0.05
 
 pwm:
   min: 1000
@@ -29,6 +32,12 @@ gain:
       p: 0.2
     r2:
       p: 0.2
+
+links:
+  num: 2
+  servo:
+    torque_max: 2.0 # N
+    ang_max: 1.570796326794897 # radians
 
 length:
   la: 0.275

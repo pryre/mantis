@@ -11,7 +11,15 @@ class ControllerIDParams {
 	public:
 		int pwm_min;
 		int pwm_max;
-		int num_motors;
+
+		int motor_num;
+		double motor_thrust_max;
+		double motor_drag_max;
+
+		int link_num;
+		double link_servo_torque_max;
+		double link_servo_ang_max;
+
 		double gain_ang_roll_p;
 		double gain_ang_pitch_p;
 		double gain_ang_yaw_p;
