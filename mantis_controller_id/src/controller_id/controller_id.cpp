@@ -257,7 +257,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		Eigen::MatrixXd u = M*tau;
 
-		//ROS_INFO_STREAM("t:" << std::endl << tau);
+		//ROS_INFO_STREAM_THROTTLE(1.0/10.0, "tau:" << std::endl << tau);
 		//ROS_INFO_STREAM("M:" << std::endl << M);
 		//ROS_INFO_STREAM("u:" << std::endl << u);
 
@@ -316,7 +316,7 @@ void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 
 	double kT = 1.0 / (p_.motor_num * p_.motor_thrust_max);
 	double ktx = 1.0 / (2.0 * p_.la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * p_.motor_thrust_max);
-	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang) * p_.motor_thrust_max);
+	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * p_.motor_thrust_max);
 	double km = 1.0 / (p_.motor_num * p_.motor_drag_max);
 	km = 0;
 
