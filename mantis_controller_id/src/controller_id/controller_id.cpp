@@ -252,7 +252,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		tau = D*ua + (C + L)*qd;// + N;
 
 		//XXX: Hardcoded for hex because lazy
-		Eigen::MatrixXd M = Eigen::MatrixXd::Constant(8, 8, 0.0);
+		Eigen::MatrixXd M = Eigen::MatrixXd::Zero(p_.motor_num + p_.link_num, num_states);
 		calc_motor_map(M);
 
 		Eigen::MatrixXd u = M*tau;
