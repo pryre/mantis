@@ -45,42 +45,42 @@ pid:
     x:
       kp: 1.25
       ki: 0.0
-      kd: 0.5
+      kd: 0.0 #0.5
       tau: 0.05
       min: -2.0
       max: 2.0
     y:
       kp: 1.25
       ki: 0.0
-      kd: 0.5
+      kd: 0.0 #0.5
       tau: 0.05
       min: -2.0
       max: 2.0
     z:
       kp: 1.0
       ki: 0.0
-      kd: 0.1
+      kd: 0.0# 0.1
       tau: 0.05
       min: -1.0
       max: 2.0
   velocity:
     x:
       kp: 0.09
-      ki: 0.02
-      kd: 0.04
+      ki: 0.0
+      kd: 0.0# 0.04
       tau: 0.05
       min: -0.2
       max: 0.2
     y:
       kp: 0.09
-      ki: 0.02
-      kd: 0.04
+      ki: 0.0
+      kd: 0.0 #0.04
       tau: 0.05
       min: -0.2
       max: 0.2
     z:
       kp: 0.2
-      ki: 0.02
+      ki: 0.0
       kd: 0.0
       tau: 0.05
       min: -0.5

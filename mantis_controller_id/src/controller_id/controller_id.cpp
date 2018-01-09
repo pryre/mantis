@@ -212,7 +212,6 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		std::cout << "Goal: [" << g_phi << ";" << g_theta << "]" << std::endl << std::endl;
 		*/
 
-
 		Eigen::Vector3d goal_w = calc_goal_rates( gr_sp, gr);
 		//double goal_wx = 6.0*(g_phi - c_phi);
 		//double goal_wy = 6.0*(g_theta - c_theta);
@@ -222,7 +221,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		ua(0,0) = 0.0;
 		ua(1,0) = 0.0;
-		ua(2,0) = Ab.z();	//TODO: Something else, maybe: Ab(2,0);	//Z acceleration in body frame
+		ua(2,0) = A.norm();	//Ab.z();	//TODO: Something else, maybe: Ab(2,0);	//Z acceleration in body frame
 		ua(3,0) = p_.gain_rate_roll_p*(goal_w.x() - bwx);
 		ua(4,0) = p_.gain_rate_pitch_p*(goal_w.y() - bwy);
 		ua(5,0) = p_.gain_rate_yaw_p*(goal_w.z() - bwz);
