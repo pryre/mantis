@@ -28,6 +28,8 @@
 		<remap from="/pose_goals/state" to="/mavel/reference/state"/>
 		<remap from="/pose_goals/pose" to="/mavel/setpoint/position"/>
 		<remap from="/pose_goals/joints" to="/controller_id/goal/joints"/>
+
+		<remap from="/pose_goals/hover_goal" to="/move_base_simple/goal"/>
 	</node>
 
 	<node name="model_state_odom" pkg="mantis_gazebo" type="model_state_odom_node" output="screen" />
