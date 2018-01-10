@@ -613,7 +613,7 @@ gy0 = [Ry0, py0; ...
 vy0 = zeros(6,1); % bvx, bvy, bvz, w1, w2, w3,
 %gdy0 = [0.1;0;0;0;0;0]; % bvx, bvy, bvz, w1, w2, w3,
 
-r0 = [0;-pi/2]; %r1, r2
+r0 = [0;0]; %r1, r2
 
 rd0 = [0;0]; %r1d, r2d
 
@@ -630,7 +630,7 @@ y0 = [gy0(:); r0; vy0; rd0];
 %u = [0.1; 0.1; 0.1];
 
 % Input accelerations
-ua = [0;0;0;0;0;0;0;0];
+ua = [0;0;9.80665;0;0;0;0;0];
 
 disp('Running Simulation')
 
@@ -661,18 +661,19 @@ for k = 1:(length(t)-1)
         C(i) = Cqqd_eq{i}(rk(1), rk(2), vk(1), vk(2), vk(3), vk(4), vk(5), vk(6), vk(7), vk(8));
     end
 
-    L = Lqd;
+    %L = Lqd;
 
-    for i = 1:numel(N)
-        %g, r1, r2
-        %gb1_1,gb2_1,gb3_1,gb4_1,gb1_2,gb2_2,gb3_2,gb4_2,gb1_3,gb2_3,gb3_3,gb4_3,gb1_4,gb2_4,gb3_4,gb4_4,r1,r2
-        N(i) = N_eq{i}(gk(3,1), gk(3,2), gk(3,3), rk(1), rk(2));
-    end
+    %for i = 1:numel(N)
+    %    %g, r1, r2
+    %    %gb1_1,gb2_1,gb3_1,gb4_1,gb1_2,gb2_2,gb3_2,gb4_2,gb1_3,gb2_3,gb3_3,gb4_3,gb1_4,gb2_4,gb3_4,gb4_4,r1,r2
+    %    N(i) = N_eq{i}(gk(3,1), gk(3,2), gk(3,3), rk(1), rk(2));
+    %end
 
     M = double(Mm_sub);
 
     % Inverse Dynamics control
-    tau = D*ua + (C + L)*vk + N;
+    %tau = D*ua + (C + L)*vk + N;
+    tau = D*ua + C*vk;
     u(:,k) = M*tau;
 
     % Simulate 1 time step
