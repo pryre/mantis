@@ -689,10 +689,12 @@
       </collision>
 
       <visual name='visual_rotor_1'>
+        <pose>0 0 -0.0036 0 0 0</pose>
         <geometry>
-          <box>
-            <size>0.256 0.015 0.005</size>
-          </box>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/prop_8045_CW.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
         </geometry>
         <material>
           <script>
@@ -746,10 +748,12 @@
       </collision>
 
       <visual name='visual_rotor_2'>
+        <pose>0 0 -0.0036 0 0 0</pose>
         <geometry>
-          <box>
-            <size>0.256 0.015 0.005</size>
-          </box>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/prop_8045_CCW.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
         </geometry>
         <material>
           <script>
@@ -803,10 +807,12 @@
       </collision>
 
       <visual name='visual_rotor_3'>
+        <pose>0 0 -0.0036 0 0 0</pose>
         <geometry>
-          <box>
-            <size>0.256 0.015 0.005</size>
-          </box>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/prop_8045_CW.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
         </geometry>
         <material>
           <script>
@@ -860,10 +866,12 @@
       </collision>
 
       <visual name='visual_rotor_4'>
+        <pose>0 0 -0.0036 0 0 0</pose>
         <geometry>
-          <box>
-            <size>0.256 0.015 0.005</size>
-          </box>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/prop_8045_CCW.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
         </geometry>
         <material>
           <script>
@@ -917,10 +925,12 @@
       </collision>
 
       <visual name='visual_rotor_5'>
+        <pose>0 0 -0.0036 0 0 0</pose>
         <geometry>
-          <box>
-            <size>0.256 0.015 0.005</size>
-          </box>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/prop_8045_CCW.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
         </geometry>
         <material>
           <script>
@@ -974,10 +984,12 @@
       </collision>
 
       <visual name='visual_rotor_6'>
+        <pose>0 0 -0.0036 0 0 0</pose>
         <geometry>
-          <box>
-            <size>0.256 0.015 0.005</size>
-          </box>
+		  <mesh>
+			<uri>model://mantis_uav/meshes/prop_8045_CW.stl</uri>
+			<scale>0.001 0.001 0.001</scale>
+		  </mesh>
         </geometry>
         <material>
           <script>
