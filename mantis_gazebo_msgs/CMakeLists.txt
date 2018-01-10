@@ -6,7 +6,7 @@ project(mantis_gazebo_msgs)
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs genmsg)
 
 ## Declare ROS messages and services
-add_service_files(FILES DoArmMotors.srv)
+add_service_files(FILES DoArm.srv)
 
 ## Generate added messages and services
 generate_messages(DEPENDENCIES std_msgs)

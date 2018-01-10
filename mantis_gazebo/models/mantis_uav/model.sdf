@@ -1019,6 +1019,8 @@
 
     <plugin name="mantis_gazebo_pwm" filename="libmantis_gazebo_pwm_motor.so"/>
 
+    <plugin name="mantis_gazebo_safety" filename="libmantis_gazebo_safety.so"/>
+
     <plugin name="imu_plugin" filename="libhector_gazebo_ros_imu.so">
       <alwaysOn>true</alwaysOn>
       <frameName>world</frameName>

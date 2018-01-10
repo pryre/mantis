@@ -7,7 +7,7 @@
 #include <std_msgs/Float64MultiArray.h>
 #include <mavros_msgs/RCOut.h>
 
-#include <mantis_gazebo_msgs/DoArmMotors.h>
+#include <mantis_gazebo_msgs/DoArm.h>
 
 #include <vector>
 #include <string>
@@ -66,8 +66,8 @@ class MantisGazeboPWMMotor : public ModelPlugin
 			pub_motor_velocity_.publish(msg_motor_velocity_);
 		}
 
-		bool arm_safety_srv( mantis_gazebo_msgs::DoArmMotors::Request  &req,
-							 mantis_gazebo_msgs::DoArmMotors::Response &res ) {
+		bool arm_safety_srv( mantis_gazebo_msgs::DoArm::Request  &req,
+							 mantis_gazebo_msgs::DoArm::Response &res ) {
 
 			safety_armed_ = req.arm;
 

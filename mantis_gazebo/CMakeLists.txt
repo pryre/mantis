@@ -138,6 +138,10 @@ add_library(${PROJECT_NAME}_pwm_motor
   src/${PROJECT_NAME}/mg_pwm_motor.cpp
 )
 
+add_library(${PROJECT_NAME}_safety
+  src/${PROJECT_NAME}/mg_safety.cpp
+)
+
 add_library(${PROJECT_NAME}_motor_model
   src/rotors/gazebo_motor_model.cpp
 )
@@ -176,6 +180,12 @@ target_link_libraries(${PROJECT_NAME}_servo
 )
 
 target_link_libraries(${PROJECT_NAME}_pwm_motor
+  ${catkin_LIBRARIES}
+  ${GAZEBO_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+target_link_libraries(${PROJECT_NAME}_safety
   ${catkin_LIBRARIES}
   ${GAZEBO_LIBRARIES}
   ${Boost_LIBRARIES}

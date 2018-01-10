@@ -7,12 +7,15 @@
 #include <std_msgs/Float64.h>
 #include <sensor_msgs/JointState.h>
 
+#include <mantis_gazebo_msgs/DoArm.h>
+
 namespace gazebo
 {
 class MantisGazeboServo : public ModelPlugin
 {
 	public:
-		MantisGazeboServo() : ModelPlugin() {
+		MantisGazeboServo() : ModelPlugin(),
+							  safety_armed_(false) {
 		}
 
 		void Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/) {
@@ -42,7 +45,9 @@ class MantisGazeboServo : public ModelPlugin
 			msg_joint_state_.velocity.push_back(joint_elbow_forearm_servo_->GetVelocity(0));
 			msg_joint_state_.effort.push_back(0);
 			msg_joint_state_.effort.push_back(0);
-;
+
+			srv_arm_servos_ = nh_.advertiseService(model_->GetName() + "/arm/servos", &MantisGazeboServo::arm_safety_srv, this);
+
 			ROS_INFO("Loaded mantis servo plugin!");
 		}
 
@@ -56,18 +61,42 @@ class MantisGazeboServo : public ModelPlugin
 
 		// Called by the world update start event
 		void OnUpdate(const common::UpdateInfo & /*_info*/) {
-			joint_shoulder_upperarm_servo_->SetForce(0, joint_effort_cmd_shoulder_);
-			joint_elbow_forearm_servo_->SetForce(0, joint_effort_cmd_elbow_);
+			double cmd_shoulder = 0.0;
+			double cmd_elbow = 0.0;
+
+			if(safety_armed_) {
+				cmd_shoulder = joint_effort_cmd_shoulder_;
+				cmd_elbow = joint_effort_cmd_elbow_;
+			}
+
+			joint_shoulder_upperarm_servo_->SetForce(0, cmd_shoulder);
+			joint_elbow_forearm_servo_->SetForce(0, cmd_elbow);
 
 			msg_joint_state_.header.stamp = ros::Time::now();
 			msg_joint_state_.position[0] = joint_shoulder_upperarm_servo_->GetAngle(0).Radian();
 			msg_joint_state_.position[1] = joint_elbow_forearm_servo_->GetAngle(0).Radian();
 			msg_joint_state_.velocity[0] = joint_shoulder_upperarm_servo_->GetVelocity(0);
 			msg_joint_state_.velocity[1] = joint_elbow_forearm_servo_->GetVelocity(0);
-			msg_joint_state_.effort[0] = joint_effort_cmd_shoulder_;
-			msg_joint_state_.effort[1] = joint_effort_cmd_elbow_;
+			msg_joint_state_.effort[0] = cmd_shoulder;
+			msg_joint_state_.effort[1] = cmd_elbow;
 
 			pub_joint_state_.publish(msg_joint_state_);
+		}
+
+		bool arm_safety_srv( mantis_gazebo_msgs::DoArm::Request  &req,
+							 mantis_gazebo_msgs::DoArm::Response &res ) {
+
+			safety_armed_ = req.arm;
+
+			if( safety_armed_ ) {
+				ROS_INFO("Mantis: Servos armed!");
+			} else {
+				ROS_INFO("Mantis: Servos disarmed!");
+			}
+
+			res.success = true;
+
+			return true;
 		}
 
 	private:
@@ -81,10 +110,13 @@ class MantisGazeboServo : public ModelPlugin
 		double joint_effort_cmd_shoulder_;
 		double joint_effort_cmd_elbow_;
 
+		bool safety_armed_;
+
 		ros::NodeHandle nh_;
 		ros::Subscriber sub_shoulder_;
 		ros::Subscriber sub_elbow_;
 		ros::Publisher pub_joint_state_;
+		ros::ServiceServer srv_arm_servos_;
 
 		sensor_msgs::JointState msg_joint_state_;
 };
