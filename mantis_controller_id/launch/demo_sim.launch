@@ -25,6 +25,9 @@
 	</node>
 
 	<node pkg="mantis_controller_id" type="pose_test_node" name="pose_goals" clear_params="true" output="screen">
+		<param name="arm/r1" value="0.0" />
+		<param name="arm/r2" value="0.0" />
+
 		<remap from="/pose_goals/state" to="/mavel/reference/state"/>
 		<remap from="/pose_goals/pose" to="/mavel/setpoint/position"/>
 		<remap from="/pose_goals/joints" to="/controller_id/goal/joints"/>
