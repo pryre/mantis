@@ -5,13 +5,17 @@
 		<param name="model_name" value="mantis_uav" />
 		<param name="update_rate" value="100.0" />
 
-		<remap from="/controller_id/joint_state" to="/mantis_uav/state/joint_states" />
-		<remap from="/controller_id/odom" to="/mantis_uav/odom" />
+		<!--
+		<remap from="/controller_id/state/odom" to="/mantis_uav/odom" />
+		<remap from="/controller_id/state/joints" to="/mantis_uav/state/joint_states" />
+
+		<remap from="/controller_id/goal/accel" to="/mavel/goal/acceleration" />
 
 		<remap from="/controller_id/rc" to="/mantis_uav/command/motor_pwm" />
 		<remap from="/controller_id/r1" to="/mantis_uav/command/servo/torque/shoulder" />
 		<remap from="/controller_id/r2" to="/mantis_uav/command/servo/torque/elbow" />
+		-->
 
-		<!-- rosparam command="load" file="$(find mantis_controller_servos)/launch/params.yaml"/ -->
+		<rosparam command="load" file="$(find mantis_controller_id)/launch/robot_params.yaml"/>
 	</node>
 </launch>

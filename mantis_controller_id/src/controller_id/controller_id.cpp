@@ -43,6 +43,8 @@ ControllerID::ControllerID() :
 	sub_goal_joints_ = nh_.subscribe<sensor_msgs::JointState>( "goal/joints", 10, &ControllerID::callback_goal_joints, this );
 
 	timer_ = nh_.createTimer(ros::Duration(1.0/param_rate_), &ControllerID::callback_control, this );
+
+	ROS_INFO("Inverse Dynamics controller loaded.");
 }
 
 ControllerID::~ControllerID() {
@@ -115,13 +117,6 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		Eigen::MatrixXd q = Eigen::MatrixXd::Zero(18, 1);	//g(4,4) + r(2,1)
 		Eigen::MatrixXd qd = Eigen::MatrixXd::Zero(num_states, 1);	//v(6,1) + rd(2,1)
-		Eigen::MatrixXd ua = Eigen::MatrixXd::Zero(num_states, 1);	//vd(6,1) + rdd(2,1)
-		Eigen::MatrixXd tau = Eigen::MatrixXd::Zero(num_states, 1);	//base torque, base force, arm torque
-
-		Eigen::MatrixXd D = Eigen::MatrixXd::Zero(num_states, num_states);
-		Eigen::MatrixXd C = Eigen::MatrixXd::Zero(num_states, num_states);
-		Eigen::MatrixXd L = Eigen::MatrixXd::Zero(num_states, num_states);
-		//Eigen::MatrixXd N = Eigen::MatrixXd::Constant(8, 1, 0.0);
 
 		//XXX: Quick init for states
 		Eigen::Quaterniond gq;
@@ -168,7 +163,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		//Rotate the accel vector back into the body frame
 		//Such that Ab.z will be the amount of acceleration wanted
-		Eigen::Vector3d Ab = gr.transpose()*A;
+		//Eigen::Vector3d Ab = gr.transpose()*A;
 
 		/* TODO:
 		Eigen::Vector3d Ax(ax, 0.0, az);
@@ -219,16 +214,23 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		double goal_r1d = p_.gain_ang_r1_p*(msg_goal_joints_.position[0] - r1);
 		double goal_r2d = p_.gain_ang_r2_p*(msg_goal_joints_.position[1] - r2);
 
-		ua(0,0) = 0.0;
-		ua(1,0) = 0.0;
-		ua(2,0) = A.norm();	//Ab.z();	//TODO: Something else, maybe: Ab(2,0);	//Z acceleration in body frame
-		ua(3,0) = p_.gain_rate_roll_p*(goal_w.x() - bwx);
-		ua(4,0) = p_.gain_rate_pitch_p*(goal_w.y() - bwy);
-		ua(5,0) = p_.gain_rate_yaw_p*(goal_w.z() - bwz);
-		ua(6,0) = p_.gain_rate_r1_p*(goal_r1d - r1d);
-		ua(7,0) = p_.gain_rate_r2_p*(goal_r2d - r2d);
+		Eigen::VectorXd ua = Eigen::VectorXd::Zero(num_states);	//vd(6,1) + rdd(2,1)
+
+		ua(0) = 0.0;
+		ua(1) = 0.0;
+		ua(2) = A.norm();	//Ab.z();	//TODO: Something else, maybe: Ab(2,0);	//Z acceleration in body frame
+		ua(3) = p_.gain_rate_roll_p*(goal_w.x() - bwx);
+		ua(4) = p_.gain_rate_pitch_p*(goal_w.y() - bwy);
+		ua(5) = p_.gain_rate_yaw_p*(goal_w.z() - bwz);
+		ua(6) = p_.gain_rate_r1_p*(goal_r1d - r1d);
+		ua(7) = p_.gain_rate_r2_p*(goal_r2d - r2d);
 
 		//Calculate the
+
+		Eigen::MatrixXd D = Eigen::MatrixXd::Zero(num_states, num_states);
+		Eigen::MatrixXd C = Eigen::MatrixXd::Zero(num_states, num_states);
+		Eigen::MatrixXd L = Eigen::MatrixXd::Zero(num_states, num_states);
+
 		calc_Dq(D,
 				p_.I0x, p_.I0y, p_.I0z,
 				p_.I1x, p_.I1y, p_.I1z,
@@ -245,10 +247,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 				  p_.m1, p_.m2,
 				  r1, r1d, r2, r2d);
 
-		//calc_Lqd(L);
-		//calc_Nq(N, IJ1z, IJ2z, g, gr(2,2), l0, l1, l2, m0, m1, m2, r1, r2);
-
-		tau = D*ua + (C + L)*qd;// + N;
+		Eigen::VectorXd tau = D*ua + (C + L)*qd;// + N;
 
 		//XXX: Hardcoded for hex because lazy
 		Eigen::MatrixXd M = Eigen::MatrixXd::Zero(p_.motor_num + p_.link_num, num_states);
