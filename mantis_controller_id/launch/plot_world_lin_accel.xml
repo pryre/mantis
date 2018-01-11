@@ -35,11 +35,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mantis_uav/world_velocity</topic>
-                                    <type>geometry_msgs/TwistStamped</type>
+                                    <topic>/mantis_uav/world_acceleration</topic>
+                                    <type>geometry_msgs/AccelStamped</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/linear/x</field>
+                                    <field>accel/linear/x</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -48,8 +48,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mantis_uav/world_velocity</topic>
-                                    <type>geometry_msgs/TwistStamped</type>
+                                    <topic>/mantis_uav/world_acceleration</topic>
+                                    <type>geometry_msgs/AccelStamped</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -72,7 +72,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>RefVelX</title>
+                            <title>RefAccelX</title>
                         </curve_0>
                         <curve_1>
                             <axes>
@@ -86,11 +86,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mavel/goal/velocity</topic>
-                                    <type>geometry_msgs/TwistStamped</type>
+                                    <topic>/mavel/goal/acceleration</topic>
+                                    <type>geometry_msgs/AccelStamped</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/linear/x</field>
+                                    <field>accel/linear/x</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -99,8 +99,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mavel/goal/velocity</topic>
-                                    <type>geometry_msgs/TwistStamped</type>
+                                    <topic>/mavel/goal/acceleration</topic>
+                                    <type>geometry_msgs/AccelStamped</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -123,14 +123,14 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>GoalVelX</title>
+                            <title>GoalAccelX</title>
                         </curve_1>
                     </curves>
                     <legend>
                         <visible>true</visible>
                     </legend>
                     <plot_rate>30</plot_rate>
-                    <title>Velocity X</title>
+                    <title>Acceleration</title>
                 </column_0>
             </row_0>
             <row_1>
@@ -162,11 +162,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mantis_uav/world_velocity</topic>
-                                    <type>geometry_msgs/TwistStamped</type>
+                                    <topic>/mantis_uav/world_acceleration</topic>
+                                    <type>geometry_msgs/AccelStamped</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/linear/y</field>
+                                    <field>accel/linear/y</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -175,8 +175,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mantis_uav/world_velocity</topic>
-                                    <type>geometry_msgs/TwistStamped</type>
+                                    <topic>/mantis_uav/world_acceleration</topic>
+                                    <type>geometry_msgs/AccelStamped</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -199,7 +199,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>RefVelY</title>
+                            <title>RefAccelY</title>
                         </curve_0>
                         <curve_1>
                             <axes>
@@ -213,11 +213,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mavel/goal/velocity</topic>
-                                    <type>geometry_msgs/TwistStamped</type>
+                                    <topic>/mavel/goal/acceleration</topic>
+                                    <type>geometry_msgs/AccelStamped</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/linear/y</field>
+                                    <field>accel/linear/y</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -226,8 +226,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mavel/goal/velocity</topic>
-                                    <type>geometry_msgs/TwistStamped</type>
+                                    <topic>/mavel/goal/acceleration</topic>
+                                    <type>geometry_msgs/AccelStamped</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -250,7 +250,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>GoalVelY</title>
+                            <title>GoalAccelY</title>
                         </curve_1>
                     </curves>
                     <legend>
@@ -289,11 +289,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mantis_uav/world_velocity</topic>
-                                    <type>geometry_msgs/TwistStamped</type>
+                                    <topic>/mantis_uav/world_acceleration</topic>
+                                    <type>geometry_msgs/AccelStamped</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/linear/z</field>
+                                    <field>accel/linear/z</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -302,8 +302,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mantis_uav/world_velocity</topic>
-                                    <type>geometry_msgs/TwistStamped</type>
+                                    <topic>/mantis_uav/world_acceleration</topic>
+                                    <type>geometry_msgs/AccelStamped</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -326,7 +326,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>RefVelZ</title>
+                            <title>RefAccelZ</title>
                         </curve_0>
                         <curve_1>
                             <axes>
@@ -340,11 +340,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mavel/goal/velocity</topic>
-                                    <type>geometry_msgs/TwistStamped</type>
+                                    <topic>/mavel/goal/acceleration</topic>
+                                    <type>geometry_msgs/AccelStamped</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/linear/z</field>
+                                    <field>accel/linear/z</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -353,8 +353,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mavel/goal/velocity</topic>
-                                    <type>geometry_msgs/TwistStamped</type>
+                                    <topic>/mavel/goal/acceleration</topic>
+                                    <type>geometry_msgs/AccelStamped</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -377,7 +377,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>GoalVelZ</title>
+                            <title>RefAccelZ</title>
                         </curve_1>
                     </curves>
                     <legend>
