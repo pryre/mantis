@@ -35,7 +35,5 @@
 		<remap from="/pose_goals/hover_goal" to="/move_base_simple/goal"/>
 	</node>
 
-	<node name="model_state_odom" pkg="mantis_gazebo" type="model_state_odom_node" output="screen" />
-
 	<node pkg="rosservice" type="rosservice" name="arm_system" args="call --wait /mantis_uav/arm/system '{arm: $(arg arm)}'"/>
 </launch>

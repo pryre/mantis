@@ -12,26 +12,26 @@ pwm:
 gain:
   ang:
     roll:
-      p: 6.0
+      p: 3.16
     pitch:
-      p: 6.0
+      p: 3.16
     yaw:
       p: 2.8
     r1:
-      p: 6.0
+      p: 3.16
     r2:
-      p: 6.0
+      p: 3.16
   rate:
     roll:
-      p: 6.0
+      p: 10.31
     pitch:
-      p: 6.0
+      p: 10.31
     yaw:
       p: 0.2
     r1:
-      p: 0.2
+      p: 10.31
     r2:
-      p: 0.2
+      p: 10.31
 
 links:
   num: 2

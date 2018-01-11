@@ -43,46 +43,46 @@ stream:
 pid:
   position:
     x:
-      kp: 1.25
+      kp: 1.4
       ki: 0.0
       kd: 0.0 #0.5
       tau: 0.05
-      min: -2.0
-      max: 2.0
+      min: -0.5
+      max: 0.5
     y:
-      kp: 1.25
+      kp: 1.4
       ki: 0.0
       kd: 0.0 #0.5
       tau: 0.05
-      min: -2.0
-      max: 2.0
+      min: -0.5
+      max: 0.5
     z:
-      kp: 0.5
+      kp: 1.4
       ki: 0.0
       kd: 0.0# 0.1
       tau: 0.05
-      min: -1.0
-      max: 2.0
+      min: -0.5
+      max: 0.5
   velocity:
     x:
-      kp: 0.5
+      kp: 4.8
       ki: 0.0
       kd: 0.0 # 0.04
       tau: 0.05
-      min: -0.5
-      max: 0.2
+      min: -3.0
+      max: 3.0
     y:
-      kp: 0.5
+      kp: 4.8
       ki: 0.0
       kd: 0.0 #0.04
       tau: 0.05
-      min: -0.5
-      max: 0.5
+      min: -3.0
+      max: 3.0
     z:
-      kp: 0.5
+      kp: 4.8
       ki: 0.0
       kd: 0.0
       tau: 0.05
-      min: -0.5
-      max: 0.5
+      min: -3.0
+      max: 3.0
 

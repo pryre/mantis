@@ -207,24 +207,29 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		std::cout << "Goal: [" << g_phi << ";" << g_theta << "]" << std::endl << std::endl;
 		*/
 
-		Eigen::Vector3d Ab = gr*A; //Get the acceleration vector in the body frame
 		Eigen::Vector3d goal_w = calc_goal_rates( gr_sp, gr);	//Calculate the goal rates to achieve the right acceleration vector
 		double goal_r1d = p_.gain_ang_r1_p*(msg_goal_joints_.position[0] - r1);
 		double goal_r2d = p_.gain_ang_r2_p*(msg_goal_joints_.position[1] - r2);
+
+		//Calculate thrust needed to prioritize maintaining altitude
+		Eigen::Vector3d thrust_vec = gr*Eigen::Vector3d::UnitZ();
+		double thrust_scale = A.z() / thrust_vec.z();
+		Eigen::Vector3d z_accel = thrust_scale*thrust_vec;
+
+		//Eigen::Vector3d Ab = gr*A; //Get the acceleration vector in the body frame
 
 		Eigen::VectorXd ua = Eigen::VectorXd::Zero(num_states);	//vd(6,1) + rdd(2,1)
 
 		ua(0) = 0.0;
 		ua(1) = 0.0;
-		ua(2) = Ab.z();	//A.norm();	//TODO: Something else, maybe: Ab(2,0);	//Z acceleration in body frame
+		ua(2) = z_accel.norm(); //A.norm()	//TODO: Something else, maybe: Ab(2,0);	//Z acceleration in body frame
 		ua(3) = p_.gain_rate_roll_p*(goal_w.x() - bwx);
 		ua(4) = p_.gain_rate_pitch_p*(goal_w.y() - bwy);
 		ua(5) = p_.gain_rate_yaw_p*(goal_w.z() - bwz);
 		ua(6) = p_.gain_rate_r1_p*(goal_r1d - r1d);
 		ua(7) = p_.gain_rate_r2_p*(goal_r2d - r2d);
 
-		//Calculate the
-
+		//Calculate dynamics matricies
 		Eigen::MatrixXd D = Eigen::MatrixXd::Zero(num_states, num_states);
 		Eigen::MatrixXd C = Eigen::MatrixXd::Zero(num_states, num_states);
 		Eigen::MatrixXd L = Eigen::MatrixXd::Zero(num_states, num_states);
