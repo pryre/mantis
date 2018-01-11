@@ -39,6 +39,5 @@ class ForwardKinematics {
 		void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
 		void callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in);
 		void configure_static_joints( void );
-		geometry_msgs::Transform affine3dToTransform( Eigen::Affine3d &g );
 		void do_viz( const std::vector<std::string> *arm_names );
 };

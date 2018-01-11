@@ -140,8 +140,8 @@ void ForwardKinematics::callback_state_joints(const sensor_msgs::JointState::Con
 
 			geometry_msgs::TransformStamped transform = tf2::eigenToTransform(g);
 			transform.header.stamp = msg_in->header.stamp;
-			transform.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/l" + std::to_string(i-1);
-			transform.child_frame_id = param_model_id_ + "/l" + std::to_string(i);
+			transform.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/link_" + std::to_string(i);
+			transform.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
 
 			tfbr_.sendTransform(transform);
 		}
@@ -165,8 +165,8 @@ void ForwardKinematics::configure_static_joints() {
 
 			geometry_msgs::TransformStamped tf = tf2::eigenToTransform(g);
 			tf.header.stamp = stamp;
-			tf.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/l" + std::to_string(i-1);
-			tf.child_frame_id = param_model_id_ + "/l" + std::to_string(i);
+			tf.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/link_" + std::to_string(i);
+			tf.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
 
 			tfsbr_.sendTransform(tf);
 		}
