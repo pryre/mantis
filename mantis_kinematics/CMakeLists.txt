@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf2
   tf2_ros
+  tf2_eigen
   nav_msgs
   sensor_msgs
   geometry_msgs

@@ -2,16 +2,17 @@
 
 #include <ros/ros.h>
 
+#include <geometry_msgs/Transform.h>
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
 
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 
-#include <tf2/LinearMath/Vector3.h>
-#include <tf2/LinearMath/Quaternion.h>
+#include <eigen3/Eigen/Dense>
 
 #include <string>
+#include <vector>
 
 class ForwardKinematics {
 	private:
@@ -23,13 +24,12 @@ class ForwardKinematics {
 		tf2_ros::TransformBroadcaster tfbr_;
 		tf2_ros::StaticTransformBroadcaster tfsbr_;
 
-		std::string param_model_name_;
-		std::vector<std::string> param_joint_names_;
-		double param_arm_len_;
+		std::string param_model_id_;
+		std::vector<int> param_dh_joints_;
+		std::vector<std::vector<double>> param_dh_params_;
+
 		bool param_do_viz_;
 		bool param_done_viz_;
-		tf2::Vector3 param_mount_translation_;
-		tf2::Quaternion param_mount_rotation_;
 
 	public:
 		ForwardKinematics( void );
@@ -38,7 +38,7 @@ class ForwardKinematics {
 
 		void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
 		void callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in);
-
-		void base_arm_rot( tf2::Vector3 p, tf2::Quaternion q );
+		void configure_static_joints( void );
+		geometry_msgs::Transform affine3dToTransform( Eigen::Affine3d &g );
 		void do_viz( const std::vector<std::string> *arm_names );
 };

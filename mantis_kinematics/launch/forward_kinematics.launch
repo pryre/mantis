@@ -3,9 +3,13 @@
 	<arg name="model_name" default="mantis_uav"/>
 
 	<node pkg="mantis_kinematics" type="mantis_forward_kinematics_node" name="mantis_fk" clear_params="true" output="screen">
+		<param name="model_id" value="$(arg model_name)" />
+
 		<remap from="/mantis_fk/state/odom" to="/$(arg model_name)/odom"/>
 		<remap from="/mantis_fk/state/joints" to="/$(arg model_name)/state/joint_states"/>
 
 		<remap from="/mantis_fk/visualization" to="/$(arg model_name)/visualization"/>
+
+		<rosparam command="load" file="$(find mantis_kinematics)/launch/mantis_dh.yaml"/>
 	</node>
 </launch>

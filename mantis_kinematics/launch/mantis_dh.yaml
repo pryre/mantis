@@ -1,0 +1,11 @@
+# DH Link definitions
+#   num: number of links
+#   var: field to use a the joint variable (0 for static joint)
+#   lx: link 'x', defined in DH parameters as:
+#     lx: [d, t, r, a]
+
+links:
+  var: [0]
+  l0: [-0.05025, 0.0, 0.0, 1.570796326794897]
+  l1: [0.0, -1.570796326794897, 0.18325, 0.0]
+  l2: [0.0, 0.0, 0.18325, 0.0]
