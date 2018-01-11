@@ -1,7 +1,7 @@
 #include <eigen3/Eigen/Dense>
 #include <math.h>
 
-void dh_gen(Eigen::Affine3d &g, const double d, const double t, const double r, const double a) {
+Eigen::Affine3d dh_gen(const double d, const double t, const double r, const double a) {
 	Eigen::Affine3d Td = Eigen::Affine3d::Identity();
 	Eigen::Affine3d Rt = Eigen::Affine3d::Identity();
 	Eigen::Affine3d Tr = Eigen::Affine3d::Identity();
@@ -38,5 +38,5 @@ void dh_gen(Eigen::Affine3d &g, const double d, const double t, const double r, 
 								  std::sin(a),  std::cos(a);
 
     //Formulate transformation
-    g = ((Rt*Td)*Tr)*Ra;
+    return Rt*Td*Tr*Ra;
 }

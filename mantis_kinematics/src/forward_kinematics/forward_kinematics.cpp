@@ -100,53 +100,51 @@ void ForwardKinematics::callback_state_joints(const sensor_msgs::JointState::Con
 	int joint_counter = 0;
 
 	for(int i=0; i<param_dh_joints_.size(); i++) {
-		int jt = param_dh_joints_[i];
+		if(param_dh_joints_[i] > 0) {
+			double d = param_dh_params_[i][0];
+			double t = param_dh_params_[i][1];
+			double r = param_dh_params_[i][2];
+			double a = param_dh_params_[i][3];
+			double j = 0.0;
 
-		Eigen::Affine3d g;
-		double d = param_dh_params_[i][0];
-		double t = param_dh_params_[i][1];
-		double r = param_dh_params_[i][2];
-		double a = param_dh_params_[i][3];
-		double j = 0.0;
+			Eigen::Affine3d g = Eigen::Affine3d::Identity();
 
-		if(jt > 0) {
 			if(joint_counter >= msg_in->position.size()) {
 				ROS_ERROR("Tried to read index (%i) but joint message is %li long", joint_counter, msg_in->position.size());
 			} else {
 				j = msg_in->position[joint_counter];
 				joint_counter++;
 			}
+
+			switch(param_dh_joints_[i]) {
+				case 1: {
+					g = dh_gen(d + j, t, r, a);
+					break;
+				}
+				case 2: {
+					g = dh_gen(d, t + j, r, a);
+					break;
+				}
+				case 3: {
+					g = dh_gen(d, t, r + j, a);
+					break;
+				}
+				case 4: {
+					g = dh_gen(d, t, r, a + j);
+					break;
+				}
+				default: {
+					//Handled by static transforms
+				}
+			}
+
+			geometry_msgs::TransformStamped transform = tf2::eigenToTransform(g);
+			transform.header.stamp = msg_in->header.stamp;
+			transform.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/l" + std::to_string(i-1);
+			transform.child_frame_id = param_model_id_ + "/l" + std::to_string(i);
+
+			tfbr_.sendTransform(transform);
 		}
-
-		switch(jt) {
-			case 1: {
-				dh_gen(g, d + j, t, r, a);
-				break;
-			}
-			case 2: {
-				dh_gen(g, d, t + j, r, a);
-				break;
-			}
-			case 3: {
-				dh_gen(g, d, t, r + j, a);
-				break;
-			}
-			case 4: {
-				dh_gen(g, d, t, r, a + j);
-				break;
-			}
-			default: {
-				//Handled by static transforms
-				//dh_gen(g, d, t, r, a);
-			}
-		}
-
-		geometry_msgs::TransformStamped transform = tf2::eigenToTransform(g);
-		transform.header.stamp = msg_in->header.stamp;
-		transform.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/l" + std::to_string(i-1);
-		transform.child_frame_id = param_model_id_ + "/l" + std::to_string(i);
-
-		tfbr_.sendTransform(transform);
 	}
 
 	//if(param_do_viz_ && !param_done_viz_)
@@ -158,43 +156,21 @@ void ForwardKinematics::configure_static_joints() {
 
 	for(int i=0; i<param_dh_joints_.size(); i++) {
 		if(param_dh_joints_[i] == 0) {
-			Eigen::Affine3d g;
 			double d = param_dh_params_[i][0];
 			double t = param_dh_params_[i][1];
 			double r = param_dh_params_[i][2];
 			double a = param_dh_params_[i][3];
 
-			dh_gen(g, d, t, r, a);
-
-			ROS_INFO("[d,t,r,a]: [%0.4f, %0.4f, %0.4f, %0.4f]", d,t,r,a);
-			ROS_INFO_STREAM("g:" << std::endl << g.matrix());
+			Eigen::Affine3d g = dh_gen(d, t, r, a);
 
 			geometry_msgs::TransformStamped tf = tf2::eigenToTransform(g);
 			tf.header.stamp = stamp;
 			tf.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/l" + std::to_string(i-1);
 			tf.child_frame_id = param_model_id_ + "/l" + std::to_string(i);
-			//tf.transform = affine3dToTransform(g);
 
 			tfsbr_.sendTransform(tf);
 		}
 	}
-}
-
-geometry_msgs::Transform ForwardKinematics::affine3dToTransform( Eigen::Affine3d &g ) {
-	geometry_msgs::Transform tf;
-
-	Eigen::Quaterniond q(g.linear());
-	q.normalize();
-
-	tf.translation.x = g.translation()(0);
-	tf.translation.y = g.translation()(1);
-	tf.translation.z = g.translation()(2);
-	tf.rotation.w = q.w();
-	tf.rotation.x = q.x();
-	tf.rotation.y = q.y();
-	tf.rotation.z = q.z();
-
-	return tf;
 }
 
 void ForwardKinematics::do_viz( const std::vector<std::string> *arm_names ) {
