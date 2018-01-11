@@ -207,10 +207,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		std::cout << "Goal: [" << g_phi << ";" << g_theta << "]" << std::endl << std::endl;
 		*/
 
-		Eigen::Vector3d goal_w = calc_goal_rates( gr_sp, gr);
-		//double goal_wx = 6.0*(g_phi - c_phi);
-		//double goal_wy = 6.0*(g_theta - c_theta);
-		//double goal_wz = 6.0*(0.0 - 0.0);	//XXX: Hold with zero for now
+		Eigen::Vector3d Ab = gr*A; //Get the acceleration vector in the body frame
+		Eigen::Vector3d goal_w = calc_goal_rates( gr_sp, gr);	//Calculate the goal rates to achieve the right acceleration vector
 		double goal_r1d = p_.gain_ang_r1_p*(msg_goal_joints_.position[0] - r1);
 		double goal_r2d = p_.gain_ang_r2_p*(msg_goal_joints_.position[1] - r2);
 
@@ -218,7 +216,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		ua(0) = 0.0;
 		ua(1) = 0.0;
-		ua(2) = A.norm();	//Ab.z();	//TODO: Something else, maybe: Ab(2,0);	//Z acceleration in body frame
+		ua(2) = Ab.z();	//A.norm();	//TODO: Something else, maybe: Ab(2,0);	//Z acceleration in body frame
 		ua(3) = p_.gain_rate_roll_p*(goal_w.x() - bwx);
 		ua(4) = p_.gain_rate_pitch_p*(goal_w.y() - bwy);
 		ua(5) = p_.gain_rate_yaw_p*(goal_w.z() - bwz);

@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 
 <launch>
-	<arg name="auto_arm" default="false"/>
+	<arg name="arm" default="false"/>
 
 	<node pkg="mantis_controller_id" type="controller_id_node" name="controller_id" clear_params="true" output="screen">
 		<param name="model_name" value="mantis_uav" />
@@ -37,5 +37,5 @@
 
 	<node name="model_state_odom" pkg="mantis_gazebo" type="model_state_odom_node" output="screen" />
 
-	<node pkg="rosservice" type="rosservice" name="arm_system" args="call --wait /mantis_uav/arm/system '{arm: $(arg auto_arm)}'"/>
+	<node pkg="rosservice" type="rosservice" name="arm_system" args="call --wait /mantis_uav/arm/system '{arm: $(arg arm)}'"/>
 </launch>
