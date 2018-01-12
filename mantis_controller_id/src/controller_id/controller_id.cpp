@@ -10,9 +10,9 @@
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/AccelStamped.h>
-//#include <mantis_controller_id/GoalPose.h>
 
 #include <mavros_msgs/RCOut.h>
 #include <std_msgs/Float64.h>
@@ -24,7 +24,8 @@
 ControllerID::ControllerID() :
 	nh_("~"),
 	p_(&nh_),
-	param_model_name_("mantis_uav"),
+	param_frame_id_("map"),
+	param_model_id_("mantis_uav"),
 	param_rate_(100) {
 
 	p_.load();
@@ -32,14 +33,14 @@ ControllerID::ControllerID() :
 	pub_rc_ = nh_.advertise<mavros_msgs::RCOut>("rc", 10);
 	pub_r1_ = nh_.advertise<std_msgs::Float64>("r1", 10);
 	pub_r2_ = nh_.advertise<std_msgs::Float64>("r2", 10);
-	pub_twist_ = nh_.advertise<geometry_msgs::TwistStamped>("feedback/twist", 10);
-	pub_accel_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel", 10);
+	pub_accel_linear_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/linear", 10);
+	pub_accel_body_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
 	pub_joints_ = nh_.advertise<sensor_msgs::JointState>("feedback/joints", 10);
 
 	sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
 	sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
 
-	sub_goal_accel_ = nh_.subscribe<geometry_msgs::AccelStamped>( "goal/accel", 10, &ControllerID::callback_goal_accel, this );
+	sub_goal_pose_ = nh_.subscribe<geometry_msgs::PoseStamped>( "goal/pose", 10, &ControllerID::callback_goal_pose, this );
 	sub_goal_joints_ = nh_.subscribe<sensor_msgs::JointState>( "goal/joints", 10, &ControllerID::callback_goal_joints, this );
 
 	timer_ = nh_.createTimer(ros::Duration(1.0/param_rate_), &ControllerID::callback_control, this );
@@ -54,191 +55,129 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	mavros_msgs::RCOut msg_rc_out;
 	std_msgs::Float64 msg_r1_out;
 	std_msgs::Float64 msg_r2_out;
-	geometry_msgs::TwistStamped msg_twist_out;
-	geometry_msgs::AccelStamped msg_accel_out;
+	geometry_msgs::AccelStamped msg_accel_linear_out;
+	geometry_msgs::AccelStamped msg_accel_body_out;
 	sensor_msgs::JointState msg_joints_out;
 
 	msg_rc_out.header.stamp = e.current_real;
-	msg_rc_out.header.frame_id = "map";
+	msg_rc_out.header.frame_id = param_frame_id_;
 	msg_rc_out.channels.resize(p_.motor_num);	//Allocate space for the number of motors
-	msg_twist_out.header.stamp = e.current_real;
-	msg_twist_out.header.frame_id = param_model_name_;
-	msg_accel_out.header.stamp = e.current_real;
-	msg_accel_out.header.frame_id = param_model_name_;
+	msg_accel_linear_out.header.stamp = e.current_real;
+	msg_accel_linear_out.header.frame_id = param_frame_id_;
+	msg_accel_body_out.header.stamp = e.current_real;
+	msg_accel_body_out.header.frame_id = param_model_id_;
 	msg_joints_out.header.stamp = e.current_real;
-	msg_joints_out.header.frame_id = param_model_name_;
-
-
-	double g = 9.80665;
-
-	/*
-	//double frame_height = 0.05;
-	//double arm_radius = 0.01;
-	//double kt = 1.0/(NUM_MOTORS*0.7*g);
-	//double km = 0.5;
-	//double IJ0x = m0*(frame_height*frame_height + 3*la*la)/12;
-	//double IJ0y = m0*(frame_height*frame_height + 3*la*la)/12;
-	//double IJ0z = m0*la*la/2;
-	//double IJ1x = m1*(arm_radius*arm_radius)/12;
-	//double IJ1y = m1*(3*arm_radius*arm_radius + l1*l1)/12;
-	//double IJ1z = m1*(3*arm_radius*arm_radius + l1*l1)/12;
-	//double IJ2x = m2*(arm_radius*arm_radius)/12;
-	//double IJ2y = m2*(3*arm_radius*arm_radius + l2*l2)/12;
-	//double IJ2z = m2*(3*arm_radius*arm_radius + l2*l2)/12;
-
-	double la = 0.275;
-	double l0 = -0.05;
-	double l1 = 0.1965;
-	double l2 = 0.1965;
-	double lc1 = 0.1638;
-	double lc2 = 0.1638;
-	double m0 = 1.63;
-	double m1 = 0.09;
-	double m2 = 0.09;
-	double IJ0x = 0.015399592102914;
-	double IJ0y = 0.014552318824581;
-	double IJ0z = 0.027781409055000;
-	double IJ1x = 0.00001371;
-	double IJ1y = 0.00008292;
-	double IJ1z = 0.00008075;
-	double IJ2x = 0.00001345;
-	double IJ2y = 0.00008292;
-	double IJ2z = 0.00008075;
-	*/
+	msg_joints_out.header.frame_id = param_model_id_;
 
 	if( ( msg_state_odom_.header.stamp != ros::Time(0) ) &&
 		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
-		( msg_goal_accel_.header.stamp != ros::Time(0) ) &&
+		( msg_goal_pose_.header.stamp != ros::Time(0) ) &&
 		( msg_goal_joints_.header.stamp != ros::Time(0) ) ) {
 
 		ROS_INFO_ONCE("Inverse dynamics controller running!");
 
-		double num_states = 6 + p_.link_num;
+		double num_states = 6 + p_.link_num;	//XXX: 6 comes from XYZ + Wrpy
 
-		Eigen::MatrixXd q = Eigen::MatrixXd::Zero(18, 1);	//g(4,4) + r(2,1)
-		Eigen::MatrixXd qd = Eigen::MatrixXd::Zero(num_states, 1);	//v(6,1) + rd(2,1)
+		//Goal States
+		//TODO: Should definitely have a trajectory instead
+		Eigen::Affine3d g_sp = affine_from_pose(msg_goal_pose_.pose);
+		Eigen::VectorXd r_sp = Eigen::VectorXd::Zero(p_.link_num);
 
-		//XXX: Quick init for states
-		Eigen::Quaterniond gq;
-		gq.x() = msg_state_odom_.pose.pose.orientation.x;
-		gq.y() = msg_state_odom_.pose.pose.orientation.y;
-		gq.z() = msg_state_odom_.pose.pose.orientation.z;
-		gq.w() = msg_state_odom_.pose.pose.orientation.w;
-		Eigen::Matrix3d gr = gq.normalized().toRotationMatrix();
-		double r1 = msg_state_joints_.position[0];
-		double r2 = msg_state_joints_.position[1];
+		//Current States
+		Eigen::Affine3d g = affine_from_pose(msg_state_odom_.pose.pose);
 
-		double bvx = msg_state_odom_.twist.twist.linear.x;
-		double bvy = msg_state_odom_.twist.twist.linear.y;
-		double bvz = msg_state_odom_.twist.twist.linear.z;
-		double bwx = msg_state_odom_.twist.twist.angular.x;
-		double bwy = msg_state_odom_.twist.twist.angular.y;
-		double bwz = msg_state_odom_.twist.twist.angular.z;
-		double r1d = msg_state_joints_.velocity[0];
-		double r2d = msg_state_joints_.velocity[1];
+		Eigen::Vector3d bv(msg_state_odom_.twist.twist.linear.x,
+						   msg_state_odom_.twist.twist.linear.y,
+						   msg_state_odom_.twist.twist.linear.z);
+		Eigen::Vector3d bw(msg_state_odom_.twist.twist.angular.x,
+						   msg_state_odom_.twist.twist.angular.y,
+						   msg_state_odom_.twist.twist.angular.z);
 
-		//Build gain matricies
-		//XXX: This only builds a memory map, it does not allocate memory
-		Eigen::MatrixXd ArrayXd Kw = Eigen::MatrixXd::Zero(p_.gain_rotation.size()/2, p_.gain_rotation.size())
-		for(int i=0; i<(p_.gain_rotation.size()/2, i++) {
-			Kw.block(i,2*i,1,2) << Eigen::VectorXd(p_.gain_manipulator[2*i], p_.gain_manipulator[(2*i)+1]);
+		Eigen::VectorXd r = Eigen::VectorXd::Zero(p_.link_num);
+		Eigen::VectorXd rd = Eigen::VectorXd::Zero(p_.link_num);
+		for(int i=0; i<p_.link_num; i++) {
+			r_sp(i) = msg_goal_joints_.position[i];
+
+			r(i) = msg_state_joints_.position[i];
+			rd(i) = msg_state_joints_.velocity[i];
 		}
 
-		//Do conversions from world to body frame
-		//Acceleration vectors for hover
-		//TODO: Need to rotate the acceleration vector to match body yaw first
+		Eigen::VectorXd qd = Eigen::VectorXd::Zero(num_states);
+		qd << bv, bw, rd;	//Full body-frame velocity state vector
 
-		double ax = msg_goal_accel_.accel.linear.x;
-		double ay = msg_goal_accel_.accel.linear.y;
-		double az = g + msg_goal_accel_.accel.linear.z;
-		az = (az < 0.0) ? 0.0 : az;	//Can't accelerate downward
+		//Build gain matricies
+		Eigen::MatrixXd Kp = Eigen::MatrixXd::Zero(3,6);
+		for(int i=0; i<(p_.gain_position.size()/2); i++) {
+			Kp.block(i,2*i,1,2) << p_.gain_position[2*i], p_.gain_position[(2*i)+1];
+		}
 
-		Eigen::Vector3d A(ax, ay, az);
+		Eigen::MatrixXd Kw = Eigen::MatrixXd::Zero(3,6);
+		for(int i=0; i<(p_.gain_rotation.size()/2); i++) {
+			Kw.block(i,2*i,1,2) << p_.gain_rotation[2*i], p_.gain_rotation[(2*i)+1];
+		}
 
+		Eigen::MatrixXd Kr = Eigen::MatrixXd::Zero(p_.link_num, 2*p_.link_num);
+		for(int i=0; i<(p_.gain_manipulator.size()/2); i++) {
+			Kr.block(i,2*i,1,2) << p_.gain_manipulator[2*i], p_.gain_manipulator[(2*i)+1];
+		}
+
+		//Calculate translation acceleration vector
+		Eigen::Vector3d e_p_p = g_sp.translation() - g.translation();
+		matrix_clamp(e_p_p, -p_.vel_max, p_.vel_max);
+		Eigen::VectorXd e_p = vector_interlace(e_p_p, Eigen::Vector3d::Zero() - (g.linear().transpose()*bv));
+		Eigen::Vector3d Al = Kp*e_p;
+
+		//Add in gravity compensation
+		Eigen::Vector3d A = Al + Eigen::Vector3d(0.0, 0.0, 9.80665);
+
+		A(2) = (A(2) < 0.1) ? 0.1 : A(2);	//Can't accelerate downward faster than -g (take a little)
+		//XXX:
+		//	A bit dirty, but this will stop acceleration going less than
+		//	-g and will keep the gr_sp from rotating by more than pi/2
+		Eigen::Vector3d Axy(A.x(), A.y(), 0.0);
+		if(Axy.norm() > A.z()) {
+			double axy_scale = Axy.norm() / A.z();
+			Axy = Axy / axy_scale;
+			A.segment(0,2) << Axy.segment(0,2);
+		}
+		//TODO: Constrain vertical max accel(?)
+
+
+		//Calculate the corresponding rotation to reach desired acceleration
 		//Start with the goal yaw as the current yaw
-		Eigen::Vector3d yaw_c = gr*Eigen::Vector3d::UnitY();
-		Eigen::Vector3d sp_x = yaw_c.cross(A).normalized();
-		Eigen::Vector3d sp_y = A.cross(sp_x).normalized();
-		Eigen::Vector3d sp_z = A.normalized();
+		Eigen::Vector3d yaw_c = g_sp.linear()*Eigen::Vector3d::UnitY();
+		yaw_c.z() = 0;
+		yaw_c.normalize();	//Flatten the vector to get yaw only
 
 		//Build the setpoint rotation matrix
 		Eigen::Matrix3d gr_sp;
+		Eigen::Vector3d sp_x = yaw_c.cross(A).normalized();
+		Eigen::Vector3d sp_y = A.cross(sp_x).normalized();
+		Eigen::Vector3d sp_z = A.normalized();
 		gr_sp.col(0) = sp_x;
 		gr_sp.col(1) = sp_y;
 		gr_sp.col(2) = sp_z;
 		gr_sp.normalize();
 
-		//Rotate the accel vector back into the body frame
-		//Such that Ab.z will be the amount of acceleration wanted
-		//Eigen::Vector3d Ab = gr.transpose()*A;
+		//Calculate the goal rates to achieve the right acceleration vector
+		Eigen::VectorXd e_w = vector_interlace(calc_ang_error(gr_sp, g.linear()), Eigen::Vector3d::Zero() - bw);
+		Eigen::Vector3d wa = Kw*e_w;
 
-		/* TODO:
-		Eigen::Vector3d Ax(ax, 0.0, az);
-		Eigen::Vector3d Ay(0.0, ay, az);
-		//Eigen::Vector3d Az(0.0, 0.0, az);
-		Eigen::Vector3d A(ax, ay, az);
-		Eigen::Vector3d Ab = gr*A; //Acceleration in the body frame
+		//Calculate the required manipulator accelerations
+		Eigen::VectorXd e_r = vector_interlace(r_sp - r, Eigen::VectorXd::Zero(p_.link_num) - rd);
+		Eigen::VectorXd ra = Kr*e_r;
 
-		Eigen::Vector3d ucx = gr*Eigen::Vector3d::UnitZ();
-		Eigen::Vector3d ucy = gr*Eigen::Vector3d::UnitZ();
-		Eigen::Vector3d Cx(ucx(0), 0.0, ucx(2));
-		Eigen::Vector3d Cy(0.0, ucy(1), ucy(2));
-
-		//Limit horizontal thrust by z thrust
-		double thrust_xy_max = gThrust.getZ() * std::tan( param_tilt_max_ );
-
-		//If thrust_sp_xy_len > thrust_xy_max
-		if( xyThrust.length() > thrust_xy_max ) {
-			//Scale the XY thrust setpoint down
-			double k = thrust_xy_max / xyThrust.length();
-			gThrust.setX( k*gThrust.getX() );
-			gThrust.setY( k*gThrust.getY() );
-			xyThrust.setX( gThrust.getX() );
-			xyThrust.setY( gThrust.getY() );
-		}
-
-		//Calculate thrust vector angles from goal accels
-		double g_phi = std::acos(Eigen::Vector3d::UnitZ().dot(Ay.normalized()));
-		double g_theta = std::acos(Eigen::Vector3d::UnitZ().dot(Ax.normalized()));
-
-		double c_phi = std::acos(Eigen::Vector3d::UnitZ().dot(Cy.normalized()));
-		double c_theta = std::acos(Eigen::Vector3d::UnitZ().dot(Cx.normalized()));
-
-		//Correct for frame rotations
-		g_phi = (ay > 0.0) ? -g_phi : g_phi;
-		g_theta = (ax < 0.0) ? -g_theta : g_theta;
-		c_phi = (ucy(1) > 0.0) ? -c_phi : c_phi;
-		c_theta = (ucx(0) < 0.0) ? -c_theta : c_theta;
-
-		std::cout << "Current: [" << c_phi << ";" << c_theta << "]" << std::endl;
-		std::cout << "Goal: [" << g_phi << ";" << g_theta << "]" << std::endl << std::endl;
-		*/
-
-		//Eigen::Vector3d goal_w = calc_goal_rates( gr_sp, gr);	//Calculate the goal rates to achieve the right acceleration vector
-		Eigen::VectorXd error_w_wd << calc_ang_error(gr_sp, gr) << Eigen::VectorXd(0.0 - bwx, 0.0 - bwy, 0.0 - bwz);
-		Eigen::Vector3d wa = Kw*error_w_wd;
-
-		double goal_r1d = p_.gain_ang_r1_p*(msg_goal_joints_.position[0] - r1);
-		double goal_r2d = p_.gain_ang_r2_p*(msg_goal_joints_.position[1] - r2);
-
-		//Calculate thrust needed to prioritize maintaining altitude
-		Eigen::Vector3d thrust_vec = gr*Eigen::Vector3d::UnitZ();
-		double thrust_scale = A.z() / thrust_vec.z();
-		Eigen::Vector3d z_accel = thrust_scale*thrust_vec;
-
-		//Eigen::Vector3d Ab = gr*A; //Get the acceleration vector in the body frame
+		//Calculate Abz such that it doesn't apply too much thrust until fully rotated
+		Eigen::Vector3d body_z = g.linear()*Eigen::Vector3d::UnitZ();
+		double Az_scale = A.z() / body_z.z();
+		Eigen::Vector3d Abz_accel = Az_scale*body_z;
 
 		Eigen::VectorXd ua = Eigen::VectorXd::Zero(num_states);	//vd(6,1) + rdd(2,1)
-
 		ua(0) = 0.0;
 		ua(1) = 0.0;
-		ua(2) = z_accel.norm(); //A.norm()	//TODO: Something else, maybe: Ab(2,0);	//Z acceleration in body frame
-		//ua(3) = p_.gain_rate_roll_p*(goal_w.x() - bwx);
-		//ua(4) = p_.gain_rate_pitch_p*(goal_w.y() - bwy);
-		//ua(5) = p_.gain_rate_yaw_p*(goal_w.z() - bwz);
-		ua.block(3,0,3,1) << wa;
-		ua(6) = p_.gain_rate_r1_p*(goal_r1d - r1d);
-		ua(7) = p_.gain_rate_r2_p*(goal_r2d - r2d);
+		ua(2) = Abz_accel.norm();
+		ua.segment(3,3) << wa;
+		ua.segment(6,p_.link_num) << ra;
 
 		//Calculate dynamics matricies
 		Eigen::MatrixXd D = Eigen::MatrixXd::Zero(num_states, num_states);
@@ -251,15 +190,15 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 				p_.I2x, p_.I2y, p_.I2z,
 				p_.l0, p_.l1, p_.lc1, p_.lc2,
 				p_.m0, p_.m1, p_.m2,
-				r1, r2);
+				r(0), r(1));
 
 		calc_Cqqd(C,
 				  p_.I1x, p_.I1y,
 				  p_.I2x, p_.I2y,
-				  bvx, bvy, bvz, bwx, bwy, bwz,
+				  bv(0), bv(1), bv(2), bw(0), bw(1), bw(2),
 				  p_.l0, p_.l1, p_.lc1, p_.lc2,
 				  p_.m1, p_.m2,
-				  r1, r1d, r2, r2d);
+				  r(0), rd(0), r(1), rd(1));
 
 		Eigen::VectorXd tau = D*ua + (C + L)*qd;// + N;
 
@@ -269,31 +208,30 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		Eigen::MatrixXd u = M*tau;
 
-		//ROS_INFO_STREAM_THROTTLE(1.0/10.0, "tau:" << std::endl << tau);
-		//ROS_INFO_STREAM("M:" << std::endl << M);
-		//ROS_INFO_STREAM("u:" << std::endl << u);
-
+		//Calculate goal PWM values to generate desired torque
 		for(int i=0; i<p_.motor_num; i++) {
 			msg_rc_out.channels[i] = map_pwm(u(i,0));
 		}
 
-		msg_r1_out.data = u(p_.motor_num,0);
-		msg_r2_out.data = u(p_.motor_num+1,0);
+		//Fill in goal manipulator torques
+		msg_r1_out.data = u(p_.motor_num);
+		msg_r2_out.data = u(p_.motor_num+1);
 
-		//msg_twist_out.twist.angular.x = goal_w.x();
-		//msg_twist_out.twist.angular.y = goal_w.y();
-		//msg_twist_out.twist.angular.z = goal_w.z();
-		msg_accel_out.accel.linear.x = ua(0,0);
-		msg_accel_out.accel.linear.y = ua(1,0);
-		msg_accel_out.accel.linear.z = ua(2,0);
-		msg_accel_out.accel.angular.x = ua(3,0);
-		msg_accel_out.accel.angular.y = ua(4,0);
-		msg_accel_out.accel.angular.z = ua(5,0);
+		msg_accel_linear_out.accel.linear.x = Al.x();
+		msg_accel_linear_out.accel.linear.y = Al.y();
+		msg_accel_linear_out.accel.linear.z = Al.z();
+
+		msg_accel_body_out.accel.linear.x = ua(0,0);
+		msg_accel_body_out.accel.linear.y = ua(1,0);
+		msg_accel_body_out.accel.linear.z = ua(2,0);
+		msg_accel_body_out.accel.angular.x = ua(3,0);
+		msg_accel_body_out.accel.angular.y = ua(4,0);
+		msg_accel_body_out.accel.angular.z = ua(5,0);
 
 		msg_joints_out.name = msg_state_joints_.name;
 		msg_joints_out.position = msg_goal_joints_.position;
-		msg_joints_out.velocity.push_back(goal_r1d);
-		msg_joints_out.velocity.push_back(goal_r2d);
+		//msg_joints_out.velocity.push_back(goal_r1d);
+		//msg_joints_out.velocity.push_back(goal_r2d);
 		msg_joints_out.effort.push_back(ua(6,0));
 		msg_joints_out.effort.push_back(ua(7,0));
 	} else {
@@ -309,9 +247,43 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	pub_rc_.publish(msg_rc_out);
 	pub_r1_.publish(msg_r1_out);
 	pub_r2_.publish(msg_r2_out);
-	pub_twist_.publish(msg_twist_out);
-	pub_accel_.publish(msg_accel_out);
+	pub_accel_linear_.publish(msg_accel_linear_out);
+	pub_accel_body_.publish(msg_accel_body_out);
 	pub_joints_.publish(msg_joints_out);
+}
+
+void ControllerID::matrix_clamp(Eigen::MatrixXd m, const double min, const double max) {
+	for(int i=0; i<m.rows(); i++) {
+		for(int j=0; j<m.cols(); j++) {
+			m(i,j) = (m(i,j) < min) ? min : (m(i,j) > max) ? max : m(i,j);
+		}
+	}
+}
+
+Eigen::VectorXd ControllerID::vector_interlace(const Eigen::VectorXd a, const Eigen::VectorXd b) {
+	ROS_ASSERT_MSG(a.size() == b.size(), "Vectors to be interlaced must be same size (a=%li,b=%li", a.size(), b.size());
+
+	Eigen::VectorXd c = Eigen::VectorXd::Zero(2*a.size());
+
+	for(int i=0; i<a.size(); i++) {
+		c.segment(2*i,2) << a(i), b(i);
+	}
+
+	return c;
+}
+
+Eigen::Affine3d ControllerID::affine_from_pose(const geometry_msgs::Pose p) {
+		Eigen::Affine3d a;
+
+		a.translation() << p.position.x,
+						   p.position.y,
+						   p.position.z;
+
+		a.linear() << Eigen::Quaterniond(p.orientation.w,
+										 p.orientation.x,
+										 p.orientation.y,
+										 p.orientation.z).normalized().toRotationMatrix();
+		return a;
 }
 
 int16_t ControllerID::map_pwm(double val) {
@@ -330,7 +302,7 @@ void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 	double ktx = 1.0 / (2.0 * p_.la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * p_.motor_thrust_max);
 	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * p_.motor_thrust_max);
 	double km = 1.0 / (p_.motor_num * p_.motor_drag_max);
-	km = 0;
+	km = 0;	//TODO: Need to pick motor_drag_max!!!
 
 	//Generate the copter map
 	Eigen::MatrixXd cm = Eigen::MatrixXd::Zero(p_.motor_num, 6);
@@ -449,7 +421,7 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 	return rates_sp;
 	*/
 
-	return e_R();
+	return e_R;
 }
 
 void ControllerID::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
@@ -460,8 +432,8 @@ void ControllerID::callback_state_joints(const sensor_msgs::JointState::ConstPtr
 	msg_state_joints_ = *msg_in;
 }
 
-void ControllerID::callback_goal_accel(const geometry_msgs::AccelStamped::ConstPtr& msg_in) {
-	msg_goal_accel_ = *msg_in;
+void ControllerID::callback_goal_pose(const geometry_msgs::PoseStamped::ConstPtr& msg_in) {
+	msg_goal_pose_ = *msg_in;
 }
 
 void ControllerID::callback_goal_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {

@@ -25,6 +25,8 @@ class ControllerIDParams {
 		std::vector<double> gain_rotation;
 		std::vector<double> gain_manipulator;
 
+		double vel_max;
+
 		double la;
 		double l0;
 		double l1;

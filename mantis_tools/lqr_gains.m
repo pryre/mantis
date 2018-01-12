@@ -1,4 +1,4 @@
-% Script to exploit LQR gains for use as a simple high-level 
+% Script to exploit LQR gains for use as a simple high-level
 % position and velocity controller
 
 % Single state matrix
@@ -27,27 +27,27 @@ b = [0
 % Position
 Ap = a;
 Bp = b;
-Rp = 0.5;
+Rp = 0.05;
 Qp = [1,  0;
-      0, 10];
-  
+      0, 1];
+
 kp = lqr(Ap,Bp,Qp,Rp);
 Kp = repmat(kp,1,3);
-  
+
 % Rotation
 Aw = a;
 Bw = b;
-Rw = 0.1;
+Rw = 0.005;
 Qw = [1,  0;
-      0, 10];
-  
+      0, 2];
+
 kw = lqr(Aw,Bw,Qw,Rw);
 Kw = repmat(kw,1,3);
 
 % Manipulator
 Ar = a;
 Br = b;
-Rr = 0.1;
+Rr = 0.01;
 Qr = [1,  0;
       0, 10];
 

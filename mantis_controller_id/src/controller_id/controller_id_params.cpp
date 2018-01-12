@@ -12,16 +12,7 @@ ControllerIDParams::ControllerIDParams(ros::NodeHandle *nh) :
 	link_num(2),
 	link_servo_torque_max(0.0),
 	link_servo_ang_max(0.0),
-	gain_ang_roll_p(0.0),
-	gain_ang_pitch_p(0.0),
-	gain_ang_yaw_p(0.0),
-	gain_ang_r1_p(0.0),
-	gain_ang_r2_p(0.0),
-	gain_rate_roll_p(0.0),
-	gain_rate_pitch_p(0.0),
-	gain_rate_yaw_p(0.0),
-	gain_rate_r1_p(0.0),
-	gain_rate_r2_p(0.0),
+	vel_max(0.0),
 	la(0.0),
 	l0(0.0),
 	l1(0.0),
@@ -57,20 +48,11 @@ void ControllerIDParams::load( void ) {
 	nh_->param("link/servo/torque_max", link_servo_torque_max, link_servo_torque_max);
 	nh_->param("link/servo/ang_max", link_servo_ang_max, link_servo_ang_max);
 
-	nh_.getParam("gain/position", gain_position);
-	nh_.getParam("gain/rotation", gain_rotation);
-	nh_.getParam("gain/manipulator", gain_manipulator);
+	nh_->getParam("gain/position", gain_position);
+	nh_->getParam("gain/rotation", gain_rotation);
+	nh_->getParam("gain/manipulator", gain_manipulator);
 
-	nh_->param("gain/ang/roll/p", gain_ang_roll_p, gain_ang_roll_p);
-	nh_->param("gain/ang/pitch/p", gain_ang_pitch_p, gain_ang_pitch_p);
-	nh_->param("gain/ang/yaw/p", gain_ang_yaw_p, gain_ang_yaw_p);
-	nh_->param("gain/ang/r1/p", gain_ang_r1_p, gain_ang_r1_p);
-	nh_->param("gain/ang/r2/p", gain_ang_r2_p, gain_ang_r2_p);
-	nh_->param("gain/rate/roll/p", gain_rate_roll_p, gain_rate_roll_p);
-	nh_->param("gain/rate/pitch/p", gain_rate_pitch_p, gain_rate_pitch_p);
-	nh_->param("gain/rate/yaw/p", gain_rate_yaw_p, gain_rate_yaw_p);
-	nh_->param("gain/rate/r1/p", gain_rate_r1_p, gain_rate_r1_p);
-	nh_->param("gain/rate/r2/p", gain_rate_r2_p, gain_rate_r2_p);
+	nh_->param("vel_max", vel_max, vel_max);
 
 	nh_->param("length/la", la, la);
 	nh_->param("length/l0", l0, l0);
