@@ -137,6 +137,13 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		double r1d = msg_state_joints_.velocity[0];
 		double r2d = msg_state_joints_.velocity[1];
 
+		//Build gain matricies
+		//XXX: This only builds a memory map, it does not allocate memory
+		Eigen::MatrixXd ArrayXd Kw = Eigen::MatrixXd::Zero(p_.gain_rotation.size()/2, p_.gain_rotation.size())
+		for(int i=0; i<(p_.gain_rotation.size()/2, i++) {
+			Kw.block(i,2*i,1,2) << Eigen::VectorXd(p_.gain_manipulator[2*i], p_.gain_manipulator[(2*i)+1]);
+		}
+
 		//Do conversions from world to body frame
 		//Acceleration vectors for hover
 		//TODO: Need to rotate the acceleration vector to match body yaw first
@@ -207,7 +214,10 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		std::cout << "Goal: [" << g_phi << ";" << g_theta << "]" << std::endl << std::endl;
 		*/
 
-		Eigen::Vector3d goal_w = calc_goal_rates( gr_sp, gr);	//Calculate the goal rates to achieve the right acceleration vector
+		//Eigen::Vector3d goal_w = calc_goal_rates( gr_sp, gr);	//Calculate the goal rates to achieve the right acceleration vector
+		Eigen::VectorXd error_w_wd << calc_ang_error(gr_sp, gr) << Eigen::VectorXd(0.0 - bwx, 0.0 - bwy, 0.0 - bwz);
+		Eigen::Vector3d wa = Kw*error_w_wd;
+
 		double goal_r1d = p_.gain_ang_r1_p*(msg_goal_joints_.position[0] - r1);
 		double goal_r2d = p_.gain_ang_r2_p*(msg_goal_joints_.position[1] - r2);
 
@@ -223,9 +233,10 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		ua(0) = 0.0;
 		ua(1) = 0.0;
 		ua(2) = z_accel.norm(); //A.norm()	//TODO: Something else, maybe: Ab(2,0);	//Z acceleration in body frame
-		ua(3) = p_.gain_rate_roll_p*(goal_w.x() - bwx);
-		ua(4) = p_.gain_rate_pitch_p*(goal_w.y() - bwy);
-		ua(5) = p_.gain_rate_yaw_p*(goal_w.z() - bwz);
+		//ua(3) = p_.gain_rate_roll_p*(goal_w.x() - bwx);
+		//ua(4) = p_.gain_rate_pitch_p*(goal_w.y() - bwy);
+		//ua(5) = p_.gain_rate_yaw_p*(goal_w.z() - bwz);
+		ua.block(3,0,3,1) << wa;
 		ua(6) = p_.gain_rate_r1_p*(goal_r1d - r1d);
 		ua(7) = p_.gain_rate_r2_p*(goal_r2d - r2d);
 
@@ -269,9 +280,9 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		msg_r1_out.data = u(p_.motor_num,0);
 		msg_r2_out.data = u(p_.motor_num+1,0);
 
-		msg_twist_out.twist.angular.x = goal_w.x();
-		msg_twist_out.twist.angular.y = goal_w.y();
-		msg_twist_out.twist.angular.z = goal_w.z();
+		//msg_twist_out.twist.angular.x = goal_w.x();
+		//msg_twist_out.twist.angular.y = goal_w.y();
+		//msg_twist_out.twist.angular.z = goal_w.z();
 		msg_accel_out.accel.linear.x = ua(0,0);
 		msg_accel_out.accel.linear.y = ua(1,0);
 		msg_accel_out.accel.linear.z = ua(2,0);
@@ -334,7 +345,7 @@ void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 		 Eigen::MatrixXd::Zero(p_.link_num, 6), Eigen::MatrixXd::Identity(p_.link_num, p_.link_num);
 }
 
-Eigen::Vector3d ControllerID::calc_goal_rates(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R) {
+Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R) {
 	Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
 
 	//Method derived from px4 attitude controller:
@@ -426,6 +437,7 @@ Eigen::Vector3d ControllerID::calc_goal_rates(const Eigen::Matrix3d &R_sp, const
 	}
 
 	//px4: calculate angular rates setpoint
+	/*
 	Eigen::Vector3d rates_sp;
 	rates_sp(0) = p_.gain_ang_roll_p * e_R.x();
 	rates_sp(1) = p_.gain_ang_pitch_p * e_R.y();
@@ -435,6 +447,9 @@ Eigen::Vector3d ControllerID::calc_goal_rates(const Eigen::Matrix3d &R_sp, const
 	//rates_sp.z += _v_att_sp.yaw_sp_move_rate * yaw_w * _params.yaw_ff;
 
 	return rates_sp;
+	*/
+
+	return e_R();
 }
 
 void ControllerID::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {

@@ -57,6 +57,10 @@ void ControllerIDParams::load( void ) {
 	nh_->param("link/servo/torque_max", link_servo_torque_max, link_servo_torque_max);
 	nh_->param("link/servo/ang_max", link_servo_ang_max, link_servo_ang_max);
 
+	nh_.getParam("gain/position", gain_position);
+	nh_.getParam("gain/rotation", gain_rotation);
+	nh_.getParam("gain/manipulator", gain_manipulator);
+
 	nh_->param("gain/ang/roll/p", gain_ang_roll_p, gain_ang_roll_p);
 	nh_->param("gain/ang/pitch/p", gain_ang_pitch_p, gain_ang_pitch_p);
 	nh_->param("gain/ang/yaw/p", gain_ang_yaw_p, gain_ang_yaw_p);

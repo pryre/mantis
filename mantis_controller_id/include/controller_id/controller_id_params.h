@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 
 #include <string>
+#include <vector>
 
 class ControllerIDParams {
 	private:
@@ -20,16 +21,9 @@ class ControllerIDParams {
 		double link_servo_torque_max;
 		double link_servo_ang_max;
 
-		double gain_ang_roll_p;
-		double gain_ang_pitch_p;
-		double gain_ang_yaw_p;
-		double gain_ang_r1_p;
-		double gain_ang_r2_p;
-		double gain_rate_roll_p;
-		double gain_rate_pitch_p;
-		double gain_rate_yaw_p;
-		double gain_rate_r1_p;
-		double gain_rate_r2_p;
+		std::vector<double> gain_position;
+		std::vector<double> gain_rotation;
+		std::vector<double> gain_manipulator;
 
 		double la;
 		double l0;
