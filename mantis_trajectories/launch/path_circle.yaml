@@ -1,6 +1,5 @@
 
 path:
-  duration: 30.0 #s
-  resoulution: 50 #points
+  height: 2.0 #m
   type: "circle"
   radius: 2.0 #m

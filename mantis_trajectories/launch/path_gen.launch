@@ -1,0 +1,11 @@
+<?xml version='1.0'?>
+
+<launch>
+	<node pkg="mantis_trajectories" type="path_gen_node" name="path_gen" clear_params="true" output="screen">
+		<param name="frame_id" value="map" />
+		<param name="duration" value="30.0" />
+		<param name="resolution" value="50" />
+
+		<rosparam command="load" file="$(find mantis_trajectories)/launch/path_circle.yaml"/>
+	</node>
+</launch>
