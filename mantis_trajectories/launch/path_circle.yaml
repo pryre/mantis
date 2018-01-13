@@ -1,0 +1,6 @@
+
+path:
+  duration: 30.0 #s
+  resoulution: 50 #points
+  type: "circle"
+  radius: 2.0 #m
