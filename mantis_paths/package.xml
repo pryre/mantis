@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>mantis_trajectories</name>
+  <name>mantis_paths</name>
   <version>0.0.0</version>
-  <description>The mantis_trajectories package</description>
+  <description>The mantis_paths package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -52,6 +52,7 @@
 
   <build_depend>nav_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
+  <build_depend>eigen</build_depend>
   <build_depend>roscpp</build_depend>
 
   <build_export_depend>nav_msgs</build_export_depend>

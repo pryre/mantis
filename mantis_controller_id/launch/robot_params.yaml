@@ -12,7 +12,7 @@ pwm:
 vel_max: 0.5
 
 takeoff:
-  x: 2.0
+  x: 0.0
   y: 0.0
   z: 2.0
 
