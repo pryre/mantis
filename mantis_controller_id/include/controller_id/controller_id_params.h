@@ -27,6 +27,10 @@ class ControllerIDParams {
 
 		double vel_max;
 
+		double takeoff_x;
+		double takeoff_y;
+		double takeoff_z;
+
 		double la;
 		double l0;
 		double l1;

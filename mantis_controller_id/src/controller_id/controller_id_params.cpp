@@ -13,6 +13,9 @@ ControllerIDParams::ControllerIDParams(ros::NodeHandle *nh) :
 	link_servo_torque_max(0.0),
 	link_servo_ang_max(0.0),
 	vel_max(0.0),
+	takeoff_x(0.0),
+	takeoff_y(0.0),
+	takeoff_z(0.0),
 	la(0.0),
 	l0(0.0),
 	l1(0.0),
@@ -53,6 +56,10 @@ void ControllerIDParams::load( void ) {
 	nh_->getParam("gain/manipulator", gain_manipulator);
 
 	nh_->param("vel_max", vel_max, vel_max);
+
+	nh_->param("takeoff/x", takeoff_x, takeoff_x);
+	nh_->param("takeoff/y", takeoff_y, takeoff_y);
+	nh_->param("takeoff/z", takeoff_z, takeoff_z);
 
 	nh_->param("length/la", la, la);
 	nh_->param("length/l0", l0, l0);

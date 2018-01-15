@@ -9,10 +9,13 @@
 //#include <dynamics/calc_Mm.h>
 
 #include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
 #include <sensor_msgs/JointState.h>
-#include <geometry_msgs/PoseStamped.h>
+//#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/AccelStamped.h>
+#include <geometry_msgs/Vector3.h>
+#include <geometry_msgs/Quaternion.h>
 
 #include <mavros_msgs/RCOut.h>
 #include <std_msgs/Float64.h>
@@ -26,7 +29,8 @@ ControllerID::ControllerID() :
 	p_(&nh_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
-	param_rate_(100) {
+	param_rate_(100),
+	latest_g_sp_(Eigen::Affine3d::Identity()) {
 
 	p_.load();
 
@@ -40,10 +44,13 @@ ControllerID::ControllerID() :
 	sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
 	sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
 
-	sub_goal_pose_ = nh_.subscribe<geometry_msgs::PoseStamped>( "goal/pose", 10, &ControllerID::callback_goal_pose, this );
+	sub_goal_path_ = nh_.subscribe<nav_msgs::Path>( "goal/path", 10, &ControllerID::callback_goal_path, this );
 	sub_goal_joints_ = nh_.subscribe<sensor_msgs::JointState>( "goal/joints", 10, &ControllerID::callback_goal_joints, this );
 
 	timer_ = nh_.createTimer(ros::Duration(1.0/param_rate_), &ControllerID::callback_control, this );
+
+	//XXX: Initialize takeoff goals
+	latest_g_sp_.translation() = Eigen::Vector3d(p_.takeoff_x, p_.takeoff_y, p_.takeoff_z);
 
 	ROS_INFO("Inverse Dynamics controller loaded.");
 }
@@ -71,7 +78,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 	if( ( msg_state_odom_.header.stamp != ros::Time(0) ) &&
 		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
-		( msg_goal_pose_.header.stamp != ros::Time(0) ) &&
+		//( msg_goal_path_.header.stamp != ros::Time(0) ) &&
 		( msg_goal_joints_.header.stamp != ros::Time(0) ) ) {
 
 		ROS_INFO_ONCE("Inverse dynamics controller running!");
@@ -79,12 +86,21 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		double num_states = 6 + p_.link_num;	//XXX: 6 comes from XYZ + Wrpy
 
 		//Goal States
+		Eigen::Affine3d g_sp = Eigen::Affine3d::Identity();
+		Eigen::Vector3d gtv_sp = Eigen::Vector3d::Zero();
+		if( !calc_goal_g_sp(g_sp, gtv_sp, e.current_real) ) {
+			//There was an issue setting the path goal
+			//Hold latest position
+			g_sp = latest_g_sp_;
+			gtv_sp = Eigen::Vector3d::Zero();
+		}
+
 		//TODO: Should definitely have a trajectory instead
-		Eigen::Affine3d g_sp = affine_from_pose(msg_goal_pose_.pose);
+		//Eigen::Affine3d g_sp = affine_from_msg(msg_goal_pose_.pose);
 		Eigen::VectorXd r_sp = Eigen::VectorXd::Zero(p_.link_num);
 
 		//Current States
-		Eigen::Affine3d g = affine_from_pose(msg_state_odom_.pose.pose);
+		Eigen::Affine3d g = affine_from_msg(msg_state_odom_.pose.pose);
 
 		Eigen::Vector3d bv(msg_state_odom_.twist.twist.linear.x,
 						   msg_state_odom_.twist.twist.linear.y,
@@ -123,8 +139,9 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		//Calculate translation acceleration vector
 		Eigen::Vector3d e_p_p = g_sp.translation() - g.translation();
-		matrix_clamp(e_p_p, -p_.vel_max, p_.vel_max);
-		Eigen::VectorXd e_p = vector_interlace(e_p_p, Eigen::Vector3d::Zero() - (g.linear().transpose()*bv));
+		Eigen::Vector3d e_p_v = gtv_sp - (g.linear().transpose()*bv);
+		//matrix_clamp(e_p_p, -p_.vel_max, p_.vel_max);
+		Eigen::VectorXd e_p = vector_interlace(e_p_p, e_p_v);
 		Eigen::Vector3d Al = Kp*e_p;
 
 		//Add in gravity compensation
@@ -272,49 +289,59 @@ Eigen::VectorXd ControllerID::vector_interlace(const Eigen::VectorXd a, const Ei
 	return c;
 }
 
-Eigen::Affine3d ControllerID::affine_from_pose(const geometry_msgs::Pose p) {
+Eigen::Vector3d ControllerID::position_from_msg(const geometry_msgs::Point p) {
+		return Eigen::Vector3d(p.x, p.y, p.z);
+}
+
+Eigen::Quaterniond ControllerID::quaternion_from_msg(const geometry_msgs::Quaternion q) {
+		return Eigen::Quaterniond(q.w, q.x, q.y, q.z).normalized();
+}
+
+Eigen::Affine3d ControllerID::affine_from_msg(const geometry_msgs::Pose pose) {
 		Eigen::Affine3d a;
 
-		a.translation() << p.position.x,
-						   p.position.y,
-						   p.position.z;
+		a.translation() << position_from_msg(pose.position);
+		a.linear() << quaternion_from_msg(pose.orientation).toRotationMatrix();
 
-		a.linear() << Eigen::Quaterniond(p.orientation.w,
-										 p.orientation.x,
-										 p.orientation.y,
-										 p.orientation.z).normalized().toRotationMatrix();
 		return a;
 }
 
-int16_t ControllerID::map_pwm(double val) {
-	//Constrain from 0 -> 1
-	double c = (val > 1.0) ? 1.0 : (val < 0.0) ? 0.0 : val;
 
-	//Scale c to the pwm values
-	return int16_t((p_.pwm_max - p_.pwm_min)*c) + p_.pwm_min;
-}
+bool ControllerID::calc_goal_g_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc) {
+	bool success = false;
 
-void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
-	//TODO: This all needs to be better defined generically
-	double arm_ang = M_PI / 3.0;
+	//If we have recieved a path message
+	if(msg_goal_path_.header.stamp > ros::Time(0)) {
+		ros::Duration duration_start = msg_goal_path_.poses.front().header.stamp - ros::Time(0);
+		ros::Duration duration_end = msg_goal_path_.poses.back().header.stamp - ros::Time(0);
 
-	double kT = 1.0 / (p_.motor_num * p_.motor_thrust_max);
-	double ktx = 1.0 / (2.0 * p_.la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * p_.motor_thrust_max);
-	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * p_.motor_thrust_max);
-	double km = 1.0 / (p_.motor_num * p_.motor_drag_max);
-	km = 0;	//TODO: Need to pick motor_drag_max!!!
+		ros::Time ts = msg_goal_path_.header.stamp + duration_start;
+		ros::Time tf = msg_goal_path_.header.stamp + duration_end;
+		ros::Duration td = duration_end - duration_start;
 
-	//Generate the copter map
-	Eigen::MatrixXd cm = Eigen::MatrixXd::Zero(p_.motor_num, 6);
-	cm << 0.0, 0.0,  kT, -ktx,  0.0, -km,
-		  0.0, 0.0,  kT,  ktx,  0.0,  km,
-		  0.0, 0.0,  kT,  ktx, -kty, -km,
-		  0.0, 0.0,  kT, -ktx,  kty,  km,
-		  0.0, 0.0,  kT, -ktx, -kty,  km,
-		  0.0, 0.0,  kT,  ktx,  kty, -km;
+		//If the current time is within the path time, follow the path
+		if((tc >= ts) && (tc < tf)) {
+			//Find the last point in the path
+			int p = std::floor( (msg_goal_path_.poses.size() - 1) * ((tc - ts).toSec() / td.toSec() ) );
 
-	M << cm, Eigen::MatrixXd::Zero(p_.motor_num, p_.link_num),
-		 Eigen::MatrixXd::Zero(p_.link_num, 6), Eigen::MatrixXd::Identity(p_.link_num, p_.link_num);
+			//XXX: All of this next part is pretty lazy
+
+			//Set the next goal
+			g_sp = affine_from_msg(msg_goal_path_.poses[p + 1].pose);
+
+			//TODO: This next velocity step should be calculated over the point goal, not to it
+			Eigen::Vector3d d_pos = position_from_msg(msg_goal_path_.poses[p + 1].pose.position) - position_from_msg(msg_goal_path_.poses[p].pose.position);
+			double dt = (msg_goal_path_.poses[p + 1].header.stamp - msg_goal_path_.poses[p].header.stamp).toSec();
+			v_sp = d_pos / dt;
+
+			//Update latest setpoint in case we need to hold lastest position
+			latest_g_sp_ = g_sp;
+
+			success = true;
+		}
+	}
+
+	return success;
 }
 
 Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R) {
@@ -424,6 +451,37 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 	return e_R;
 }
 
+int16_t ControllerID::map_pwm(double val) {
+	//Constrain from 0 -> 1
+	double c = (val > 1.0) ? 1.0 : (val < 0.0) ? 0.0 : val;
+
+	//Scale c to the pwm values
+	return int16_t((p_.pwm_max - p_.pwm_min)*c) + p_.pwm_min;
+}
+
+void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
+	//TODO: This all needs to be better defined generically
+	double arm_ang = M_PI / 3.0;
+
+	double kT = 1.0 / (p_.motor_num * p_.motor_thrust_max);
+	double ktx = 1.0 / (2.0 * p_.la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * p_.motor_thrust_max);
+	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * p_.motor_thrust_max);
+	double km = 1.0 / (p_.motor_num * p_.motor_drag_max);
+	km = 0;	//TODO: Need to pick motor_drag_max!!!
+
+	//Generate the copter map
+	Eigen::MatrixXd cm = Eigen::MatrixXd::Zero(p_.motor_num, 6);
+	cm << 0.0, 0.0,  kT, -ktx,  0.0, -km,
+		  0.0, 0.0,  kT,  ktx,  0.0,  km,
+		  0.0, 0.0,  kT,  ktx, -kty, -km,
+		  0.0, 0.0,  kT, -ktx,  kty,  km,
+		  0.0, 0.0,  kT, -ktx, -kty,  km,
+		  0.0, 0.0,  kT,  ktx,  kty, -km;
+
+	M << cm, Eigen::MatrixXd::Zero(p_.motor_num, p_.link_num),
+		 Eigen::MatrixXd::Zero(p_.link_num, 6), Eigen::MatrixXd::Identity(p_.link_num, p_.link_num);
+}
+
 void ControllerID::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
 	msg_state_odom_ = *msg_in;
 }
@@ -432,8 +490,19 @@ void ControllerID::callback_state_joints(const sensor_msgs::JointState::ConstPtr
 	msg_state_joints_ = *msg_in;
 }
 
-void ControllerID::callback_goal_pose(const geometry_msgs::PoseStamped::ConstPtr& msg_in) {
-	msg_goal_pose_ = *msg_in;
+void ControllerID::callback_goal_path(const nav_msgs::Path::ConstPtr& msg_in) {
+	//If there is at least 2 poses in the path
+	if(msg_in->poses.size() > 1) {
+		//If at least the very last timestamp is in the future, accept path
+		if( ( msg_in->header.stamp + ( msg_in->poses.back().header.stamp - ros::Time(0) ) ) > ros::Time::now() ) {
+			ROS_INFO("Recieved new path!");
+			msg_goal_path_ = *msg_in;
+		} else {
+			ROS_WARN("Rejecting path, timestamps are too old.");
+		}
+	} else {
+		ROS_WARN("Rejecting path, must be at least 2 poses.");
+	}
 }
 
 void ControllerID::callback_goal_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {

@@ -1,6 +1,7 @@
 <?xml version='1.0'?>
 <launch>
 	<arg name="model_name" default="mantis_uav"/>
+	<arg name="rviz" default="false"/>
 
 	<node pkg="mantis_kinematics" type="mantis_forward_kinematics_node" name="mantis_fk" clear_params="true" output="screen">
 		<param name="model_id" value="$(arg model_name)" />
@@ -12,4 +13,9 @@
 
 		<rosparam command="load" file="$(find mantis_kinematics)/launch/mantis_dh.yaml"/>
 	</node>
+
+	<!-- start gazebo client -->
+	<group if="$(arg rviz)">
+		<node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
+	</group>
 </launch>

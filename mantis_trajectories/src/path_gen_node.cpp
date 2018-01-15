@@ -42,6 +42,10 @@ PathGen::PathGen() :
 	nh_.param("path/type", param_path_type_, param_path_type_);
 	nh_.param("path/height", param_path_height_, param_path_height_);
 
+	//Give the node a moment to recieve a clock message (to allow it to work with simulated time)
+	ros::Duration(0.2).sleep();
+	ros::spinOnce();
+
 	bool error = false;
 
 	//Check that params were loaded correctly
@@ -73,9 +77,10 @@ PathGen::PathGen() :
 				p.pose.orientation.y = 0.0;
 				p.pose.orientation.z = 0.0;
 
-				double rot_step = 2*M_PI/(param_resolution_);	//'-1' to allow us to finish where we start
+				double rot_step = 2*M_PI/(param_resolution_);
 				double r = 0.0;
 
+				//Fill in the rest of the path
 				if(nh_.getParam("path/radius", r)) {
 					for(int i=0; i<=(param_resolution_); i++) {
 						p.header.seq = i;
