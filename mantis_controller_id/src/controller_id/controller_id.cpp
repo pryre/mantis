@@ -306,6 +306,11 @@ Eigen::Affine3d ControllerID::affine_from_msg(const geometry_msgs::Pose pose) {
 		return a;
 }
 
+Eigen::Vector3d ControllerID::vector_lerp(const Eigen::Vector3d a, const Eigen::Vector3d b, const double alpha) {
+  return ((1.0 - alpha) * a) + (alpha * b);
+}
+
+
 
 bool ControllerID::calc_goal_g_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc) {
 	bool success = false;
@@ -324,15 +329,23 @@ bool ControllerID::calc_goal_g_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, 
 			//Find the last point in the path
 			int p = std::floor( (msg_goal_path_.poses.size() - 1) * ((tc - ts).toSec() / td.toSec() ) );
 
-			//XXX: All of this next part is pretty lazy
+			//Get the last and next points
+			Eigen::Affine3d g_l = affine_from_msg(msg_goal_path_.poses[p].pose);
+			Eigen::Affine3d g_n = affine_from_msg(msg_goal_path_.poses[p + 1].pose);
 
-			//Set the next goal
-			g_sp = affine_from_msg(msg_goal_path_.poses[p + 1].pose);
-
-			//TODO: This next velocity step should be calculated over the point goal, not to it
-			Eigen::Vector3d d_pos = position_from_msg(msg_goal_path_.poses[p + 1].pose.position) - position_from_msg(msg_goal_path_.poses[p].pose.position);
+			//Linear interpolation parameter
+			ros::Time tlp = msg_goal_path_.header.stamp + (msg_goal_path_.poses[p].header.stamp - ros::Time(0));
 			double dt = (msg_goal_path_.poses[p + 1].header.stamp - msg_goal_path_.poses[p].header.stamp).toSec();
-			v_sp = d_pos / dt;
+			double d0 = (tc - tlp).toSec();
+			double alpha = d0 / dt;
+
+			//Set the next position goal
+			g_sp.translation() << vector_lerp(g_l.translation(), g_n.translation(), alpha);
+			g_sp.linear() << Eigen::Quaterniond(g_l.linear()).slerp(alpha, Eigen::Quaterniond(g_n.linear())).toRotationMatrix();
+
+			//Calculate the velocity vector
+			Eigen::Vector3d dp = g_sp.translation() - position_from_msg(msg_goal_path_.poses[p].pose.position);
+			v_sp = dp / dt;
 
 			//Update latest setpoint in case we need to hold lastest position
 			latest_g_sp_ = g_sp;
@@ -466,8 +479,8 @@ void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 	double kT = 1.0 / (p_.motor_num * p_.motor_thrust_max);
 	double ktx = 1.0 / (2.0 * p_.la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * p_.motor_thrust_max);
 	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * p_.motor_thrust_max);
-	double km = 1.0 / (p_.motor_num * p_.motor_drag_max);
-	km = 0;	//TODO: Need to pick motor_drag_max!!!
+	double km = -1.0 / (p_.motor_num * p_.motor_drag_max);
+	//km = 0;	//TODO: Need to pick motor_drag_max!!!
 
 	//Generate the copter map
 	Eigen::MatrixXd cm = Eigen::MatrixXd::Zero(p_.motor_num, 6);

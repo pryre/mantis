@@ -53,6 +53,7 @@ class ControllerID {
 		Eigen::Vector3d position_from_msg(const geometry_msgs::Point p);
 		Eigen::Quaterniond quaternion_from_msg(const geometry_msgs::Quaternion q);
 		Eigen::Affine3d affine_from_msg(const geometry_msgs::Pose pose);
+		Eigen::Vector3d vector_lerp(const Eigen::Vector3d a, const Eigen::Vector3d b, const double alpha);
 
 		bool calc_goal_g_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc);
 		Eigen::Vector3d calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R);
