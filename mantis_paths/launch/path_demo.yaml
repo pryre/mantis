@@ -15,7 +15,7 @@ path:
     velocity: 0.2
     height: 0.0
     radius: 2.0
-    theta: -3.141592654
+    theta: 3.141592654
     #orientation: [1.0, 0.0, 0.0, 0.0]
   s2:
     type: "line"
