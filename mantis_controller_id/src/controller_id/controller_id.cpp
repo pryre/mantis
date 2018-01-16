@@ -534,6 +534,7 @@ void ControllerID::callback_goal_path(const nav_msgs::Path::ConstPtr& msg_in) {
 		if( ( msg_in->header.stamp + ( msg_in->poses.back().header.stamp - ros::Time(0) ) ) > ros::Time::now() ) {
 			ROS_INFO("Recieved new path!");
 			msg_goal_path_ = *msg_in;
+			path_hint_ = 0;
 		} else {
 			ROS_WARN("Rejecting path, timestamps are too old.");
 		}
