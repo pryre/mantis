@@ -1,0 +1,38 @@
+start:
+  position: [0.0, 0.0, 2.0]
+  direction: [0.924, 0.0, 0.0, 0.383]
+  #orientation: [1.0, 0.0, 0.0, 0.0]
+
+path:
+  s0:
+    type: "line"
+    velocity: 0.1
+    length: 1.0
+    height: 0.0
+    #orientation: [1.0, 0.0, 0.0, 0.0]
+  s1:
+    type: "arc"
+    velocity: 0.1
+    height: 0.0
+    radius: 1.0
+    theta: -4.71238898
+    #orientation: [1.0, 0.0, 0.0, 0.0]
+  s2:
+    type: "line"
+    velocity: 0.1
+    length: 2.0
+    height: 0.0
+    #orientation: [1.0, 0.0, 0.0, 0.0]
+  s3:
+    type: "arc"
+    velocity: 0.1
+    height: 0.0
+    radius: 1.0
+    theta: 4.71238898
+    #orientation: [1.0, 0.0, 0.0, 0.0]
+  s4:
+    type: "line"
+    velocity: 0.1
+    length: 1.0
+    height: 0.0
+    orientation: [1.0, 0.0, 0.0, 0.0]

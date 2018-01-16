@@ -204,7 +204,6 @@ geometry_msgs::Pose Paths::pose_from_eigen(const Eigen::Vector3d p, const Eigen:
 	return pose;
 }
 
-
 Eigen::Vector3d Paths::vector_from_doubles(std::vector<double> &a) {
 	ROS_ASSERT_MSG( (a.size() == 3), "Vector3 size (%li) must be 3", a.size());
 
@@ -220,75 +219,3 @@ Eigen::Quaterniond Paths::quaternion_from_doubles(std::vector<double> &a) {
 ros::Duration Paths::travel_time(const double len, const double vel) {
 	return ros::Duration(len / vel);
 }
-
-
-
-
-
-
-
-/*
-bool success = false;
-nav_msgs::Path msg_out;
-double time_step = param_duration_ / param_resolution_;
-
-//Find the path to generate
-if(param_path_type_ == "line ") {
-
-	success = true;
-} else if (param_path_type_ == "points") {
-
-	success = true;
-} else if (param_path_type_ == "square") {
-
-	success = true;
-} else if(param_path_type_ == "circle") {
-	geometry_msgs::PoseStamped p;
-	p.header.frame_id = param_frame_id_;
-
-	p.pose.position.z = param_path_height_;
-	p.pose.orientation.w = 1.0;
-	p.pose.orientation.x = 0.0;
-	p.pose.orientation.y = 0.0;
-	p.pose.orientation.z = 0.0;
-
-	double rot_step = 2*M_PI/(param_resolution_);
-	double r = 0.0;
-
-	//Fill in the rest of the path
-	if(nh_.getParam("path/radius", r)) {
-		for(int i=0; i<=(param_resolution_); i++) {
-			p.header.seq = i;
-			p.header.stamp = ros::Time(0) + ros::Duration((i)*time_step);
-
-			p.pose.position.x = r*std::cos(rot_step*i);
-			p.pose.position.y = r*std::sin(rot_step*i);
-
-			msg_out.poses.push_back(p);
-		}
-
-		success = true;
-	} else {
-		ROS_ERROR("Type 'circle' needs parameter 'path/radius'");
-	}
-} else if (param_path_type_ == "figure_8") {
-
-
-	success = true;
-} else {
-	error = true;
-	ROS_ERROR("Path type (%s) is not supported.", param_path_type_.c_str());
-}
-
-if(success) {
-	msg_out.header.frame_id = param_frame_id_;
-	msg_out.header.stamp = ros::Time::now();
-
-	pub_path_.publish(msg_out);
-
-	ROS_INFO("Path generated!");
-} else {
-	ROS_ERROR("A path was unable to be generated.");
-	error = true;
-		}
-*/
