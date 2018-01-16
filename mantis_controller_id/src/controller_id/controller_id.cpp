@@ -287,7 +287,7 @@ bool ControllerID::calc_goal_g_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, 
 		//If the current time is within the path time, follow the path
 		if((tc >= ts) && (tc < tf)) {
 			//Find the lastest point in the path
-			int p = 1;
+			int p = path_hint_ + 1;
 			bool found = false;
 			while( (!found) && ( p < msg_goal_path_.poses.size() ) ) {
 				ros::Duration d_l = msg_goal_path_.poses[p - 1].header.stamp - ros::Time(0);
@@ -303,6 +303,9 @@ bool ControllerID::calc_goal_g_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, 
 
 				p++;
 			}
+
+			//Record the index we ues so we can start the time checks there next loop
+			path_hint_ = p;
 
 			//Get the last and next points
 			Eigen::Affine3d g_l = affine_from_msg(msg_goal_path_.poses[p].pose);
@@ -327,6 +330,8 @@ bool ControllerID::calc_goal_g_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, 
 			latest_g_sp_ = g_sp;
 
 			success = true;
+		} else {
+			path_hint_ = 0;
 		}
 	}
 
