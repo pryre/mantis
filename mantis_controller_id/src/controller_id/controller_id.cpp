@@ -11,7 +11,7 @@
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 #include <sensor_msgs/JointState.h>
-//#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/AccelStamped.h>
 #include <geometry_msgs/Vector3.h>
@@ -40,6 +40,7 @@ ControllerID::ControllerID() :
 	pub_accel_linear_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/linear", 10);
 	pub_accel_body_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
 	pub_joints_ = nh_.advertise<sensor_msgs::JointState>("feedback/joints", 10);
+	pub_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("feedback/pose", 10);
 
 	sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
 	sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
@@ -65,6 +66,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	geometry_msgs::AccelStamped msg_accel_linear_out;
 	geometry_msgs::AccelStamped msg_accel_body_out;
 	sensor_msgs::JointState msg_joints_out;
+	geometry_msgs::PoseStamped msg_pose_out;
 
 	msg_rc_out.header.stamp = e.current_real;
 	msg_rc_out.header.frame_id = param_frame_id_;
@@ -75,6 +77,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	msg_accel_body_out.header.frame_id = param_model_id_;
 	msg_joints_out.header.stamp = e.current_real;
 	msg_joints_out.header.frame_id = param_model_id_;
+	msg_pose_out.header.stamp = e.current_real;
+	msg_pose_out.header.frame_id = param_frame_id_;
 
 	if( ( msg_state_odom_.header.stamp != ros::Time(0) ) &&
 		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
@@ -251,6 +255,15 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		//msg_joints_out.velocity.push_back(goal_r2d);
 		msg_joints_out.effort.push_back(ua(6,0));
 		msg_joints_out.effort.push_back(ua(7,0));
+
+		Eigen::Quaterniond g_sp_q(g_sp.linear());
+		msg_pose_out.pose.position.x = g_sp.translation().x();
+		msg_pose_out.pose.position.y = g_sp.translation().y();
+		msg_pose_out.pose.position.z = g_sp.translation().z();
+		msg_pose_out.pose.orientation.w = g_sp_q.w();
+		msg_pose_out.pose.orientation.x = g_sp_q.x();
+		msg_pose_out.pose.orientation.y = g_sp_q.y();
+		msg_pose_out.pose.orientation.z = g_sp_q.z();
 	} else {
 		//Output nothing until the input info is available
 		for(int i=0; i<p_.motor_num; i++) {
@@ -267,6 +280,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	pub_accel_linear_.publish(msg_accel_linear_out);
 	pub_accel_body_.publish(msg_accel_body_out);
 	pub_joints_.publish(msg_joints_out);
+	pub_pose_.publish(msg_pose_out);
 }
 
 void ControllerID::matrix_clamp(Eigen::MatrixXd m, const double min, const double max) {

@@ -130,6 +130,7 @@ bool Paths::generate_path() {
 					double length = Eigen::Vector3d(dx,0.0,dz).norm();	//Integrate over the arc
 
 					Eigen::Quaterniond qo = qc;
+					Eigen::Quaterniond qcs = qc;
 					bool use_orientation = false;
 					std::vector<double> orientation;
 					if( nh_.getParam("path/s" + std::to_string(i) + "/orientation", orientation) ) {
@@ -142,7 +143,7 @@ bool Paths::generate_path() {
 						pc += qc.toRotationMatrix()*Eigen::Vector3d(dx, 0.0, 0.0) + Eigen::Vector3d(0.0, 0.0, dz);
 						qc *= Eigen::Quaterniond(Eigen::AngleAxisd(dtheta, Eigen::Vector3d::UnitZ()));
 
-						Eigen::Quaterniond qs = use_orientation ? qo : qc;
+						Eigen::Quaterniond qs = use_orientation ? qcs.slerp(alpha,qo) : qc;
 
 						//Always calculate the slerp, even if it's that not efficient
 						add_pose(travel_time(length, velocity), pose_from_eigen(pc, qs));
