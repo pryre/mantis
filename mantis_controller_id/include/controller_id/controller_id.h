@@ -24,11 +24,9 @@ class ControllerID {
 		ros::Subscriber sub_goal_joints_;
 
 		ros::Publisher pub_rc_;
-		ros::Publisher pub_r1_;
-		ros::Publisher pub_r2_;
+		ros::Publisher pub_joints_;
 		ros::Publisher pub_accel_linear_;
 		ros::Publisher pub_accel_body_;
-		ros::Publisher pub_joints_;
 		ros::Publisher pub_pose_;
 
 		nav_msgs::Odometry msg_state_odom_;
@@ -37,6 +35,7 @@ class ControllerID {
 		sensor_msgs::JointState msg_goal_joints_;
 
 		Eigen::Affine3d latest_g_sp_;
+		int path_hint_;
 
 		std::string param_frame_id_;
 		std::string param_model_id_;
@@ -61,6 +60,9 @@ class ControllerID {
 
 		int16_t map_pwm(double val);
 		void calc_motor_map(Eigen::MatrixXd &M);
+
+		void message_output_control(const ros::Time t, const std::vector<uint16_t> &pwm, const std::vector<double> &joints);
+		void message_output_feedback(const ros::Time t, const Eigen::Affine3d &g_sp, const Eigen::Vector3d &pa, const Eigen::VectorXd &ua);
 
 		void callback_control(const ros::TimerEvent& e);
 		void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);

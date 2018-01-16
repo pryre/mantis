@@ -12,9 +12,8 @@
 
 		<remap from="/controller_id/goal/path" to="/path_gen/path" />
 
-		<remap from="/controller_id/rc" to="/mantis_uav/command/motor_pwm" />
-		<remap from="/controller_id/r1" to="/mantis_uav/command/servo/torque/shoulder" />
-		<remap from="/controller_id/r2" to="/mantis_uav/command/servo/torque/elbow" />
+		<remap from="/controller_id/output/rc" to="/mantis_uav/command/motor_pwm" />
+		<remap from="/controller_id/output/joints" to="/mantis_uav/command/joint_torque" />
 
 		<rosparam command="load" file="$(find mantis_controller_id)/launch/robot_params.yaml"/>
 	</node>

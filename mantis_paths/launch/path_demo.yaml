@@ -9,24 +9,24 @@ path:
     velocity: 0.2
     length: 2.0
     height: 0.0
-    #orientation: [1.0, 0.0, 0.0, 0.0]
+    orientation: [1.0, 0.0, 0.0, 0.0]
   s1:
     type: "arc"
     velocity: 0.2
     height: 0.0
     radius: 2.0
     theta: 3.141592654
-    #orientation: [1.0, 0.0, 0.0, 0.0]
+    orientation: [1.0, 0.0, 0.0, 0.0]
   s2:
     type: "line"
     velocity: 0.2
     length: 2.0
     height: 0.0
-    #orientation: [1.0, 0.0, 0.0, 0.0]
+    orientation: [1.0, 0.0, 0.0, 0.0]
   s3:
     type: "arc"
     velocity: 0.2
     height: 0.0
     radius: 2.0
     theta: 3.141592654
-    #orientation: [1.0, 0.0, 0.0, 0.0]
+    orientation: [1.0, 0.0, 0.0, 0.0]

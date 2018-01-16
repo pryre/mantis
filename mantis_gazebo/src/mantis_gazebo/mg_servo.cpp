@@ -4,7 +4,6 @@
 #include <gazebo/common/common.hh>
 
 #include <ros/ros.h>
-#include <std_msgs/Float64.h>
 #include <sensor_msgs/JointState.h>
 
 #include <mantis_gazebo_msgs/DoArm.h>
@@ -27,13 +26,13 @@ class MantisGazeboServo : public ModelPlugin
 
 			model_ = _parent;
 			updateConnection_ = event::Events::ConnectWorldUpdateBegin( boost::bind( &MantisGazeboServo::OnUpdate, this, _1 ) );
+			//Need a better way to do these
 			joint_shoulder_upperarm_servo_ = model_->GetJoint("joint_shoulder");
 			joint_elbow_forearm_servo_ = model_->GetJoint("joint_elbow");
 
-			joint_shoulder_upperarm_servo_->SetPosition(0, -1.570796327);
+			//joint_shoulder_upperarm_servo_->SetPosition(0, -1.570796327);
 
-			sub_shoulder_ = nh_.subscribe<std_msgs::Float64>( model_->GetName() + "/command/servo/torque/shoulder", 100, &MantisGazeboServo::cmd_shoulder_cb, this );
-			sub_elbow_ = nh_.subscribe<std_msgs::Float64>( model_->GetName() + "/command/servo/torque/elbow", 100, &MantisGazeboServo::cmd_elbow_cb, this );
+			sub_joint_goals_ = nh_.subscribe<sensor_msgs::JointState>(model_->GetName() + "/command/joint_torque", 100, &MantisGazeboServo::cmd_joints_cb, this );
 			pub_joint_state_ = nh_.advertise<sensor_msgs::JointState>(model_->GetName() + "/state/joint_states", 10);
 
 			msg_joint_state_.header.frame_id = model_->GetName();
@@ -51,12 +50,8 @@ class MantisGazeboServo : public ModelPlugin
 			ROS_INFO("Loaded mantis servo plugin!");
 		}
 
-		void cmd_shoulder_cb( const std_msgs::Float64::ConstPtr& msg_in ) {
-			joint_effort_cmd_shoulder_ = msg_in->data;
-		}
-
-		void cmd_elbow_cb( const std_msgs::Float64::ConstPtr& msg_in ) {
-			joint_effort_cmd_elbow_ = msg_in->data;
+		void cmd_joints_cb( const sensor_msgs::JointState::ConstPtr& msg_in ) {
+			msg_joint_goal_ = *msg_in;
 		}
 
 		// Called by the world update start event
@@ -64,9 +59,10 @@ class MantisGazeboServo : public ModelPlugin
 			double cmd_shoulder = 0.0;
 			double cmd_elbow = 0.0;
 
-			if(safety_armed_) {
-				cmd_shoulder = joint_effort_cmd_shoulder_;
-				cmd_elbow = joint_effort_cmd_elbow_;
+			//Only allpy torque if saftey is armed, and we have recieved a message
+			if(safety_armed_ && (msg_joint_goal_.header.stamp > ros::Time(0) ) ) {
+				cmd_shoulder = msg_joint_goal_.effort[0];
+				cmd_elbow = msg_joint_goal_.effort[1];
 			}
 
 			joint_shoulder_upperarm_servo_->SetForce(0, cmd_shoulder);
@@ -103,22 +99,18 @@ class MantisGazeboServo : public ModelPlugin
 		physics::ModelPtr model_;	// Pointer to the model
 		event::ConnectionPtr updateConnection_;	// Pointer to the update event connection
 
-		//pose of every joint
 		physics::JointPtr joint_shoulder_upperarm_servo_;
 		physics::JointPtr joint_elbow_forearm_servo_;
-
-		double joint_effort_cmd_shoulder_;
-		double joint_effort_cmd_elbow_;
 
 		bool safety_armed_;
 
 		ros::NodeHandle nh_;
-		ros::Subscriber sub_shoulder_;
-		ros::Subscriber sub_elbow_;
+		ros::Subscriber sub_joint_goals_;
 		ros::Publisher pub_joint_state_;
 		ros::ServiceServer srv_arm_servos_;
 
 		sensor_msgs::JointState msg_joint_state_;
+		sensor_msgs::JointState msg_joint_goal_;
 };
 
 GZ_REGISTER_MODEL_PLUGIN(MantisGazeboServo)

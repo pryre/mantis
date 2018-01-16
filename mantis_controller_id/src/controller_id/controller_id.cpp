@@ -5,20 +5,17 @@
 #include <dynamics/calc_Dq.h>
 #include <dynamics/calc_Cqqd.h>
 #include <dynamics/calc_Lqd.h>
-//#include <dynamics/calc_Nq.h>
-//#include <dynamics/calc_Mm.h>
+
+#include <mavros_msgs/RCOut.h>
+#include <sensor_msgs/JointState.h>
 
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
-#include <sensor_msgs/JointState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/AccelStamped.h>
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Quaternion.h>
-
-#include <mavros_msgs/RCOut.h>
-#include <std_msgs/Float64.h>
 
 #include <eigen3/Eigen/Dense>
 #include <math.h>
@@ -30,16 +27,16 @@ ControllerID::ControllerID() :
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_rate_(100),
-	latest_g_sp_(Eigen::Affine3d::Identity()) {
+	latest_g_sp_(Eigen::Affine3d::Identity()),
+	path_hint_(0) {
 
 	p_.load();
 
-	pub_rc_ = nh_.advertise<mavros_msgs::RCOut>("rc", 10);
-	pub_r1_ = nh_.advertise<std_msgs::Float64>("r1", 10);
-	pub_r2_ = nh_.advertise<std_msgs::Float64>("r2", 10);
+	pub_rc_ = nh_.advertise<mavros_msgs::RCOut>("output/rc", 10);
+	pub_joints_ = nh_.advertise<sensor_msgs::JointState>("output/joints", 10);
+
 	pub_accel_linear_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/linear", 10);
 	pub_accel_body_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
-	pub_joints_ = nh_.advertise<sensor_msgs::JointState>("feedback/joints", 10);
 	pub_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("feedback/pose", 10);
 
 	sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
@@ -60,29 +57,11 @@ ControllerID::~ControllerID() {
 }
 
 void ControllerID::callback_control(const ros::TimerEvent& e) {
-	mavros_msgs::RCOut msg_rc_out;
-	std_msgs::Float64 msg_r1_out;
-	std_msgs::Float64 msg_r2_out;
-	geometry_msgs::AccelStamped msg_accel_linear_out;
-	geometry_msgs::AccelStamped msg_accel_body_out;
-	sensor_msgs::JointState msg_joints_out;
-	geometry_msgs::PoseStamped msg_pose_out;
-
-	msg_rc_out.header.stamp = e.current_real;
-	msg_rc_out.header.frame_id = param_frame_id_;
-	msg_rc_out.channels.resize(p_.motor_num);	//Allocate space for the number of motors
-	msg_accel_linear_out.header.stamp = e.current_real;
-	msg_accel_linear_out.header.frame_id = param_frame_id_;
-	msg_accel_body_out.header.stamp = e.current_real;
-	msg_accel_body_out.header.frame_id = param_model_id_;
-	msg_joints_out.header.stamp = e.current_real;
-	msg_joints_out.header.frame_id = param_model_id_;
-	msg_pose_out.header.stamp = e.current_real;
-	msg_pose_out.header.frame_id = param_frame_id_;
+	std::vector<uint16_t> pwm_out(p_.motor_num);	//Allocate space for the number of motors
+	std::vector<double> joints_out(p_.link_num);
 
 	if( ( msg_state_odom_.header.stamp != ros::Time(0) ) &&
 		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
-		//( msg_goal_path_.header.stamp != ros::Time(0) ) &&
 		( msg_goal_joints_.header.stamp != ros::Time(0) ) ) {
 
 		ROS_INFO_ONCE("Inverse dynamics controller running!");
@@ -100,7 +79,6 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		}
 
 		//TODO: Should definitely have a trajectory instead
-		//Eigen::Affine3d g_sp = affine_from_msg(msg_goal_pose_.pose);
 		Eigen::VectorXd r_sp = Eigen::VectorXd::Zero(p_.link_num);
 
 		//Current States
@@ -221,9 +199,9 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 				  p_.m1, p_.m2,
 				  r(0), rd(0), r(1), rd(1));
 
-		Eigen::VectorXd tau = D*ua + (C + L)*qd;// + N;
+		Eigen::VectorXd tau = D*ua + (C + L)*qd;
 
-		//XXX: Hardcoded for hex because lazy
+		//XXX: Hardcoded for hex in function because lazy
 		Eigen::MatrixXd M = Eigen::MatrixXd::Zero(p_.motor_num + p_.link_num, num_states);
 		calc_motor_map(M);
 
@@ -231,56 +209,26 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		//Calculate goal PWM values to generate desired torque
 		for(int i=0; i<p_.motor_num; i++) {
-			msg_rc_out.channels[i] = map_pwm(u(i,0));
+			pwm_out[i] = map_pwm(u(i));
 		}
 
-		//Fill in goal manipulator torques
-		msg_r1_out.data = u(p_.motor_num);
-		msg_r2_out.data = u(p_.motor_num+1);
+		for(int i=0; i<p_.link_num; i++) {
+			joints_out[i] = u(p_.motor_num + i);
+		}
 
-		msg_accel_linear_out.accel.linear.x = Al.x();
-		msg_accel_linear_out.accel.linear.y = Al.y();
-		msg_accel_linear_out.accel.linear.z = Al.z();
-
-		msg_accel_body_out.accel.linear.x = ua(0,0);
-		msg_accel_body_out.accel.linear.y = ua(1,0);
-		msg_accel_body_out.accel.linear.z = ua(2,0);
-		msg_accel_body_out.accel.angular.x = ua(3,0);
-		msg_accel_body_out.accel.angular.y = ua(4,0);
-		msg_accel_body_out.accel.angular.z = ua(5,0);
-
-		msg_joints_out.name = msg_state_joints_.name;
-		msg_joints_out.position = msg_goal_joints_.position;
-		//msg_joints_out.velocity.push_back(goal_r1d);
-		//msg_joints_out.velocity.push_back(goal_r2d);
-		msg_joints_out.effort.push_back(ua(6,0));
-		msg_joints_out.effort.push_back(ua(7,0));
-
-		Eigen::Quaterniond g_sp_q(g_sp.linear());
-		msg_pose_out.pose.position.x = g_sp.translation().x();
-		msg_pose_out.pose.position.y = g_sp.translation().y();
-		msg_pose_out.pose.position.z = g_sp.translation().z();
-		msg_pose_out.pose.orientation.w = g_sp_q.w();
-		msg_pose_out.pose.orientation.x = g_sp_q.x();
-		msg_pose_out.pose.orientation.y = g_sp_q.y();
-		msg_pose_out.pose.orientation.z = g_sp_q.z();
+		message_output_feedback(e.current_real, g_sp, Al, ua);
 	} else {
-		//Output nothing until the input info is available
+		//Output minimums until the input info is available
 		for(int i=0; i<p_.motor_num; i++) {
-			msg_rc_out.channels[i] = p_.pwm_min;
+			pwm_out[i] = p_.pwm_min;
 		}
 
-		msg_r1_out.data = 0.0;
-		msg_r2_out.data = 0.0;
+		for(int i=0; i<p_.link_num; i++) {
+			joints_out[i] = 0.0;
+		}
 	}
 
-	pub_rc_.publish(msg_rc_out);
-	pub_r1_.publish(msg_r1_out);
-	pub_r2_.publish(msg_r2_out);
-	pub_accel_linear_.publish(msg_accel_linear_out);
-	pub_accel_body_.publish(msg_accel_body_out);
-	pub_joints_.publish(msg_joints_out);
-	pub_pose_.publish(msg_pose_out);
+	message_output_control(e.current_real, pwm_out, joints_out);
 }
 
 void ControllerID::matrix_clamp(Eigen::MatrixXd m, const double min, const double max) {
@@ -324,8 +272,6 @@ Eigen::Vector3d ControllerID::vector_lerp(const Eigen::Vector3d a, const Eigen::
   return ((1.0 - alpha) * a) + (alpha * b);
 }
 
-
-
 bool ControllerID::calc_goal_g_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc) {
 	bool success = false;
 
@@ -340,26 +286,42 @@ bool ControllerID::calc_goal_g_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, 
 
 		//If the current time is within the path time, follow the path
 		if((tc >= ts) && (tc < tf)) {
-			//Find the last point in the path
-			int p = std::floor( (msg_goal_path_.poses.size() - 1) * ((tc - ts).toSec() / td.toSec() ) );
+			//Find the lastest point in the path
+			int p = 1;
+			bool found = false;
+			while( (!found) && ( p < msg_goal_path_.poses.size() ) ) {
+				ros::Duration d_l = msg_goal_path_.poses[p - 1].header.stamp - ros::Time(0);
+				ros::Duration d_n = msg_goal_path_.poses[p].header.stamp - ros::Time(0);
+
+				if( (tc >= msg_goal_path_.header.stamp + d_l ) &&
+					(tc < msg_goal_path_.header.stamp + d_n ) ) {
+					//We have the right index + 1
+					//so subtract and break;
+					p--;
+					break;
+				}
+
+				p++;
+			}
 
 			//Get the last and next points
 			Eigen::Affine3d g_l = affine_from_msg(msg_goal_path_.poses[p].pose);
 			Eigen::Affine3d g_n = affine_from_msg(msg_goal_path_.poses[p + 1].pose);
+			ros::Duration t_l = msg_goal_path_.poses[p].header.stamp - ros::Time(0);
+			ros::Duration t_n = msg_goal_path_.poses[p + 1].header.stamp - ros::Time(0);
+			ros::Time t_lt = msg_goal_path_.header.stamp + t_l;
+			double dts = (t_n - t_l).toSec();	//Time to complete this segment
+			double da = (tc - t_lt).toSec();	//Time to alpha
+			double alpha = da / dts;
 
-			//Linear interpolation parameter
-			ros::Time tlp = msg_goal_path_.header.stamp + (msg_goal_path_.poses[p].header.stamp - ros::Time(0));
-			double dt = (msg_goal_path_.poses[p + 1].header.stamp - msg_goal_path_.poses[p].header.stamp).toSec();
-			double d0 = (tc - tlp).toSec();
-			double alpha = d0 / dt;
-
-			//Set the next position goal
+			//Position goal
 			g_sp.translation() << vector_lerp(g_l.translation(), g_n.translation(), alpha);
-			g_sp.linear() << Eigen::Quaterniond(g_l.linear()).slerp(alpha, Eigen::Quaterniond(g_n.linear())).toRotationMatrix();
+			Eigen::Quaterniond ql_sp(g_l.linear());
+			Eigen::Quaterniond qc_sp = ql_sp.slerp(alpha, Eigen::Quaterniond(g_n.linear()));
+			g_sp.linear() << qc_sp.toRotationMatrix();
 
-			//Calculate the velocity vector
-			Eigen::Vector3d dp = g_sp.translation() - position_from_msg(msg_goal_path_.poses[p].pose.position);
-			v_sp = dp / dt;
+			//Velocity goal
+			v_sp = (g_n.translation() -  g_l.translation()) / dts;
 
 			//Update latest setpoint in case we need to hold lastest position
 			latest_g_sp_ = g_sp;
@@ -376,11 +338,6 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 
 	//Method derived from px4 attitude controller:
 	//DCM from for state and setpoint
-
-	/*
-	Eigen::Matrix3d R = q_current->normalized().toRotationMatrix();
-	Eigen::Matrix3d R_sp = q_sp->normalized().toRotationMatrix();
-	*/
 
 	//Calculate shortest path to goal rotation without yaw (as it's slower than roll/pitch)
 	Eigen::Vector3d R_z = R.col(2);
@@ -462,19 +419,6 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 		e_R = e_R * (1.0 - direct_w) + e_R_d * direct_w;
 	}
 
-	//px4: calculate angular rates setpoint
-	/*
-	Eigen::Vector3d rates_sp;
-	rates_sp(0) = p_.gain_ang_roll_p * e_R.x();
-	rates_sp(1) = p_.gain_ang_pitch_p * e_R.y();
-	rates_sp(2) = p_.gain_ang_yaw_p * e_R.z();
-
-	//px4: feed forward yaw setpoint rate	//TODO:?
-	//rates_sp.z += _v_att_sp.yaw_sp_move_rate * yaw_w * _params.yaw_ff;
-
-	return rates_sp;
-	*/
-
 	return e_R;
 }
 
@@ -507,6 +451,67 @@ void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 
 	M << cm, Eigen::MatrixXd::Zero(p_.motor_num, p_.link_num),
 		 Eigen::MatrixXd::Zero(p_.link_num, 6), Eigen::MatrixXd::Identity(p_.link_num, p_.link_num);
+}
+
+void ControllerID::message_output_control(const ros::Time t, const std::vector<uint16_t> &pwm, const std::vector<double> &joints) {
+	mavros_msgs::RCOut msg_rc_out;
+	sensor_msgs::JointState msg_joints_out;
+
+	//Prepare headers
+	msg_rc_out.header.stamp = t;
+	msg_rc_out.header.frame_id = param_frame_id_;
+	msg_joints_out.header.stamp = t;
+	msg_joints_out.header.frame_id = param_model_id_;
+
+	//Insert control data
+	msg_rc_out.channels = pwm;
+	msg_joints_out.name = msg_goal_joints_.name;
+	msg_joints_out.position = msg_goal_joints_.position;
+	msg_joints_out.effort = joints;
+
+	//Publish messages
+	pub_rc_.publish(msg_rc_out);
+	pub_joints_.publish(msg_joints_out);
+}
+
+void ControllerID::message_output_feedback(const ros::Time t, const Eigen::Affine3d &g_sp, const Eigen::Vector3d &pa, const Eigen::VectorXd &ua) {
+	geometry_msgs::PoseStamped msg_pose_out;
+	geometry_msgs::AccelStamped msg_accel_linear_out;
+	geometry_msgs::AccelStamped msg_accel_body_out;
+
+	//Prepare headers
+	msg_pose_out.header.stamp = t;
+	msg_pose_out.header.frame_id = param_frame_id_;
+	msg_accel_linear_out.header.stamp = t;
+	msg_accel_linear_out.header.frame_id = param_frame_id_;
+	msg_accel_body_out.header.stamp = t;
+	msg_accel_body_out.header.frame_id = param_model_id_;
+
+	//Insert feedback data
+	Eigen::Quaterniond g_sp_q(g_sp.linear());
+	msg_pose_out.pose.position.x = g_sp.translation().x();
+	msg_pose_out.pose.position.y = g_sp.translation().y();
+	msg_pose_out.pose.position.z = g_sp.translation().z();
+	msg_pose_out.pose.orientation.w = g_sp_q.w();
+	msg_pose_out.pose.orientation.x = g_sp_q.x();
+	msg_pose_out.pose.orientation.y = g_sp_q.y();
+	msg_pose_out.pose.orientation.z = g_sp_q.z();
+
+	msg_accel_linear_out.accel.linear.x = pa.x();
+	msg_accel_linear_out.accel.linear.y = pa.y();
+	msg_accel_linear_out.accel.linear.z = pa.z();
+
+	msg_accel_body_out.accel.linear.x = ua(0);
+	msg_accel_body_out.accel.linear.y = ua(1);
+	msg_accel_body_out.accel.linear.z = ua(2);
+	msg_accel_body_out.accel.angular.x = ua(3);
+	msg_accel_body_out.accel.angular.y = ua(4);
+	msg_accel_body_out.accel.angular.z = ua(5);
+
+	//Publish messages
+	pub_pose_.publish(msg_pose_out);
+	pub_accel_linear_.publish(msg_accel_linear_out);
+	pub_accel_body_.publish(msg_accel_body_out);
 }
 
 void ControllerID::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {

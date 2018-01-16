@@ -99,24 +99,26 @@ bool Paths::generate_path() {
 		if( nh_.getParam("path/s" + std::to_string(i) + "/velocity", velocity) &&
 			nh_.getParam("path/s" + std::to_string(i) + "/height", height) ) {
 
+			bool use_qo = false;
+			Eigen::Quaterniond qo = Eigen::Quaterniond::Identity();
+			std::vector<double> orientation;
+			if( nh_.getParam("path/s" + std::to_string(i) + "/orientation", orientation) ) {
+				qo = quaternion_from_doubles(orientation);
+				use_qo = true;
+			}
+
 			if(seg_type == "line") {
 				double length = 0.0;
 
 				if( nh_.getParam("path/s" + std::to_string(i) + "/length", length) ) {
 					pc += qc.toRotationMatrix()*Eigen::Vector3d(length, 0.0, 0.0) + Eigen::Vector3d(0.0, 0.0, height);
+
+					double dist = Eigen::Vector3d(length, 0.0, height).norm();	//Segment distance
+					add_pose(travel_time(dist, velocity), pose_from_eigen(pc, (use_qo ? qo : qc) ) );
 				} else {
 					ROS_ERROR("Could not load length for line segment (%i)", i);
 					error = true;
 				}
-
-				Eigen::Quaterniond qo = qc;
-				std::vector<double> orientation;
-				if( nh_.getParam("path/s" + std::to_string(i) + "/orientation", orientation) ) {
-					qo = quaternion_from_doubles(orientation);
-				}
-
-				if(!error)
-					add_pose(travel_time(Eigen::Vector3d(length, 0.0, height).norm(), velocity), pose_from_eigen(pc, qo));
 			} else if(seg_type == "arc") {
 				double radius = 0.0;
 				double theta = 0.0;
@@ -127,26 +129,15 @@ bool Paths::generate_path() {
 					double dtheta = theta / param_arc_res_;
 					double dx = std::fabs(radius*dtheta);
 					double dz = height / param_arc_res_;
-					double length = Eigen::Vector3d(dx,0.0,dz).norm();	//Integrate over the arc
 
-					Eigen::Quaterniond qo = qc;
-					Eigen::Quaterniond qcs = qc;
-					bool use_orientation = false;
-					std::vector<double> orientation;
-					if( nh_.getParam("path/s" + std::to_string(i) + "/orientation", orientation) ) {
-						qo = quaternion_from_doubles(orientation);
-						use_orientation = true;
-					}
-
+					//Go through each subsegment
 					for(int j=1; j<=param_arc_res_; j++) {
 						double alpha = (double)j / (double)param_arc_res_;
 						pc += qc.toRotationMatrix()*Eigen::Vector3d(dx, 0.0, 0.0) + Eigen::Vector3d(0.0, 0.0, dz);
 						qc *= Eigen::Quaterniond(Eigen::AngleAxisd(dtheta, Eigen::Vector3d::UnitZ()));
 
-						Eigen::Quaterniond qs = use_orientation ? qcs.slerp(alpha,qo) : qc;
-
-						//Always calculate the slerp, even if it's that not efficient
-						add_pose(travel_time(length, velocity), pose_from_eigen(pc, qs));
+						double dist = Eigen::Vector3d(dx, 0.0, dz).norm();	//Segment distance
+						add_pose(travel_time(dist, velocity), pose_from_eigen(pc, (use_qo ? qo : qc) ) );
 					}
 				} else {
 					ROS_ERROR("Could not load radius and theta for arc segment (%i)", i);
