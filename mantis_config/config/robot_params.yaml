@@ -5,6 +5,10 @@ motor:
   thrust_max: 10.5225 # N
   drag_max: 0.63 # N
 
+servo:
+  torque_max: 2.0 # N
+  ang_max: 1.570796326794897 # radians
+
 pwm:
   min: 1000
   max: 2000
@@ -22,10 +26,25 @@ gain:
   manipulator: [14.1421,20.6950,14.1421,20.6950]
 
 links:
-  num: 2
-  servo:
-    torque_max: 2.0 # N
-    ang_max: 1.570796326794897 # radians
+  num: 3
+  l0:
+    d: -0.05025,
+    t: 0.0,
+    r: 0.0,
+    a: 1.570796326794897
+    type: "static"
+  l1:
+    d: 0.0,
+    t: -1.570796326794897,
+    r: 0.18325,
+    a: 0.0
+    type: "twist_z"
+  l2:
+    d: 0.0,
+    t: 0.0,
+    r: 0.18325,
+    a: 0.0
+    type: "twist_z"
 
 length:
   la: 0.275

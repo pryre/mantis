@@ -9,6 +9,7 @@ add_definitions(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  dh_parameters
   tf2
   tf2_ros
   tf2_eigen
@@ -130,7 +131,6 @@ include_directories(
 ## Declare a C++ library
 add_library(forward_kinematics
   src/forward_kinematics/forward_kinematics.cpp
-  src/forward_kinematics/dh_gen.cpp
 )
 
 ## Add cmake target dependencies of the library

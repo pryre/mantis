@@ -11,7 +11,7 @@
 
 		<remap from="/mantis_fk/visualization" to="/$(arg model_name)/visualization"/>
 
-		<rosparam command="load" file="$(find mantis_kinematics)/launch/mantis_dh.yaml"/>
+		<rosparam command="load" file="$(find mantis_config)/config/robot_params.yaml"/>
 	</node>
 
 	<!-- start gazebo client -->

@@ -2,6 +2,8 @@
 
 #include <ros/ros.h>
 
+#include <dh_parameters/dh_parameters.h>
+
 #include <geometry_msgs/Transform.h>
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
@@ -25,8 +27,7 @@ class ForwardKinematics {
 		tf2_ros::StaticTransformBroadcaster tfsbr_;
 
 		std::string param_model_id_;
-		std::vector<int> param_dh_joints_;
-		std::vector<std::vector<double>> param_dh_params_;
+		std::vector<DHParameters> param_joints_;
 
 		bool param_do_viz_;
 		bool param_done_viz_;

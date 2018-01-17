@@ -1,7 +1,8 @@
 #include <ros/ros.h>
 
 #include <forward_kinematics/forward_kinematics.h>
-#include <forward_kinematics/dh_gen.h>
+
+#include <dh_parameters/dh_parameters.h>
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
@@ -30,28 +31,22 @@ ForwardKinematics::ForwardKinematics() :
 	param_do_viz_(true),
 	param_done_viz_(false) {
 
+	int num_links = 0;
+
 	//Load parameters
 	nh_.param("model_id", param_model_id_, param_model_id_);
+	nh_.getParam("links/num", num_links);
 
-	nh_.getParam("links/var", param_dh_joints_);
-
-	ROS_INFO("Loading %li links...", param_dh_joints_.size());
+	ROS_INFO("Loading %i links...", num_links);
 	bool success = true;
 
-	for(int i=0; i<param_dh_joints_.size(); i++) {
-		//Clean up dh if needed
-		if( (param_dh_joints_[i] > 4) ||  (param_dh_joints_[i] < 0) ) {
-			ROS_FATAL("Joint selector for link %i is not valid (0 <= %i <= 4)", i, param_dh_joints_[i]);
-			success = false;
-			break;
-		}
+	for(int i=0; i<num_links; i++) {
+		DHParameters dh( &nh_, "links/l" + std::to_string(i) );
 
-		std::vector<double> dh;
-
-		if(nh_.getParam("links/l" + std::to_string(i), dh)) {
-			param_dh_params_.push_back(dh);
+		if( dh.is_valid() ) {
+			param_joints_.push_back(dh);
 		} else {
-			ROS_FATAL("Could not find DH parameters for link %i", i);
+			ROS_FATAL("Error loading joint %i", i);
 			success = false;
 			break;
 		}
@@ -99,15 +94,9 @@ void ForwardKinematics::callback_state_odom(const nav_msgs::Odometry::ConstPtr& 
 void ForwardKinematics::callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
 	int joint_counter = 0;
 
-	for(int i=0; i<param_dh_joints_.size(); i++) {
-		if(param_dh_joints_[i] > 0) {
-			double d = param_dh_params_[i][0];
-			double t = param_dh_params_[i][1];
-			double r = param_dh_params_[i][2];
-			double a = param_dh_params_[i][3];
+	for(int i=0; i<param_joints_.size(); i++) {
+		if( param_joints_[i].jt() != DHParameters::JointType::Static ) {
 			double j = 0.0;
-
-			Eigen::Affine3d g = Eigen::Affine3d::Identity();
 
 			if(joint_counter >= msg_in->position.size()) {
 				ROS_ERROR("Tried to read index (%i) but joint message is %li long", joint_counter, msg_in->position.size());
@@ -116,29 +105,9 @@ void ForwardKinematics::callback_state_joints(const sensor_msgs::JointState::Con
 				joint_counter++;
 			}
 
-			switch(param_dh_joints_[i]) {
-				case 1: {
-					g = dh_gen(d + j, t, r, a);
-					break;
-				}
-				case 2: {
-					g = dh_gen(d, t + j, r, a);
-					break;
-				}
-				case 3: {
-					g = dh_gen(d, t, r + j, a);
-					break;
-				}
-				case 4: {
-					g = dh_gen(d, t, r, a + j);
-					break;
-				}
-				default: {
-					//Handled by static transforms
-				}
-			}
+			param_joints_[i].update(j);
 
-			geometry_msgs::TransformStamped transform = tf2::eigenToTransform(g);
+			geometry_msgs::TransformStamped transform = tf2::eigenToTransform(param_joints_[i].transform());
 			transform.header.stamp = msg_in->header.stamp;
 			transform.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/link_" + std::to_string(i);
 			transform.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
@@ -154,16 +123,9 @@ void ForwardKinematics::callback_state_joints(const sensor_msgs::JointState::Con
 void ForwardKinematics::configure_static_joints() {
 	ros::Time stamp = ros::Time::now();
 
-	for(int i=0; i<param_dh_joints_.size(); i++) {
-		if(param_dh_joints_[i] == 0) {
-			double d = param_dh_params_[i][0];
-			double t = param_dh_params_[i][1];
-			double r = param_dh_params_[i][2];
-			double a = param_dh_params_[i][3];
-
-			Eigen::Affine3d g = dh_gen(d, t, r, a);
-
-			geometry_msgs::TransformStamped tf = tf2::eigenToTransform(g);
+	for(int i=0; i<param_joints_.size(); i++) {
+		if( param_joints_[i].jt() == DHParameters::JointType::Static ) {
+			geometry_msgs::TransformStamped tf = tf2::eigenToTransform( param_joints_[i].transform() );
 			tf.header.stamp = stamp;
 			tf.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/link_" + std::to_string(i);
 			tf.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);

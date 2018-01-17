@@ -16,6 +16,6 @@
 		<remap from="/controller_id/r2" to="/mantis_uav/command/servo/torque/elbow" />
 		-->
 
-		<rosparam command="load" file="$(find mantis_controller_id)/launch/robot_params.yaml"/>
+		<rosparam command="load" file="$(find mantis_config)/config/robot_params.yaml"/>
 	</node>
 </launch>

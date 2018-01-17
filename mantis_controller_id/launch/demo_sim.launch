@@ -15,7 +15,7 @@
 		<remap from="/controller_id/output/rc" to="/mantis_uav/command/motor_pwm" />
 		<remap from="/controller_id/output/joints" to="/mantis_uav/command/joint_torque" />
 
-		<rosparam command="load" file="$(find mantis_controller_id)/launch/robot_params.yaml"/>
+		<rosparam command="load" file="$(find mantis_config)/config/robot_params.yaml"/>
 	</node>
 	<!--
 	<node pkg="mavel" type="mavel_node" name="mavel" clear_params="true" output="screen">
