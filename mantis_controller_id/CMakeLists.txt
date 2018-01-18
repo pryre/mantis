@@ -9,6 +9,7 @@ add_definitions(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  dh_parameters
   std_msgs
   nav_msgs
   sensor_msgs

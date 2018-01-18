@@ -6,20 +6,19 @@ ControllerIDParams::ControllerIDParams(ros::NodeHandle *nh) :
 	nh_(nh),
 	pwm_min(1000),
 	pwm_max(2000),
-	motor_num(4),
+	motor_num(0),
 	motor_thrust_max(0.0),
 	motor_drag_max(0.0),
-	link_num(2),
-	link_servo_torque_max(0.0),
-	link_servo_ang_max(0.0),
+	link_num(0),
+	servo_torque_max(0.0),
+	servo_ang_max(0.0),
 	vel_max(0.0),
 	takeoff_x(0.0),
 	takeoff_y(0.0),
 	takeoff_z(0.0),
 	la(0.0),
-	l0(0.0),
-	l1(0.0),
-	l2(0.0),
+	body_num(1),
+	manip_num(0),
 	lc1(0.0),
 	lc2(0.0),
 	m0(0.0),
@@ -44,12 +43,14 @@ void ControllerIDParams::load( void ) {
 	nh_->param("pwm/max", pwm_max, pwm_max);
 
 	nh_->param("motor/num", motor_num, motor_num);
+	nh_->param("motor/arm_len", la, la);
 	nh_->param("motor/thrust_max", motor_thrust_max, motor_thrust_max);
 	nh_->param("motor/drag_max", motor_drag_max, motor_drag_max);
 
-	nh_->param("link/num", link_num, link_num);
-	nh_->param("link/servo/torque_max", link_servo_torque_max, link_servo_torque_max);
-	nh_->param("link/servo/ang_max", link_servo_ang_max, link_servo_ang_max);
+	nh_->param("servo/torque_max", servo_torque_max, servo_torque_max);
+	nh_->param("servo/ang_max", servo_ang_max, servo_ang_max);
+
+	nh_->param("links/num", link_num, link_num);
 
 	nh_->getParam("gain/position", gain_position);
 	nh_->getParam("gain/rotation", gain_rotation);
@@ -61,25 +62,22 @@ void ControllerIDParams::load( void ) {
 	nh_->param("takeoff/y", takeoff_y, takeoff_y);
 	nh_->param("takeoff/z", takeoff_z, takeoff_z);
 
-	nh_->param("length/la", la, la);
-	nh_->param("length/l0", l0, l0);
-	nh_->param("length/l1", l1, l1);
-	nh_->param("length/l2", l2, l2);
-	nh_->param("length/lc1", lc1, lc1);
-	nh_->param("length/lc2", lc2, lc2);
-
-	nh_->param("mass/b0/m", m0, m0);
-	nh_->param("mass/b0/Ix", I0x, I0x);
-	nh_->param("mass/b0/Iy", I0y, I0y);
-	nh_->param("mass/b0/Iz", I0z, I0z);
-	nh_->param("mass/b1/m", m1, m1);
-	nh_->param("mass/b1/Ix", I1x, I1x);
-	nh_->param("mass/b1/Iy", I1y, I1y);
-	nh_->param("mass/b1/Iz", I1z, I1z);
-	nh_->param("mass/b2/m", m2, m2);
-	nh_->param("mass/b2/Ix", I2x, I2x);
-	nh_->param("mass/b2/Iy", I2y, I2y);
-	nh_->param("mass/b2/Iz", I2z, I2z);
+	nh_->param("body/num", body_num, body_num);
+	manip_num = body_num - 1;
+	nh_->param("body/b0/mass/m", m0, m0);
+	nh_->param("body/b0/mass/Ix", I0x, I0x);
+	nh_->param("body/b0/mass/Iy", I0y, I0y);
+	nh_->param("body/b0/mass/Iz", I0z, I0z);
+	nh_->param("body/b1/mass/m", m1, m1);
+	nh_->param("body/b1/mass/Ix", I1x, I1x);
+	nh_->param("body/b1/mass/Iy", I1y, I1y);
+	nh_->param("body/b1/mass/Iz", I1z, I1z);
+	nh_->param("body/b1/com", lc1, lc1);
+	nh_->param("body/b2/mass/m", m2, m2);
+	nh_->param("body/b2/mass/Ix", I2x, I2x);
+	nh_->param("body/b2/mass/Iy", I2y, I2y);
+	nh_->param("body/b2/mass/Iz", I2z, I2z);
+	nh_->param("body/b2/com", lc2, lc2);
 
 	ROS_INFO("ControllerID params loaded!");
 }

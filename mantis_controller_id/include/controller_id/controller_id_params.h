@@ -17,9 +17,10 @@ class ControllerIDParams {
 		double motor_thrust_max;
 		double motor_drag_max;
 
+		double servo_torque_max;
+		double servo_ang_max;
+
 		int link_num;
-		double link_servo_torque_max;
-		double link_servo_ang_max;
 
 		std::vector<double> gain_position;
 		std::vector<double> gain_rotation;
@@ -31,10 +32,9 @@ class ControllerIDParams {
 		double takeoff_y;
 		double takeoff_z;
 
+		int body_num;
+		int manip_num;
 		double la;
-		double l0;
-		double l1;
-		double l2;
 		double lc1;
 		double lc2;
 		double m0;

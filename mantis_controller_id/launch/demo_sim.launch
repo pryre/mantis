@@ -4,8 +4,10 @@
 	<arg name="arm" default="false"/>
 
 	<node pkg="mantis_controller_id" type="controller_id_node" name="controller_id" clear_params="true" output="screen">
-		<param name="model_name" value="mantis_uav" />
-		<param name="update_rate" value="100.0" />
+		<param name="frame_id" value="map" />
+		<param name="model_id" value="mantis_uav" />
+		<param name="track_base" value="true" />
+		<param name="control_rate" value="100.0" />
 
 		<remap from="/controller_id/state/odom" to="/mantis_uav/odom" />
 		<remap from="/controller_id/state/joints" to="/mantis_uav/state/joint_states" />
