@@ -61,17 +61,17 @@ bool Paths::load_start_params(void) {
 	bool success = false;
 
 	std::vector<double> start_p;
-	std::vector<double> start_dq;
-	std::vector<double> start_oq;
+	double start_a;
+	double start_t;
 
 	if( nh_.getParam("start/position", start_p) &&
-		nh_.getParam("start/direction", start_dq) ) {
+		nh_.getParam("start/alpha", start_a) ) {
 
 		param_start_position_ = vector_from_doubles(start_p);
-		param_start_direction_ = quaternion_from_doubles(start_dq);
+		param_start_direction_ = quaternion_from_yaw(start_a);
 
-		if( nh_.getParam("start/orientation", start_oq) ) {
-			param_start_direction_ = quaternion_from_doubles(start_oq);
+		if( nh_.getParam("start/theta", start_t) ) {
+			param_start_orientation_ = quaternion_from_yaw(start_t);
 		} else {
 			ROS_WARN("Using starting direction as starting orientation!");
 			param_start_orientation_ = param_start_direction_;
@@ -101,9 +101,9 @@ bool Paths::generate_path() {
 
 			bool use_qo = false;
 			Eigen::Quaterniond qo = Eigen::Quaterniond::Identity();
-			std::vector<double> orientation;
-			if( nh_.getParam("path/s" + std::to_string(i) + "/orientation", orientation) ) {
-				qo = quaternion_from_doubles(orientation);
+			double theta = 0.0;
+			if( nh_.getParam("path/s" + std::to_string(i) + "/theta", theta) ) {
+				qo = quaternion_from_yaw(theta);
 				use_qo = true;
 			}
 
@@ -121,26 +121,26 @@ bool Paths::generate_path() {
 				}
 			} else if(seg_type == "arc") {
 				double radius = 0.0;
-				double theta = 0.0;
+				double alpha = 0.0;
 
 				if( nh_.getParam("path/s" + std::to_string(i) + "/radius", radius) &&
-					nh_.getParam("path/s" + std::to_string(i) + "/theta", theta) ) {
+					nh_.getParam("path/s" + std::to_string(i) + "/alpha", alpha) ) {
 
-					double dtheta = theta / param_arc_res_;
-					double dx = std::fabs(radius*dtheta);
+					double dalpha = alpha / param_arc_res_;
+					double dx = std::fabs(radius*dalpha);
 					double dz = height / param_arc_res_;
 
 					//Go through each subsegment
 					for(int j=1; j<=param_arc_res_; j++) {
 						double alpha = (double)j / (double)param_arc_res_;
 						pc += qc.toRotationMatrix()*Eigen::Vector3d(dx, 0.0, 0.0) + Eigen::Vector3d(0.0, 0.0, dz);
-						qc *= Eigen::Quaterniond(Eigen::AngleAxisd(dtheta, Eigen::Vector3d::UnitZ()));
+						qc *= quaternion_from_yaw(dalpha);
 
 						double dist = Eigen::Vector3d(dx, 0.0, dz).norm();	//Segment distance
 						add_pose(travel_time(dist, velocity), pose_from_eigen(pc, (use_qo ? qo : qc) ) );
 					}
 				} else {
-					ROS_ERROR("Could not load radius and theta for arc segment (%i)", i);
+					ROS_ERROR("Could not load radius and alpha for arc segment (%i)", i);
 					error = true;
 				}
 			} else {
@@ -201,10 +201,8 @@ Eigen::Vector3d Paths::vector_from_doubles(std::vector<double> &a) {
 	return Eigen::Vector3d(a[0], a[1], a[2]);
 }
 
-Eigen::Quaterniond Paths::quaternion_from_doubles(std::vector<double> &a) {
-	ROS_ASSERT_MSG( (a.size() == 4), "Quaternion size (%li) must be 4", a.size());
-
-	return Eigen::Quaterniond(a[0], a[1], a[2], a[3]).normalized();
+Eigen::Quaterniond Paths::quaternion_from_yaw( const double theta ) {
+	return Eigen::Quaterniond( Eigen::AngleAxisd( theta, Eigen::Vector3d::UnitZ() ) );
 }
 
 ros::Duration Paths::travel_time(const double len, const double vel) {

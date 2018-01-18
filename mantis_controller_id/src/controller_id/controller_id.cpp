@@ -30,7 +30,7 @@ ControllerID::ControllerID() :
 	param_track_base_(false),
 	param_rate_(100),
 	latest_g_sp_(Eigen::Affine3d::Identity()),
-	path_hint_(0) {
+	path_hint_(1) {
 
 	bool success = true;
 
@@ -330,18 +330,32 @@ Eigen::Vector3d ControllerID::vector_lerp(const Eigen::Vector3d a, const Eigen::
 
 void ControllerID::calc_goal_base_states(Eigen::Affine3d &g_sp, Eigen::Vector3d &gv_sp, const Eigen::Affine3d ge_sp, const Eigen::Vector3d gev_sp) {
 	Eigen::Affine3d gbe = Eigen::Affine3d::Identity();
-	Eigen::Affine3d sp = Eigen::Affine3d::Identity();
 
-	//For compound all joints in the chain to get the the transform from base to end effector
+	//Flatten the setpoint rotation to ensure yaw only
+	Eigen::Vector3d y_c = ge_sp.linear().col(1);
+	Eigen::Vector3d sp_x = y_c.cross(Eigen::Vector3d::UnitZ());
+	Eigen::Vector3d sp_y = Eigen::Vector3d::UnitZ().cross(sp_x);
+
+	//Use this yaw only rotation to set the direction of the base (and thus end effector)
+	Eigen::Matrix3d br_sp = Eigen::Matrix3d::Identity();
+	br_sp.col(0) = sp_x.normalized();
+	br_sp.col(1) = sp_y.normalized();
+	br_sp.col(2) = Eigen::Vector3d::UnitZ();
+
+	//Compute transform for all joints in the chain to get base to end effector
 	for(int i=0; i<param_joints_.size(); i++) {
 		gbe = gbe * param_joints_[i].transform();
 	}
 
-	sp = ge_sp*gbe;
+	//Construct the true end effector
+	Eigen::Affine3d sp = Eigen::Affine3d::Identity();
+	sp.linear() = br_sp*gbe.linear();
 	sp.translation() = ge_sp.translation();
 
+	//Use the inverse transform to get the true base transform
 	g_sp = sp*gbe.inverse();
 
+	//The linear velocity of the base is the same as the end effector
 	gv_sp = gev_sp;
 }
 
@@ -359,18 +373,16 @@ bool ControllerID::calc_goal_ge_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp,
 
 		//If the current time is within the path time, follow the path
 		if((tc >= ts) && (tc < tf)) {
-			//Find the lastest point in the path
-			int p = path_hint_ + 1;
-			bool found = false;
-			while( (!found) && ( p < msg_goal_path_.poses.size() ) ) {
+			//Find the next point in the path
+			int p = path_hint_;
+
+			while( p < msg_goal_path_.poses.size() ) {
 				ros::Duration d_l = msg_goal_path_.poses[p - 1].header.stamp - ros::Time(0);
 				ros::Duration d_n = msg_goal_path_.poses[p].header.stamp - ros::Time(0);
 
 				if( (tc >= msg_goal_path_.header.stamp + d_l ) &&
 					(tc < msg_goal_path_.header.stamp + d_n ) ) {
-					//We have the right index + 1
-					//so subtract and break;
-					p--;
+					//We have the right index
 					break;
 				}
 
@@ -381,10 +393,10 @@ bool ControllerID::calc_goal_ge_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp,
 			path_hint_ = p;
 
 			//Get the last and next points
-			Eigen::Affine3d g_l = affine_from_msg(msg_goal_path_.poses[p].pose);
-			Eigen::Affine3d g_n = affine_from_msg(msg_goal_path_.poses[p + 1].pose);
-			ros::Duration t_l = msg_goal_path_.poses[p].header.stamp - ros::Time(0);
-			ros::Duration t_n = msg_goal_path_.poses[p + 1].header.stamp - ros::Time(0);
+			Eigen::Affine3d g_l = affine_from_msg(msg_goal_path_.poses[p - 1].pose);
+			Eigen::Affine3d g_n = affine_from_msg(msg_goal_path_.poses[p].pose);
+			ros::Duration t_l = msg_goal_path_.poses[p - 1].header.stamp - ros::Time(0);
+			ros::Duration t_n = msg_goal_path_.poses[p].header.stamp - ros::Time(0);
 			ros::Time t_lt = msg_goal_path_.header.stamp + t_l;
 			double dts = (t_n - t_l).toSec();	//Time to complete this segment
 			double da = (tc - t_lt).toSec();	//Time to alpha
@@ -404,7 +416,8 @@ bool ControllerID::calc_goal_ge_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp,
 
 			success = true;
 		} else {
-			path_hint_ = 0;
+			//Reset the hint back to 1 to reset hinting
+			path_hint_ = 1;
 		}
 	}
 
@@ -434,7 +447,7 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 	//px4: calculate rotation matrix after roll/pitch only rotation
 	Eigen::Matrix3d R_rp;
 
-	e_R_z_sin = 0;	//TODO: XXX: Seems to fix issues somewhere
+	//e_R_z_sin = 0;	//TODO: XXX: Seems to fix issues somewhere
 
 	if(e_R_z_sin > 0) {
 		//px4: get axis-angle representation
@@ -578,6 +591,7 @@ void ControllerID::message_output_feedback(const ros::Time t,
 
 	//Insert feedback data
 	Eigen::Quaterniond ge_sp_q(ge_sp.linear());
+	ge_sp_q.normalize();
 	msg_pose_end_out.pose.position.x = ge_sp.translation().x();
 	msg_pose_end_out.pose.position.y = ge_sp.translation().y();
 	msg_pose_end_out.pose.position.z = ge_sp.translation().z();
@@ -587,6 +601,7 @@ void ControllerID::message_output_feedback(const ros::Time t,
 	msg_pose_end_out.pose.orientation.z = ge_sp_q.z();
 
 	Eigen::Quaterniond g_sp_q(g_sp.linear());
+	g_sp_q.normalize();
 	msg_pose_base_out.pose.position.x = g_sp.translation().x();
 	msg_pose_base_out.pose.position.y = g_sp.translation().y();
 	msg_pose_base_out.pose.position.z = g_sp.translation().z();
@@ -600,6 +615,7 @@ void ControllerID::message_output_feedback(const ros::Time t,
 	msg_accel_linear_out.accel.linear.z = pa.z();
 
 	Eigen::Quaterniond r_sp_q(g_sp.linear().transpose() * r_sp);
+	r_sp_q.normalize();
 	msg_goal_rot_out.pose.position.x = 0.0;
 	msg_goal_rot_out.pose.position.y = 0.0;
 	msg_goal_rot_out.pose.position.z = 0.0;

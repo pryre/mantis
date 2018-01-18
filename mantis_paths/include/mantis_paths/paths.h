@@ -37,5 +37,5 @@ class Paths {
 
 		geometry_msgs::Pose pose_from_eigen(const Eigen::Vector3d p, const Eigen::Quaterniond q);
 		Eigen::Vector3d vector_from_doubles(std::vector<double> &a);
-		Eigen::Quaterniond quaternion_from_doubles(std::vector<double> &a);
+		Eigen::Quaterniond quaternion_from_yaw( const double theta );
 };

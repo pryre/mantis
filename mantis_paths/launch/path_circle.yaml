@@ -1,7 +1,7 @@
 start:
   position: [0.0, 0.0, 2.0]
-  direction: [1.0, 0.0, 0.0, 0.0]
-  #orientation: [1.0, 0.0, 0.0, 0.0]
+  alpha: 0.0
+  #theta: 0.0
 
 path:
   s0:
@@ -9,31 +9,31 @@ path:
     velocity: 0.2
     length: 1.0
     height: 0.0
-    orientation: [1.0, 0.0, 0.0, 0.0]
+    theta: 0.0
   s1:
     type: "arc"
     velocity: 0.05
     height: 0.0
     radius: 0.1
-    theta: 1.571
-    orientation: [1.0, 0.0, 0.0, 0.0]
+    alpha: 1.571
+    theta: 0.0
   s2:
     type: "arc"
     velocity: 0.2
     height: 0.0
     radius: 2.0
-    theta: 6.283185308
-    orientation: [1.0, 0.0, 0.0, 0.0]
+    alpha: 6.283185308
+    theta: 0.0
   s3:
     type: "arc"
     velocity: 0.05
     height: 0.0
     radius: 0.1
-    theta: 1.57
-    orientation: [1.0, 0.0, 0.0, 0.0]
+    alpha: 1.57
+    theta: 0.0
   s4:
     type: "line"
     velocity: 0.2
     length: 1.0
     height: 0.0
-    orientation: [1.0, 0.0, 0.0, 0.0]
+    theta: 0.0
