@@ -35,9 +35,10 @@ ForwardKinematics::ForwardKinematics() :
 
 	//Load parameters
 	nh_.param("model_id", param_model_id_, param_model_id_);
-	nh_.getParam("links/num", num_links);
+	nh_.param("links/num", num_links, num_links);
 
 	ROS_INFO("Loading %i links...", num_links);
+
 	bool success = true;
 
 	for(int i=0; i<num_links; i++) {
