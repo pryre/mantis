@@ -195,7 +195,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		//Calculate translation acceleration vector
 		Eigen::Vector3d e_p_p = g_sp.translation() - g.translation();
-		Eigen::Vector3d e_p_v = gv_sp - (g.linear().transpose()*bv);
+		Eigen::Vector3d e_p_v = gv_sp - (g.linear()*bv);
 		//matrix_clamp(e_p_p, -p_.vel_max, p_.vel_max);
 		Eigen::VectorXd e_p = vector_interlace(e_p_p, e_p_v);
 		Eigen::Vector3d Al = Kp*e_p;
@@ -495,13 +495,8 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 	double e_R_z_sin = e_R.norm();
 	double e_R_z_cos = R_z.dot(R_sp_z);
 
-	//px4: calculate weight for yaw control
-	double yaw_w = R_sp(2,2)*R_sp(2,2);
-
 	//px4: calculate rotation matrix after roll/pitch only rotation
 	Eigen::Matrix3d R_rp;
-
-	//e_R_z_sin = 0;	//TODO: XXX: Seems to fix issues somewhere
 
 	if(e_R_z_sin > 0) {
 		//px4: get axis-angle representation
@@ -524,44 +519,22 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 		R_rp = R;
 	}
 
-	//XXX: R_rp = R;
-
 	//px4: R_rp and R_sp has the same Z axis, calculate yaw error
 	Eigen::Vector3d R_sp_x = R_sp.col(0);
 	Eigen::Vector3d R_rp_x = R_rp.col(0);
 
-	Eigen::Vector3d R_rp_c_sp = R_rp_x.cross(R_sp_x);
+	//px4: calculate weight for yaw control
+	double yaw_w = e_R_z_cos * e_R_z_cos;
 
-	//e_R(2) = atan2f(R_rp_c_sp * R_sp_z, R_rp_x * R_sp_x) * yaw_w;
-	e_R(2) = std::atan2(R_rp_c_sp.dot(R_sp_z), R_rp_x.dot(R_sp_x)) * yaw_w;
+	//px4: e_R(2) = atan2f((R_rp_x % R_sp_x) * R_sp_z, R_rp_x * R_sp_x) * yaw_w;
+	//Eigen::Vector3d R_rp_c_sp = R_rp_x.cross(R_sp_x);
+	//e_R(2) = std::atan2(R_rp_c_sp.dot(R_sp_z), R_rp_x.dot(R_sp_x)) * yaw_w;
+	e_R(2) = std::atan2( (R_rp_x.cross(R_sp_x)).dot(R_sp_z), R_rp_x.dot(R_sp_x)) * yaw_w;
 
 	if(e_R_z_cos < 0) {
 		//px4: for large thrust vector rotations use another rotation method:
-		//px4: calculate angle and axis for R -> R_sp rotation directly
-		Eigen::Vector3d e_R_d;
-		Eigen::Quaterniond q_error(R.transpose() * R_sp);
-
-		if(q_error.w() >= 0) {
-			Eigen::Vector3d temp_vec;
-			temp_vec.x() = q_error.x();
-			temp_vec.y() = q_error.y();
-			temp_vec.z() = q_error.z();
-
-			e_R_d = temp_vec * 2.0;
-		} else {
-			Eigen::Vector3d temp_vec;
-			temp_vec.x() = -q_error.x();
-			temp_vec.y() = -q_error.y();
-			temp_vec.z() = -q_error.z();
-
-			e_R_d = temp_vec * 2.0;
-		}
-
-		//px4: use fusion of Z axis based rotation and direct rotation
-		double direct_w = e_R_z_cos * e_R_z_cos * yaw_w;
-
-		//px4: e_R = e_R * (1.0f - direct_w) + e_R_d * direct_w;
-		e_R = e_R * (1.0 - direct_w) + e_R_d * direct_w;
+		//Should never be an issue for us
+		ROS_WARN("Large thrust vector detected!");
 	}
 
 	return R_ERROR_P*e_R;

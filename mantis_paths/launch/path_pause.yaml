@@ -16,7 +16,8 @@ path:
     hold_time: 5.0
     height: 0.0
     radius: 0.0
-    alpha: 3.14157
+    #alpha: 3.14157
+    alpha: 1.57
     #theta: 0.0
   s2:
     type: "line"
