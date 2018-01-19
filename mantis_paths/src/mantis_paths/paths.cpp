@@ -126,6 +126,12 @@ bool Paths::generate_path() {
 				if( nh_.getParam("path/s" + std::to_string(i) + "/radius", radius) &&
 					nh_.getParam("path/s" + std::to_string(i) + "/alpha", alpha) ) {
 
+					double hold_time = 0.0;
+
+					if(velocity == 0.0) {
+						nh_.getParam("path/s" + std::to_string(i) + "/hold_time", hold_time);
+					}
+
 					double dalpha = alpha / param_arc_res_;
 					double dx = std::fabs(radius*dalpha);
 					double dz = height / param_arc_res_;
@@ -137,7 +143,9 @@ bool Paths::generate_path() {
 						qc *= quaternion_from_yaw(dalpha);
 
 						double dist = Eigen::Vector3d(dx, 0.0, dz).norm();	//Segment distance
-						add_pose(travel_time(dist, velocity), pose_from_eigen(pc, (use_qo ? qo : qc) ) );
+						ros::Duration seg_time = (hold_time > 0.0) ? ros::Duration(hold_time / param_arc_res_) : travel_time(dist, velocity);
+
+						add_pose(seg_time, pose_from_eigen(pc, (use_qo ? qo : qc) ) );
 					}
 				} else {
 					ROS_ERROR("Could not load radius and alpha for arc segment (%i)", i);
