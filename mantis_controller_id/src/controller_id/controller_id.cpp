@@ -71,7 +71,6 @@ ControllerID::ControllerID() :
 
 		pub_accel_linear_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/linear", 10);
 		pub_accel_body_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
-		pub_pose_rot_ = nh_.advertise<geometry_msgs::PoseStamped>("feedback/pose/rotation", 10);
 		pub_pose_base_ = nh_.advertise<geometry_msgs::PoseStamped>("feedback/pose/base", 10);
 		pub_pose_end_ = nh_.advertise<geometry_msgs::PoseStamped>("feedback/pose/end_effector", 10);
 
@@ -534,7 +533,7 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 	if(e_R_z_cos < 0) {
 		//px4: for large thrust vector rotations use another rotation method:
 		//Should never be an issue for us
-		ROS_WARN("Large thrust vector detected!");
+		ROS_WARN_THROTTLE(1.0, "Large thrust vector detected!");
 	}
 
 	return R_ERROR_P*e_R;
@@ -599,20 +598,17 @@ void ControllerID::message_output_feedback(const ros::Time t,
 										   const Eigen::Matrix3d &r_sp,
 										   const Eigen::VectorXd &ua) {
 	geometry_msgs::PoseStamped msg_pose_end_out;
-	geometry_msgs::PoseStamped msg_pose_base_out;
 	geometry_msgs::AccelStamped msg_accel_linear_out;
-	geometry_msgs::PoseStamped msg_goal_rot_out;
+	geometry_msgs::PoseStamped msg_pose_base_out;
 	geometry_msgs::AccelStamped msg_accel_body_out;
 
 	//Prepare headers
 	msg_pose_end_out.header.stamp = t;
 	msg_pose_end_out.header.frame_id = param_frame_id_;
-	msg_pose_base_out.header.stamp = t;
-	msg_pose_base_out.header.frame_id = param_frame_id_;
 	msg_accel_linear_out.header.stamp = t;
 	msg_accel_linear_out.header.frame_id = param_frame_id_;
-	msg_goal_rot_out.header.stamp = t;
-	msg_goal_rot_out.header.frame_id = param_frame_id_;
+	msg_pose_base_out.header.stamp = t;
+	msg_pose_base_out.header.frame_id = param_frame_id_;
 	msg_accel_body_out.header.stamp = t;
 	msg_accel_body_out.header.frame_id = param_model_id_;
 
@@ -627,29 +623,19 @@ void ControllerID::message_output_feedback(const ros::Time t,
 	msg_pose_end_out.pose.orientation.y = ge_sp_q.y();
 	msg_pose_end_out.pose.orientation.z = ge_sp_q.z();
 
-	Eigen::Quaterniond g_sp_q(g_sp.linear());
-	g_sp_q.normalize();
-	msg_pose_base_out.pose.position.x = g_sp.translation().x();
-	msg_pose_base_out.pose.position.y = g_sp.translation().y();
-	msg_pose_base_out.pose.position.z = g_sp.translation().z();
-	msg_pose_base_out.pose.orientation.w = g_sp_q.w();
-	msg_pose_base_out.pose.orientation.x = g_sp_q.x();
-	msg_pose_base_out.pose.orientation.y = g_sp_q.y();
-	msg_pose_base_out.pose.orientation.z = g_sp_q.z();
-
 	msg_accel_linear_out.accel.linear.x = pa.x();
 	msg_accel_linear_out.accel.linear.y = pa.y();
 	msg_accel_linear_out.accel.linear.z = pa.z();
 
-	Eigen::Quaterniond r_sp_q(r_sp);//g_sp.linear().transpose() * r_sp);
+	Eigen::Quaterniond r_sp_q(r_sp);
 	r_sp_q.normalize();
-	msg_goal_rot_out.pose.position.x = g_sp.translation().x();
-	msg_goal_rot_out.pose.position.y = g_sp.translation().y();
-	msg_goal_rot_out.pose.position.z = g_sp.translation().z();
-	msg_goal_rot_out.pose.orientation.w = r_sp_q.w();
-	msg_goal_rot_out.pose.orientation.x = r_sp_q.x();
-	msg_goal_rot_out.pose.orientation.y = r_sp_q.y();
-	msg_goal_rot_out.pose.orientation.z = r_sp_q.z();
+	msg_pose_base_out.pose.position.x = g_sp.translation().x();
+	msg_pose_base_out.pose.position.y = g_sp.translation().y();
+	msg_pose_base_out.pose.position.z = g_sp.translation().z();
+	msg_pose_base_out.pose.orientation.w = r_sp_q.w();
+	msg_pose_base_out.pose.orientation.x = r_sp_q.x();
+	msg_pose_base_out.pose.orientation.y = r_sp_q.y();
+	msg_pose_base_out.pose.orientation.z = r_sp_q.z();
 
 	msg_accel_body_out.accel.linear.x = ua(0);
 	msg_accel_body_out.accel.linear.y = ua(1);
@@ -660,9 +646,8 @@ void ControllerID::message_output_feedback(const ros::Time t,
 
 	//Publish messages
 	pub_pose_end_.publish(msg_pose_end_out);
-	pub_pose_base_.publish(msg_pose_base_out);
 	pub_accel_linear_.publish(msg_accel_linear_out);
-	pub_pose_rot_.publish(msg_goal_rot_out);
+	pub_pose_base_.publish(msg_pose_base_out);
 	pub_accel_body_.publish(msg_accel_body_out);
 }
 

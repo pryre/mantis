@@ -29,7 +29,6 @@ class ControllerID {
 		ros::Publisher pub_joints_;
 		ros::Publisher pub_accel_linear_;
 		ros::Publisher pub_accel_body_;
-		ros::Publisher pub_pose_rot_;
 		ros::Publisher pub_pose_base_;
 		ros::Publisher pub_pose_end_;
 
