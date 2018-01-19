@@ -7,6 +7,7 @@
 		<param name="frame_id" value="map" />
 		<param name="model_id" value="mantis_uav" />
 		<param name="track_base" value="false" />
+		<param name="accurate_end_tracking" value="true" />
 		<param name="control_rate" value="100.0" />
 
 		<remap from="/controller_id/state/odom" to="/mantis_uav/odom" />

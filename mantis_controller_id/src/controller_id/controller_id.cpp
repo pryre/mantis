@@ -2,9 +2,11 @@
 
 #include <controller_id/controller_id.h>
 #include <controller_id/controller_id_params.h>
+#include <controller_id/se_tools.h>
 #include <dynamics/calc_Dq.h>
 #include <dynamics/calc_Cqqd.h>
 #include <dynamics/calc_Lqd.h>
+#include <dynamics/calc_Je.h>
 #include <dh_parameters/dh_parameters.h>
 
 #include <mavros_msgs/RCOut.h>
@@ -22,12 +24,17 @@
 #include <math.h>
 #include <iostream>
 
+
+#define R_ERROR_P 3.16
+#define W_ERROR_P 10.31
+
 ControllerID::ControllerID() :
 	nh_("~"),
 	p_(&nh_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_track_base_(false),
+	param_accurate_end_tracking_(false),
 	param_rate_(100),
 	latest_g_sp_(Eigen::Affine3d::Identity()),
 	path_hint_(1) {
@@ -37,6 +44,7 @@ ControllerID::ControllerID() :
 	nh_.param("frame_id", param_frame_id_, param_frame_id_);
 	nh_.param("model_id", param_model_id_, param_model_id_);
 	nh_.param("track_base", param_track_base_, param_track_base_);
+	nh_.param("accurate_end_tracking", param_accurate_end_tracking_, param_accurate_end_tracking_);
 	nh_.param("control_rate", param_rate_, param_rate_);
 
 	//Load the robot parameters
@@ -148,12 +156,26 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			gev_sp = Eigen::Vector3d::Zero();
 		}
 
+		//Compute transform for all joints in the chain to get base to end effector
+		Eigen::Affine3d gbe = Eigen::Affine3d::Identity();
+		for(int i=0; i<param_joints_.size(); i++) {
+			gbe = gbe * param_joints_[i].transform();
+		}
+
 		if(param_track_base_) {
 			g_sp = ge_sp;
 			gv_sp = gev_sp;
 		} else {
 			//Calculate the tracking offset for the base
-			calc_goal_base_states(g_sp, gv_sp, ge_sp, gev_sp);
+			g_sp = calc_goal_base_transform(ge_sp, gbe);
+
+			//Compensate for velocity terms in manipulator movement
+			//This is more accurate, but can make things more unstable
+			if(param_accurate_end_tracking_) {
+				gv_sp = calc_goal_base_velocity(gev_sp, g.linear()*gbe.linear(), rd);
+			} else {
+				gv_sp = gev_sp;
+			}
 		}
 		//Build gain matricies
 		Eigen::MatrixXd Kp = Eigen::MatrixXd::Zero(3,6);
@@ -194,24 +216,19 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		//TODO: Constrain vertical max accel(?)
 
 		//Calculate the corresponding rotation to reach desired acceleration
-		//Start with the goal yaw as the current yaw
-		Eigen::Vector3d yaw_c = g_sp.linear()*Eigen::Vector3d::UnitY();
-		yaw_c.z() = 0;
-		yaw_c.normalize();	//Flatten the vector to get yaw only
-
-		//Build the setpoint rotation matrix
+		//We generate at it base on now yaw, then rotate it to reach the desired orientation
+		Eigen::Vector3d An = A.normalized();
+		Eigen::Vector3d y_c = g_sp.linear().col(1).normalized();
+		Eigen::Vector3d r_sp_x = y_c.cross(An).normalized();
+		Eigen::Vector3d r_sp_y = An.cross(r_sp_x).normalized();
 		Eigen::Matrix3d gr_sp;
-		Eigen::Vector3d sp_x = yaw_c.cross(A).normalized();
-		Eigen::Vector3d sp_y = A.cross(sp_x).normalized();
-		Eigen::Vector3d sp_z = A.normalized();
-		gr_sp.col(0) = sp_x;
-		gr_sp.col(1) = sp_y;
-		gr_sp.col(2) = sp_z;
-		gr_sp.normalize();
+		gr_sp << r_sp_x, r_sp_y, An;
 
 		//Calculate the goal rates to achieve the right acceleration vector
-		Eigen::VectorXd e_w = vector_interlace(calc_ang_error(gr_sp, g.linear()), Eigen::Vector3d::Zero() - bw);
-		Eigen::Vector3d wa = Kw*e_w;
+		//Eigen::VectorXd e_w = vector_interlace(calc_ang_error(gr_sp, g.linear()), Eigen::Vector3d::Zero() - bw);
+		//Eigen::Vector3d wa = Kw*e_w;
+		Eigen::Vector3d w_goal = calc_ang_error(gr_sp, g.linear());
+		Eigen::Vector3d wa = W_ERROR_P*(w_goal - bw);
 
 		//Calculate the required manipulator accelerations
 		Eigen::VectorXd e_r = vector_interlace(r_sp - r, Eigen::VectorXd::Zero(p_.manip_num) - rd);
@@ -328,24 +345,9 @@ Eigen::Vector3d ControllerID::vector_lerp(const Eigen::Vector3d a, const Eigen::
 }
 
 
-void ControllerID::calc_goal_base_states(Eigen::Affine3d &g_sp, Eigen::Vector3d &gv_sp, const Eigen::Affine3d ge_sp, const Eigen::Vector3d gev_sp) {
-	Eigen::Affine3d gbe = Eigen::Affine3d::Identity();
-
-	//Flatten the setpoint rotation to ensure yaw only
-	Eigen::Vector3d y_c = ge_sp.linear().col(1);
-	Eigen::Vector3d sp_x = y_c.cross(Eigen::Vector3d::UnitZ());
-	Eigen::Vector3d sp_y = Eigen::Vector3d::UnitZ().cross(sp_x);
-
+Eigen::Affine3d ControllerID::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe) {
 	//Use this yaw only rotation to set the direction of the base (and thus end effector)
-	Eigen::Matrix3d br_sp = Eigen::Matrix3d::Identity();
-	br_sp.col(0) = sp_x.normalized();
-	br_sp.col(1) = sp_y.normalized();
-	br_sp.col(2) = Eigen::Vector3d::UnitZ();
-
-	//Compute transform for all joints in the chain to get base to end effector
-	for(int i=0; i<param_joints_.size(); i++) {
-		gbe = gbe * param_joints_[i].transform();
-	}
+	Eigen::Matrix3d br_sp = extract_yaw_component(ge_sp.linear());
 
 	//Construct the true end effector
 	Eigen::Affine3d sp = Eigen::Affine3d::Identity();
@@ -353,10 +355,62 @@ void ControllerID::calc_goal_base_states(Eigen::Affine3d &g_sp, Eigen::Vector3d 
 	sp.translation() = ge_sp.translation();
 
 	//Use the inverse transform to get the true base transform
-	g_sp = sp*gbe.inverse();
+	return sp*gbe.inverse();
+}
 
-	//The linear velocity of the base is the same as the end effector
-	gv_sp = gev_sp;
+Eigen::Vector3d ControllerID::calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::VectorXd &rd) {
+	//The linear velocity of the base is dependent on the joint velocities the end effector
+	//End effector velocity jacobian
+	Eigen::MatrixXd Je = Eigen::MatrixXd::Zero(6, rd.size());
+	calc_Je(Je,
+			param_joints_[1].r(),
+			param_joints_[2].r(),
+			param_joints_[2].q());
+
+	//Velocity of the end effector in the end effector frame
+	Eigen::VectorXd vbe = Je*rd;
+
+	Eigen::Affine3d Vbe;
+	Vbe.translation() << vbe.segment(0,3);
+	Vbe.linear() << vee_up(vbe.segment(3,3));
+
+	//Get velocity in the world frame
+	Eigen::Vector3d Ve = Re*vbe.segment(0,3);
+
+	//Only care about the translation movements
+	return gev_sp - Ve;
+}
+
+Eigen::Matrix3d ControllerID::extract_yaw_component(const Eigen::Matrix3d r) {
+	Eigen::Vector3d sp_x = Eigen::Vector3d::UnitX();
+	Eigen::Vector3d sp_y = Eigen::Vector3d::UnitY();
+
+	//As long as y isn't straight up
+	if(r.col(1) != Eigen::Vector3d::UnitZ()) {
+		//If we have ||roll|| > 90Deg
+		Eigen::Vector3d y_c;
+		if(r(2,2) > 0.0) {
+			y_c = r.col(1);
+		} else {
+			y_c = -r.col(1);
+		}
+
+		sp_x = y_c.cross(Eigen::Vector3d::UnitZ());
+		sp_y = Eigen::Vector3d::UnitZ().cross(sp_x);
+	} else { //Use X-axis for the edge-case
+		Eigen::Vector3d x_c = r.col(0);
+
+		sp_y = Eigen::Vector3d::UnitZ().cross(x_c);
+		sp_x = sp_y.cross(Eigen::Vector3d::UnitZ());
+	}
+
+	//Get the pure yaw rotation
+	Eigen::Matrix3d ry;
+	ry << sp_x.normalized(),
+		  sp_y.normalized(),
+		  Eigen::Vector3d::UnitZ();
+
+	return ry;
 }
 
 bool ControllerID::calc_goal_ge_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc) {
@@ -510,7 +564,7 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 		e_R = e_R * (1.0 - direct_w) + e_R_d * direct_w;
 	}
 
-	return e_R;
+	return R_ERROR_P*e_R;
 }
 
 int16_t ControllerID::map_pwm(double val) {
@@ -585,7 +639,7 @@ void ControllerID::message_output_feedback(const ros::Time t,
 	msg_accel_linear_out.header.stamp = t;
 	msg_accel_linear_out.header.frame_id = param_frame_id_;
 	msg_goal_rot_out.header.stamp = t;
-	msg_goal_rot_out.header.frame_id = param_model_id_;
+	msg_goal_rot_out.header.frame_id = param_frame_id_;
 	msg_accel_body_out.header.stamp = t;
 	msg_accel_body_out.header.frame_id = param_model_id_;
 
@@ -614,11 +668,11 @@ void ControllerID::message_output_feedback(const ros::Time t,
 	msg_accel_linear_out.accel.linear.y = pa.y();
 	msg_accel_linear_out.accel.linear.z = pa.z();
 
-	Eigen::Quaterniond r_sp_q(g_sp.linear().transpose() * r_sp);
+	Eigen::Quaterniond r_sp_q(r_sp);//g_sp.linear().transpose() * r_sp);
 	r_sp_q.normalize();
-	msg_goal_rot_out.pose.position.x = 0.0;
-	msg_goal_rot_out.pose.position.y = 0.0;
-	msg_goal_rot_out.pose.position.z = 0.0;
+	msg_goal_rot_out.pose.position.x = g_sp.translation().x();
+	msg_goal_rot_out.pose.position.y = g_sp.translation().y();
+	msg_goal_rot_out.pose.position.z = g_sp.translation().z();
 	msg_goal_rot_out.pose.orientation.w = r_sp_q.w();
 	msg_goal_rot_out.pose.orientation.x = r_sp_q.x();
 	msg_goal_rot_out.pose.orientation.y = r_sp_q.y();

@@ -1,0 +1,32 @@
+start:
+  position: [0.0, 0.0, 2.0]
+  alpha: 0.0
+  #theta: 0.0
+
+path:
+  s0:
+    type: "line"
+    velocity: 0.2
+    length: 2.0
+    height: 0.0
+    #theta: 0.0
+  s1:
+    type: "arc"
+    velocity: 0.2
+    height: 0.0
+    radius: 2.0
+    alpha: 3.141592654
+    #theta: 0.0
+  s2:
+    type: "line"
+    velocity: 0.2
+    length: 2.0
+    height: 0.0
+    #theta: 0.0
+  s3:
+    type: "arc"
+    velocity: 0.2
+    height: 0.0
+    radius: 2.0
+    alpha: 3.141592654
+    #theta: 0.0

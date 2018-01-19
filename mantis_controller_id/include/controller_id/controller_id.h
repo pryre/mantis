@@ -41,6 +41,7 @@ class ControllerID {
 		std::string param_frame_id_;
 		std::string param_model_id_;
 		bool param_track_base_;
+		bool param_accurate_end_tracking_;
 		double param_rate_;
 
 		ControllerIDParams p_;
@@ -60,9 +61,11 @@ class ControllerID {
 		Eigen::Quaterniond quaternion_from_msg(const geometry_msgs::Quaternion q);
 		Eigen::Affine3d affine_from_msg(const geometry_msgs::Pose pose);
 		Eigen::Vector3d vector_lerp(const Eigen::Vector3d a, const Eigen::Vector3d b, const double alpha);
+		Eigen::Matrix3d extract_yaw_component(const Eigen::Matrix3d r);
 
 		bool calc_goal_ge_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc);
-		void calc_goal_base_states(Eigen::Affine3d &g_sp, Eigen::Vector3d &gv_sp, const Eigen::Affine3d ge_sp, const Eigen::Vector3d gev_sp);
+		Eigen::Affine3d calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe);
+		Eigen::Vector3d calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::VectorXd &rd);
 		Eigen::Vector3d calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R);
 
 		int16_t map_pwm(double val);

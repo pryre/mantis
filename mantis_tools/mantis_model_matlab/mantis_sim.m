@@ -236,6 +236,10 @@ J1 = simplify(J1);
 J2 = simplify(J2);
 
 
+%End effector jacobian
+Je = jacobian_gen(gb1*g12*g23,[r1;r2]);
+Je = simplify(Je);
+
 %% Equations of Motion
 
 disp('Defining Inertials')
@@ -579,6 +583,8 @@ function_gen_mat(Cqqd, 'Cqqd');
 function_gen_mat(sym(Lqd), 'Lqd');
 function_gen_mat(Nq, 'Nq');
 function_gen_mat(Mm, 'Mm');
+
+function_gen_mat(Je, 'Je');
 
 for i = 1:numel(Gq)
     function_gen_mat(Gq{i}, ['G', num2str(i-1)]);
