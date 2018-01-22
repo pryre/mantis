@@ -369,9 +369,9 @@ Eigen::Vector3d ControllerID::calc_goal_base_velocity(const Eigen::Vector3d &gev
 	//Velocity of the end effector in the end effector frame
 	Eigen::VectorXd vbe = Je*rd;
 
-	Eigen::Affine3d Vbe;
-	Vbe.translation() << vbe.segment(0,3);
-	Vbe.linear() << vee_up(vbe.segment(3,3));
+	//Eigen::Affine3d Vbe;
+	//Vbe.translation() << vbe.segment(0,3);
+	//Vbe.linear() << vee_up(vbe.segment(3,3));
 
 	//Get velocity in the world frame
 	Eigen::Vector3d Ve = Re*vbe.segment(0,3);
