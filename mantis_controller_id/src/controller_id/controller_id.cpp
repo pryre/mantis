@@ -35,6 +35,7 @@ ControllerID::ControllerID() :
 	param_model_id_("mantis_uav"),
 	param_track_base_(false),
 	param_accurate_end_tracking_(false),
+	param_reference_feedback_(false),
 	param_rate_(100),
 	latest_g_sp_(Eigen::Affine3d::Identity()),
 	path_hint_(1) {
@@ -45,6 +46,7 @@ ControllerID::ControllerID() :
 	nh_.param("model_id", param_model_id_, param_model_id_);
 	nh_.param("track_base", param_track_base_, param_track_base_);
 	nh_.param("accurate_end_tracking", param_accurate_end_tracking_, param_accurate_end_tracking_);
+	nh_.param("reference_feedback", param_reference_feedback_, param_reference_feedback_);
 	nh_.param("control_rate", param_rate_, param_rate_);
 
 	//Load the robot parameters
@@ -69,10 +71,12 @@ ControllerID::ControllerID() :
 		pub_rc_ = nh_.advertise<mavros_msgs::RCOut>("output/rc", 10);
 		pub_joints_ = nh_.advertise<sensor_msgs::JointState>("output/joints", 10);
 
-		pub_accel_linear_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/linear", 10);
-		pub_accel_body_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
 		pub_pose_base_ = nh_.advertise<geometry_msgs::PoseStamped>("feedback/pose/base", 10);
 		pub_pose_end_ = nh_.advertise<geometry_msgs::PoseStamped>("feedback/pose/end_effector", 10);
+		pub_twist_base_ = nh_.advertise<geometry_msgs::TwistStamped>("feedback/twist/end_effector", 10);
+		pub_twist_end_ = nh_.advertise<geometry_msgs::TwistStamped>("feedback/twist/base", 10);
+		pub_accel_linear_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/linear", 10);
+		pub_accel_body_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
 
 		sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
 		sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
@@ -287,7 +291,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			joints_out[i] = u(p_.motor_num + i);
 		}
 
-		message_output_feedback(e.current_real, ge_sp, g_sp, Al, gr_sp, ua);
+		if(param_reference_feedback_)
+			message_output_feedback(e.current_real, g_sp, ge_sp, gv_sp, gev_sp, Al, gr_sp, ua);
 	} else {
 		//Output minimums until the input info is available
 		for(int i=0; i<p_.motor_num; i++) {
@@ -592,41 +597,37 @@ void ControllerID::message_output_control(const ros::Time t, const std::vector<u
 }
 
 void ControllerID::message_output_feedback(const ros::Time t,
-										   const Eigen::Affine3d &ge_sp,
 										   const Eigen::Affine3d &g_sp,
+										   const Eigen::Affine3d &ge_sp,
+										   const Eigen::Vector3d &gv_sp,
+										   const Eigen::Vector3d &gev_sp,
 										   const Eigen::Vector3d &pa,
 										   const Eigen::Matrix3d &r_sp,
 										   const Eigen::VectorXd &ua) {
-	geometry_msgs::PoseStamped msg_pose_end_out;
-	geometry_msgs::AccelStamped msg_accel_linear_out;
 	geometry_msgs::PoseStamped msg_pose_base_out;
+	geometry_msgs::PoseStamped msg_pose_end_out;
+	geometry_msgs::TwistStamped msg_twist_base_out;
+	geometry_msgs::TwistStamped msg_twist_end_out;
+	geometry_msgs::AccelStamped msg_accel_linear_out;
 	geometry_msgs::AccelStamped msg_accel_body_out;
 
 	//Prepare headers
-	msg_pose_end_out.header.stamp = t;
-	msg_pose_end_out.header.frame_id = param_frame_id_;
-	msg_accel_linear_out.header.stamp = t;
-	msg_accel_linear_out.header.frame_id = param_frame_id_;
 	msg_pose_base_out.header.stamp = t;
 	msg_pose_base_out.header.frame_id = param_frame_id_;
+	msg_pose_end_out.header.stamp = t;
+	msg_pose_end_out.header.frame_id = param_frame_id_;
+
+	msg_twist_base_out.header.stamp = t;
+	msg_twist_base_out.header.frame_id = param_frame_id_;
+	msg_twist_end_out.header.stamp = t;
+	msg_twist_end_out.header.frame_id = param_frame_id_;
+
+	msg_accel_linear_out.header.stamp = t;
+	msg_accel_linear_out.header.frame_id = param_frame_id_;
 	msg_accel_body_out.header.stamp = t;
 	msg_accel_body_out.header.frame_id = param_model_id_;
 
 	//Insert feedback data
-	Eigen::Quaterniond ge_sp_q(ge_sp.linear());
-	ge_sp_q.normalize();
-	msg_pose_end_out.pose.position.x = ge_sp.translation().x();
-	msg_pose_end_out.pose.position.y = ge_sp.translation().y();
-	msg_pose_end_out.pose.position.z = ge_sp.translation().z();
-	msg_pose_end_out.pose.orientation.w = ge_sp_q.w();
-	msg_pose_end_out.pose.orientation.x = ge_sp_q.x();
-	msg_pose_end_out.pose.orientation.y = ge_sp_q.y();
-	msg_pose_end_out.pose.orientation.z = ge_sp_q.z();
-
-	msg_accel_linear_out.accel.linear.x = pa.x();
-	msg_accel_linear_out.accel.linear.y = pa.y();
-	msg_accel_linear_out.accel.linear.z = pa.z();
-
 	Eigen::Quaterniond r_sp_q(r_sp);
 	r_sp_q.normalize();
 	msg_pose_base_out.pose.position.x = g_sp.translation().x();
@@ -637,6 +638,28 @@ void ControllerID::message_output_feedback(const ros::Time t,
 	msg_pose_base_out.pose.orientation.y = r_sp_q.y();
 	msg_pose_base_out.pose.orientation.z = r_sp_q.z();
 
+	Eigen::Quaterniond ge_sp_q(ge_sp.linear());
+	ge_sp_q.normalize();
+	msg_pose_end_out.pose.position.x = ge_sp.translation().x();
+	msg_pose_end_out.pose.position.y = ge_sp.translation().y();
+	msg_pose_end_out.pose.position.z = ge_sp.translation().z();
+	msg_pose_end_out.pose.orientation.w = ge_sp_q.w();
+	msg_pose_end_out.pose.orientation.x = ge_sp_q.x();
+	msg_pose_end_out.pose.orientation.y = ge_sp_q.y();
+	msg_pose_end_out.pose.orientation.z = ge_sp_q.z();
+
+	msg_twist_base_out.twist.linear.x = gv_sp.x();
+	msg_twist_base_out.twist.linear.y = gv_sp.y();
+	msg_twist_base_out.twist.linear.z = gv_sp.z();
+
+	msg_twist_end_out.twist.linear.x = gev_sp.x();
+	msg_twist_end_out.twist.linear.y = gev_sp.y();
+	msg_twist_end_out.twist.linear.z = gev_sp.z();
+
+	msg_accel_linear_out.accel.linear.x = pa.x();
+	msg_accel_linear_out.accel.linear.y = pa.y();
+	msg_accel_linear_out.accel.linear.z = pa.z();
+
 	msg_accel_body_out.accel.linear.x = ua(0);
 	msg_accel_body_out.accel.linear.y = ua(1);
 	msg_accel_body_out.accel.linear.z = ua(2);
@@ -645,9 +668,11 @@ void ControllerID::message_output_feedback(const ros::Time t,
 	msg_accel_body_out.accel.angular.z = ua(5);
 
 	//Publish messages
-	pub_pose_end_.publish(msg_pose_end_out);
-	pub_accel_linear_.publish(msg_accel_linear_out);
 	pub_pose_base_.publish(msg_pose_base_out);
+	pub_pose_end_.publish(msg_pose_end_out);
+	pub_twist_base_.publish(msg_twist_base_out);
+	pub_twist_end_.publish(msg_twist_end_out);
+	pub_accel_linear_.publish(msg_accel_linear_out);
 	pub_accel_body_.publish(msg_accel_body_out);
 }
 

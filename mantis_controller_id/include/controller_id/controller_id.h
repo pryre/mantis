@@ -29,6 +29,8 @@ class ControllerID {
 		ros::Publisher pub_joints_;
 		ros::Publisher pub_accel_linear_;
 		ros::Publisher pub_accel_body_;
+		ros::Publisher pub_twist_base_;
+		ros::Publisher pub_twist_end_;
 		ros::Publisher pub_pose_base_;
 		ros::Publisher pub_pose_end_;
 
@@ -41,6 +43,7 @@ class ControllerID {
 		std::string param_model_id_;
 		bool param_track_base_;
 		bool param_accurate_end_tracking_;
+		bool param_reference_feedback_;
 		double param_rate_;
 
 		ControllerIDParams p_;
@@ -72,8 +75,10 @@ class ControllerID {
 
 		void message_output_control(const ros::Time t, const std::vector<uint16_t> &pwm, const std::vector<double> &joints);
 		void message_output_feedback(const ros::Time t,
-									 const Eigen::Affine3d &ge_sp,
 									 const Eigen::Affine3d &g_sp,
+									 const Eigen::Affine3d &ge_sp,
+									 const Eigen::Vector3d &gv_sp,
+									 const Eigen::Vector3d &gev_sp,
 									 const Eigen::Vector3d &pa,
 									 const Eigen::Matrix3d &r_sp,
 									 const Eigen::VectorXd &ua);
