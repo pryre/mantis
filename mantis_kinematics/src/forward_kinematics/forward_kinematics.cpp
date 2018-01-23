@@ -7,7 +7,9 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
 
+#include <tf2_ros/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
@@ -27,16 +29,21 @@
 
 ForwardKinematics::ForwardKinematics() :
 	nh_("~"),
+	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
+	param_do_end_effector_pose_(true),
 	param_do_viz_(true),
 	param_done_viz_(false) {
 
 	int num_links = 0;
 
 	//Load parameters
+	nh_.param("frame_id", param_frame_id_, param_frame_id_);
 	nh_.param("model_id", param_model_id_, param_model_id_);
-	nh_.param("links/num", num_links, num_links);
+	nh_.param("do_viz", param_do_viz_, param_do_viz_);
+	nh_.param("end_effector_pose", param_do_end_effector_pose_, param_do_end_effector_pose_);
 
+	nh_.param("links/num", num_links, num_links);
 	ROS_INFO("Loading %i links...", num_links);
 
 	bool success = true;
@@ -57,6 +64,7 @@ ForwardKinematics::ForwardKinematics() :
 		ROS_INFO("All links loaded!");
 
 		//Configure publishers and subscribers
+		pub_end_ = nh_.advertise<geometry_msgs::PoseStamped>("end_effector", 10);
 		pub_viz_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization", 10, true);
 
 		sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ForwardKinematics::callback_state_odom, this );
@@ -90,6 +98,7 @@ void ForwardKinematics::callback_state_odom(const nav_msgs::Odometry::ConstPtr& 
 	t.transform.rotation.z = msg_in->pose.pose.orientation.z;
 
 	tfbr_.sendTransform(t);
+	tfBuffer_.setTransform(t, ros::this_node::getName());	//Set the base link
 }
 
 void ForwardKinematics::callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
@@ -114,9 +123,34 @@ void ForwardKinematics::callback_state_joints(const sensor_msgs::JointState::Con
 			transform.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
 
 			tfbr_.sendTransform(transform);
+			tfBuffer_.setTransform(transform, ros::this_node::getName());	//Set the internal dynamic joints
 		}
 	}
 
+	//Send out the end effector pose
+	if(param_do_end_effector_pose_) {
+		geometry_msgs::PoseStamped msg_end_out_;
+	    geometry_msgs::TransformStamped tf_end;
+		std::string last_joint = param_model_id_ + "/link_" + std::to_string(param_joints_.size());
+
+		try {
+			tf_end = tfBuffer_.lookupTransform(param_frame_id_, last_joint, ros::Time(0));
+
+			msg_end_out_.header = tf_end.header;
+			msg_end_out_.pose.position.x = tf_end.transform.translation.x;
+			msg_end_out_.pose.position.y = tf_end.transform.translation.y;
+			msg_end_out_.pose.position.z = tf_end.transform.translation.z;
+			msg_end_out_.pose.orientation.w = tf_end.transform.rotation.w;
+			msg_end_out_.pose.orientation.x = tf_end.transform.rotation.x;
+			msg_end_out_.pose.orientation.y = tf_end.transform.rotation.y;
+			msg_end_out_.pose.orientation.z = tf_end.transform.rotation.z;
+
+			pub_end_.publish(msg_end_out_);
+		}
+		catch(const tf2::LookupException& e) {
+			ROS_WARN_THROTTLE(1.0, "Lookup error: %s", e.what());
+		}
+	}
 	//if(param_do_viz_ && !param_done_viz_)
 	//	do_viz(&(msg_in->name));
 }
@@ -132,6 +166,7 @@ void ForwardKinematics::configure_static_joints() {
 			tf.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
 
 			tfsbr_.sendTransform(tf);
+			tfBuffer_.setTransform(tf, ros::this_node::getName(), true);	//Set the internal static joints
 		}
 	}
 }

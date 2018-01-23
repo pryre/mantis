@@ -8,6 +8,7 @@
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
 
+#include <tf2_ros/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 
@@ -19,16 +20,20 @@
 class ForwardKinematics {
 	private:
 		ros::NodeHandle nh_;
+		ros::Publisher pub_end_;
 		ros::Publisher pub_viz_;
 		ros::Subscriber sub_state_odom_;
 		ros::Subscriber sub_state_joints_;
 
+		tf2_ros::Buffer tfBuffer_;
 		tf2_ros::TransformBroadcaster tfbr_;
 		tf2_ros::StaticTransformBroadcaster tfsbr_;
 
+		std::string param_frame_id_;
 		std::string param_model_id_;
 		std::vector<DHParameters> param_joints_;
 
+		bool param_do_end_effector_pose_;
 		bool param_do_viz_;
 		bool param_done_viz_;
 
