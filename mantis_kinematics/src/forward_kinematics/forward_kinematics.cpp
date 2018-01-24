@@ -150,6 +150,9 @@ void ForwardKinematics::callback_state_joints(const sensor_msgs::JointState::Con
 		catch(const tf2::LookupException& e) {
 			ROS_WARN_THROTTLE(1.0, "Lookup error: %s", e.what());
 		}
+		catch(const tf2::ExtrapolationException& e) {
+			ROS_WARN_THROTTLE(1.0, "Extrapolation error: %s", e.what());
+		}
 	}
 	//if(param_do_viz_ && !param_done_viz_)
 	//	do_viz(&(msg_in->name));
