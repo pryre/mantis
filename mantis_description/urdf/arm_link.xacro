@@ -13,7 +13,7 @@
 			<collision name='collision_${suffix}'>
 				<origin xyz="0.091625 0 0" rpy="0 0 0"/>
 				<geometry>
-					<box size="0.18325 0.24 0.041"/>
+					<box size="0.18325 0.024 0.041"/>
 				</geometry>
 			</collision>
 

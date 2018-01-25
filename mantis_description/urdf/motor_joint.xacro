@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:macro name="motor_joint" params="motor_number parent xyz direction">
+		<link name="link_rotor_${motor_number}">
+			<inertial name='inertial_rotor_${motor_number}'>>
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+				<mass value="0.005" />
+				<inertia ixx="9.75e-07" iyy="0.000273104" izz="0.000274004" ixy="0.0" ixz="0.0" iyz="0.0" />
+			</inertial>
+
+			<collision name='collision_rotor_${motor_number}'>
+				<origin xyz="0 0 -0.0036" rpy="0 0 0"/>
+				<geometry>
+					<box size="0.01 0.24 0.01"/>
+				</geometry>
+			</collision>
+
+			<visual name="visual_rotor_${motor_number}">
+				<origin xyz="0 0 -0.0036" rpy="0 0 0"/>
+				<geometry>
+					<mesh filename="package://mantis_description/meshes/prop_8045_CW.stl" scale="0.001 0.001 0.001"/>
+				</geometry>
+				<material name="black"/>
+			</visual>
+		</link>
+
+		<joint name="joint_rotor_${motor_number}" type="continuous">
+			<parent link="${parent}"/>
+			<child link="link_rotor_${motor_number}"/>
+			<origin xyz="${xyz}" rpy="0 0 0"/>
+			<axis xyz="0 0 1"/>
+		</joint>
+
+		<gazebo>
+			<plugin name='mantis_gazebo_motor_model_${motor_number}' filename='libmantis_gazebo_motor_model.so'>
+				<robotNamespace></robotNamespace>
+				<jointName>joint_rotor_${motor_number}</jointName>
+				<linkName>link_rotor_${motor_number}</linkName>
+				<turningDirection>${direction}</turningDirection>
+				<timeConstantUp>0.0125</timeConstantUp>
+				<timeConstantDown>0.025</timeConstantDown>
+				<maxRotVelocity>1618</maxRotVelocity>
+				<motorConstant>4.019e-06</motorConstant>
+				<momentConstant>0.06</momentConstant>
+				<commandSubTopic>/command/motor_velocity</commandSubTopic>
+				<motorNumber>${motor_number - 1}</motorNumber>
+				<rotorDragCoefficient>0.000806428</rotorDragCoefficient>
+				<rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+				<motorSpeedPubTopic>/state/motor_speed/${motor_number}</motorSpeedPubTopic>
+				<rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+			</plugin>
+		</gazebo>
+	</xacro:macro>
+</robot>
