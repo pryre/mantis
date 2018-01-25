@@ -29,12 +29,14 @@ gain:
 links:
   num: 3
   l0:
+    name: "mount"
     d: -0.05025
     t: 0.0
     r: 0.0
     a: 1.570796326794897
     type: "static"
   l1:
+    name: "joint_shoulder"
     d: 0.0
     t: -1.570796326794897
     r: 0.18325
@@ -42,6 +44,7 @@ links:
     type: "twist_z"
     beta: 0.8
   l2:
+    name: "joint_elbow"
     d: 0.0
     t: 0.0
     r: 0.18325

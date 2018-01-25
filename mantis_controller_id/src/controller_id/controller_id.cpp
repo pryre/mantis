@@ -678,12 +678,14 @@ void ControllerID::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_i
 void ControllerID::callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
 	double dt = (msg_state_joints_.header.stamp - msg_in->header.stamp).toSec();
 
-	int jc = 0;
 	for(int i=0; i<joints_.size(); i++) {
 		//Only update the dynamic links
 		if(joints_[i].jt() != DHParameters::JointType::Static) {
-			joints_[i].update(msg_in->position[jc], msg_in->velocity[jc], dt);
-			jc++;
+			for(int j=0; j<msg_in->name.size(); j++) {
+				//If we have the right joint
+				if(joints_[i].name() == msg_in->name[j])
+					joints_[i].update(msg_in->position[j], msg_in->velocity[j], dt);
+			}
 		}
 	}
 
