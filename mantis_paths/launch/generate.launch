@@ -6,6 +6,8 @@
 		<param name="frame_id" value="map" />
 		<param name="arc_resolution" value="50" />
 
+		<remap from="/path_gen/path" to="/controller_id/goal/path" />
+
 		<rosparam command="load" file="$(find mantis_paths)/launch/path_$(arg path_name).yaml"/>
 	</node>
 </launch>

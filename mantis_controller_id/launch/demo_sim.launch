@@ -14,29 +14,19 @@
 		<remap from="/controller_id/state/odom" to="/mantis_uav/odom" />
 		<remap from="/controller_id/state/joints" to="/mantis_uav/joint_states" />
 
-		<remap from="/controller_id/goal/path" to="/path_gen/path" />
-
 		<remap from="/controller_id/output/rc" to="/mantis_uav/command/motor_pwm" />
 		<remap from="/controller_id/output/joints" to="/mantis_uav/command/joint_torque" />
 
 		<rosparam command="load" file="$(find mantis_description)/config/robot_params.yaml"/>
 	</node>
-	<!--
-	<node pkg="mavel" type="mavel_node" name="mavel" clear_params="true" output="screen">
-		<rosparam command="load" file="$(find mantis_controller_id)/launch/mavel_params.yaml"/>
-		<remap from="/mavel/reference/odometry" to="/mantis_uav/odom"/>
+
+	<node pkg="mantis_controller_id" type="robot_config_node" name="robot_config" clear_params="true" output="screen">
+		<remap from="/robot_config/goal/path" to="/controller_id/goal/path"/>
+		<remap from="/robot_config/goal/joints" to="/mantis_uav/joint_position_controller/command"/>
+
+		<remap from="/robot_config/joints" to="/mantis_uav/joint_goals"/>
+		<remap from="/robot_config/pose" to="/move_base_simple/goal"/>
 	</node>
 
-	<node pkg="mantis_controller_id" type="pose_test_node" name="pose_goals" clear_params="true" output="screen">
-		<param name="arm/r1" value="0.0" />
-		<param name="arm/r2" value="0.0" />
-
-		<remap from="/pose_goals/pose" to="/controller_id/goal/pose"/>
-
-		<remap from="/pose_goals/joints" to="/controller_id/goal/joints"/>
-
-		<remap from="/pose_goals/hover_goal" to="/move_base_simple/goal"/>
-	</node>
-	-->
 	<node pkg="rosservice" type="rosservice" name="arm_system" args="call --wait /mantis_uav/arm/motors '{arm: $(arg arm)}'"/>
 </launch>
