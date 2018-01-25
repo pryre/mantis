@@ -40,12 +40,14 @@ links:
     r: 0.18325
     a: 0.0
     type: "twist_z"
+    beta: 0.8
   l2:
     d: 0.0
     t: 0.0
     r: 0.18325
     a: 0.0
     type: "twist_z"
+    beta: 0.8
 
 body:
   num: 3
