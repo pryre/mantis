@@ -1,25 +1,7 @@
-<!-- -*- mode: XML -*- -->
-
+<?xml version='1.0'?>
 <launch>
-    <!-- Start controller manager -->
-    <node name="dynamixel_manager" pkg="dynamixel_controllers" type="controller_manager.py" required="true" output="screen">
-        <rosparam>
-            namespace: dxl_manager
-            serial_ports:
-                arm_port:
-                    port_name: "/dev/ttyUSB0"
-                    baud_rate: 3000000
-                    min_motor_id: 1
-                    max_motor_id: 3
-                    update_rate: 100
-        </rosparam>
-    </node>
+	<rosparam file="$(find mantis_description)/config/robot_joint_control.yaml" command="load"/>
 
-    <!-- Start arm joint controller -->
-    <rosparam file="$(find mantis_config)/config/arm_controller.yaml" command="load"/>
-    <node name="arm_controller_spawner" pkg="dynamixel_controllers" type="controller_spawner.py"
-          args="--manager=dxl_manager
-                --port arm_port
-                elbow_controller"
-          output="screen"/>
+	<node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+	output="screen" ns="/mantis_uav" args="shoulder_position_controller elbow_position_controller joint_state_controller"/>
 </launch>
