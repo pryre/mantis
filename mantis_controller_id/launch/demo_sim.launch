@@ -12,14 +12,14 @@
 		<param name="control_rate" value="100.0" />
 
 		<remap from="/controller_id/state/odom" to="/mantis_uav/odom" />
-		<remap from="/controller_id/state/joints" to="/mantis_uav/state/joint_states" />
+		<remap from="/controller_id/state/joints" to="/mantis_uav/joint_states" />
 
 		<remap from="/controller_id/goal/path" to="/path_gen/path" />
 
 		<remap from="/controller_id/output/rc" to="/mantis_uav/command/motor_pwm" />
 		<remap from="/controller_id/output/joints" to="/mantis_uav/command/joint_torque" />
 
-		<rosparam command="load" file="$(find mantis_config)/config/robot_params.yaml"/>
+		<rosparam command="load" file="$(find mantis_description)/config/robot_params.yaml"/>
 	</node>
 	<!--
 	<node pkg="mavel" type="mavel_node" name="mavel" clear_params="true" output="screen">
@@ -38,5 +38,5 @@
 		<remap from="/pose_goals/hover_goal" to="/move_base_simple/goal"/>
 	</node>
 	-->
-	<node pkg="rosservice" type="rosservice" name="arm_system" args="call --wait /mantis_uav/arm/system '{arm: $(arg arm)}'"/>
+	<node pkg="rosservice" type="rosservice" name="arm_system" args="call --wait /mantis_uav/arm/motors '{arm: $(arg arm)}'"/>
 </launch>

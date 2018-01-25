@@ -12,11 +12,11 @@
 		<param name="end_effector_pose" value="true" />
 
 		<remap from="/mantis_fk/state/odom" to="/$(arg model_name)/odom"/>
-		<remap from="/mantis_fk/state/joints" to="/$(arg model_name)/state/joint_states"/>
+		<remap from="/mantis_fk/state/joints" to="/$(arg model_name)/joint_states"/>
 
 		<remap from="/mantis_fk/visualization" to="/$(arg model_name)/visualization"/>
 
-		<rosparam command="load" file="$(find mantis_config)/config/robot_params.yaml"/>
+		<rosparam command="load" file="$(find mantis_description)/config/robot_params.yaml"/>
 	</node>
 
 	<!-- start gazebo client -->

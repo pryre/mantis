@@ -102,28 +102,21 @@ void ForwardKinematics::callback_state_odom(const nav_msgs::Odometry::ConstPtr& 
 }
 
 void ForwardKinematics::callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
-	int joint_counter = 0;
-
 	for(int i=0; i<param_joints_.size(); i++) {
 		if( param_joints_[i].jt() != DHParameters::JointType::Static ) {
-			double j = 0.0;
+			for(int j=0; j<msg_in->name.size(); j++) {
+				if(param_joints_[i].name() == msg_in->name[j]) {
+					param_joints_[i].update(msg_in->position[j]);
 
-			if(joint_counter >= msg_in->position.size()) {
-				ROS_ERROR("Tried to read index (%i) but joint message is %li long", joint_counter, msg_in->position.size());
-			} else {
-				j = msg_in->position[joint_counter];
-				joint_counter++;
+					geometry_msgs::TransformStamped transform = tf2::eigenToTransform(param_joints_[i].transform());
+					transform.header.stamp = msg_in->header.stamp;
+					transform.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/link_" + std::to_string(i);
+					transform.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
+
+					tfbr_.sendTransform(transform);
+					tfBuffer_.setTransform(transform, ros::this_node::getName());	//Set the internal dynamic joints
+				}
 			}
-
-			param_joints_[i].update(j);
-
-			geometry_msgs::TransformStamped transform = tf2::eigenToTransform(param_joints_[i].transform());
-			transform.header.stamp = msg_in->header.stamp;
-			transform.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/link_" + std::to_string(i);
-			transform.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
-
-			tfbr_.sendTransform(transform);
-			tfBuffer_.setTransform(transform, ros::this_node::getName());	//Set the internal dynamic joints
 		}
 	}
 
