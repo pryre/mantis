@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:macro name="arm_link" params="suffix">
+
+		<link name="link_${suffix}">
+			<inertial name='inertial_${suffix}'>>
+				<origin xyz="0.15297991 0 0" rpy="0 0 0"/>
+				<mass value="0.10022841" />
+				<inertia ixx="1.678e-05" iyy="2.5428e-04" izz="2.4944e-04" ixy="0.0" ixz="0.0" iyz="0.0" />
+			</inertial>
+
+			<collision name='collision_${suffix}'>
+				<origin xyz="0.091625 0 0" rpy="0 0 0"/>
+				<geometry>
+					<box size="0.18325 0.24 0.041"/>
+				</geometry>
+			</collision>
+
+			<visual name="visual_${suffix}_bracket">
+				<origin xyz="-0.0025 0.012 0.0205" rpy="${pi/2} ${pi/2} 0"/>
+				<geometry>
+					<mesh filename="package://mantis_description/meshes/FR12-H101.stl" scale="0.001 0.001 0.001"/>
+				</geometry>
+				<material name="black"/>
+			</visual>
+
+			<visual name="visual_${suffix}_rod">
+				<origin xyz="0.028 -0.008 -0.008" rpy="0 0 0"/>
+				<geometry>
+					<mesh filename="package://mantis_description/meshes/rod.stl" scale="0.001 0.001 0.001"/>
+				</geometry>
+				<material name="black"/>
+			</visual>
+
+			<xacro:visual_servo suffix="${suffix}" xyz="0.148 0.01425 -0.019" rpy="0 0 ${-pi/2}" />
+		</link>
+	</xacro:macro>
+</robot>

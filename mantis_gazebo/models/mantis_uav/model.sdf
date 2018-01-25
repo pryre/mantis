@@ -481,7 +481,6 @@
       </axis>
     </joint>
 
-
     <link name="arm_link_upperarm">
       <pose>0 0 0.29927009 1.570796327 1.570796327 0</pose>
       <gravity>1</gravity>
@@ -508,6 +507,14 @@
           </box>
         </geometry>
       </collision>
+
+
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="package://mantis_description/meshes/rod.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</visual>
 
       <visual name="visual_upperarm_bracket">
         <pose>-0.15297991 0.012 0.0205 1.570796327 1.570796327 0</pose>
@@ -579,7 +586,6 @@
         </limit>
       </axis>
     </joint>
-
 
     <link name="arm_link_forearm">
       <pose>0 0 0.11602009 1.570796327 1.570796327 0</pose>

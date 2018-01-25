@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:macro name="frame_servo" params="suffix size color xyz rpy">
+		<collision name="collision_${suffix}">
+			<origin xyz="${xyz}" rpy="${rpy}"/>
+			<geometry>
+				<box size="${size}"/>
+			</geometry>
+		</collision>
+
+		<xacro:visual_servo suffix="${suffix}" xyz="${xyz}" rpy="${rpy}" />
+	</xacro:macro>
+</robot>

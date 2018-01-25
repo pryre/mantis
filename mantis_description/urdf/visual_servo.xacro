@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:macro name="visual_servo" params="suffix xyz rpy">
+		<visual name="visual_${suffix}_servo">
+			<origin xyz="${xyz}" rpy="${rpy}"/>
+			<geometry>
+				<mesh filename="package://mantis_description/meshes/X-430_IDLE.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="black"/>
+		</visual>
+	</xacro:macro>
+</robot>

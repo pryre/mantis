@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>mantis_config</name>
+  <name>mantis_description</name>
   <version>0.0.0</version>
   <description>The mantis_config package</description>
 
@@ -10,7 +10,10 @@
   <!-- <url type="website">http://wiki.ros.org/mantis_uav_config</url> -->
 
   <buildtool_depend>catkin</buildtool_depend>
-  <run_depend>dynamixel_controllers</run_depend>
+  <run_depend>mantis_gazebo</run_depend>
+  <run_depend>joint_state_publisher</run_depend>
+  <run_depend>robot_state_publisher</run_depend>
+  <run_depend>rviz</run_depend>
 
   <export>
     <!-- Other tools can request additional information be placed here -->

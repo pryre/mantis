@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(mantis_config)
+project(mantis_description)
 
 find_package(catkin REQUIRED)
 
@@ -24,4 +24,22 @@ install(
   DIRECTORY
     launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
+
+install(
+  DIRECTORY
+    meshes/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/meshes
+)
+
+install(
+  DIRECTORY
+    manoeuvres/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/manoeuvres
+)
+
+install(
+  DIRECTORY
+    urdf/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/urdf
 )

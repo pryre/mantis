@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:macro name="arm_joint" params="suffix parent child xyz rpy">
+		<joint name="joint_${suffix}" type="revolute">
+			<parent link="${parent}"/>
+			<child link="${child}"/>
+			<origin xyz="${xyz}" rpy="${rpy}"/>
+			<axis xyz="0 0 1"/>
+			<limit effort="1000" velocity="100" lower="${-pi/2}" upper="${pi/2}"/>
+			<dynamics damping="0.1" friction="0.0"/>
+		</joint>
+
+		<transmission name="trans_${suffix}">
+			<type>transmission_interface/SimpleTransmission</type>
+			<joint name="joint_${suffix}">
+				<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+			</joint>
+			<actuator name="motor_${suffix}">
+				<mechanicalReduction>1</mechanicalReduction>
+			</actuator>
+		</transmission>
+	</xacro:macro>
+</robot>

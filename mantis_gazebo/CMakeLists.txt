@@ -10,6 +10,10 @@ add_definitions(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   gazebo_ros
+  gazebo_ros_control
+  controller_manager
+  joint_state_controller
+  robot_state_publisher
   std_msgs
   sensor_msgs
   mavros_msgs
