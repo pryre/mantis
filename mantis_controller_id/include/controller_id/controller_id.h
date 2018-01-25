@@ -23,7 +23,7 @@ class ControllerID {
 		ros::Subscriber sub_state_odom_;
 		ros::Subscriber sub_state_joints_;
 		ros::Subscriber sub_goal_path_;
-		ros::Subscriber sub_goal_joints_;
+		//ros::Subscriber sub_goal_joints_;
 
 		ros::Publisher pub_rc_;
 		ros::Publisher pub_joints_;
@@ -37,7 +37,7 @@ class ControllerID {
 		nav_msgs::Odometry msg_state_odom_;
 		sensor_msgs::JointState msg_state_joints_;
 		nav_msgs::Path msg_goal_path_;
-		sensor_msgs::JointState msg_goal_joints_;
+		//sensor_msgs::JointState msg_goal_joints_;
 
 		std::string param_frame_id_;
 		std::string param_model_id_;
@@ -47,7 +47,7 @@ class ControllerID {
 		double param_rate_;
 
 		ControllerIDParams p_;
-		std::vector<DHParameters> param_joints_;
+		std::vector<DHParameters> joints_;
 		Eigen::Affine3d latest_g_sp_;
 		int path_hint_;
 
@@ -87,5 +87,5 @@ class ControllerID {
 		void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
 		void callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in);
 		void callback_goal_path(const nav_msgs::Path::ConstPtr& msg_in);
-		void callback_goal_joints(const sensor_msgs::JointState::ConstPtr& msg_in);
+		//void callback_goal_joints(const sensor_msgs::JointState::ConstPtr& msg_in);
 };

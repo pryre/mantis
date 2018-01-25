@@ -57,7 +57,7 @@ ControllerID::ControllerID() :
 		DHParameters dh( &nh_, "links/l" + std::to_string(i) );
 
 		if( dh.is_valid() ) {
-			param_joints_.push_back(dh);
+			joints_.push_back(dh);
 		} else {
 			ROS_FATAL("Error loading joint %i", i);
 			success = false;
@@ -66,7 +66,7 @@ ControllerID::ControllerID() :
 	}
 
 	if(success) {
-		ROS_INFO( "Loaded configuration for %li links", param_joints_.size() );
+		ROS_INFO( "Loaded configuration for %li links", joints_.size() );
 
 		pub_rc_ = nh_.advertise<mavros_msgs::RCOut>("output/rc", 10);
 		pub_joints_ = nh_.advertise<sensor_msgs::JointState>("output/joints", 10);
@@ -82,7 +82,7 @@ ControllerID::ControllerID() :
 		sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
 
 		sub_goal_path_ = nh_.subscribe<nav_msgs::Path>( "goal/path", 10, &ControllerID::callback_goal_path, this );
-		sub_goal_joints_ = nh_.subscribe<sensor_msgs::JointState>( "goal/joints", 10, &ControllerID::callback_goal_joints, this );
+		//sub_goal_joints_ = nh_.subscribe<sensor_msgs::JointState>( "goal/joints", 10, &ControllerID::callback_goal_joints, this );
 
 		timer_ = nh_.createTimer(ros::Duration(1.0/param_rate_), &ControllerID::callback_control, this );
 
@@ -104,14 +104,14 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	std::vector<double> joints_out(p_.manip_num);
 
 	if( ( msg_state_odom_.header.stamp != ros::Time(0) ) &&
-		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
-		( msg_goal_joints_.header.stamp != ros::Time(0) ) ) {
+		( msg_state_joints_.header.stamp != ros::Time(0) ) ) { // &&
+		//( msg_goal_joints_.header.stamp != ros::Time(0) ) ) {
 
 		ROS_INFO_ONCE("Inverse dynamics controller running!");
 
 		double num_states = 6 + p_.manip_num;	//XXX: 6 comes from XYZ + Wrpy
 
-		Eigen::VectorXd r_sp = Eigen::VectorXd::Zero(p_.manip_num);
+		//Eigen::VectorXd r_sp = Eigen::VectorXd::Zero(p_.manip_num);
 
 		//Current States
 		Eigen::Affine3d g = affine_from_msg(msg_state_odom_.pose.pose);
@@ -125,21 +125,16 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		Eigen::VectorXd r = Eigen::VectorXd::Zero(p_.manip_num);
 		Eigen::VectorXd rd = Eigen::VectorXd::Zero(p_.manip_num);
-		for(int i=0; i<p_.manip_num; i++) {
-			//Set joint setpoints
-			r_sp(i) = msg_goal_joints_.position[i];
+		Eigen::VectorXd rdd = Eigen::VectorXd::Zero(p_.manip_num);
 
-			//Get joint states
-			r(i) = msg_state_joints_.position[i];
-			rd(i) = msg_state_joints_.velocity[i];
-		}
-
-		//Update the joint parameter states
 		int jc = 0;
-		for(int i=0; i<param_joints_.size(); i++) {
+		for(int i=0; i<joints_.size(); i++) {
 			//Only update the dynamic links
-			if(param_joints_[i].jt() != DHParameters::JointType::Static) {
-				param_joints_[i].update(r(jc));
+			if(joints_[i].jt() != DHParameters::JointType::Static) {
+				r(jc) = joints_[i].q();
+				rd(jc) = joints_[i].qd();
+				rdd(jc) = joints_[i].qdd();
+
 				jc++;
 			}
 		}
@@ -161,8 +156,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		//Compute transform for all joints in the chain to get base to end effector
 		Eigen::Affine3d gbe = Eigen::Affine3d::Identity();
-		for(int i=0; i<param_joints_.size(); i++) {
-			gbe = gbe * param_joints_[i].transform();
+		for(int i=0; i<joints_.size(); i++) {
+			gbe = gbe * joints_[i].transform();
 		}
 
 		if(param_track_base_) {
@@ -190,12 +185,12 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		for(int i=0; i<(p_.gain_rotation.size()/2); i++) {
 			Kw.block(i,2*i,1,2) << p_.gain_rotation[2*i], p_.gain_rotation[(2*i)+1];
 		}
-
+		/*
 		Eigen::MatrixXd Kr = Eigen::MatrixXd::Zero(p_.manip_num, 2*p_.manip_num);
 		for(int i=0; i<(p_.gain_manipulator.size()/2); i++) {
 			Kr.block(i,2*i,1,2) << p_.gain_manipulator[2*i], p_.gain_manipulator[(2*i)+1];
 		}
-
+		*/
 		//Calculate translation acceleration vector
 		Eigen::Vector3d e_p_p = g_sp.translation() - g.translation();
 		Eigen::Vector3d e_p_v = gv_sp - (g.linear()*bv);
@@ -234,8 +229,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		Eigen::Vector3d wa = W_ERROR_P*(w_goal - bw);
 
 		//Calculate the required manipulator accelerations
-		Eigen::VectorXd e_r = vector_interlace(r_sp - r, Eigen::VectorXd::Zero(p_.manip_num) - rd);
-		Eigen::VectorXd ra = Kr*e_r;
+		//Eigen::VectorXd e_r = vector_interlace(r_sp - r, Eigen::VectorXd::Zero(p_.manip_num) - rd);
+		//Eigen::VectorXd ra = Kr*e_r;
 
 		//Calculate Abz such that it doesn't apply too much thrust until fully rotated
 		Eigen::Vector3d body_z = g.linear()*Eigen::Vector3d::UnitZ();
@@ -247,7 +242,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		ua(1) = 0.0;
 		ua(2) = Abz_accel.norm();
 		ua.segment(3,3) << wa;
-		ua.segment(6,p_.manip_num) << ra;
+		ua.segment(6,p_.manip_num) << rdd;
 
 		//Calculate dynamics matricies
 		Eigen::MatrixXd D = Eigen::MatrixXd::Zero(num_states, num_states);
@@ -255,8 +250,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		Eigen::MatrixXd L = Eigen::MatrixXd::Zero(num_states, num_states);
 
 		//XXX: Take care!
-		double l0 = param_joints_[0].d();
-		double l1 = param_joints_[1].r();
+		double l0 = joints_[0].d();
+		double l1 = joints_[1].r();
 
 		calc_Dq(D,
 				p_.I0x, p_.I0y, p_.I0z,
@@ -367,9 +362,9 @@ Eigen::Vector3d ControllerID::calc_goal_base_velocity(const Eigen::Vector3d &gev
 	//End effector velocity jacobian
 	Eigen::MatrixXd Je = Eigen::MatrixXd::Zero(6, rd.size());
 	calc_Je(Je,
-			param_joints_[1].r(),
-			param_joints_[2].r(),
-			param_joints_[2].q());
+			joints_[1].r(),
+			joints_[2].r(),
+			joints_[2].q());
 
 	//Velocity of the end effector in the end effector frame
 	Eigen::VectorXd vbe = Je*rd;
@@ -587,8 +582,8 @@ void ControllerID::message_output_control(const ros::Time t, const std::vector<u
 
 	//Insert control data
 	msg_rc_out.channels = pwm;
-	msg_joints_out.name = msg_goal_joints_.name;
-	msg_joints_out.position = msg_goal_joints_.position;
+	msg_joints_out.name = msg_state_joints_.name;
+	msg_joints_out.position = msg_state_joints_.position;
 	msg_joints_out.effort = joints;
 
 	//Publish messages
@@ -681,6 +676,17 @@ void ControllerID::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_i
 }
 
 void ControllerID::callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
+	double dt = (msg_state_joints_.header.stamp - msg_in->header.stamp).toSec();
+
+	int jc = 0;
+	for(int i=0; i<joints_.size(); i++) {
+		//Only update the dynamic links
+		if(joints_[i].jt() != DHParameters::JointType::Static) {
+			joints_[i].update(msg_in->position[jc], msg_in->velocity[jc], dt);
+			jc++;
+		}
+	}
+
 	msg_state_joints_ = *msg_in;
 }
 
@@ -700,6 +706,6 @@ void ControllerID::callback_goal_path(const nav_msgs::Path::ConstPtr& msg_in) {
 	}
 }
 
-void ControllerID::callback_goal_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
-	msg_goal_joints_ = *msg_in;
-}
+//void ControllerID::callback_goal_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
+//	msg_goal_joints_ = *msg_in;
+//}
