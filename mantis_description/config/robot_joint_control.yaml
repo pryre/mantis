@@ -4,7 +4,7 @@ mantis_uav:
     type: joint_state_controller/JointStateController
     publish_rate: 50
 
-  # Position Controllers ---------------------------------------
+  # Velocity Controllers ---------------------------------------
   shoulder_velocity_controller:
     type: effort_controllers/JointVelocityController
     joint: joint_shoulder
@@ -14,13 +14,12 @@ mantis_uav:
     joint: joint_elbow
     pid: {p: 0.25, i: 0.0, d: 0.0}
 
-
-  #joint_position_controller:
-  #  type: "effort_controllers/JointGroupVeclocityController"
-  #  joints:
-  #    - joint_shoulder
-  #    - joint_elbow
-  #  joint_shoulder:
-  #    pid: {p: 0.25, i: 0.1, d: 0.0}
-  #  joint_elbow:
-  #    pid: {p: 0.25, i: 0.1, d: 0.0}
+  joint_position_controller:
+    joint_shoulder:
+      command: shoulder_velocity_controller
+      pid: {p: 1.25, i: 0.0, d: 0.0}
+      limits: {min: -0.5, max: 0.5}
+    joint_elbow:
+      command: elbow_velocity_controller
+      pid: {p: 1.25, i: 0.0, d: 0.0}
+      limits: {min: -0.5, max: 0.5}

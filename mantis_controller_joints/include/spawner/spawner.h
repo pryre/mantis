@@ -10,22 +10,22 @@
 class Spawner {
 	private:
 		ros::NodeHandle nh_;
+		ros::NodeHandle nhp_;
 		ros::Timer timer_;
 		ros::Subscriber sub_state_;
 		ros::Publisher pub_goal_;
 
-		std::string param_model_name_;
+		std::string param_controller_name_;
 
-		std::vector<Controller> controllers;
+		std::vector<Controller> controllers_;
 
-		double param_servo_update_rate_;
+		double param_update_rate_;
 
-		sensor_msgs::JointState servo_states_;
-		sensor_msgs::JointState servo_goals_;
+		sensor_msgs::JointState joint_states_;
 		bool got_states_;
 
 	public:
-		Spawner( void );
+		Spawner( const std::vector<std::string> &c_names );
 
 		~Spawner( void );
 

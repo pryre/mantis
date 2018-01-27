@@ -1,0 +1,10 @@
+<?xml version='1.0'?>
+<launch>
+	<rosparam file="$(find mantis_controller_joints)/launch/params.yaml" command="load"/>
+
+	<node name="position_controller" pkg="mantis_controller_joints" type="controller_node" respawn="false"
+	output="screen" ns="/mantis_uav">
+		<param name="controller_name" value="joint_position_controller" />
+		<param name="update_rate" value="50.0" />
+	</node>
+</launch>
