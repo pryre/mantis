@@ -17,8 +17,8 @@ class Controller {
 
 		std::string name_;
 
-		bool state_position_;
-		bool state_velocity_;
+		double state_position_;
+		double state_velocity_;
 
 		bool have_reference_;
 

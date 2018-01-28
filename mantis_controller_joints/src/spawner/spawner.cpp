@@ -39,11 +39,11 @@ Spawner::Spawner( const std::vector<std::string> &c_names ) :
 			timer_ = nh_.createTimer(ros::Duration( 1.0 / param_update_rate_ ), &Spawner::callback_timer, this );
 		} else {
 			ROS_ERROR("Failed to load a controller");
-			//ros::shutdown();
+			ros::shutdown();
 		}
 	} else {
 		ROS_ERROR("No controllers specified");
-		//ros::shutdown();
+		ros::shutdown();
 	}
 }
 

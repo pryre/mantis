@@ -53,13 +53,15 @@
 	<!-- INFO SETUP -->
 
 	<node name="model_state_odom" pkg="mantis_gazebo" type="model_state_odom_node" output="screen" />
-
+	<!--
 	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
-		<remap from="/joint_states" to="/mantis_uav/joint_states" />
+		<remap from="/joint_states" to="/mantis_uav/robot_states" />
 	</node>
 
-	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
-
+	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+		<remap from="/joint_states" to="/mantis_uav/joint_states" />
+	</node>
+	-->
 	<!-- CONTROLLER SETUP -->
 
 	<rosparam file="$(find mantis_description)/config/robot_joint_control.yaml" command="load"/>

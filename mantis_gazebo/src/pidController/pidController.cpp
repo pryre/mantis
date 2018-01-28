@@ -4,31 +4,31 @@
 #include <assert.h>
 
 pidController::pidController() :
-	kp_( 0.0f ),
-	ki_( 0.0f ),
-	kd_( 0.0f ),
-	tau_( 0.0f ),
-	x_( 0.0f ),
-	x_dot_( 0.0f ),
-	sp_( 0.0f ),
-	control_output_( 0.0f ) {
+	kp_( 0.0 ),
+	ki_( 0.0 ),
+	kd_( 0.0 ),
+	tau_( 0.0 ),
+	x_( 0.0 ),
+	x_dot_( 0.0 ),
+	sp_( 0.0 ),
+	control_output_( 0.0 ) {
 
-	setOutputMinMax( -1.0f, 1.0f );
+	setOutputMinMax( -1.0, 1.0 );
 
 	this->reset();
 }
 
 pidController::pidController( double initial_x, double initial_x_dot, double initial_setpoint, double initial_output ) :
-	kp_( 0.0f ),
-	ki_( 0.0f ),
-	kd_( 0.0f ),
-	tau_( 0.0f ),
+	kp_( 0.0 ),
+	ki_( 0.0 ),
+	kd_( 0.0 ),
+	tau_( 0.0 ),
 	x_( initial_x ),
 	x_dot_( initial_x_dot ),
 	sp_( initial_setpoint ),
 	control_output_( initial_output ) {
 
-	setOutputMinMax( -1.0f, 1.0f );
+	setOutputMinMax( -1.0, 1.0 );
 
 	this->reset();
 }
@@ -57,7 +57,7 @@ void pidController::reset() {
 }
 
 void pidController::reset( double x_prev ) {
-	integrator_ = 0.0f;
+	integrator_ = 0.0;
 	x_prev_ = x_prev;
 }
 
@@ -112,7 +112,6 @@ double pidController::step( double dt, double sp, double x ) {
 }
 
 //Calculate control step with known x_dot
-//	time_now: Current time in seconds
 double pidController::step( double dt, double sp, double x, double x_dot ) {
 	x_dot_ = x_dot;
 
