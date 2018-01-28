@@ -62,6 +62,7 @@
 		<remap from="/joint_states" to="/mantis_uav/joint_states" />
 	</node>
 	-->
+
 	<!-- CONTROLLER SETUP -->
 
 	<rosparam file="$(find mantis_description)/config/robot_joint_control.yaml" command="load"/>
