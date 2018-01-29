@@ -24,14 +24,15 @@
 	</node>
 
 	<!-- HIGH LEVEL CONTROL -->
-	<node name="robot_config" pkg="mantis_controller_id" type="robot_config_node" respawn="false" output="screen">
+	<node name="robot_config" pkg="mantis_controller_id" type="robot_config_node" respawn="false"
+	ns="/mantis_uav" output="screen">
 		<param name="frame_id" value="map" />
 		<param name="hover_height" value="1.0" />
 
-		<remap from="/robot_config/goal/joint1" to="/mantis_uav/joint_position_controller/joint_shoulder/command"/>
-		<remap from="/robot_config/goal/joint2" to="/mantis_uav/joint_position_controller/joint_elbow/command"/>
+		<remap from="/mantis_uav/robot_config/goal/joint1" to="/mantis_uav/joint_position_controller/joint_shoulder/command"/>
+		<remap from="/mantis_uav/robot_config/goal/joint2" to="/mantis_uav/joint_position_controller/joint_elbow/command"/>
 
-		<remap from="/robot_config/pose" to="/move_base_simple/goal"/>
-		<remap from="/robot_config/goal/path" to="/controller_id/goal/path"/>
+		<remap from="/mantis_uav/robot_config/pose" to="/move_base_simple/goal"/>
+		<remap from="/mantis_uav/robot_config/goal/path" to="/controller_id/goal/path"/>
 	</node>
 </launch>

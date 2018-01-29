@@ -12,6 +12,7 @@
 class RobotConfig {
 	private:
 		ros::NodeHandle nh_;
+		ros::NodeHandle nhp_;
 		ros::Timer timer_;
 
 		ros::Publisher pub_path_;
@@ -36,19 +37,20 @@ class RobotConfig {
 
 
 RobotConfig::RobotConfig() :
-	nh_("~"),
+	nh_(),
+	nhp_("~"),
 	param_frame_id_("map"),
 	param_hover_height_(0.0),
-	dyncfg_joints_(ros::NodeHandle(nh_, "joints")) {
+	dyncfg_joints_(ros::NodeHandle(nh_, "joint_positions")) {
 
-	nh_.param("frame_id", param_frame_id_, param_frame_id_);
-	nh_.param("hover_height", param_hover_height_, param_hover_height_);
+	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
+	nhp_.param("hover_height", param_hover_height_, param_hover_height_);
 
-	pub_path_ = nh_.advertise<nav_msgs::Path>("goal/path", 10);
-	pub_joint1_ = nh_.advertise<std_msgs::Float64>("goal/joint1", 10);
-	pub_joint2_ = nh_.advertise<std_msgs::Float64>("goal/joint2", 10);
+	pub_path_ = nhp_.advertise<nav_msgs::Path>("goal/path", 10);
+	pub_joint1_ = nhp_.advertise<std_msgs::Float64>("goal/joint1", 10);
+	pub_joint2_ = nhp_.advertise<std_msgs::Float64>("goal/joint2", 10);
 
-	sub_hover_goal_ = nh_.subscribe<geometry_msgs::PoseStamped>( "pose", 10, &RobotConfig::callback_hover_goal, this );
+	sub_hover_goal_ = nhp_.subscribe<geometry_msgs::PoseStamped>( "pose", 10, &RobotConfig::callback_hover_goal, this );
 	dyncfg_joints_.setCallback(boost::bind(&RobotConfig::callback_cfg_joints, this, _1, _2));
 
 	ROS_INFO("Robot pose configured");

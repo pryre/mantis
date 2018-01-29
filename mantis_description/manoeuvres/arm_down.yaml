@@ -5,8 +5,8 @@ dictitems:
       groups: !!python/object/new:dynamic_reconfigure.encoding.Config
         state: []
       id: 0
-      joint_1: 0.0
-      joint_2: 0.0
+      joint1: 0.0
+      joint2: 0.0
       name: Default
       parameters: !!python/object/new:dynamic_reconfigure.encoding.Config
         state: []
@@ -14,6 +14,6 @@ dictitems:
       state: true
       type: ''
     state: []
-  joint_1: 0.0
-  joint_2: 0.0
+  joint1: 0.0
+  joint2: 0.0
 state: []
