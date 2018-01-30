@@ -343,7 +343,6 @@ Eigen::Vector3d ControllerID::vector_lerp(const Eigen::Vector3d a, const Eigen::
   return ((1.0 - alpha) * a) + (alpha * b);
 }
 
-
 Eigen::Affine3d ControllerID::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe) {
 	//Use this yaw only rotation to set the direction of the base (and thus end effector)
 	Eigen::Matrix3d br_sp = extract_yaw_component(ge_sp.linear());
