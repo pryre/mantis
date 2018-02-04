@@ -24,16 +24,13 @@
 #include <math.h>
 #include <iostream>
 
-
-#define R_ERROR_P 3.16
-#define W_ERROR_P 10.31
-
 ControllerID::ControllerID() :
 	nh_("~"),
 	p_(&nh_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_track_base_(false),
+	param_accurate_z_tracking_(false),
 	param_accurate_end_tracking_(false),
 	param_reference_feedback_(false),
 	param_rate_(100),
@@ -45,6 +42,7 @@ ControllerID::ControllerID() :
 	nh_.param("frame_id", param_frame_id_, param_frame_id_);
 	nh_.param("model_id", param_model_id_, param_model_id_);
 	nh_.param("track_base", param_track_base_, param_track_base_);
+	nh_.param("accurate_z_tracking", param_accurate_z_tracking_, param_accurate_z_tracking_);
 	nh_.param("accurate_end_tracking", param_accurate_end_tracking_, param_accurate_end_tracking_);
 	nh_.param("reference_feedback", param_reference_feedback_, param_reference_feedback_);
 	nh_.param("control_rate", param_rate_, param_rate_);
@@ -167,6 +165,21 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			//Calculate the tracking offset for the base
 			g_sp = calc_goal_base_transform(ge_sp, gbe);
 
+			if(param_accurate_z_tracking_) {
+				//Get the current end effector pose
+				Eigen::Affine3d ge_c = g*gbe;
+				//Translate it to the desired setpoint
+				ge_c.translation() = ge_sp.translation();
+				//Get the base pose based off of the translated setpoint
+				Eigen::Affine3d g_sp_c = ge_c*gbe.inverse();
+
+				double z_corr = g_sp_c.translation().z() - g_sp.translation().z();
+
+				ROS_INFO_STREAM("z_corr: " << z_corr);
+				//Override the calculated z translation with one that matches the current pose
+				g_sp.translation().z() += z_corr;
+			}
+
 			//Compensate for velocity terms in manipulator movement
 			//This is more accurate, but can make things more unstable
 			if(param_accurate_end_tracking_) {
@@ -175,28 +188,21 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 				gv_sp = gev_sp;
 			}
 		}
+
 		//Build gain matricies
 		Eigen::MatrixXd Kp = Eigen::MatrixXd::Zero(3,6);
-		for(int i=0; i<(p_.gain_position.size()/2); i++) {
-			Kp.block(i,2*i,1,2) << p_.gain_position[2*i], p_.gain_position[(2*i)+1];
-		}
+		Kp.block(0,0,1,2) << p_.gain_position_xy[0], p_.gain_position_xy[1];
+		Kp.block(1,2,1,2) << p_.gain_position_xy[0], p_.gain_position_xy[1];
+		Kp.block(2,4,1,2) << p_.gain_position_z[0], p_.gain_position_z[1];
 
-		Eigen::MatrixXd Kw = Eigen::MatrixXd::Zero(3,6);
-		for(int i=0; i<(p_.gain_rotation.size()/2); i++) {
-			Kw.block(i,2*i,1,2) << p_.gain_rotation[2*i], p_.gain_rotation[(2*i)+1];
-		}
-		/*
-		Eigen::MatrixXd Kr = Eigen::MatrixXd::Zero(p_.manip_num, 2*p_.manip_num);
-		for(int i=0; i<(p_.gain_manipulator.size()/2); i++) {
-			Kr.block(i,2*i,1,2) << p_.gain_manipulator[2*i], p_.gain_manipulator[(2*i)+1];
-		}
-		*/
 		//Calculate translation acceleration vector
 		Eigen::Vector3d e_p_p = g_sp.translation() - g.translation();
 		Eigen::Vector3d e_p_v = gv_sp - (g.linear()*bv);
 		//matrix_clamp(e_p_p, -p_.vel_max, p_.vel_max);
 		Eigen::VectorXd e_p = vector_interlace(e_p_p, e_p_v);
 		Eigen::Vector3d Al = Kp*e_p;
+
+		//ROS_INFO_STREAM("Pos/Vel Error:" << std::endl << "e_p_p: " << e_p_p << std::endl << "e_p_v: " << e_p_v << std::endl);
 
 		//Add in gravity compensation
 		Eigen::Vector3d A = Al + Eigen::Vector3d(0.0, 0.0, 9.80665);
@@ -226,7 +232,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		//Eigen::VectorXd e_w = vector_interlace(calc_ang_error(gr_sp, g.linear()), Eigen::Vector3d::Zero() - bw);
 		//Eigen::Vector3d wa = Kw*e_w;
 		Eigen::Vector3d w_goal = calc_ang_error(gr_sp, g.linear());
-		Eigen::Vector3d wa = W_ERROR_P*(w_goal - bw);
+		Eigen::Vector3d wa = p_.gain_rotation_ew*(w_goal - bw);
 
 		//Calculate the required manipulator accelerations
 		//Eigen::VectorXd e_r = vector_interlace(r_sp - r, Eigen::VectorXd::Zero(p_.manip_num) - rd);
@@ -241,8 +247,11 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		ua(0) = 0.0;
 		ua(1) = 0.0;
 		ua(2) = Abz_accel.norm();
+		//ua(2) = A.norm();
 		ua.segment(3,3) << wa;
 		ua.segment(6,p_.manip_num) << rdd;
+
+		//ROS_INFO_STREAM("Error: " << A.z() - Abz_accel.z() << std::endl << "Linear: " << A.norm() << std::endl << "Body: " << Abz_accel.norm());
 
 		//Calculate dynamics matricies
 		Eigen::MatrixXd D = Eigen::MatrixXd::Zero(num_states, num_states);
@@ -543,7 +552,7 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 		ROS_WARN_THROTTLE(1.0, "Large thrust vector detected!");
 	}
 
-	return R_ERROR_P*e_R;
+	return p_.gain_rotation_er*e_R;
 }
 
 int16_t ControllerID::map_pwm(double val) {
@@ -553,7 +562,7 @@ int16_t ControllerID::map_pwm(double val) {
 	//Scale c to the pwm values
 	return int16_t((p_.pwm_max - p_.pwm_min)*c) + p_.pwm_min;
 }
-
+/*
 void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 	//TODO: This all needs to be better defined generically
 	double arm_ang = M_PI / 3.0;
@@ -563,6 +572,28 @@ void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * p_.motor_thrust_max);
 	double km = -1.0 / (p_.motor_num * p_.motor_drag_max);
 	//km = 0;	//TODO: Need to pick motor_drag_max!!!
+
+	//Generate the copter map
+	Eigen::MatrixXd cm = Eigen::MatrixXd::Zero(p_.motor_num, 6);
+	cm << 0.0, 0.0,  kT, -ktx,  0.0, -km,
+		  0.0, 0.0,  kT,  ktx,  0.0,  km,
+		  0.0, 0.0,  kT,  ktx, -kty, -km,
+		  0.0, 0.0,  kT, -ktx,  kty,  km,
+		  0.0, 0.0,  kT, -ktx, -kty,  km,
+		  0.0, 0.0,  kT,  ktx,  kty, -km;
+
+	M << cm, Eigen::MatrixXd::Zero(p_.motor_num, p_.manip_num),
+		 Eigen::MatrixXd::Zero(p_.manip_num, 6), Eigen::MatrixXd::Identity(p_.manip_num, p_.manip_num);
+}
+*/
+void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
+	//TODO: This all needs to be better defined generically
+	double arm_ang = M_PI / 3.0;
+
+	double kT = 1.0 / (p_.motor_num * p_.motor_thrust_max);
+	double ktx = 1.0 / (2.0 * p_.la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * p_.motor_thrust_max);
+	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * p_.motor_thrust_max);
+	double km = -1.0 / (p_.motor_num * p_.motor_drag_max);
 
 	//Generate the copter map
 	Eigen::MatrixXd cm = Eigen::MatrixXd::Zero(p_.motor_num, 6);

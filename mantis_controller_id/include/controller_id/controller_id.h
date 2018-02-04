@@ -42,6 +42,7 @@ class ControllerID {
 		std::string param_frame_id_;
 		std::string param_model_id_;
 		bool param_track_base_;
+		bool param_accurate_z_tracking_;
 		bool param_accurate_end_tracking_;
 		bool param_reference_feedback_;
 		double param_rate_;
