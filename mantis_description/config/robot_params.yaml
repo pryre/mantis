@@ -1,4 +1,4 @@
-#Paramter file for the Mantis MM-UAV
+#Parameter file for the Mantis MM-UAV
 
 motor:
   num: 6
