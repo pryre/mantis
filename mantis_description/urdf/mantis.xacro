@@ -17,7 +17,6 @@
 
 	<xacro:include filename="$(find mantis_description)/urdf/motor_joint.xacro" />
 
-
 	<!-- Import all Gazebo-customization elements, including Gazebo colors -->
 	<xacro:include filename="$(find mantis_description)/urdf/mantis.gazebo" />
 	<!-- Import Rviz colors -->

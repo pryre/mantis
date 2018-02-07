@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot>
 
-  <!-- ros_control plugin -->
+  <!--
 	<gazebo reference="visual_base_link">
 		<material>Gazebo/Green</material>
 	</gazebo>
@@ -9,7 +9,7 @@
 	<gazebo reference="visual_battery_primary">
 		<material>Gazebo/Blue</material>
 	</gazebo>
-
+ -->
 
 	<gazebo>
 		<plugin name="mantis_gazebo_pwm" filename="libmantis_gazebo_pwm_motor.so"/>
