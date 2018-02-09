@@ -235,10 +235,17 @@ J2 = jacobian_gen(gbl2,[r1;r2]);
 J1 = simplify(J1);
 J2 = simplify(J2);
 
+%Joint jacobians
+Jj1 = jacobian_gen(gb1,[r1;r2]);
+Jj1 = simplify(Jj1);
+
+Jj2 = jacobian_gen(gb1*g12,[r1;r2]);
+Jj2 = simplify(Jj2);
 
 %End effector jacobian
 Je = jacobian_gen(gb1*g12*g23,[r1;r2]);
 Je = simplify(Je);
+
 
 %% Equations of Motion
 
@@ -584,6 +591,8 @@ function_gen_mat(sym(Lqd), 'Lqd');
 function_gen_mat(Nq, 'Nq');
 function_gen_mat(Mm, 'Mm');
 
+function_gen_mat(Jj1, 'Jj1');
+function_gen_mat(Jj2, 'Jj2');
 function_gen_mat(Je, 'Je');
 
 for i = 1:numel(Gq)

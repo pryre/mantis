@@ -6,6 +6,7 @@
 #include <dynamics/calc_Dq.h>
 #include <dynamics/calc_Cqqd.h>
 #include <dynamics/calc_Lqd.h>
+#include <dynamics/calc_Jj2.h>
 #include <dynamics/calc_Je.h>
 #include <dh_parameters/dh_parameters.h>
 
@@ -30,6 +31,7 @@ ControllerID::ControllerID() :
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_track_base_(false),
+	param_track_j2_(false),
 	param_accurate_z_tracking_(false),
 	param_accurate_end_tracking_(false),
 	param_reference_feedback_(false),
@@ -42,6 +44,7 @@ ControllerID::ControllerID() :
 	nh_.param("frame_id", param_frame_id_, param_frame_id_);
 	nh_.param("model_id", param_model_id_, param_model_id_);
 	nh_.param("track_base", param_track_base_, param_track_base_);
+	nh_.param("track_j2", param_track_j2_, param_track_j2_);
 	nh_.param("accurate_z_tracking", param_accurate_z_tracking_, param_accurate_z_tracking_);
 	nh_.param("accurate_end_tracking", param_accurate_end_tracking_, param_accurate_end_tracking_);
 	nh_.param("reference_feedback", param_reference_feedback_, param_reference_feedback_);
@@ -152,16 +155,39 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			gev_sp = Eigen::Vector3d::Zero();
 		}
 
-		//Compute transform for all joints in the chain to get base to end effector
-		Eigen::Affine3d gbe = Eigen::Affine3d::Identity();
-		for(int i=0; i<joints_.size(); i++) {
-			gbe = gbe * joints_[i].transform();
-		}
-
 		if(param_track_base_) {
 			g_sp = ge_sp;
 			gv_sp = gev_sp;
 		} else {
+			//Compute transform for all joints in the chain to get base to end effector
+			Eigen::Affine3d gbe = Eigen::Affine3d::Identity();
+			Eigen::MatrixXd Je = Eigen::MatrixXd::Zero(6, rd.size());
+
+			//This is only really here for the paper test case
+			//This hole thing could be done dynamically for any joint
+			if(param_track_j2_) {
+				//Compute transform for all joints in the chain to get base to Joint 2
+				for(int i=0; i<2; i++) {
+					gbe = gbe * joints_[i].transform();
+				}
+
+				calc_Jj2(Je, joints_[1].r());
+
+			} else {
+				//Compute transform for all joints in the chain to get base to end effector
+				for(int i=0; i<joints_.size(); i++) {
+					gbe = gbe * joints_[i].transform();
+				}
+
+				//The linear velocity of the base is dependent on the joint velocities the end effector
+				//End effector velocity jacobian
+				//XXX: Pretty sure this can be done dynamically in dh_parameters
+				calc_Je(Je,
+						joints_[1].r(),
+						joints_[2].r(),
+						joints_[2].q());
+			}
+
 			//Calculate the tracking offset for the base
 			g_sp = calc_goal_base_transform(ge_sp, gbe);
 
@@ -183,7 +209,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			//Compensate for velocity terms in manipulator movement
 			//This is more accurate, but can make things more unstable
 			if(param_accurate_end_tracking_) {
-				gv_sp = calc_goal_base_velocity(gev_sp, g.linear()*gbe.linear(), rd);
+				gv_sp = calc_goal_base_velocity(gev_sp, g.linear()*gbe.linear(), Je, rd);
 			} else {
 				gv_sp = gev_sp;
 			}
@@ -365,15 +391,7 @@ Eigen::Affine3d ControllerID::calc_goal_base_transform(const Eigen::Affine3d &ge
 	return sp*gbe.inverse();
 }
 
-Eigen::Vector3d ControllerID::calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::VectorXd &rd) {
-	//The linear velocity of the base is dependent on the joint velocities the end effector
-	//End effector velocity jacobian
-	Eigen::MatrixXd Je = Eigen::MatrixXd::Zero(6, rd.size());
-	calc_Je(Je,
-			joints_[1].r(),
-			joints_[2].r(),
-			joints_[2].q());
-
+Eigen::Vector3d ControllerID::calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::MatrixXd &Je, const Eigen::VectorXd &rd) {
 	//Velocity of the end effector in the end effector frame
 	Eigen::VectorXd vbe = Je*rd;
 
@@ -381,7 +399,7 @@ Eigen::Vector3d ControllerID::calc_goal_base_velocity(const Eigen::Vector3d &gev
 	//Vbe.translation() << vbe.segment(0,3);
 	//Vbe.linear() << vee_up(vbe.segment(3,3));
 
-	//Get velocity in the world frame
+	//Get linear velocity in the world frame
 	Eigen::Vector3d Ve = Re*vbe.segment(0,3);
 
 	//Only care about the translation movements
