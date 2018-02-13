@@ -19,7 +19,7 @@
 		<param name="control_rate" value="100.0" />
 
 		<remap from="/controller_id/state/odom" to="/mantis_uav/odom" />
-		<remap from="/controller_id/state/joints" to="/dynamixel_interface/states" />
+		<remap from="/controller_id/state/joints" to="/mantis_uav/joint_states" />
 
 		<remap from="/controller_id/output/rc" to="/mavros/rc/override" />
 		<!-- remap from="/controller_id/output/joints" to="/mantis_uav/command/joint_torque" /-->
