@@ -10,7 +10,7 @@
 #include <dynamics/calc_Je.h>
 #include <dh_parameters/dh_parameters.h>
 
-#include <mavros_msgs/RCOut.h>
+#include <mavros_msgs/OverrideRCIn.h>
 #include <sensor_msgs/JointState.h>
 
 #include <nav_msgs/Odometry.h>
@@ -69,7 +69,7 @@ ControllerID::ControllerID() :
 	if(success) {
 		ROS_INFO( "Loaded configuration for %li links", joints_.size() );
 
-		pub_rc_ = nh_.advertise<mavros_msgs::RCOut>("output/rc", 10);
+		pub_rc_ = nh_.advertise<mavros_msgs::OverrideRCIn>("output/rc", 10);
 		pub_joints_ = nh_.advertise<sensor_msgs::JointState>("output/joints", 10);
 
 		pub_pose_base_ = nh_.advertise<geometry_msgs::PoseStamped>("feedback/pose/base", 10);
@@ -627,17 +627,25 @@ void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 }
 
 void ControllerID::message_output_control(const ros::Time t, const std::vector<uint16_t> &pwm, const std::vector<double> &joints) {
-	mavros_msgs::RCOut msg_rc_out;
+	mavros_msgs::OverrideRCIn msg_rc_out;
 	sensor_msgs::JointState msg_joints_out;
 
 	//Prepare headers
-	msg_rc_out.header.stamp = t;
-	msg_rc_out.header.frame_id = param_frame_id_;
+	//msg_rc_out.header.stamp = t;
+	//msg_rc_out.header.frame_id = param_frame_id_;
 	msg_joints_out.header.stamp = t;
 	msg_joints_out.header.frame_id = param_model_id_;
 
 	//Insert control data
-	msg_rc_out.channels = pwm;
+	ROS_ASSERT_MSG(pwm.size() <= 8, "Supported number of motors is 8 (%li)", pwm.size());
+	for(int i=0; i<8; i++) {
+		if( i<pwm.size() ) {
+			msg_rc_out.channels[i] = pwm[i];
+		} else {
+			msg_rc_out.channels[i] = msg_rc_out.CHAN_NOCHANGE;
+		}
+	}
+
 	msg_joints_out.name = msg_state_joints_.name;
 	msg_joints_out.position = msg_state_joints_.position;
 	msg_joints_out.effort = joints;

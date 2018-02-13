@@ -5,7 +5,7 @@
 
 #include <ros/ros.h>
 #include <std_msgs/Float64MultiArray.h>
-#include <mavros_msgs/RCOut.h>
+#include <mavros_msgs/OverrideRCIn.h>
 
 #include <mantis_gazebo_msgs/DoArm.h>
 
@@ -38,7 +38,7 @@ class MantisGazeboPWMMotor : public ModelPlugin
 
 			model_ = _parent;
 
-			sub_rc_out_ = nh_.subscribe<mavros_msgs::RCOut>( model_->GetName() + "/command/motor_pwm", 100, &MantisGazeboPWMMotor::rc_out_cb, this );
+			sub_rc_out_ = nh_.subscribe<mavros_msgs::OverrideRCIn>( model_->GetName() + "/command/motor_pwm", 100, &MantisGazeboPWMMotor::rc_out_cb, this );
 			pub_motor_velocity_ = nh_.advertise<std_msgs::Float64MultiArray>(model_->GetName() + "/command/motor_velocity", 10);
 
 			srv_arm_motors_ = nh_.advertiseService(model_->GetName() + "/arm/motors", &MantisGazeboPWMMotor::arm_safety_srv, this);
@@ -46,12 +46,15 @@ class MantisGazeboPWMMotor : public ModelPlugin
 			ROS_INFO("Loaded mantis pwm motor plugin!");
 		}
 
-		void rc_out_cb( const mavros_msgs::RCOut::ConstPtr& msg_in ) {
+		void rc_out_cb( const mavros_msgs::OverrideRCIn::ConstPtr& msg_in ) {
 			msg_motor_velocity_.data.resize( msg_in->channels.size() );
 
 			for(int i=0; i<msg_in->channels.size(); i++){
 				if( safety_armed_ ) {
-					double pwm = int32_constrain( msg_in->channels[i], param_pwm_min_, param_pwm_max_);
+					//Cut down ignored channels
+					int pwm_raw = (msg_in->channels[i] != 0 ) && (msg_in->channels[i] != 65535) ? msg_in->channels[i] : 0;
+
+					double pwm = int32_constrain( pwm_raw, param_pwm_min_, param_pwm_max_);
 
 					double norm_ref = ( pwm - param_pwm_min_ ) / ( param_pwm_max_ - param_pwm_min_ );
 					//double cmd_vel = norm_ref * param_motor_vel_max_;
