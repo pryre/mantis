@@ -1,0 +1,13 @@
+plugin_whitelist:
+#- 'sys_*'
+# common
+- actuator_control
+- command
+- imu
+- param
+- rc_io
+- setpoint_raw
+- sys_status
+- sys_time
+# extras
+- distance_sensor
