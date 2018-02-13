@@ -15,6 +15,7 @@
 
 #include <eigen3/Eigen/Dense>
 #include <string>
+#include <eigen3/Eigen/StdVector>
 
 class ControllerID {
 	private:
@@ -47,7 +48,7 @@ class ControllerID {
 		double param_rate_;
 
 		ControllerIDParams p_;
-		std::vector<DHParameters> joints_;
+		std::vector<DHParameters,Eigen::aligned_allocator<DHParameters> > joints_;
 		Eigen::Affine3d latest_g_sp_;
 		int path_hint_;
 
