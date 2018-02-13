@@ -1,4 +1,4 @@
-#Paramter file for the Mantis MM-UAV
+#Parameter file for the Mantis MM-UAV
 
 motor:
   num: 6
@@ -22,9 +22,11 @@ takeoff:
   z: 2.0
 
 gain:
-  position: [5,3,5,3,5,3]
-  rotation: [14.1421,20.6950,14.1421,20.6950,14.1421,20.6950]
-  manipulator: [14.1421,20.6950,14.1421,20.6950]
+  position_xy: [10,4.8]
+  position_z: [4.4721,5.3800]
+  rotation: [3.16,10.31]
+#  rotation_xy: [3.16,10.31]
+#  rotation_z: [3.16,10.31]
 
 links:
   num: 3
@@ -56,10 +58,10 @@ body:
   num: 3
   b0:
     mass:
-      m: 1.578 # Base + props
-      Ix: 0.015198135489664
-      Iy: 0.014353211169664
-      Iz: 0.027767959346667
+      m: 1.83497 # Base + props
+      Ix: 0.02961
+      Iy: 0.02933
+      Iz: 0.05342
     com: 0.0
   b1:
     mass:

@@ -1,0 +1,49 @@
+Output Coordinate Frame -> World
+X -> X
+Y -> Z
+Z -> -Y
+
+
+-----------------------------------------
+
+Mass properties of base
+     Configuration: Default
+     Coordinate system: -- default --
+
+Mass = 1.80497 kilograms
+
+Volume = 0.00068 cubic meters
+
+Surface area = 0.60903 square meters
+
+Center of mass: ( meters )
+	X = -0.00295
+	Y = 0.03120
+	Z = -0.00004
+
+Principal axes of inertia and principal moments of inertia: ( kilograms * square meters )
+Taken at the center of mass.
+	 Ix = ( 0.01230,  0.00012,  0.99992)   	Px = 0.02756
+	 Iy = ( 0.99989,  0.00788, -0.01230)   	Py = 0.02785
+	 Iz = (-0.00788,  0.99997, -0.00002)   	Pz = 0.05341
+
+Moments of inertia: ( kilograms * square meters )
+Taken at the center of mass and aligned with the output coordinate system.
+	Lxx = 0.02785	Lxy = 0.00020	Lxz = 0.00000
+	Lyx = 0.00020	Lyy = 0.05341	Lyz = 0.00000
+	Lzx = 0.00000	Lzy = 0.00000	Lzz = 0.02756
+
+Moments of inertia: ( kilograms * square meters )
+Taken at the output coordinate system.
+	Ixx = 0.02961	Ixy = 0.00004	Ixz = 0.00000
+	Iyx = 0.00004	Iyy = 0.05342	Iyz = 0.00000
+	Izx = 0.00000	Izy = 0.00000	Izz = 0.02933
+
+One or more components have overridden mass properties:
+	Brushless motor 2212 920kv
+	Brushless motor 2212 920kv
+	Brushless motor 2212 920kv
+	Brushless motor 2212 920kv
+	Brushless motor 2212 920kv
+	Brushless motor 2212 920kv
+	x-430_idle

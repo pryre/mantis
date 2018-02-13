@@ -22,9 +22,11 @@ class ControllerIDParams {
 
 		int link_num;
 
-		std::vector<double> gain_position;
+		std::vector<double> gain_position_xy;
+		std::vector<double> gain_position_z;
 		std::vector<double> gain_rotation;
-		std::vector<double> gain_manipulator;
+		double gain_rotation_er;
+		double gain_rotation_ew;
 
 		double vel_max;
 

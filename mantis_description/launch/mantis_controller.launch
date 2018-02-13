@@ -10,6 +10,8 @@
 		<param name="frame_id" value="map" />
 		<param name="model_id" value="mantis_uav" />
 		<param name="track_base" value="false" />
+		<param name="track_j2" value="true" />
+		<param name="accurate_z_tracking" value="false" />
 		<param name="accurate_end_tracking" value="true" />
 		<param name="reference_feedback" value="true" />
 		<param name="control_rate" value="100.0" />

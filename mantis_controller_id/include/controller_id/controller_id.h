@@ -43,6 +43,8 @@ class ControllerID {
 		std::string param_frame_id_;
 		std::string param_model_id_;
 		bool param_track_base_;
+		bool param_track_j2_;
+		bool param_accurate_z_tracking_;
 		bool param_accurate_end_tracking_;
 		bool param_reference_feedback_;
 		double param_rate_;
@@ -68,7 +70,7 @@ class ControllerID {
 
 		bool calc_goal_ge_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc);
 		Eigen::Affine3d calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe);
-		Eigen::Vector3d calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::VectorXd &rd);
+		Eigen::Vector3d calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::MatrixXd &Je, const Eigen::VectorXd &rd);
 		Eigen::Vector3d calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R);
 
 		int16_t map_pwm(double val);

@@ -6,6 +6,7 @@
 #include <dynamics/calc_Dq.h>
 #include <dynamics/calc_Cqqd.h>
 #include <dynamics/calc_Lqd.h>
+#include <dynamics/calc_Jj2.h>
 #include <dynamics/calc_Je.h>
 #include <dh_parameters/dh_parameters.h>
 
@@ -24,16 +25,14 @@
 #include <math.h>
 #include <iostream>
 
-
-#define R_ERROR_P 3.16
-#define W_ERROR_P 10.31
-
 ControllerID::ControllerID() :
 	nh_("~"),
 	p_(&nh_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_track_base_(false),
+	param_track_j2_(false),
+	param_accurate_z_tracking_(false),
 	param_accurate_end_tracking_(false),
 	param_reference_feedback_(false),
 	param_rate_(100),
@@ -45,6 +44,8 @@ ControllerID::ControllerID() :
 	nh_.param("frame_id", param_frame_id_, param_frame_id_);
 	nh_.param("model_id", param_model_id_, param_model_id_);
 	nh_.param("track_base", param_track_base_, param_track_base_);
+	nh_.param("track_j2", param_track_j2_, param_track_j2_);
+	nh_.param("accurate_z_tracking", param_accurate_z_tracking_, param_accurate_z_tracking_);
 	nh_.param("accurate_end_tracking", param_accurate_end_tracking_, param_accurate_end_tracking_);
 	nh_.param("reference_feedback", param_reference_feedback_, param_reference_feedback_);
 	nh_.param("control_rate", param_rate_, param_rate_);
@@ -154,49 +155,80 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			gev_sp = Eigen::Vector3d::Zero();
 		}
 
-		//Compute transform for all joints in the chain to get base to end effector
-		Eigen::Affine3d gbe = Eigen::Affine3d::Identity();
-		for(int i=0; i<joints_.size(); i++) {
-			gbe = gbe * joints_[i].transform();
-		}
-
 		if(param_track_base_) {
 			g_sp = ge_sp;
 			gv_sp = gev_sp;
 		} else {
+			//Compute transform for all joints in the chain to get base to end effector
+			Eigen::Affine3d gbe = Eigen::Affine3d::Identity();
+			Eigen::MatrixXd Je = Eigen::MatrixXd::Zero(6, rd.size());
+
+			//This is only really here for the paper test case
+			//This hole thing could be done dynamically for any joint
+			if(param_track_j2_) {
+				//Compute transform for all joints in the chain to get base to Joint 2
+				for(int i=0; i<2; i++) {
+					gbe = gbe * joints_[i].transform();
+				}
+
+				calc_Jj2(Je, joints_[1].r());
+
+			} else {
+				//Compute transform for all joints in the chain to get base to end effector
+				for(int i=0; i<joints_.size(); i++) {
+					gbe = gbe * joints_[i].transform();
+				}
+
+				//The linear velocity of the base is dependent on the joint velocities the end effector
+				//End effector velocity jacobian
+				//XXX: Pretty sure this can be done dynamically in dh_parameters
+				calc_Je(Je,
+						joints_[1].r(),
+						joints_[2].r(),
+						joints_[2].q());
+			}
+
 			//Calculate the tracking offset for the base
 			g_sp = calc_goal_base_transform(ge_sp, gbe);
+
+			if(param_accurate_z_tracking_) {
+				//Get the current end effector pose
+				Eigen::Affine3d ge_c = g*gbe;
+				//Translate it to the desired setpoint
+				ge_c.translation() = ge_sp.translation();
+				//Get the base pose based off of the translated setpoint
+				Eigen::Affine3d g_sp_c = ge_c*gbe.inverse();
+
+				double z_corr = g_sp_c.translation().z() - g_sp.translation().z();
+
+				ROS_INFO_STREAM("z_corr: " << z_corr);
+				//Override the calculated z translation with one that matches the current pose
+				g_sp.translation().z() += z_corr;
+			}
 
 			//Compensate for velocity terms in manipulator movement
 			//This is more accurate, but can make things more unstable
 			if(param_accurate_end_tracking_) {
-				gv_sp = calc_goal_base_velocity(gev_sp, g.linear()*gbe.linear(), rd);
+				gv_sp = calc_goal_base_velocity(gev_sp, g.linear()*gbe.linear(), Je, rd);
 			} else {
 				gv_sp = gev_sp;
 			}
 		}
+
 		//Build gain matricies
 		Eigen::MatrixXd Kp = Eigen::MatrixXd::Zero(3,6);
-		for(int i=0; i<(p_.gain_position.size()/2); i++) {
-			Kp.block(i,2*i,1,2) << p_.gain_position[2*i], p_.gain_position[(2*i)+1];
-		}
+		Kp.block(0,0,1,2) << p_.gain_position_xy[0], p_.gain_position_xy[1];
+		Kp.block(1,2,1,2) << p_.gain_position_xy[0], p_.gain_position_xy[1];
+		Kp.block(2,4,1,2) << p_.gain_position_z[0], p_.gain_position_z[1];
 
-		Eigen::MatrixXd Kw = Eigen::MatrixXd::Zero(3,6);
-		for(int i=0; i<(p_.gain_rotation.size()/2); i++) {
-			Kw.block(i,2*i,1,2) << p_.gain_rotation[2*i], p_.gain_rotation[(2*i)+1];
-		}
-		/*
-		Eigen::MatrixXd Kr = Eigen::MatrixXd::Zero(p_.manip_num, 2*p_.manip_num);
-		for(int i=0; i<(p_.gain_manipulator.size()/2); i++) {
-			Kr.block(i,2*i,1,2) << p_.gain_manipulator[2*i], p_.gain_manipulator[(2*i)+1];
-		}
-		*/
 		//Calculate translation acceleration vector
 		Eigen::Vector3d e_p_p = g_sp.translation() - g.translation();
 		Eigen::Vector3d e_p_v = gv_sp - (g.linear()*bv);
 		//matrix_clamp(e_p_p, -p_.vel_max, p_.vel_max);
 		Eigen::VectorXd e_p = vector_interlace(e_p_p, e_p_v);
 		Eigen::Vector3d Al = Kp*e_p;
+
+		//ROS_INFO_STREAM("Pos/Vel Error:" << std::endl << "e_p_p: " << e_p_p << std::endl << "e_p_v: " << e_p_v << std::endl);
 
 		//Add in gravity compensation
 		Eigen::Vector3d A = Al + Eigen::Vector3d(0.0, 0.0, 9.80665);
@@ -226,7 +258,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		//Eigen::VectorXd e_w = vector_interlace(calc_ang_error(gr_sp, g.linear()), Eigen::Vector3d::Zero() - bw);
 		//Eigen::Vector3d wa = Kw*e_w;
 		Eigen::Vector3d w_goal = calc_ang_error(gr_sp, g.linear());
-		Eigen::Vector3d wa = W_ERROR_P*(w_goal - bw);
+		Eigen::Vector3d wa = p_.gain_rotation_ew*(w_goal - bw);
 
 		//Calculate the required manipulator accelerations
 		//Eigen::VectorXd e_r = vector_interlace(r_sp - r, Eigen::VectorXd::Zero(p_.manip_num) - rd);
@@ -241,8 +273,11 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		ua(0) = 0.0;
 		ua(1) = 0.0;
 		ua(2) = Abz_accel.norm();
+		//ua(2) = A.norm();
 		ua.segment(3,3) << wa;
 		ua.segment(6,p_.manip_num) << rdd;
+
+		//ROS_INFO_STREAM("Error: " << A.z() - Abz_accel.z() << std::endl << "Linear: " << A.norm() << std::endl << "Body: " << Abz_accel.norm());
 
 		//Calculate dynamics matricies
 		Eigen::MatrixXd D = Eigen::MatrixXd::Zero(num_states, num_states);
@@ -343,7 +378,6 @@ Eigen::Vector3d ControllerID::vector_lerp(const Eigen::Vector3d a, const Eigen::
   return ((1.0 - alpha) * a) + (alpha * b);
 }
 
-
 Eigen::Affine3d ControllerID::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe) {
 	//Use this yaw only rotation to set the direction of the base (and thus end effector)
 	Eigen::Matrix3d br_sp = extract_yaw_component(ge_sp.linear());
@@ -357,15 +391,7 @@ Eigen::Affine3d ControllerID::calc_goal_base_transform(const Eigen::Affine3d &ge
 	return sp*gbe.inverse();
 }
 
-Eigen::Vector3d ControllerID::calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::VectorXd &rd) {
-	//The linear velocity of the base is dependent on the joint velocities the end effector
-	//End effector velocity jacobian
-	Eigen::MatrixXd Je = Eigen::MatrixXd::Zero(6, rd.size());
-	calc_Je(Je,
-			joints_[1].r(),
-			joints_[2].r(),
-			joints_[2].q());
-
+Eigen::Vector3d ControllerID::calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::MatrixXd &Je, const Eigen::VectorXd &rd) {
 	//Velocity of the end effector in the end effector frame
 	Eigen::VectorXd vbe = Je*rd;
 
@@ -373,7 +399,7 @@ Eigen::Vector3d ControllerID::calc_goal_base_velocity(const Eigen::Vector3d &gev
 	//Vbe.translation() << vbe.segment(0,3);
 	//Vbe.linear() << vee_up(vbe.segment(3,3));
 
-	//Get velocity in the world frame
+	//Get linear velocity in the world frame
 	Eigen::Vector3d Ve = Re*vbe.segment(0,3);
 
 	//Only care about the translation movements
@@ -544,7 +570,7 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 		ROS_WARN_THROTTLE(1.0, "Large thrust vector detected!");
 	}
 
-	return R_ERROR_P*e_R;
+	return p_.gain_rotation_er*e_R;
 }
 
 int16_t ControllerID::map_pwm(double val) {
@@ -554,7 +580,7 @@ int16_t ControllerID::map_pwm(double val) {
 	//Scale c to the pwm values
 	return int16_t((p_.pwm_max - p_.pwm_min)*c) + p_.pwm_min;
 }
-
+/*
 void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 	//TODO: This all needs to be better defined generically
 	double arm_ang = M_PI / 3.0;
@@ -564,6 +590,28 @@ void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * p_.motor_thrust_max);
 	double km = -1.0 / (p_.motor_num * p_.motor_drag_max);
 	//km = 0;	//TODO: Need to pick motor_drag_max!!!
+
+	//Generate the copter map
+	Eigen::MatrixXd cm = Eigen::MatrixXd::Zero(p_.motor_num, 6);
+	cm << 0.0, 0.0,  kT, -ktx,  0.0, -km,
+		  0.0, 0.0,  kT,  ktx,  0.0,  km,
+		  0.0, 0.0,  kT,  ktx, -kty, -km,
+		  0.0, 0.0,  kT, -ktx,  kty,  km,
+		  0.0, 0.0,  kT, -ktx, -kty,  km,
+		  0.0, 0.0,  kT,  ktx,  kty, -km;
+
+	M << cm, Eigen::MatrixXd::Zero(p_.motor_num, p_.manip_num),
+		 Eigen::MatrixXd::Zero(p_.manip_num, 6), Eigen::MatrixXd::Identity(p_.manip_num, p_.manip_num);
+}
+*/
+void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
+	//TODO: This all needs to be better defined generically
+	double arm_ang = M_PI / 3.0;
+
+	double kT = 1.0 / (p_.motor_num * p_.motor_thrust_max);
+	double ktx = 1.0 / (2.0 * p_.la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * p_.motor_thrust_max);
+	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * p_.motor_thrust_max);
+	double km = -1.0 / (p_.motor_num * p_.motor_drag_max);
 
 	//Generate the copter map
 	Eigen::MatrixXd cm = Eigen::MatrixXd::Zero(p_.motor_num, 6);

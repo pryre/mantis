@@ -1,6 +1,9 @@
 % Script to exploit LQR gains for use as a simple high-level
 % position and velocity controller
 
+clear;
+clc;
+
 % Single state matrix
 %    x = [p     % position
 %         v];   % velocity
@@ -27,12 +30,19 @@ b = [0
 % Position
 Ap = a;
 Bp = b;
-Rp = 0.05;
-Qp = [1,  0;
-      0, 1];
+Rpxy = 1;
+Qpxy = [100,  0;
+      0,   1];
 
-kp = lqr(Ap,Bp,Qp,Rp);
-Kp = repmat(kp,1,3);
+kp = lqr(Ap,Bp,Qpxy,Rpxy);
+Kpxy = repmat(kp,1,2);
+
+Rpz = 0.05;
+Qpz = [1,  0;
+      0,   1];
+
+kpz = lqr(Ap,Bp,Qpz,Rpz);
+Kp = [Kpxy, kpz];
 
 % Rotation
 Aw = a;
