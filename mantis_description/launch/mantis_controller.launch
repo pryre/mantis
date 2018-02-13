@@ -19,12 +19,27 @@
 		<param name="control_rate" value="100.0" />
 
 		<remap from="/controller_id/state/odom" to="/mantis_uav/odom" />
-		<remap from="/controller_id/state/joints" to="/mantis_uav/joint_states" />
+		<remap from="/controller_id/state/joints" to="/dynamixel_interface/states" />
 
 		<remap from="/controller_id/output/rc" to="/mavros/rc/override" />
 		<!-- remap from="/controller_id/output/joints" to="/mantis_uav/command/joint_torque" /-->
 
 		<rosparam command="load" file="$(find mantis_description)/config/robot_params.yaml"/>
+	</node>
+
+	<node pkg="mantis_interface_dynamixel" type="interface_node" name="dynamixel_interface" clear_params="true" output="screen">
+		<param name="topic_input_setpoints" value="setpoints" type="str" />
+		<param name="topic_output_states" value="states" type="str" />
+
+		<param name="port_name" value="/dev/ttyUSB0" type="str" />
+		<param name="port_baud" value="3000000" type="int" />
+		<param name="protocol" value="2.0" type="double" />
+
+		<param name="frame_id" value="mantis" type="str" />
+		<param name="update_rate" value="50.0" type="double" />
+
+		<!-- Motor Parameters -->
+		<rosparam command="load" file="$(find mantis_description)/config/mantis_dynamixel_interface.yaml"/>
 	</node>
 
 	<!-- HIGH LEVEL CONTROL -->
@@ -33,8 +48,10 @@
 		<param name="frame_id" value="map" />
 		<param name="hover_height" value="1.0" />
 
-		<remap from="/mantis_uav/robot_config/goal/joint1" to="/mantis_uav/joint_position_controller/joint_shoulder/command"/>
-		<remap from="/mantis_uav/robot_config/goal/joint2" to="/mantis_uav/joint_position_controller/joint_elbow/command"/>
+		<remap from="/mantis_uav/robot_config/goal/joint_state" to="/dynamixel_interface/setpoints"/>
+
+		<!-- remap from="/mantis_uav/robot_config/goal/joint1" to="/mantis_uav/joint_position_controller/joint_shoulder/command"/-->
+		<!-- remap from="/mantis_uav/robot_config/goal/joint2" to="/mantis_uav/joint_position_controller/joint_elbow/command"/-->
 
 		<remap from="/mantis_uav/robot_config/pose" to="/move_base_simple/goal"/>
 		<remap from="/mantis_uav/robot_config/goal/path" to="/controller_id/goal/path"/>

@@ -3,6 +3,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Float64.h>
 #include <nav_msgs/Path.h>
+#include <sensor_msgs/JointState.h>
 
 #include <dynamic_reconfigure/server.h>
 #include <mantis_controller_id/JointGoalsConfig.h>
@@ -16,6 +17,7 @@ class RobotConfig {
 		ros::Timer timer_;
 
 		ros::Publisher pub_path_;
+		ros::Publisher pub_joint_state_;
 		ros::Publisher pub_joint1_;
 		ros::Publisher pub_joint2_;
 
@@ -47,6 +49,7 @@ RobotConfig::RobotConfig() :
 	nhp_.param("hover_height", param_hover_height_, param_hover_height_);
 
 	pub_path_ = nhp_.advertise<nav_msgs::Path>("goal/path", 10);
+	pub_joint_state_ = nhp_.advertise<sensor_msgs::JointState>("goal/joint_state", 10);
 	pub_joint1_ = nhp_.advertise<std_msgs::Float64>("goal/joint1", 10);
 	pub_joint2_ = nhp_.advertise<std_msgs::Float64>("goal/joint2", 10);
 
@@ -63,12 +66,19 @@ RobotConfig::~RobotConfig() {
 void RobotConfig::callback_cfg_joints(mantis_controller_id::JointGoalsConfig &config, uint32_t level) {
 	std_msgs::Float64 msg_out_j1;
 	std_msgs::Float64 msg_out_j2;
+	sensor_msgs::JointState msg_out_js;
 
 	msg_out_j1.data = config.joint1;
 	msg_out_j2.data = config.joint2;
 
+	msg_out_js.name.push_back("joint_1");
+	msg_out_js.name.push_back("joint_2");
+	msg_out_js.position.push_back(config.joint1);
+	msg_out_js.position.push_back(config.joint2);
+
 	pub_joint1_.publish(msg_out_j1);
 	pub_joint2_.publish(msg_out_j2);
+	pub_joint_state_.publish(msg_out_js);
 }
 
 
