@@ -40,6 +40,7 @@ class InterfaceDynamixel {
 		double param_port_version_;
 		int param_num_motors_;
 		std::string param_frame_id_;
+		std::vector<std::string> param_motor_names_;
 
 		//Flags
 		//bool flag_setpoints_received_;

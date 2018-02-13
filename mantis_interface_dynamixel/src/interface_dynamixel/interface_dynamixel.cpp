@@ -137,12 +137,15 @@ bool InterfaceDynamixel::add_motors() {
 	bool success = true;
 
 	for(int i=0; i<param_num_motors_; i++) {
+		std::string motor_name;
 		std::string motor_model;
 		int motor_id;
 		double protocol_version;
+		nh_.getParam("motors/motor_" + std::to_string(i) + "/name", motor_name);
 		nh_.getParam("motors/motor_" + std::to_string(i) + "/model", motor_model);
 		nh_.getParam("motors/motor_" + std::to_string(i) + "/id", motor_id);
 		protocol_version = param_port_version_;
+		param_motor_names_.push_back(motor_name);
 
 		init_motor(motor_model, (uint8_t)motor_id, protocol_version);
 
@@ -181,8 +184,10 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 	std::vector<std::vector<std::int32_t>> states;
 
 	if( doSyncRead(&states) ) {
+		joint_states.name = param_motor_names_;
+
 		for(int i=0; i<dynamixel_.size(); i++) {
-			joint_states.name.push_back("motor_" + std::to_string(i));
+			//joint_states.name.push_back("motor_" + std::to_string(i));
 			joint_states.position.push_back(convert_value_radian(states[i][1], i));
 			joint_states.velocity.push_back(convert_value_velocity(states[i][2], i));
 			joint_states.effort.push_back(convert_value_torque(states[i][3], i));
