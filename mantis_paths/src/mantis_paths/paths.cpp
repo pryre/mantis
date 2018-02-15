@@ -90,7 +90,8 @@ bool Paths::generate_path() {
 	std::string seg_type;
 
 	Eigen::Vector3d pc = param_start_position_;	//Current position
-	Eigen::Quaterniond qc = param_start_direction_;	//Current direction
+	Eigen::Quaterniond qcp = param_start_direction_;	//Current direction of the path
+	Eigen::Quaterniond qcr = param_start_orientation_;	//Current direction of the robot
 
 	//Loop through every segment available
 	while( (!error) && nh_.getParam("path/s" + std::to_string(i) + "/type", seg_type) ) {
@@ -111,10 +112,13 @@ bool Paths::generate_path() {
 				double length = 0.0;
 
 				if( nh_.getParam("path/s" + std::to_string(i) + "/length", length) ) {
-					pc += qc.toRotationMatrix()*Eigen::Vector3d(length, 0.0, 0.0) + Eigen::Vector3d(0.0, 0.0, height);
+					pc += qcp.toRotationMatrix()*Eigen::Vector3d(length, 0.0, 0.0) + Eigen::Vector3d(0.0, 0.0, height);
 
 					double dist = Eigen::Vector3d(length, 0.0, height).norm();	//Segment distance
-					add_pose(travel_time(dist, velocity), pose_from_eigen(pc, (use_qo ? qo : qc) ) );
+
+					qcr = (use_qo ? qo : qcr);	//Override the current heading if requested, else hold current heading
+
+					add_pose(travel_time(dist, velocity), pose_from_eigen(pc, qcr) );
 				} else {
 					ROS_ERROR("Could not load length for line segment (%i)", i);
 					error = true;
@@ -139,13 +143,16 @@ bool Paths::generate_path() {
 					//Go through each subsegment
 					for(int j=1; j<=param_arc_res_; j++) {
 						double alpha = (double)j / (double)param_arc_res_;
-						pc += qc.toRotationMatrix()*Eigen::Vector3d(dx, 0.0, 0.0) + Eigen::Vector3d(0.0, 0.0, dz);
-						qc *= quaternion_from_yaw(dalpha);
+						pc += qcp.toRotationMatrix()*Eigen::Vector3d(dx, 0.0, 0.0) + Eigen::Vector3d(0.0, 0.0, dz);
+						qcp *= quaternion_from_yaw(dalpha);
+						qcr *=quaternion_from_yaw(dalpha);
 
 						double dist = Eigen::Vector3d(dx, 0.0, dz).norm();	//Segment distance
 						ros::Duration seg_time = (hold_time > 0.0) ? ros::Duration(hold_time / param_arc_res_) : travel_time(dist, velocity);
 
-						add_pose(seg_time, pose_from_eigen(pc, (use_qo ? qo : qc) ) );
+						qcr = (use_qo ? qo : qcr);	//Override the current heading if requested, else hold current heading
+
+						add_pose(seg_time, pose_from_eigen(pc, qcr) );
 					}
 				} else {
 					ROS_ERROR("Could not load radius and alpha for arc segment (%i)", i);
