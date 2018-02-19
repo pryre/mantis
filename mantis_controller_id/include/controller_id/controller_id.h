@@ -20,6 +20,7 @@
 class ControllerID {
 	private:
 		ros::NodeHandle nh_;
+		ros::NodeHandle nhp_;
 		ros::Timer timer_;
 		ros::Subscriber sub_state_odom_;
 		ros::Subscriber sub_state_joints_;
@@ -90,5 +91,6 @@ class ControllerID {
 		void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
 		void callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in);
 		void callback_goal_path(const nav_msgs::Path::ConstPtr& msg_in);
+
 		//void callback_goal_joints(const sensor_msgs::JointState::ConstPtr& msg_in);
 };

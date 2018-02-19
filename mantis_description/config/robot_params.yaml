@@ -21,12 +21,17 @@ takeoff:
   y: 0.0
   z: 2.0
 
-gain:
-  position_xy: [10,4.8]
-  position_z: [4.4721,5.3800]
-  rotation: [3.16,10.31]
-#  rotation_xy: [3.16,10.31]
-#  rotation_z: [3.16,10.31]
+controller_id:
+  gain:
+    xy:
+      p: 10
+      d: 3
+    z:
+      p: 15
+      d: 10
+    rot:
+      p: 3
+      d: 10
 
 links:
   num: 3

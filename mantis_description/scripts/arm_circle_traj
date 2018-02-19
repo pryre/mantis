@@ -32,7 +32,11 @@ def timer_callback(e):
 	global duration_traj
 	global time_start_traj
 
-	if(start_traj and ( rospy.Time.now() < (time_start_traj + duration_traj))):
+	if(start_traj and (time_start_traj == rospy.Time(0))):
+		time_start_traj = rospy.Time.now()
+
+	if((time_start_traj != rospy.Time(0)) and ( rospy.Time.now() < (time_start_traj + duration_traj))):
+
 		tc = rospy.Time.now() - time_start_traj
 
 		alpha = cycles_traj*tc.to_sec()/duration_traj.to_sec()
@@ -52,13 +56,12 @@ def path_callback(msg_in):
 	global time_start_traj
 
 	start_traj = True
-	time_start_traj = rospy.Time.now()
 	rospy.loginfo("Starting arm movements")
 
 def joint_pub():
 	rospy.init_node('talker', anonymous=True)
 
-	s = rospy.Subscriber("/controller_id/goal/path", Path, path_callback)
+	s = rospy.Subscriber("/mantis_uav/path", Path, path_callback)
 	t = rospy.Timer(rospy.Duration(1.0/50.0), timer_callback)
 
 	rospy.spin()

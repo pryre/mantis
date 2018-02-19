@@ -26,8 +26,9 @@
 #include <iostream>
 
 ControllerID::ControllerID() :
-	nh_("~"),
-	p_(&nh_),
+	nh_(),
+	nhp_("~"),
+	p_(&nh_, &nhp_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_track_base_(false),
@@ -41,14 +42,14 @@ ControllerID::ControllerID() :
 
 	bool success = true;
 
-	nh_.param("frame_id", param_frame_id_, param_frame_id_);
-	nh_.param("model_id", param_model_id_, param_model_id_);
-	nh_.param("track_base", param_track_base_, param_track_base_);
-	nh_.param("track_j2", param_track_j2_, param_track_j2_);
-	nh_.param("accurate_z_tracking", param_accurate_z_tracking_, param_accurate_z_tracking_);
-	nh_.param("accurate_end_tracking", param_accurate_end_tracking_, param_accurate_end_tracking_);
-	nh_.param("reference_feedback", param_reference_feedback_, param_reference_feedback_);
-	nh_.param("control_rate", param_rate_, param_rate_);
+	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
+	nhp_.param("model_id", param_model_id_, param_model_id_);
+	nhp_.param("track_base", param_track_base_, param_track_base_);
+	nhp_.param("track_j2", param_track_j2_, param_track_j2_);
+	nhp_.param("accurate_z_tracking", param_accurate_z_tracking_, param_accurate_z_tracking_);
+	nhp_.param("accurate_end_tracking", param_accurate_end_tracking_, param_accurate_end_tracking_);
+	nhp_.param("reference_feedback", param_reference_feedback_, param_reference_feedback_);
+	nhp_.param("control_rate", param_rate_, param_rate_);
 
 	//Load the robot parameters
 	p_.load();	//TODO have this give a success if loaded correctly
@@ -69,23 +70,23 @@ ControllerID::ControllerID() :
 	if(success) {
 		ROS_INFO( "Loaded configuration for %li links", joints_.size() );
 
-		pub_rc_ = nh_.advertise<mavros_msgs::OverrideRCIn>("output/rc", 10);
-		pub_joints_ = nh_.advertise<sensor_msgs::JointState>("output/joints", 10);
+		pub_rc_ = nhp_.advertise<mavros_msgs::OverrideRCIn>("output/rc", 10);
+		pub_joints_ = nhp_.advertise<sensor_msgs::JointState>("output/joints", 10);
 
-		pub_pose_base_ = nh_.advertise<geometry_msgs::PoseStamped>("feedback/pose/base", 10);
-		pub_pose_end_ = nh_.advertise<geometry_msgs::PoseStamped>("feedback/pose/end_effector", 10);
-		pub_twist_base_ = nh_.advertise<geometry_msgs::TwistStamped>("feedback/twist/end_effector", 10);
-		pub_twist_end_ = nh_.advertise<geometry_msgs::TwistStamped>("feedback/twist/base", 10);
-		pub_accel_linear_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/linear", 10);
-		pub_accel_body_ = nh_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
+		pub_pose_base_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/pose/base", 10);
+		pub_pose_end_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/pose/end_effector", 10);
+		pub_twist_base_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/twist/end_effector", 10);
+		pub_twist_end_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/twist/base", 10);
+		pub_accel_linear_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel/linear", 10);
+		pub_accel_body_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
 
-		sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
-		sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
+		sub_state_odom_ = nhp_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
+		sub_state_joints_ = nhp_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
 
-		sub_goal_path_ = nh_.subscribe<nav_msgs::Path>( "goal/path", 10, &ControllerID::callback_goal_path, this );
-		//sub_goal_joints_ = nh_.subscribe<sensor_msgs::JointState>( "goal/joints", 10, &ControllerID::callback_goal_joints, this );
+		sub_goal_path_ = nhp_.subscribe<nav_msgs::Path>( "goal/path", 10, &ControllerID::callback_goal_path, this );
+		//sub_goal_joints_ = nhp_.subscribe<sensor_msgs::JointState>( "goal/joints", 10, &ControllerID::callback_goal_joints, this );
 
-		timer_ = nh_.createTimer(ros::Duration(1.0/param_rate_), &ControllerID::callback_control, this );
+		timer_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ControllerID::callback_control, this );
 
 		//XXX: Initialize takeoff goals
 		latest_g_sp_.translation() = Eigen::Vector3d(p_.takeoff_x, p_.takeoff_y, p_.takeoff_z);
@@ -217,9 +218,9 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 		//Build gain matricies
 		Eigen::MatrixXd Kp = Eigen::MatrixXd::Zero(3,6);
-		Kp.block(0,0,1,2) << p_.gain_position_xy[0], p_.gain_position_xy[1];
-		Kp.block(1,2,1,2) << p_.gain_position_xy[0], p_.gain_position_xy[1];
-		Kp.block(2,4,1,2) << p_.gain_position_z[0], p_.gain_position_z[1];
+		Kp.block(0,0,1,2) << p_.gain_position_xy_p, p_.gain_position_xy_d;
+		Kp.block(1,2,1,2) << p_.gain_position_xy_p, p_.gain_position_xy_d;
+		Kp.block(2,4,1,2) << p_.gain_position_z_p, p_.gain_position_z_d;
 
 		//Calculate translation acceleration vector
 		Eigen::Vector3d e_p_p = g_sp.translation() - g.translation();
@@ -258,7 +259,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		//Eigen::VectorXd e_w = vector_interlace(calc_ang_error(gr_sp, g.linear()), Eigen::Vector3d::Zero() - bw);
 		//Eigen::Vector3d wa = Kw*e_w;
 		Eigen::Vector3d w_goal = calc_ang_error(gr_sp, g.linear());
-		Eigen::Vector3d wa = p_.gain_rotation_ew*(w_goal - bw);
+		Eigen::Vector3d wa = p_.gain_rotation_d*(w_goal - bw);
 
 		//Calculate the required manipulator accelerations
 		//Eigen::VectorXd e_r = vector_interlace(r_sp - r, Eigen::VectorXd::Zero(p_.manip_num) - rd);
@@ -570,7 +571,7 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 		ROS_WARN_THROTTLE(1.0, "Large thrust vector detected!");
 	}
 
-	return p_.gain_rotation_er*e_R;
+	return p_.gain_rotation_p*e_R;
 }
 
 int16_t ControllerID::map_pwm(double val) {

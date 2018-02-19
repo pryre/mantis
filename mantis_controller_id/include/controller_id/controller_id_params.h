@@ -2,12 +2,16 @@
 
 #include <ros/ros.h>
 
+#include <dynamic_reconfigure/server.h>
+#include <mantis_controller_id/PDGainsConfig.h>
+
 #include <string>
 #include <vector>
 
 class ControllerIDParams {
 	private:
 		ros::NodeHandle *nh_;
+		ros::NodeHandle *nhp_;
 
 	public:
 		int pwm_min;
@@ -22,11 +26,12 @@ class ControllerIDParams {
 
 		int link_num;
 
-		std::vector<double> gain_position_xy;
-		std::vector<double> gain_position_z;
-		std::vector<double> gain_rotation;
-		double gain_rotation_er;
-		double gain_rotation_ew;
+		double gain_position_xy_p;
+		double gain_position_xy_d;
+		double gain_position_z_p;
+		double gain_position_z_d;
+		double gain_rotation_p;
+		double gain_rotation_d;
 
 		double vel_max;
 
@@ -52,10 +57,19 @@ class ControllerIDParams {
 		double I2y;
 		double I2z;
 
+		dynamic_reconfigure::Server<mantis_controller_id::PDGainsConfig> dyncfg_gain_xy_;
+		dynamic_reconfigure::Server<mantis_controller_id::PDGainsConfig> dyncfg_gain_z_;
+		dynamic_reconfigure::Server<mantis_controller_id::PDGainsConfig> dyncfg_gain_rot_;
+
 	public:
-		ControllerIDParams( ros::NodeHandle *nh );
+		ControllerIDParams( ros::NodeHandle *nh, ros::NodeHandle *nhp );
 
 		~ControllerIDParams( void );
 
 		void load( void );
+
+	private:
+		void callback_cfg_gain_xy(mantis_controller_id::PDGainsConfig &config, uint32_t level);
+		void callback_cfg_gain_z(mantis_controller_id::PDGainsConfig &config, uint32_t level);
+		void callback_cfg_gain_rot(mantis_controller_id::PDGainsConfig &config, uint32_t level);
 };

@@ -1,9 +1,11 @@
 #include <ros/ros.h>
 
+#include <dynamic_reconfigure/server.h>
 #include <controller_id/controller_id_params.h>
 
-ControllerIDParams::ControllerIDParams(ros::NodeHandle *nh) :
+ControllerIDParams::ControllerIDParams(ros::NodeHandle *nh, ros::NodeHandle *nhp) :
 	nh_(nh),
+	nhp_(nhp),
 	pwm_min(1000),
 	pwm_max(2000),
 	motor_num(0),
@@ -32,7 +34,14 @@ ControllerIDParams::ControllerIDParams(ros::NodeHandle *nh) :
 	I1z(0.0),
 	I2x(0.0),
 	I2y(0.0),
-	I2z(0.0) {
+	I2z(0.0),
+	dyncfg_gain_xy_(ros::NodeHandle(*nhp, "gain/xy")),
+	dyncfg_gain_z_(ros::NodeHandle(*nhp, "gain/z")),
+	dyncfg_gain_rot_(ros::NodeHandle(*nhp, "gain/rot")) {
+
+	dyncfg_gain_xy_.setCallback(boost::bind(&ControllerIDParams::callback_cfg_gain_xy, this, _1, _2));
+	dyncfg_gain_z_.setCallback(boost::bind(&ControllerIDParams::callback_cfg_gain_z, this, _1, _2));
+	dyncfg_gain_rot_.setCallback(boost::bind(&ControllerIDParams::callback_cfg_gain_rot, this, _1, _2));
 }
 
 ControllerIDParams::~ControllerIDParams() {
@@ -51,18 +60,6 @@ void ControllerIDParams::load( void ) {
 	nh_->param("servo/ang_max", servo_ang_max, servo_ang_max);
 
 	nh_->param("links/num", link_num, link_num);
-
-	nh_->getParam("gain/position_xy", gain_position_xy);
-	nh_->getParam("gain/position_z", gain_position_z);
-	nh_->getParam("gain/rotation", gain_rotation);
-
-	ROS_ASSERT_MSG( (gain_position_xy.size() == 2) &&
-					(gain_position_z.size() == 2) &&
-					(gain_rotation.size() == 2),
-					"Gain vectors must have length 2" );
-
-	gain_rotation_er = gain_rotation[0];
-	gain_rotation_ew = gain_rotation[1];
 
 	nh_->param("vel_max", vel_max, vel_max);
 
@@ -89,3 +86,20 @@ void ControllerIDParams::load( void ) {
 
 	ROS_INFO("ControllerID params loaded!");
 }
+
+void ControllerIDParams::callback_cfg_gain_xy(mantis_controller_id::PDGainsConfig &config, uint32_t level) {
+	gain_position_xy_p = config.p;
+	gain_position_xy_d = config.d;
+}
+
+void ControllerIDParams::callback_cfg_gain_z(mantis_controller_id::PDGainsConfig &config, uint32_t level) {
+	gain_position_z_p = config.p;
+	gain_position_z_d = config.d;
+
+}
+
+void ControllerIDParams::callback_cfg_gain_rot(mantis_controller_id::PDGainsConfig &config, uint32_t level) {
+	gain_rotation_p = config.p;
+	gain_rotation_d = config.d;
+}
+
