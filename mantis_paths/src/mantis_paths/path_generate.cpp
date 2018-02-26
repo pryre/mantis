@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 
-#include <mantis_paths/paths.h>
+#include <mantis_paths/path_generate.h>
 
 #include <nav_msgs/Path.h>
 #include <geometry_msgs/Pose.h>
@@ -11,7 +11,7 @@
 #include <vector>
 #include <string>
 
-Paths::Paths() :
+PathGenerate::PathGenerate() :
 	nh_("~"),
 	param_frame_id_("map"),
 	param_arc_res_(0),
@@ -54,10 +54,10 @@ Paths::Paths() :
 		ros::shutdown();
 }
 
-Paths::~Paths() {
+PathGenerate::~PathGenerate() {
 }
 
-bool Paths::load_start_params(void) {
+bool PathGenerate::load_start_params(void) {
 	bool success = false;
 
 	std::vector<double> start_p;
@@ -83,7 +83,7 @@ bool Paths::load_start_params(void) {
 	return success;
 }
 
-bool Paths::generate_path() {
+bool PathGenerate::generate_path() {
 	bool error = false;
 
 	int i = 0;
@@ -180,7 +180,7 @@ bool Paths::generate_path() {
 	return (i > 0) & !error;
 }
 
-void Paths::add_pose(const ros::Duration dt, const geometry_msgs::Pose pose) {
+void PathGenerate::add_pose(const ros::Duration dt, const geometry_msgs::Pose pose) {
 	geometry_msgs::PoseStamped pose_out;
 
 	running_stamp_ += dt;
@@ -195,7 +195,7 @@ void Paths::add_pose(const ros::Duration dt, const geometry_msgs::Pose pose) {
 	running_seq_++;
 }
 
-geometry_msgs::Pose Paths::pose_from_eigen(const Eigen::Vector3d p, const Eigen::Quaterniond q) {
+geometry_msgs::Pose PathGenerate::pose_from_eigen(const Eigen::Vector3d p, const Eigen::Quaterniond q) {
 	geometry_msgs::Pose pose;
 	Eigen::Quaterniond qc = q.normalized();
 
@@ -210,16 +210,16 @@ geometry_msgs::Pose Paths::pose_from_eigen(const Eigen::Vector3d p, const Eigen:
 	return pose;
 }
 
-Eigen::Vector3d Paths::vector_from_doubles(std::vector<double> &a) {
+Eigen::Vector3d PathGenerate::vector_from_doubles(std::vector<double> &a) {
 	ROS_ASSERT_MSG( (a.size() == 3), "Vector3 size (%li) must be 3", a.size());
 
 	return Eigen::Vector3d(a[0], a[1], a[2]);
 }
 
-Eigen::Quaterniond Paths::quaternion_from_yaw( const double theta ) {
+Eigen::Quaterniond PathGenerate::quaternion_from_yaw( const double theta ) {
 	return Eigen::Quaterniond( Eigen::AngleAxisd( theta, Eigen::Vector3d::UnitZ() ) );
 }
 
-ros::Duration Paths::travel_time(const double len, const double vel) {
+ros::Duration PathGenerate::travel_time(const double len, const double vel) {
 	return ros::Duration(len / vel);
 }

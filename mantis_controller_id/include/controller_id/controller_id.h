@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 
 #include <controller_id/controller_id_params.h>
+#include <mantis_paths/path_extract.h>
 #include <dh_parameters/dh_parameters.h>
 
 #include <sensor_msgs/JointState.h>
@@ -24,7 +25,7 @@ class ControllerID {
 		ros::Timer timer_;
 		ros::Subscriber sub_state_odom_;
 		ros::Subscriber sub_state_joints_;
-		ros::Subscriber sub_goal_path_;
+		//ros::Subscriber sub_goal_path_;
 		//ros::Subscriber sub_goal_joints_;
 
 		ros::Publisher pub_rc_;
@@ -38,7 +39,7 @@ class ControllerID {
 
 		nav_msgs::Odometry msg_state_odom_;
 		sensor_msgs::JointState msg_state_joints_;
-		nav_msgs::Path msg_goal_path_;
+		//nav_msgs::Path msg_goal_path_;
 		//sensor_msgs::JointState msg_goal_joints_;
 
 		std::string param_frame_id_;
@@ -52,8 +53,7 @@ class ControllerID {
 
 		ControllerIDParams p_;
 		std::vector<DHParameters,Eigen::aligned_allocator<DHParameters> > joints_;
-		Eigen::Affine3d latest_g_sp_;
-		int path_hint_;
+		PathExtract ref_path_;
 
 	public:
 		ControllerID( void );
@@ -66,10 +66,10 @@ class ControllerID {
 		Eigen::Vector3d position_from_msg(const geometry_msgs::Point p);
 		Eigen::Quaterniond quaternion_from_msg(const geometry_msgs::Quaternion q);
 		Eigen::Affine3d affine_from_msg(const geometry_msgs::Pose pose);
-		Eigen::Vector3d vector_lerp(const Eigen::Vector3d a, const Eigen::Vector3d b, const double alpha);
+		//Eigen::Vector3d vector_lerp(const Eigen::Vector3d a, const Eigen::Vector3d b, const double alpha);
 		Eigen::Matrix3d extract_yaw_component(const Eigen::Matrix3d r);
 
-		bool calc_goal_ge_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc);
+		//bool calc_goal_ge_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc);
 		Eigen::Affine3d calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe);
 		Eigen::Vector3d calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::MatrixXd &Je, const Eigen::VectorXd &rd);
 		Eigen::Vector3d calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R);
@@ -90,7 +90,6 @@ class ControllerID {
 		void callback_control(const ros::TimerEvent& e);
 		void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
 		void callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in);
-		void callback_goal_path(const nav_msgs::Path::ConstPtr& msg_in);
-
+		//void callback_goal_path(const nav_msgs::Path::ConstPtr& msg_in);
 		//void callback_goal_joints(const sensor_msgs::JointState::ConstPtr& msg_in);
 };

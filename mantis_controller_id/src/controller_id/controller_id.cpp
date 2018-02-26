@@ -9,6 +9,7 @@
 #include <dynamics/calc_Jj2.h>
 #include <dynamics/calc_Je.h>
 #include <dh_parameters/dh_parameters.h>
+#include <mantis_paths/path_extract.h>
 
 #include <mavros_msgs/OverrideRCIn.h>
 #include <sensor_msgs/JointState.h>
@@ -29,6 +30,7 @@ ControllerID::ControllerID() :
 	nh_(),
 	nhp_("~"),
 	p_(&nh_, &nhp_),
+	ref_path_(&nhp_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_track_base_(false),
@@ -36,9 +38,7 @@ ControllerID::ControllerID() :
 	param_accurate_z_tracking_(false),
 	param_accurate_end_tracking_(false),
 	param_reference_feedback_(false),
-	param_rate_(100),
-	latest_g_sp_(Eigen::Affine3d::Identity()),
-	path_hint_(1) {
+	param_rate_(100) {
 
 	bool success = true;
 
@@ -83,13 +83,13 @@ ControllerID::ControllerID() :
 		sub_state_odom_ = nhp_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
 		sub_state_joints_ = nhp_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
 
-		sub_goal_path_ = nhp_.subscribe<nav_msgs::Path>( "goal/path", 10, &ControllerID::callback_goal_path, this );
+		//sub_goal_path_ = nhp_.subscribe<nav_msgs::Path>( "goal/path", 10, &ControllerID::callback_goal_path, this );
 		//sub_goal_joints_ = nhp_.subscribe<sensor_msgs::JointState>( "goal/joints", 10, &ControllerID::callback_goal_joints, this );
+		ref_path_.set_latest( Eigen::Vector3d(p_.takeoff_x, p_.takeoff_y, p_.takeoff_z), Eigen::Quaterniond::Identity() );
 
 		timer_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ControllerID::callback_control, this );
 
 		//XXX: Initialize takeoff goals
-		latest_g_sp_.translation() = Eigen::Vector3d(p_.takeoff_x, p_.takeoff_y, p_.takeoff_z);
 
 		ROS_INFO("Inverse Dynamics controller loaded.");
 	} else {
@@ -149,11 +149,14 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		Eigen::Vector3d gev_sp = Eigen::Vector3d::Zero();
 		Eigen::Affine3d g_sp = Eigen::Affine3d::Identity();
 		Eigen::Vector3d gv_sp = Eigen::Vector3d::Zero();
-		if( !calc_goal_ge_sp(ge_sp, gev_sp, e.current_real) ) {
+
+		if( !ref_path_.get_ref_state(ge_sp, gev_sp, e.current_real) ) {
 			//There was an issue setting the path goal
 			//Hold latest position
-			ge_sp = latest_g_sp_;
-			gev_sp = Eigen::Vector3d::Zero();
+
+			//XXX: This isn't needed as it is done internally
+			//ge_sp = latest_g_sp_;
+			//gev_sp = Eigen::Vector3d::Zero();
 		}
 
 		if(param_track_base_) {
@@ -375,10 +378,6 @@ Eigen::Affine3d ControllerID::affine_from_msg(const geometry_msgs::Pose pose) {
 		return a;
 }
 
-Eigen::Vector3d ControllerID::vector_lerp(const Eigen::Vector3d a, const Eigen::Vector3d b, const double alpha) {
-  return ((1.0 - alpha) * a) + (alpha * b);
-}
-
 Eigen::Affine3d ControllerID::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe) {
 	//Use this yaw only rotation to set the direction of the base (and thus end effector)
 	Eigen::Matrix3d br_sp = extract_yaw_component(ge_sp.linear());
@@ -437,79 +436,6 @@ Eigen::Matrix3d ControllerID::extract_yaw_component(const Eigen::Matrix3d r) {
 		  Eigen::Vector3d::UnitZ();
 
 	return ry;
-}
-
-bool ControllerID::calc_goal_ge_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc) {
-	bool success = false;
-
-	try {
-		//If we have recieved a path message
-		if(msg_goal_path_.header.stamp > ros::Time(0)) {
-			ros::Duration duration_start = msg_goal_path_.poses.front().header.stamp - ros::Time(0);
-			ros::Duration duration_end = msg_goal_path_.poses.back().header.stamp - ros::Time(0);
-
-			ros::Time ts = msg_goal_path_.header.stamp + duration_start;
-			ros::Time tf = msg_goal_path_.header.stamp + duration_end;
-			ros::Duration td = duration_end - duration_start;
-
-			//If the current time is within the path time, follow the path
-			if((tc >= ts) && (tc < tf)) {
-				//Find the next point in the path
-				int p = path_hint_;
-
-				while( p < msg_goal_path_.poses.size() ) {
-					ros::Duration d_l = msg_goal_path_.poses[p - 1].header.stamp - ros::Time(0);
-					ros::Duration d_n = msg_goal_path_.poses[p].header.stamp - ros::Time(0);
-
-					if( (tc >= msg_goal_path_.header.stamp + d_l ) &&
-						(tc < msg_goal_path_.header.stamp + d_n ) ) {
-						//We have the right index
-						break;
-					}
-
-					p++;
-				}
-
-				//Record the index we ues so we can start the time checks there next loop
-				path_hint_ = p;
-
-				//Get the last and next points
-				Eigen::Affine3d g_l = affine_from_msg(msg_goal_path_.poses[p - 1].pose);
-				Eigen::Affine3d g_n = affine_from_msg(msg_goal_path_.poses[p].pose);
-				ros::Duration t_l = msg_goal_path_.poses[p - 1].header.stamp - ros::Time(0);
-				ros::Duration t_n = msg_goal_path_.poses[p].header.stamp - ros::Time(0);
-				ros::Time t_lt = msg_goal_path_.header.stamp + t_l;
-				double dts = (t_n - t_l).toSec();	//Time to complete this segment
-				double da = (tc - t_lt).toSec();	//Time to alpha
-				double alpha = da / dts;
-
-				//Position goal
-				g_sp.translation() << vector_lerp(g_l.translation(), g_n.translation(), alpha);
-				Eigen::Quaterniond ql_sp(g_l.linear());
-				Eigen::Quaterniond qc_sp = ql_sp.slerp(alpha, Eigen::Quaterniond(g_n.linear()));
-				g_sp.linear() << qc_sp.toRotationMatrix();
-
-				//Velocity goal
-				v_sp = (g_n.translation() -  g_l.translation()) / dts;
-
-				//Update latest setpoint in case we need to hold lastest position
-				latest_g_sp_ = g_sp;
-
-				success = true;
-			} else {
-				//Reset the hint back to 1 to reset hinting
-				path_hint_ = 1;
-			}
-		}
-	} catch( std::runtime_error &e) {
-		//May get errors if timestamp is malformed
-		ROS_ERROR("Exception: [%s]", e.what());
-		ROS_WARN("Aborting current path!");
-
-		msg_goal_path_.header.stamp = ros::Time(0);
-	}
-
-	return success;
 }
 
 Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R) {
@@ -756,23 +682,3 @@ void ControllerID::callback_state_joints(const sensor_msgs::JointState::ConstPtr
 
 	msg_state_joints_ = *msg_in;
 }
-
-void ControllerID::callback_goal_path(const nav_msgs::Path::ConstPtr& msg_in) {
-	//If there is at least 2 poses in the path
-	if(msg_in->poses.size() > 1) {
-		//If at least the very last timestamp is in the future, accept path
-		if( ( msg_in->header.stamp + ( msg_in->poses.back().header.stamp - ros::Time(0) ) ) > ros::Time::now() ) {
-			ROS_INFO("Recieved new path!");
-			msg_goal_path_ = *msg_in;
-			path_hint_ = 0;
-		} else {
-			ROS_WARN("Rejecting path, timestamps are too old.");
-		}
-	} else {
-		ROS_WARN("Rejecting path, must be at least 2 poses.");
-	}
-}
-
-//void ControllerID::callback_goal_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
-//	msg_goal_joints_ = *msg_in;
-//}

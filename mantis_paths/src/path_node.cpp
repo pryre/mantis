@@ -1,9 +1,9 @@
 #include <ros/ros.h>
-#include <mantis_paths/paths.h>
+#include <mantis_paths/path_generate.h>
 
 int main(int argc, char** argv) {
 	ros::init(argc, argv, "paths");
-	Paths p;
+	PathGenerate pg;
 
 	ros::spin();
 

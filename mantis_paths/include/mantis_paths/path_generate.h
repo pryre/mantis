@@ -8,7 +8,7 @@
 #include <vector>
 #include <string>
 
-class Paths {
+class PathGenerate {
 	private:
 		ros::NodeHandle nh_;
 
@@ -25,9 +25,9 @@ class Paths {
 		Eigen::Quaterniond param_start_orientation_;
 
 	public:
-		Paths( void );
+		PathGenerate( void );
 
-		~Paths( void );
+		~PathGenerate( void );
 
 		bool load_start_params(void);
 		bool generate_path();

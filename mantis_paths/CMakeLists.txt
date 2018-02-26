@@ -104,10 +104,10 @@ find_package(Eigen3 REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES mantis_trajectories
-#  CATKIN_DEPENDS nav_msgs roscpp
-#  DEPENDS system_lib
+  INCLUDE_DIRS include
+  LIBRARIES path_extract
+# CATKIN_DEPENDS nav_msgs roscpp
+  DEPENDS Eigen3
 )
 
 ###########
@@ -123,14 +123,19 @@ include_directories(
 )
 
 ## Declare a C++ library
-add_library(paths
-  src/${PROJECT_NAME}/paths.cpp
+add_library(path_generate
+  src/${PROJECT_NAME}/path_generate.cpp
+)
+
+add_library(path_extract
+  src/${PROJECT_NAME}/path_extract.cpp
 )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(paths ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(path_generate ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(path_extract ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -149,7 +154,7 @@ add_dependencies(path_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(path_node
-  paths
+  path_generate
   ${catkin_LIBRARIES}
 )
 
