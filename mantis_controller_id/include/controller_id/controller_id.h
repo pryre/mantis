@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 
 #include <controller_id/controller_id_params.h>
+#include <pidController/pidController.h>
 #include <mantis_paths/path_extract.h>
 #include <dh_parameters/dh_parameters.h>
 
@@ -54,6 +55,9 @@ class ControllerID {
 		ControllerIDParams p_;
 		std::vector<DHParameters,Eigen::aligned_allocator<DHParameters> > joints_;
 		PathExtract ref_path_;
+		pidController pos_pid_x_;
+		pidController pos_pid_y_;
+		pidController pos_pid_z_;
 
 	public:
 		ControllerID( void );

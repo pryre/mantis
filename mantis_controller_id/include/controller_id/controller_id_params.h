@@ -3,7 +3,8 @@
 #include <ros/ros.h>
 
 #include <dynamic_reconfigure/server.h>
-#include <mantis_controller_id/PDGainsConfig.h>
+#include <mantis_controller_id/PIGainsConfig.h>
+#include <mantis_controller_id/PGainsConfig.h>
 
 #include <string>
 #include <vector>
@@ -27,11 +28,13 @@ class ControllerIDParams {
 		int link_num;
 
 		double gain_position_xy_p;
-		double gain_position_xy_d;
+		double gain_position_xy_i;
 		double gain_position_z_p;
-		double gain_position_z_d;
-		double gain_rotation_p;
-		double gain_rotation_d;
+		double gain_position_z_i;
+		double gain_velocity_xy_p;
+		double gain_velocity_z_p;
+		double gain_rotation_ang_p;
+		double gain_rotation_rate_p;
 
 		double vel_max;
 
@@ -57,9 +60,12 @@ class ControllerIDParams {
 		double I2y;
 		double I2z;
 
-		dynamic_reconfigure::Server<mantis_controller_id::PDGainsConfig> dyncfg_gain_xy_;
-		dynamic_reconfigure::Server<mantis_controller_id::PDGainsConfig> dyncfg_gain_z_;
-		dynamic_reconfigure::Server<mantis_controller_id::PDGainsConfig> dyncfg_gain_rot_;
+		dynamic_reconfigure::Server<mantis_controller_id::PIGainsConfig> dyncfg_gain_pos_xy_;
+		dynamic_reconfigure::Server<mantis_controller_id::PIGainsConfig> dyncfg_gain_pos_z_;
+		dynamic_reconfigure::Server<mantis_controller_id::PGainsConfig> dyncfg_gain_vel_xy_;
+		dynamic_reconfigure::Server<mantis_controller_id::PGainsConfig> dyncfg_gain_vel_z_;
+		dynamic_reconfigure::Server<mantis_controller_id::PGainsConfig> dyncfg_gain_rot_ang_;
+		dynamic_reconfigure::Server<mantis_controller_id::PGainsConfig> dyncfg_gain_rot_rate_;
 
 	public:
 		ControllerIDParams( ros::NodeHandle *nh, ros::NodeHandle *nhp );
@@ -69,7 +75,10 @@ class ControllerIDParams {
 		void load( void );
 
 	private:
-		void callback_cfg_gain_xy(mantis_controller_id::PDGainsConfig &config, uint32_t level);
-		void callback_cfg_gain_z(mantis_controller_id::PDGainsConfig &config, uint32_t level);
-		void callback_cfg_gain_rot(mantis_controller_id::PDGainsConfig &config, uint32_t level);
+		void callback_cfg_gain_pos_xy(mantis_controller_id::PIGainsConfig &config, uint32_t level);
+		void callback_cfg_gain_vel_xy(mantis_controller_id::PGainsConfig &config, uint32_t level);
+		void callback_cfg_gain_pos_z(mantis_controller_id::PIGainsConfig &config, uint32_t level);
+		void callback_cfg_gain_vel_z(mantis_controller_id::PGainsConfig &config, uint32_t level);
+		void callback_cfg_gain_rot_ang(mantis_controller_id::PGainsConfig &config, uint32_t level);
+		void callback_cfg_gain_rot_rate(mantis_controller_id::PGainsConfig &config, uint32_t level);
 };

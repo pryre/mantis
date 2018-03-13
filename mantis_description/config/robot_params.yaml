@@ -23,15 +23,23 @@ takeoff:
 
 controller_id:
   gain:
-    xy:
-      p: 10
-      d: 3
-    z:
-      p: 15
-      d: 10
+    pos:
+      xy:
+        p: 10
+        i: 15
+      z:
+        p: 15
+        i: 5
+    vel:
+      xy:
+        p: 3
+      z:
+        p: 10
     rot:
-      p: 3
-      d: 10
+      ang:
+        p: 3
+      rate:
+        p: 10
 
 links:
   num: 3

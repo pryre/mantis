@@ -97,7 +97,8 @@ generate_messages(
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
 generate_dynamic_reconfigure_options(
   cfg/JointGoals.cfg
-  cfg/PDGains.cfg
+  cfg/PIGains.cfg
+  cfg/PGains.cfg
 )
 
 ###################################
@@ -130,6 +131,10 @@ include_directories(
 )
 
 ## Declare a C++ library
+add_library(${PROJECT_NAME}_pid
+  src/pidController/pidController.cpp
+)
+
 add_library(${PROJECT_NAME}_params
   src/controller_id/controller_id_params.cpp
 )
@@ -141,6 +146,7 @@ add_library(${PROJECT_NAME}
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
+add_dependencies(${PROJECT_NAME}_pid ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(${PROJECT_NAME}_params ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
@@ -163,10 +169,16 @@ add_dependencies(robot_config_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_
 
 ## Specify libraries to link a library or executable target against
 
+target_link_libraries(${PROJECT_NAME}_pid
+  ${catkin_LIBRARIES}
+)
+
 target_link_libraries(${PROJECT_NAME}_params
   ${catkin_LIBRARIES}
 )
+
 target_link_libraries(${PROJECT_NAME}
+  ${PROJECT_NAME}_pid
   ${PROJECT_NAME}_params
   ${catkin_LIBRARIES}
 )

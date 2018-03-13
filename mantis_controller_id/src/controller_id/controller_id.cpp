@@ -2,6 +2,7 @@
 
 #include <controller_id/controller_id.h>
 #include <controller_id/controller_id_params.h>
+#include <pidController/pidController.h>
 #include <controller_id/se_tools.h>
 #include <dynamics/calc_Dq.h>
 #include <dynamics/calc_Cqqd.h>
@@ -25,6 +26,8 @@
 #include <eigen3/Eigen/Dense>
 #include <math.h>
 #include <iostream>
+
+#define CONST_GRAV 9.80665
 
 ControllerID::ControllerID() :
 	nh_(),
@@ -67,6 +70,13 @@ ControllerID::ControllerID() :
 		}
 	}
 
+	pos_pid_x_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
+	pos_pid_y_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
+	pos_pid_z_.setGains( p_.gain_position_z_p, p_.gain_position_z_i, 0.0, 0.0 );
+	pos_pid_x_.setOutputMinMax( -CONST_GRAV / 2.0, CONST_GRAV / 2.0);
+	pos_pid_y_.setOutputMinMax( -CONST_GRAV / 2.0, CONST_GRAV / 2.0);
+	pos_pid_z_.setOutputMinMax( -CONST_GRAV / 2.0, CONST_GRAV / 2.0);
+
 	if(success) {
 		ROS_INFO( "Loaded configuration for %li links", joints_.size() );
 
@@ -104,6 +114,8 @@ ControllerID::~ControllerID() {
 void ControllerID::callback_control(const ros::TimerEvent& e) {
 	std::vector<uint16_t> pwm_out(p_.motor_num);	//Allocate space for the number of motors
 	std::vector<double> joints_out(p_.manip_num);
+
+	double dt = (e.current_real - e.last_real).toSec();
 
 	if( ( msg_state_odom_.header.stamp != ros::Time(0) ) &&
 		( msg_state_joints_.header.stamp != ros::Time(0) ) ) { // &&
@@ -219,6 +231,10 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			}
 		}
 
+
+
+
+		/* XXX: Old MISO method
 		//Build gain matricies
 		Eigen::MatrixXd Kp = Eigen::MatrixXd::Zero(3,6);
 		Kp.block(0,0,1,2) << p_.gain_position_xy_p, p_.gain_position_xy_d;
@@ -233,9 +249,29 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		Eigen::Vector3d Al = Kp*e_p;
 
 		//ROS_INFO_STREAM("Pos/Vel Error:" << std::endl << "e_p_p: " << e_p_p << std::endl << "e_p_v: " << e_p_v << std::endl);
+		*/
+
+		pos_pid_x_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
+		pos_pid_y_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
+		pos_pid_z_.setGains( p_.gain_position_z_p, p_.gain_position_z_i, 0.0, 0.0 );
+
+		Eigen::Vector3d bv_world = g.linear()*bv;
+		double a_p_x = pos_pid_x_.step(dt, g_sp.translation().x(), g.translation().x(), bv_world.x());
+		double a_p_y = pos_pid_y_.step(dt, g_sp.translation().y(), g.translation().y(), bv_world.y());
+		double a_p_z = pos_pid_z_.step(dt, g_sp.translation().z(), g.translation().z(), bv_world.z());
+
+		Eigen::Vector3d e_p_v = gv_sp - bv_world;
+		double a_v_x = p_.gain_velocity_xy_p * e_p_v.x();
+		double a_v_y = p_.gain_velocity_xy_p * e_p_v.y();
+		double a_v_z = p_.gain_velocity_z_p * e_p_v.z();
+
+		Eigen::Vector3d Al(a_p_x + a_v_x, a_p_y + a_v_y, a_p_z + a_v_z);
+
+
+
 
 		//Add in gravity compensation
-		Eigen::Vector3d A = Al + Eigen::Vector3d(0.0, 0.0, 9.80665);
+		Eigen::Vector3d A = Al + Eigen::Vector3d(0.0, 0.0, CONST_GRAV);
 
 		A(2) = (A(2) < 0.1) ? 0.1 : A(2);	//Can't accelerate downward faster than -g (take a little)
 		//XXX:
@@ -262,7 +298,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		//Eigen::VectorXd e_w = vector_interlace(calc_ang_error(gr_sp, g.linear()), Eigen::Vector3d::Zero() - bw);
 		//Eigen::Vector3d wa = Kw*e_w;
 		Eigen::Vector3d w_goal = calc_ang_error(gr_sp, g.linear());
-		Eigen::Vector3d wa = p_.gain_rotation_d*(w_goal - bw);
+		Eigen::Vector3d wa = p_.gain_rotation_rate_p*(w_goal - bw);
 
 		//Calculate the required manipulator accelerations
 		//Eigen::VectorXd e_r = vector_interlace(r_sp - r, Eigen::VectorXd::Zero(p_.manip_num) - rd);
@@ -336,6 +372,11 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		for(int i=0; i<p_.manip_num; i++) {
 			joints_out[i] = 0.0;
 		}
+
+		//Reset the PIDs and keep the integrator down
+		pos_pid_x_.reset(msg_state_odom_.pose.pose.position.x);
+		pos_pid_y_.reset(msg_state_odom_.pose.pose.position.y);
+		pos_pid_z_.reset(msg_state_odom_.pose.pose.position.z);
 	}
 
 	message_output_control(e.current_real, pwm_out, joints_out);
@@ -493,11 +534,12 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 
 	if(e_R_z_cos < 0) {
 		//px4: for large thrust vector rotations use another rotation method:
+		//For normal operation, this implies a roll/pitch change greater than pi
 		//Should never be an issue for us
 		ROS_WARN_THROTTLE(1.0, "Large thrust vector detected!");
 	}
 
-	return p_.gain_rotation_p*e_R;
+	return p_.gain_rotation_ang_p*e_R;
 }
 
 int16_t ControllerID::map_pwm(double val) {

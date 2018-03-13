@@ -35,13 +35,19 @@ ControllerIDParams::ControllerIDParams(ros::NodeHandle *nh, ros::NodeHandle *nhp
 	I2x(0.0),
 	I2y(0.0),
 	I2z(0.0),
-	dyncfg_gain_xy_(ros::NodeHandle(*nhp, "gain/xy")),
-	dyncfg_gain_z_(ros::NodeHandle(*nhp, "gain/z")),
-	dyncfg_gain_rot_(ros::NodeHandle(*nhp, "gain/rot")) {
+	dyncfg_gain_pos_xy_(ros::NodeHandle(*nhp, "gain/pos/xy")),
+	dyncfg_gain_pos_z_(ros::NodeHandle(*nhp, "gain/pos/z")),
+	dyncfg_gain_vel_xy_(ros::NodeHandle(*nhp, "gain/vel/xy")),
+	dyncfg_gain_vel_z_(ros::NodeHandle(*nhp, "gain/vel/z")),
+	dyncfg_gain_rot_ang_(ros::NodeHandle(*nhp, "gain/rot/ang")),
+	dyncfg_gain_rot_rate_(ros::NodeHandle(*nhp, "gain/rot/rate")) {
 
-	dyncfg_gain_xy_.setCallback(boost::bind(&ControllerIDParams::callback_cfg_gain_xy, this, _1, _2));
-	dyncfg_gain_z_.setCallback(boost::bind(&ControllerIDParams::callback_cfg_gain_z, this, _1, _2));
-	dyncfg_gain_rot_.setCallback(boost::bind(&ControllerIDParams::callback_cfg_gain_rot, this, _1, _2));
+	dyncfg_gain_pos_xy_.setCallback(boost::bind(&ControllerIDParams::callback_cfg_gain_pos_xy, this, _1, _2));
+	dyncfg_gain_vel_xy_.setCallback(boost::bind(&ControllerIDParams::callback_cfg_gain_vel_xy, this, _1, _2));
+	dyncfg_gain_pos_z_.setCallback(boost::bind(&ControllerIDParams::callback_cfg_gain_pos_z, this, _1, _2));
+	dyncfg_gain_vel_z_.setCallback(boost::bind(&ControllerIDParams::callback_cfg_gain_vel_z, this, _1, _2));
+	dyncfg_gain_rot_ang_.setCallback(boost::bind(&ControllerIDParams::callback_cfg_gain_rot_ang, this, _1, _2));
+	dyncfg_gain_rot_rate_.setCallback(boost::bind(&ControllerIDParams::callback_cfg_gain_rot_rate, this, _1, _2));
 }
 
 ControllerIDParams::~ControllerIDParams() {
@@ -87,19 +93,32 @@ void ControllerIDParams::load( void ) {
 	ROS_INFO("ControllerID params loaded!");
 }
 
-void ControllerIDParams::callback_cfg_gain_xy(mantis_controller_id::PDGainsConfig &config, uint32_t level) {
+void ControllerIDParams::callback_cfg_gain_pos_xy(mantis_controller_id::PIGainsConfig &config, uint32_t level) {
 	gain_position_xy_p = config.p;
-	gain_position_xy_d = config.d;
+	gain_position_xy_i = config.i;
 }
 
-void ControllerIDParams::callback_cfg_gain_z(mantis_controller_id::PDGainsConfig &config, uint32_t level) {
+
+void ControllerIDParams::callback_cfg_gain_pos_z(mantis_controller_id::PIGainsConfig &config, uint32_t level) {
 	gain_position_z_p = config.p;
-	gain_position_z_d = config.d;
+	gain_position_z_i = config.i;
 
 }
 
-void ControllerIDParams::callback_cfg_gain_rot(mantis_controller_id::PDGainsConfig &config, uint32_t level) {
-	gain_rotation_p = config.p;
-	gain_rotation_d = config.d;
+void ControllerIDParams::callback_cfg_gain_vel_xy(mantis_controller_id::PGainsConfig &config, uint32_t level) {
+	gain_velocity_xy_p = config.p;
+}
+
+void ControllerIDParams::callback_cfg_gain_vel_z(mantis_controller_id::PGainsConfig &config, uint32_t level) {
+	gain_velocity_z_p = config.p;
+
+}
+
+void ControllerIDParams::callback_cfg_gain_rot_ang(mantis_controller_id::PGainsConfig &config, uint32_t level) {
+	gain_rotation_ang_p = config.p;
+}
+
+void ControllerIDParams::callback_cfg_gain_rot_rate(mantis_controller_id::PGainsConfig &config, uint32_t level) {
+	gain_rotation_rate_p = config.p;
 }
 
