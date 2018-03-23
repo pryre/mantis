@@ -94,7 +94,7 @@ InterfaceDynamixel::~InterfaceDynamixel() {
 void InterfaceDynamixel::shutdown_node( void ) {
 	ROS_ERROR("Shutting down dynamixel interface");
 
-	for(int i=0; i<dynamixel_.size(); i++)
+	for(int i=0; i<dynamixel_.ids.size(); i++)
 		set_torque_enable(i, false);
 
 	portHandler_->closePort();
@@ -108,8 +108,8 @@ bool InterfaceDynamixel::set_torque_enable(int motor_number, bool onoff) {
 bool InterfaceDynamixel::enable_torque(mantis_interface_dynamixel::EnableTorque::Request& req, mantis_interface_dynamixel::EnableTorque::Response& res) {
 	bool success = true;
 
-	if(req.set_enable.size() == dynamixel_.size()) {
-		for(int i=0; i<dynamixel_.size(); i++) {
+	if(req.set_enable.size() == dynamixel_.ids.size()) {
+		for(int i=0; i<dynamixel_.ids.size(); i++) {
 			if(req.set_enable[i]) {
 				ROS_INFO("Turning on motor_%i!", i);
 			} else {
@@ -128,9 +128,12 @@ bool InterfaceDynamixel::enable_torque(mantis_interface_dynamixel::EnableTorque:
 	return true;
 }
 
-void InterfaceDynamixel::init_motor(std::string motor_model, uint8_t motor_id, double protocol_version) {
-	dynamixel_tool::DynamixelTool dynamixel_motor(motor_id, motor_model);
-	dynamixel_.push_back(dynamixel_motor);
+void InterfaceDynamixel::init_motor(std::string motor_model, uint8_t motor_id, double protocol_version, std::string motor_name) {
+	DynamixelTool dynamixel_motor;
+	dynamixel_.tools.push_back(dynamixel_motor);
+	dynamixel_.tools[dynamixel_.tools.size() - 1].addDXL(motor_model.c_str(), motor_id);
+	dynamixel_.ids.push_back(motor_id);
+	dynamixel_.names.push_back(motor_name);
 }
 
 bool InterfaceDynamixel::add_motors() {
@@ -145,9 +148,8 @@ bool InterfaceDynamixel::add_motors() {
 		nh_.getParam("motors/motor_" + std::to_string(i) + "/model", motor_model);
 		nh_.getParam("motors/motor_" + std::to_string(i) + "/id", motor_id);
 		protocol_version = param_port_version_;
-		param_motor_names_.push_back(motor_name);
 
-		init_motor(motor_model, (uint8_t)motor_id, protocol_version);
+		init_motor(motor_model, (uint8_t)motor_id, protocol_version, motor_name);
 
 		int64_t tmp_val;
 
@@ -184,9 +186,9 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 	std::vector<std::vector<std::int32_t>> states;
 
 	if( doSyncRead(&states) ) {
-		joint_states.name = param_motor_names_;
+		joint_states.name = dynamixel_.names;
 
-		for(int i=0; i<dynamixel_.size(); i++) {
+		for(int i=0; i<dynamixel_.ids.size(); i++) {
 			//joint_states.name.push_back("motor_" + std::to_string(i));
 			joint_states.position.push_back(convert_value_radian(states[i][1], i));
 			joint_states.velocity.push_back(convert_value_velocity(states[i][2], i));
@@ -249,29 +251,30 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 }
 
 void InterfaceDynamixel::initSyncRead() {
-	for(int i=0; i<dynamixel_.size(); i++) {
+	for(int i=0; i<dynamixel_.ids.size(); i++) {
 		//dynamixel_[i].item_ = dynamixel_[i].ctrl_table_["indirect_address"];
 
-		uint8_t id = dynamixel_[i].id_;
+		uint8_t id = dynamixel_.ids[i];
 		//uint16_t addr = dynamixel_[i].item_->address;
 		uint16_t addr = 168; //XXX: XM430-W350 indirect_address_1
 		uint8_t length = 2;
 
-		dynamixel_[i].item_ = dynamixel_[i].ctrl_table_["torque_enable"];
-		writeDynamixelRegister(id, addr + 0, length, dynamixel_[i].item_->address + 0);
-		dynamixel_[i].item_ = dynamixel_[i].ctrl_table_["present_position"];
-		writeDynamixelRegister(id, addr + 2, length, dynamixel_[i].item_->address + 0);
-		writeDynamixelRegister(id, addr + 4, length, dynamixel_[i].item_->address + 1);
-		writeDynamixelRegister(id, addr + 6, length, dynamixel_[i].item_->address + 2);
-		writeDynamixelRegister(id, addr + 8, length, dynamixel_[i].item_->address + 3);
-		dynamixel_[i].item_ = dynamixel_[i].ctrl_table_["present_velocity"];
-		writeDynamixelRegister(id, addr + 10, length, dynamixel_[i].item_->address + 0);
-		writeDynamixelRegister(id, addr + 12, length, dynamixel_[i].item_->address + 1);
-		writeDynamixelRegister(id, addr + 14, length, dynamixel_[i].item_->address + 2);
-		writeDynamixelRegister(id, addr + 16, length, dynamixel_[i].item_->address + 3);
-		dynamixel_[i].item_ = dynamixel_[i].ctrl_table_["present_current"];
-		writeDynamixelRegister(id, addr + 18, length, dynamixel_[i].item_->address + 0);
-		writeDynamixelRegister(id, addr + 20, length, dynamixel_[i].item_->address + 1);
+		ControlTableItem* item;
+		item = dynamixel_.tools[i].getControlItem("torque_enable");
+		writeDynamixelRegister(id, addr + 0, length, item->address + 0);
+		item = dynamixel_.tools[i].getControlItem("present_position");
+		writeDynamixelRegister(id, addr + 2, length, item->address + 0);
+		writeDynamixelRegister(id, addr + 4, length, item->address + 1);
+		writeDynamixelRegister(id, addr + 6, length, item->address + 2);
+		writeDynamixelRegister(id, addr + 8, length, item->address + 3);
+		item = dynamixel_.tools[i].getControlItem("present_velocity");
+		writeDynamixelRegister(id, addr + 10, length, item->address + 0);
+		writeDynamixelRegister(id, addr + 12, length, item->address + 1);
+		writeDynamixelRegister(id, addr + 14, length, item->address + 2);
+		writeDynamixelRegister(id, addr + 16, length, item->address + 3);
+		item = dynamixel_.tools[i].getControlItem("present_current");
+		writeDynamixelRegister(id, addr + 18, length, item->address + 0);
+		writeDynamixelRegister(id, addr + 20, length, item->address + 1);
 	}
 }
 
@@ -283,11 +286,11 @@ bool InterfaceDynamixel::doSyncRead(std::vector<std::vector<std::int32_t>> *stat
 	uint8_t read_addr = 224;	//XXX: XM430-W350 indirect_data_1
 	dynamixel::GroupSyncRead groupSyncRead(portHandler_, packetHandler_, read_addr, 13); //XXX: 13 from length of data stored in indirect
 
-	for(int j=0; j<dynamixel_.size(); j++) {
-		uint8_t dxl_addparam_result = groupSyncRead.addParam(dynamixel_[j].id_);
+	for(int j=0; j<dynamixel_.ids.size(); j++) {
+		uint8_t dxl_addparam_result = groupSyncRead.addParam(dynamixel_.ids[j]);
 
 		if(!dxl_addparam_result) {
-			ROS_ERROR("ID:%d] groupSyncRead addparam failed", dynamixel_[j].id_);
+			ROS_ERROR("ID:%d] groupSyncRead addparam failed", dynamixel_.ids[j]);
 			success = false;
 		}
 	}
@@ -296,25 +299,28 @@ bool InterfaceDynamixel::doSyncRead(std::vector<std::vector<std::int32_t>> *stat
 		uint8_t comm_result = groupSyncRead.txRxPacket();
 
 		if ( comm_result == COMM_SUCCESS ) {
-			for(int i=0; i<dynamixel_.size(); i++) {
+			for(int i=0; i<dynamixel_.ids.size(); i++) {
 				// Get Dynamixel present position value
-				dynamixel_[i].item_ = dynamixel_[i].ctrl_table_["torque_enable"];
-				uint8_t len_te = dynamixel_[i].item_->data_length;
-				dynamixel_[i].item_ = dynamixel_[i].ctrl_table_["present_position"];
-				uint8_t len_pos = dynamixel_[i].item_->data_length;
-				dynamixel_[i].item_ = dynamixel_[i].ctrl_table_["present_velocity"];
-				uint8_t len_vel = dynamixel_[i].item_->data_length;
-				dynamixel_[i].item_ = dynamixel_[i].ctrl_table_["present_current"];
-				uint8_t len_cur = dynamixel_[i].item_->data_length;
+				uint8_t id = dynamixel_.ids[i];
+
+				ControlTableItem* item;
+				item = dynamixel_.tools[i].getControlItem("torque_enable");
+				uint8_t len_te = item->data_length;
+				item = dynamixel_.tools[i].getControlItem("present_position");
+				uint8_t len_pos = item->data_length;
+				item = dynamixel_.tools[i].getControlItem("present_velocity");
+				uint8_t len_vel = item->data_length;
+				item = dynamixel_.tools[i].getControlItem("present_current");
+				uint8_t len_cur = item->data_length;
 
 				uint32_t offset = 0;
-				int32_t torque_enable = groupSyncRead.getData(dynamixel_[i].id_, read_addr + offset, len_te);
+				int32_t torque_enable = groupSyncRead.getData(id, read_addr + offset, len_te);
 				offset += len_te;
-				int32_t present_position = groupSyncRead.getData(dynamixel_[i].id_, read_addr + offset, len_pos);
+				int32_t present_position = groupSyncRead.getData(id, read_addr + offset, len_pos);
 				offset += len_pos;
-				int32_t present_velocity = groupSyncRead.getData(dynamixel_[i].id_, read_addr + offset, len_vel);
+				int32_t present_velocity = groupSyncRead.getData(id, read_addr + offset, len_vel);
 				offset += len_vel;
-				int32_t present_current = (int16_t)groupSyncRead.getData(dynamixel_[i].id_, read_addr + offset, len_cur);
+				int32_t present_current = (int16_t)groupSyncRead.getData(id, read_addr + offset, len_cur);
 
 				ROS_DEBUG("SYNC_READ: [%d, %d, %d, %d]", torque_enable, present_position, present_velocity, present_current);
 
@@ -327,7 +333,8 @@ bool InterfaceDynamixel::doSyncRead(std::vector<std::vector<std::int32_t>> *stat
 				states->push_back( vals );
 			}
 		} else {
-			packetHandler_->printTxRxResult(comm_result);
+			ROS_ERROR("Dynamixel Tx/Rx result error: %i", comm_result);
+			//packetHandler_->printTxRxResult(comm_result);
 			success = false;
 		}
 	}
@@ -340,13 +347,15 @@ void InterfaceDynamixel::doSyncWrite(std::string addr_name) {
 	bool do_write = false;
 
 	// Initialize GroupSyncWrite instance
+
+	ControlTableItem* item;
 	//XXX: Need to do this to hardcode this to get anything working
-	dynamixel_[0].item_ = dynamixel_[0].ctrl_table_[addr_name];
-	dynamixel::GroupSyncWrite groupSyncWrite(portHandler_, packetHandler_, dynamixel_[0].item_->address, dynamixel_[0].item_->data_length);
+	item = dynamixel_.tools[0].getControlItem(addr_name.c_str());
+	dynamixel::GroupSyncWrite groupSyncWrite(portHandler_, packetHandler_, item->address, item->data_length);
 
 	if(addr_name == "goal_current") {
-		for(int i=0; i<dynamixel_.size(); i++) {
-			dynamixel_[i].item_ = dynamixel_[i].ctrl_table_[addr_name];
+		for(int i=0; i<dynamixel_.ids.size(); i++) {
+			item = dynamixel_.tools[i].getControlItem(addr_name.c_str());
 
 			// Allocate goal position value into byte array
 			uint8_t param_goal_current[2];
@@ -356,10 +365,10 @@ void InterfaceDynamixel::doSyncWrite(std::string addr_name) {
 			param_goal_current[1] = DXL_HIBYTE(goal_current);
 
 			// Add Dynamixel goal position value to the Syncwrite parameter storage
-			uint8_t dxl_addparam_result = groupSyncWrite.addParam(dynamixel_[i].id_, param_goal_current);
+			uint8_t dxl_addparam_result = groupSyncWrite.addParam(dynamixel_.ids[i], param_goal_current);
 
 			if(!dxl_addparam_result) {
-				ROS_ERROR("ID:%d] groupSyncRead addparam failed", dynamixel_[i].id_);
+				ROS_ERROR("ID:%d] groupSyncRead addparam failed", dynamixel_.ids[i]);
 				//success = false;
 			}
 		}
@@ -391,8 +400,8 @@ void InterfaceDynamixel::doSyncWrite(std::string addr_name) {
 	}
 	*/
 	if(addr_name == "goal_position") {
-		for(int i=0; i<dynamixel_.size(); i++) {
-			dynamixel_[i].item_ = dynamixel_[i].ctrl_table_[addr_name];
+		for(int i=0; i<dynamixel_.ids.size(); i++) {
+			item = dynamixel_.tools[i].getControlItem(addr_name.c_str());
 
 			// Allocate goal position value into byte array
 			uint8_t param_goal_position[4];
@@ -404,10 +413,10 @@ void InterfaceDynamixel::doSyncWrite(std::string addr_name) {
 			param_goal_position[3] = DXL_HIBYTE(DXL_HIWORD(goal_position));
 
 			// Add Dynamixel goal position value to the Syncwrite parameter storage
-			uint8_t dxl_addparam_result = groupSyncWrite.addParam(dynamixel_[i].id_, param_goal_position);
+			uint8_t dxl_addparam_result = groupSyncWrite.addParam(dynamixel_.ids[i], param_goal_position);
 
 			if(!dxl_addparam_result) {
-				ROS_ERROR("ID:%d] groupSyncRead addparam failed", dynamixel_[i].id_);
+				ROS_ERROR("ID:%d] groupSyncRead addparam failed", dynamixel_.ids[i]);
 				//success = false;
 			}
 		}
@@ -427,7 +436,7 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 	//TODO: expect a stream?
 
 	bool success = true;
-	int num_motors = dynamixel_.size();
+	int num_motors = dynamixel_.ids.size();
 
 	//Checks to make sure that at least one input is of the right size
 	bool input_size_name_ok = msg_in->name.size() == num_motors;
@@ -442,7 +451,7 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 	if( input_ok ) {
 		joint_setpoints_ = *msg_in;
 
-		for(int i=0; i<dynamixel_.size(); i++) {
+		for(int i=0; i<num_motors; i++) {
 			//Use the lowest level mode that has been sent
 			if(input_size_effort_ok) {
 				if(motor_output_mode_ != MOTOR_MODE_TORQUE) {
@@ -493,30 +502,32 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 }
 
 bool InterfaceDynamixel::readMotorState(std::string addr_name, int motor_number, int64_t *read_value) {
-	dynamixel_[motor_number].item_ = dynamixel_[motor_number].ctrl_table_[addr_name];
+	ControlTableItem* item;
+	item = dynamixel_.tools[motor_number].getControlItem(addr_name.c_str());
 
-	return( readDynamixelRegister(dynamixel_[motor_number].id_, dynamixel_[motor_number].item_->address, dynamixel_[motor_number].item_->data_length, read_value) );
+	return( readDynamixelRegister(dynamixel_.ids[motor_number], item->address, item->data_length, read_value) );
 }
 
 bool InterfaceDynamixel::readDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, int64_t *value) {
 	uint8_t dynamixel_error = 0;
-	int8_t dynamixel_comm_result_;
+	int8_t comm_result;
 
 	int8_t value_8_bit = 0;
 	int16_t value_16_bit = 0;
 	int32_t value_32_bit = 0;
 
 	if (length == 1) {
-		dynamixel_comm_result_ = packetHandler_->read1ByteTxRx(portHandler_, id, addr, (uint8_t*)&value_8_bit, &dynamixel_error);
+		comm_result = packetHandler_->read1ByteTxRx(portHandler_, id, addr, (uint8_t*)&value_8_bit, &dynamixel_error);
 	} else if (length == 2) {
-		dynamixel_comm_result_ = packetHandler_->read2ByteTxRx(portHandler_, id, addr, (uint16_t*)&value_16_bit, &dynamixel_error);
+		comm_result = packetHandler_->read2ByteTxRx(portHandler_, id, addr, (uint16_t*)&value_16_bit, &dynamixel_error);
 	} else if (length == 4) {
-		dynamixel_comm_result_ = packetHandler_->read4ByteTxRx(portHandler_, id, addr, (uint32_t*)&value_32_bit, &dynamixel_error);
+		comm_result = packetHandler_->read4ByteTxRx(portHandler_, id, addr, (uint32_t*)&value_32_bit, &dynamixel_error);
 	}
 
-	if (dynamixel_comm_result_ == COMM_SUCCESS) {
+	if (comm_result == COMM_SUCCESS) {
 		if (dynamixel_error != 0) {
-			packetHandler_->printRxPacketError(dynamixel_error);
+			ROS_ERROR("Dynamixel Rx packet error: %i", dynamixel_error);
+			//packetHandler_->printRxPacketError(dynamixel_error);
 		} else {
 			if (length == 1) {
 				*value = value_8_bit;
@@ -529,7 +540,8 @@ bool InterfaceDynamixel::readDynamixelRegister(uint8_t id, uint16_t addr, uint8_
 			return true;
 		}
 	} else {
-		packetHandler_->printTxRxResult(dynamixel_comm_result_);
+		ROS_ERROR("Dynamixel Tx/Rx result error: %i", comm_result);
+		//packetHandler_->printTxRxResult(comm_result);
 		ROS_ERROR("[ID] %u, Fail to read!", id);
 	}
 
@@ -537,9 +549,10 @@ bool InterfaceDynamixel::readDynamixelRegister(uint8_t id, uint16_t addr, uint8_
 }
 
 bool InterfaceDynamixel::writeMotorState(std::string addr_name, int motor_number, uint32_t write_value) {
-	dynamixel_[motor_number].item_ = dynamixel_[motor_number].ctrl_table_[addr_name];
+	ControlTableItem* item;
+	item = dynamixel_.tools[motor_number].getControlItem(addr_name.c_str());
 
-	return writeDynamixelRegister(dynamixel_[motor_number].id_, dynamixel_[motor_number].item_->address, dynamixel_[motor_number].item_->data_length, write_value);
+	return writeDynamixelRegister(dynamixel_.ids[motor_number], item->address, item->data_length, write_value);
 }
 
 bool InterfaceDynamixel::writeDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, uint32_t value) {
@@ -556,12 +569,13 @@ bool InterfaceDynamixel::writeDynamixelRegister(uint8_t id, uint16_t addr, uint8
 
 	if (comm_result == COMM_SUCCESS) {
 		if (dynamixel_error != 0) {
-			packetHandler_->printRxPacketError(dynamixel_error);
+			ROS_ERROR("Dynamixel Rx packet error: %i", dynamixel_error);
+			//packetHandler_->printRxPacketError(dynamixel_error);
 		} else {
 			return true;
 		}
 	} else {
-		packetHandler_->printTxRxResult(comm_result);
+		ROS_ERROR("Dynamixel Tx/Rx result error: %i", comm_result);
 	}
 
 	ROS_ERROR("[ID] %u, Fail to write!", id);
@@ -570,29 +584,29 @@ bool InterfaceDynamixel::writeDynamixelRegister(uint8_t id, uint16_t addr, uint8
 }
 
 int InterfaceDynamixel::convert_torque_value(double torque, int motor_number) {
-	return (int)(torque * dynamixel_[motor_number].torque_to_current_value_ratio_);
+	return (int)(torque * dynamixel_.tools[motor_number].getTorqueToCurrentValueRatio());
 }
 
 double InterfaceDynamixel::convert_value_torque(int value, int motor_number) {
-	return (double)value / dynamixel_[motor_number].torque_to_current_value_ratio_;
+	return (double)value / dynamixel_.tools[motor_number].getTorqueToCurrentValueRatio();
 }
 
 
 int InterfaceDynamixel::convert_velocity_value(double velocity, int motor_number) {
-	return (int)(velocity * 2 * dynamixel_[motor_number].velocity_to_value_ratio_);
+	return (int)(velocity * 2 * dynamixel_.tools[motor_number].getVelocityToValueRatio());
 }
 
 double InterfaceDynamixel::convert_value_velocity(int value, int motor_number) {
-	return ( (double)value / 2.0 ) / dynamixel_[motor_number].velocity_to_value_ratio_;
+	return ( (double)value / 2.0 ) / dynamixel_.tools[motor_number].getVelocityToValueRatio();
 }
 
 int InterfaceDynamixel::convert_radian_value(double radian, int motor_number) {
 	int64_t value = 0;
-	int64_t rad_max = dynamixel_[motor_number].max_radian_;
-	int64_t rad_min = dynamixel_[motor_number].min_radian_;
-	int64_t val_max = dynamixel_[motor_number].value_of_max_radian_position_;
-	int64_t val_min = dynamixel_[motor_number].value_of_min_radian_position_;
-	int64_t val_zero = dynamixel_[motor_number].value_of_0_radian_position_;
+	int64_t rad_max = dynamixel_.tools[motor_number].getMaxRadian();
+	int64_t rad_min = dynamixel_.tools[motor_number].getMinRadian();
+	int64_t val_max = dynamixel_.tools[motor_number].getValueOfMaxRadianPosition();
+	int64_t val_min = dynamixel_.tools[motor_number].getValueOfMinRadianPosition();
+	int64_t val_zero = dynamixel_.tools[motor_number].getValueOfZeroRadianPosition();
 
 	if (radian > 0.0) {
 		value = (radian * (val_max - val_zero) / rad_max) + val_zero;
