@@ -1,0 +1,22 @@
+<launch>
+  <node name="front_camera" pkg="usb_cam" type="usb_cam_node" output="screen" clear_params="true" >
+    <param name="video_device" value="/dev/video1" />
+    <param name="image_width" value="640" />
+    <param name="image_height" value="480" />
+    <param name="pixel_format" value="grey" />
+    <param name="camera_frame_id" value="usb_cam" />
+    <param name="io_method" value="mmap"/>
+
+    <param name="brightness" value="255" />
+    <param name="contrast" value="32" />
+    <param name="saturation" value="32" />
+    <param name="sharpness" value="22" />
+
+    <param name="camera_name" value="camera_front"/>
+    <param name="camera_info_url" value="file:///$(find mantis_description)/config/camera_front.yaml"/>
+  </node>
+</launch>
+
+
+
+
