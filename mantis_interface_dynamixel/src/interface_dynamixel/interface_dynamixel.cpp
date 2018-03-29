@@ -149,11 +149,13 @@ bool InterfaceDynamixel::add_motors() {
 		nh_.getParam("motors/motor_" + std::to_string(i) + "/id", motor_id);
 		protocol_version = param_port_version_;
 
+		ROS_INFO("Initializing motor #%i", i);
 		init_motor(motor_model, (uint8_t)motor_id, protocol_version, motor_name);
 
+		ROS_INFO("Contacting motor #%i", i);
 		int64_t tmp_val;
 
-		if( readMotorState("torque_enable", i, &tmp_val) ) {
+		if( readMotorState("Torque_Enable", i, &tmp_val) ) {
 			set_torque_enable(i, false);	//Make sure motor is not turned on
 			ROS_INFO("Motor %i successfully added", i);
 		} else {
@@ -502,10 +504,13 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 }
 
 bool InterfaceDynamixel::readMotorState(std::string addr_name, int motor_number, int64_t *read_value) {
-	ControlTableItem* item;
+	ControlTableItem* item = NULL;
 	item = dynamixel_.tools[motor_number].getControlItem(addr_name.c_str());
 
-	return( readDynamixelRegister(dynamixel_.ids[motor_number], item->address, item->data_length, read_value) );
+	ROS_INFO("id:%i addr:%i", dynamixel_.ids[motor_number], item->address);
+
+//	return( readDynamixelRegister(dynamixel_.ids[motor_number], item->address, item->data_length, read_value) );
+	return 0;
 }
 
 bool InterfaceDynamixel::readDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, int64_t *value) {
@@ -523,6 +528,8 @@ bool InterfaceDynamixel::readDynamixelRegister(uint8_t id, uint16_t addr, uint8_
 	} else if (length == 4) {
 		comm_result = packetHandler_->read4ByteTxRx(portHandler_, id, addr, (uint32_t*)&value_32_bit, &dynamixel_error);
 	}
+
+	ROS_INFO("HERE!2");
 
 	if (comm_result == COMM_SUCCESS) {
 		if (dynamixel_error != 0) {
