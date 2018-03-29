@@ -1,0 +1,92 @@
+#Parameter file for the Mantis MM-UAV
+
+motor:
+  num: 6
+  arm_len: 0.275 #m
+  thrust_max: 10.5225 # N
+  drag_max: 0.63 # N
+
+servo:
+  torque_max: 2.0 # N
+  ang_max: 1.570796326794897 # radians
+
+pwm:
+  min: 1000
+  max: 2000
+
+vel_max: 0.5
+
+takeoff:
+  x: 0.0
+  y: 0.0
+  z: 2.0
+
+controller_id:
+  gain:
+    pos:
+      xy:
+        p: 10
+        i: 15
+      z:
+        p: 15
+        i: 5
+    vel:
+      xy:
+        p: 3
+      z:
+        p: 10
+    rot:
+      ang:
+        p: 3
+      rate:
+        p: 10
+
+links:
+  num: 3
+  l0:
+    name: "mount"
+    d: -0.05025
+    t: 0.0
+    r: 0.0
+    a: 1.570796326794897
+    type: "static"
+  l1:
+    name: "joint_shoulder"
+    d: 0.0
+    t: -1.570796326794897
+    r: 0.18325
+    a: 0.0
+    type: "twist_z"
+    beta: 0.8
+  l2:
+    name: "joint_elbow"
+    d: 0.0
+    t: 0.0
+    r: 0.18325
+    a: 0.0
+    type: "twist_z"
+    beta: 0.8
+
+body:
+  num: 3
+  b0:
+    mass:
+      m: 2.295 # Base + props
+      Ix: 0.02961
+      Iy: 0.02933
+      Iz: 0.05342
+    com: 0.0
+  b1:
+    mass:
+      m: 0.205
+      Ix: 0.00005191
+      Iy: 0.00067668
+      Iz: 0.00067439
+    com: 0.12164350
+  b2:
+    mass:
+      m: 0.10
+      Ix: 0.00001678
+      Iy: 0.00025428
+      Iz: 0.00024944
+    com: 0.05
