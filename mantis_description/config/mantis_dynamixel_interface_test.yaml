@@ -1,0 +1,8 @@
+# Motors
+num_motors: 1
+
+motors:
+  motor_0:
+    id: 3
+    model: "XM430_W350"
+    name: "joint_test"

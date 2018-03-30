@@ -127,7 +127,11 @@ include_directories(
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_library(interface_dynamixel src/interface_dynamixel/interface_dynamixel.cpp)
+add_library(interface_dynamixel
+			src/interface_dynamixel/interface_dynamixel.cpp
+			src/interface_dynamixel/interface_dynamixel_driver_conversions.cpp
+			src/interface_dynamixel/interface_dynamixel_driver_tx.cpp
+			src/interface_dynamixel/interface_dynamixel_driver_rx.cpp)
 add_dependencies(interface_dynamixel ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable

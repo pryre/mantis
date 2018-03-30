@@ -12,7 +12,7 @@
 		<param name="update_rate" value="50.0" type="double" />
 
 		<!-- Motor Parameters -->
-		<rosparam command="load" file="$(find mantis_description)/config/mantis_dynamixel_interface.yaml"/>
+		<rosparam command="load" file="$(find mantis_description)/config/mantis_dynamixel_interface_test.yaml"/>
 	</node>
 
 	<!-- HIGH LEVEL CONTROL -->
