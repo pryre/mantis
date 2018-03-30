@@ -1,12 +1,12 @@
 #include <interface_dynamixel/interface_dynamixel.h>
 #include <dynamixel_sdk/dynamixel_sdk.h>
 
-
 bool InterfaceDynamixel::writeMotorState(std::string addr_name, int motor_number, uint32_t write_value) {
-	ControlTableItem* item;
-	item = dynamixel_.tools[motor_number].getControlItem(addr_name.c_str());
+	ControlTableItem* item = dxl_[motor_number].getControlItem(addr_name.c_str());
 
-	return writeDynamixelRegister(dynamixel_.ids[motor_number], item->address, item->data_length, write_value);
+	//ROS_INFO("id: %d\naddr: %d\nlen: %d\nval: %d", get_id(motor_number), item->address, item->data_length, write_value);
+
+	return writeDynamixelRegister(get_id(motor_number), item->address, item->data_length, write_value);
 }
 
 bool InterfaceDynamixel::writeDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, uint32_t value) {
@@ -43,12 +43,12 @@ void InterfaceDynamixel::doSyncWrite(std::string addr_name) {
 
 	ControlTableItem* item;
 	//XXX: Need to do this to hardcode this to get anything working
-	item = dynamixel_.tools[0].getControlItem(addr_name.c_str());
+	item = dxl_[0].getControlItem(addr_name.c_str());
 	dynamixel::GroupSyncWrite groupSyncWrite(portHandler_, packetHandler_, item->address, item->data_length);
 
-	if(addr_name == "goal_current") {
-		for(int i=0; i<dynamixel_.ids.size(); i++) {
-			item = dynamixel_.tools[i].getControlItem(addr_name.c_str());
+	if(addr_name == "Goal_Current") {
+		for(int i=0; i<dxl_.size(); i++) {
+			item = dxl_[i].getControlItem(addr_name.c_str());
 
 			// Allocate goal position value into byte array
 			uint8_t param_goal_current[2];
@@ -58,10 +58,10 @@ void InterfaceDynamixel::doSyncWrite(std::string addr_name) {
 			param_goal_current[1] = DXL_HIBYTE(goal_current);
 
 			// Add Dynamixel goal position value to the Syncwrite parameter storage
-			uint8_t dxl_addparam_result = groupSyncWrite.addParam(dynamixel_.ids[i], param_goal_current);
+			uint8_t dxl_addparam_result = groupSyncWrite.addParam(get_id(i), param_goal_current);
 
 			if(!dxl_addparam_result) {
-				ROS_ERROR("[ID: %u] groupSyncRead addparam failed", dynamixel_.ids[i]);
+				ROS_ERROR("[ID: %u] groupSyncRead addparam failed", get_id(i));
 				//success = false;
 			}
 		}
@@ -92,9 +92,9 @@ void InterfaceDynamixel::doSyncWrite(std::string addr_name) {
 		do_write = true;
 	}
 	*/
-	if(addr_name == "goal_position") {
-		for(int i=0; i<dynamixel_.ids.size(); i++) {
-			item = dynamixel_.tools[i].getControlItem(addr_name.c_str());
+	if(addr_name == "Goal_Position") {
+		for(int i=0; i<dxl_.size(); i++) {
+			item = dxl_[i].getControlItem(addr_name.c_str());
 
 			// Allocate goal position value into byte array
 			uint8_t param_goal_position[4];
@@ -106,10 +106,10 @@ void InterfaceDynamixel::doSyncWrite(std::string addr_name) {
 			param_goal_position[3] = DXL_HIBYTE(DXL_HIWORD(goal_position));
 
 			// Add Dynamixel goal position value to the Syncwrite parameter storage
-			uint8_t dxl_addparam_result = groupSyncWrite.addParam(dynamixel_.ids[i], param_goal_position);
+			uint8_t dxl_addparam_result = groupSyncWrite.addParam(get_id(i), param_goal_position);
 
 			if(!dxl_addparam_result) {
-				ROS_ERROR("[ID: %u] groupSyncRead addparam failed", dynamixel_.ids[i]);
+				ROS_ERROR("[ID: %u] groupSyncRead addparam failed", get_id(i));
 				//success = false;
 			}
 		}

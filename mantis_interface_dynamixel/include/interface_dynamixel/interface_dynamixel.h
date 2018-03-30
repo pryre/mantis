@@ -19,12 +19,6 @@ enum dynamixel_mode_t {
 	MOTOR_MODE_INVALID = 255
 };
 
-typedef struct {
-	std::vector<DynamixelTool> tools;
-	std::vector<std::string> names;
-	std::vector<uint8_t> ids;
-} DynamixelMotorInterfaces;
-
 class InterfaceDynamixel {
 	private:
 		ros::NodeHandle nh_;
@@ -55,7 +49,8 @@ class InterfaceDynamixel {
 		//dynamixel_multi_driver::DynamixelMultiDriver *dynamixel_multi_driver_;
 		dynamixel::PortHandler *portHandler_;
 		dynamixel::PacketHandler *packetHandler_;
-		DynamixelMotorInterfaces dynamixel_;
+		std::vector<DynamixelTool> dxl_;
+		std::vector<std::string> dxl_names_;
 		//dynamixel::GroupSyncWrite groupSyncWrite;
 		//dynamixel::GroupSyncRead groupSyncRead;
 
@@ -77,6 +72,7 @@ class InterfaceDynamixel {
 		bool load_dynamixel();
 		bool check_load_dynamixel();
 		void shutdown_node( void );
+		uint8_t get_id( int motor_number );
 		void init_motor(std::string motor_model, uint8_t motor_id, double protocol_version, std::string motor_name);
 		bool add_motors();
 

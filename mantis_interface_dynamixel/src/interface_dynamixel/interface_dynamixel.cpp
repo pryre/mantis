@@ -45,6 +45,17 @@ InterfaceDynamixel::InterfaceDynamixel() :
 
 	bool port_ok = false;
 
+	/*
+	ROS_WARN("START TOOL TEST");
+	DynamixelTool tool;
+	tool.addTool("XM430-W350", 3);
+	ROS_INFO("id: %d, mdl: %d, cnt: %d", tool.dxl_info_[tool.dxl_info_cnt_-1].id, tool.dxl_info_[tool.dxl_info_cnt_-1].model_num, tool.dxl_info_cnt_);
+	ControlTableItem* item = tool.getControlItem("Torque_Enable");
+	ROS_INFO("addr: %d, len: %d", item->address, item->data_length);
+	ROS_WARN("END TOOL TEST");
+
+	shutdown_node();
+	*/
 
 	//Open port
 	if ( portHandler_->openPort() ) {
@@ -88,10 +99,15 @@ InterfaceDynamixel::~InterfaceDynamixel() {
 	shutdown_node();
 }
 
+
+uint8_t InterfaceDynamixel::get_id( int motor_number ) {
+	return dxl_[motor_number].dxl_info_[dxl_[motor_number].dxl_info_cnt_-1].id;
+}
+
 void InterfaceDynamixel::shutdown_node( void ) {
 	ROS_ERROR("Shutting down dynamixel interface");
 
-	for(int i=0; i<dynamixel_.ids.size(); i++)
+	for(int i=0; i<dxl_.size(); i++)
 		set_torque_enable(i, false);
 
 	portHandler_->closePort();
@@ -99,14 +115,14 @@ void InterfaceDynamixel::shutdown_node( void ) {
 }
 
 bool InterfaceDynamixel::set_torque_enable(int motor_number, bool onoff) {
-	return writeMotorState("torque_enable", motor_number, onoff);
+	return writeMotorState("Torque_Enable", motor_number, onoff);
 }
 
 bool InterfaceDynamixel::enable_torque(mantis_interface_dynamixel::EnableTorque::Request& req, mantis_interface_dynamixel::EnableTorque::Response& res) {
 	bool success = true;
 
-	if(req.set_enable.size() == dynamixel_.ids.size()) {
-		for(int i=0; i<dynamixel_.ids.size(); i++) {
+	if(req.set_enable.size() == dxl_.size()) {
+		for(int i=0; i<dxl_.size(); i++) {
 			if(req.set_enable[i]) {
 				ROS_INFO("Turning on motor_%i!", i);
 			} else {
@@ -126,11 +142,10 @@ bool InterfaceDynamixel::enable_torque(mantis_interface_dynamixel::EnableTorque:
 }
 
 void InterfaceDynamixel::init_motor(std::string motor_model, uint8_t motor_id, double protocol_version, std::string motor_name) {
-	DynamixelTool dynamixel_motor;
-	dynamixel_.tools.push_back(dynamixel_motor);
-	dynamixel_.tools[dynamixel_.tools.size() - 1].addDXL(motor_model.c_str(), motor_id);
-	dynamixel_.ids.push_back(motor_id);
-	dynamixel_.names.push_back(motor_name);
+	DynamixelTool tool;
+	dxl_.push_back(tool);
+	dxl_.back().addTool(motor_model.c_str(), motor_id);
+	dxl_names_.push_back(motor_name);
 }
 
 bool InterfaceDynamixel::add_motors() {
@@ -185,9 +200,9 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 	std::vector<std::vector<std::int32_t>> states;
 
 	if( doSyncRead(&states) ) {
-		joint_states.name = dynamixel_.names;
+		joint_states.name = dxl_names_;
 
-		for(int i=0; i<dynamixel_.ids.size(); i++) {
+		for(int i=0; i<dxl_.size(); i++) {
 			//joint_states.name.push_back("motor_" + std::to_string(i));
 			joint_states.position.push_back(convert_value_radian(states[i][1], i));
 			joint_states.velocity.push_back(convert_value_velocity(states[i][2], i));
@@ -225,19 +240,19 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 	if(motor_output_mode_ != MOTOR_MODE_INVALID) {
 		switch(motor_output_mode_) {
 			case MOTOR_MODE_TORQUE: {
-				doSyncWrite("goal_current");
+				doSyncWrite("Goal_Current");
 				//writeMotorState("goal_current", i, convert_torque_value(joint_setpoints_.effort[i], i));
 
 				break;
 			}
 			case MOTOR_MODE_VELOCITY: {
-				doSyncWrite("goal_velocity");
+				doSyncWrite("Goal_Velocity");
 				//writeMotorState("goal_velocity", i, convert_velocity_value(joint_setpoints_.velocity[i], i));
 
 				break;
 			}
 			case MOTOR_MODE_POSITION: {
-				doSyncWrite("goal_position");
+				doSyncWrite("Goal_Position");
 				//writeMotorState("goal_position", i, convert_radian_value(joint_setpoints_.position[i], i));
 
 				break;
@@ -249,39 +264,11 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 	}
 }
 
-void InterfaceDynamixel::initSyncRead() {
-	for(int i=0; i<dynamixel_.ids.size(); i++) {
-		//dynamixel_[i].item_ = dynamixel_[i].ctrl_table_["indirect_address"];
-
-		uint8_t id = dynamixel_.ids[i];
-		//uint16_t addr = dynamixel_[i].item_->address;
-		uint16_t addr = 168; //XXX: XM430-W350 indirect_address_1
-		uint8_t length = 2;
-
-		ControlTableItem* item;
-		item = dynamixel_.tools[i].getControlItem("torque_enable");
-		writeDynamixelRegister(id, addr + 0, length, item->address + 0);
-		item = dynamixel_.tools[i].getControlItem("present_position");
-		writeDynamixelRegister(id, addr + 2, length, item->address + 0);
-		writeDynamixelRegister(id, addr + 4, length, item->address + 1);
-		writeDynamixelRegister(id, addr + 6, length, item->address + 2);
-		writeDynamixelRegister(id, addr + 8, length, item->address + 3);
-		item = dynamixel_.tools[i].getControlItem("present_velocity");
-		writeDynamixelRegister(id, addr + 10, length, item->address + 0);
-		writeDynamixelRegister(id, addr + 12, length, item->address + 1);
-		writeDynamixelRegister(id, addr + 14, length, item->address + 2);
-		writeDynamixelRegister(id, addr + 16, length, item->address + 3);
-		item = dynamixel_.tools[i].getControlItem("present_current");
-		writeDynamixelRegister(id, addr + 18, length, item->address + 0);
-		writeDynamixelRegister(id, addr + 20, length, item->address + 1);
-	}
-}
-
 void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::ConstPtr& msg_in) {
 	//TODO: expect a stream?
 
 	bool success = true;
-	int num_motors = dynamixel_.ids.size();
+	int num_motors = dxl_.size();
 
 	//Checks to make sure that at least one input is of the right size
 	bool input_size_name_ok = msg_in->name.size() == num_motors;
@@ -302,21 +289,21 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 				if(motor_output_mode_ != MOTOR_MODE_TORQUE) {
 					ROS_INFO("Torque control setpoint accepted");
 					set_torque_enable(i, false);
-					writeMotorState("operating_mode", i, MOTOR_MODE_TORQUE);
+					writeMotorState("Operating_Mode", i, MOTOR_MODE_TORQUE);
 					motor_output_mode_ = MOTOR_MODE_TORQUE;
 				}
 			} else if( input_size_velocity_ok ) {
 				if(motor_output_mode_ != MOTOR_MODE_VELOCITY) {
 					ROS_INFO("Velocity control setpoint accepted");
 					set_torque_enable(i, false);
-					writeMotorState("operating_mode", i, MOTOR_MODE_VELOCITY);
+					writeMotorState("Operating_Mode", i, MOTOR_MODE_VELOCITY);
 					motor_output_mode_ = MOTOR_MODE_VELOCITY;
 				}
 			} else if( input_size_position_ok ) {
 				if(motor_output_mode_ != MOTOR_MODE_POSITION) {
 					ROS_INFO("Position control setpoint accepted");
 					set_torque_enable(i, false);
-					writeMotorState("operating_mode", i, MOTOR_MODE_POSITION);
+					writeMotorState("Operating_Mode", i, MOTOR_MODE_POSITION);
 					motor_output_mode_ = MOTOR_MODE_POSITION;
 				}
 			} else {
@@ -345,5 +332,4 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 		ROS_WARN_THROTTLE(1.0, "Ignoring setpoint: %s", failure_reason.c_str());
 	}
 }
-
 

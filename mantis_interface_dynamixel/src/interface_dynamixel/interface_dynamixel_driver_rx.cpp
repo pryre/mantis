@@ -2,10 +2,11 @@
 #include <dynamixel_sdk/dynamixel_sdk.h>
 
 bool InterfaceDynamixel::readMotorState(std::string addr_name, int motor_number, int64_t *read_value) {
-	ControlTableItem* item;
-	item = dynamixel_.tools[motor_number].getControlItem(addr_name.c_str());
+	ControlTableItem* item = dxl_[motor_number].getControlItem(addr_name.c_str());
 
-	return( readDynamixelRegister(dynamixel_.ids[motor_number], item->address, item->data_length, read_value) );
+	//ROS_INFO("id: %d\naddr: %d\nlen: %d", get_id(motor_number), item->address, item->data_length);
+
+	return readDynamixelRegister(get_id(motor_number), item->address, item->data_length, read_value);
 }
 
 bool InterfaceDynamixel::readDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, int64_t *value) {
@@ -47,6 +48,34 @@ bool InterfaceDynamixel::readDynamixelRegister(uint8_t id, uint16_t addr, uint8_
 	return false;
 }
 
+void InterfaceDynamixel::initSyncRead() {
+	for(int i=0; i<dxl_.size(); i++) {
+		//dynamixel_[i].item_ = dynamixel_[i].ctrl_table_["indirect_address"];
+
+		uint8_t id = get_id(i);
+		//uint16_t addr = dynamixel_[i].item_->address;
+		uint16_t addr = 168; //XXX: XM430-W350 indirect_address_1
+		uint8_t length = 2;
+
+		ControlTableItem* item;
+		item = dxl_[i].getControlItem("Torque_Enable");
+		writeDynamixelRegister(id, addr + 0, length, item->address + 0);
+		item = dxl_[i].getControlItem("Present_Position");
+		writeDynamixelRegister(id, addr + 2, length, item->address + 0);
+		writeDynamixelRegister(id, addr + 4, length, item->address + 1);
+		writeDynamixelRegister(id, addr + 6, length, item->address + 2);
+		writeDynamixelRegister(id, addr + 8, length, item->address + 3);
+		item = dxl_[i].getControlItem("Present_Velocity");
+		writeDynamixelRegister(id, addr + 10, length, item->address + 0);
+		writeDynamixelRegister(id, addr + 12, length, item->address + 1);
+		writeDynamixelRegister(id, addr + 14, length, item->address + 2);
+		writeDynamixelRegister(id, addr + 16, length, item->address + 3);
+		item = dxl_[i].getControlItem("Present_Current");
+		writeDynamixelRegister(id, addr + 18, length, item->address + 0);
+		writeDynamixelRegister(id, addr + 20, length, item->address + 1);
+	}
+}
+
 //TODO: This needs to be switched to a groupBulkRead so that multiple different models can be supported
 bool InterfaceDynamixel::doSyncRead(std::vector<std::vector<std::int32_t>> *states) {
 	bool success = true;
@@ -55,11 +84,11 @@ bool InterfaceDynamixel::doSyncRead(std::vector<std::vector<std::int32_t>> *stat
 	uint8_t read_addr = 224;	//XXX: XM430-W350 indirect_data_1
 	dynamixel::GroupSyncRead groupSyncRead(portHandler_, packetHandler_, read_addr, 13); //XXX: 13 from length of data stored in indirect
 
-	for(int j=0; j<dynamixel_.ids.size(); j++) {
-		uint8_t dxl_addparam_result = groupSyncRead.addParam(dynamixel_.ids[j]);
+	for(int j=0; j<dxl_.size(); j++) {
+		uint8_t dxl_addparam_result = groupSyncRead.addParam(get_id(j));
 
 		if(!dxl_addparam_result) {
-			ROS_ERROR("[ID: %u] groupSyncRead addparam failed", dynamixel_.ids[j]);
+			ROS_ERROR("[ID: %u] groupSyncRead addparam failed", get_id(j));
 			success = false;
 		}
 	}
@@ -68,18 +97,18 @@ bool InterfaceDynamixel::doSyncRead(std::vector<std::vector<std::int32_t>> *stat
 		uint8_t comm_result = groupSyncRead.txRxPacket();
 
 		if ( comm_result == COMM_SUCCESS ) {
-			for(int i=0; i<dynamixel_.ids.size(); i++) {
+			for(int i=0; i<dxl_.size(); i++) {
 				// Get Dynamixel present position value
-				uint8_t id = dynamixel_.ids[i];
+				uint8_t id = get_id(i);
 
 				ControlTableItem* item;
-				item = dynamixel_.tools[i].getControlItem("torque_enable");
+				item = dxl_[i].getControlItem("Torque_Enable");
 				uint8_t len_te = item->data_length;
-				item = dynamixel_.tools[i].getControlItem("present_position");
+				item = dxl_[i].getControlItem("Present_Position");
 				uint8_t len_pos = item->data_length;
-				item = dynamixel_.tools[i].getControlItem("present_velocity");
+				item = dxl_[i].getControlItem("Present_Velocity");
 				uint8_t len_vel = item->data_length;
-				item = dynamixel_.tools[i].getControlItem("present_current");
+				item = dxl_[i].getControlItem("Present_Current");
 				uint8_t len_cur = item->data_length;
 
 				uint32_t offset = 0;
