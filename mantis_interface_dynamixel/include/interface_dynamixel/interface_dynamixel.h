@@ -6,6 +6,7 @@
 #include <dynamixel_sdk/dynamixel_sdk.h>
 
 #include <mantis_interface_dynamixel/EnableTorque.h>
+#include <std_srvs/SetBool.h>
 #include <sensor_msgs/JointState.h>
 
 #include <string>
@@ -25,7 +26,8 @@ class InterfaceDynamixel {
 		ros::Timer timer_;
 		ros::Publisher pub_states_;
 		ros::Subscriber sub_setpoints_;
-		ros::ServiceServer srv_enable_torque_;
+		ros::ServiceServer srv_enable_torque_specific_;
+		ros::ServiceServer srv_enable_torque_all_;
 
 		sensor_msgs::JointState joint_states_;
 		sensor_msgs::JointState joint_setpoints_;
@@ -66,7 +68,8 @@ class InterfaceDynamixel {
 		//ROS
 		void callback_timer(const ros::TimerEvent& e);
 		void callback_setpoints(const sensor_msgs::JointState::ConstPtr& msg_in);
-		bool enable_torque(mantis_interface_dynamixel::EnableTorque::Request& req, mantis_interface_dynamixel::EnableTorque::Response& res);
+		bool enable_torque_specific(mantis_interface_dynamixel::EnableTorque::Request& req, mantis_interface_dynamixel::EnableTorque::Response& res);
+		bool enable_torque_all(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res);
 
 		//Interfacing
 		bool load_dynamixel();

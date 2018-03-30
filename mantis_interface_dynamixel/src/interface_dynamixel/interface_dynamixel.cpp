@@ -83,7 +83,8 @@ InterfaceDynamixel::InterfaceDynamixel() :
 			ROS_INFO("SyncRead done!");
 
 			timer_ = nh_.createTimer(ros::Duration(1.0 / param_update_rate_), &InterfaceDynamixel::callback_timer, this );
-			srv_enable_torque_ = nh_.advertiseService("enable_torque", &InterfaceDynamixel::enable_torque, this);
+			srv_enable_torque_specific_ = nh_.advertiseService("enable_torque_specific", &InterfaceDynamixel::enable_torque_specific, this);
+			srv_enable_torque_all_ = nh_.advertiseService("enable_torque_all", &InterfaceDynamixel::enable_torque_all, this);
 
 			ROS_INFO("Dynamixel interface started successfully!");
 		} else {
@@ -118,7 +119,7 @@ bool InterfaceDynamixel::set_torque_enable(int motor_number, bool onoff) {
 	return writeMotorState("Torque_Enable", motor_number, onoff);
 }
 
-bool InterfaceDynamixel::enable_torque(mantis_interface_dynamixel::EnableTorque::Request& req, mantis_interface_dynamixel::EnableTorque::Response& res) {
+bool InterfaceDynamixel::enable_torque_specific(mantis_interface_dynamixel::EnableTorque::Request& req, mantis_interface_dynamixel::EnableTorque::Response& res) {
 	bool success = true;
 
 	if(req.set_enable.size() == dxl_.size()) {
@@ -137,6 +138,28 @@ bool InterfaceDynamixel::enable_torque(mantis_interface_dynamixel::EnableTorque:
 	}
 
 	res.success = success;
+
+	return true;
+}
+
+bool InterfaceDynamixel::enable_torque_all(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res) {
+	res.success = true;
+
+	for(int i=0; i<dxl_.size(); i++) {
+		if(req.data) {
+			ROS_INFO("Turning on motor_%i!", i);
+		} else {
+			ROS_INFO("Turning off motor_%i!", i);
+		}
+
+		res.success &= set_torque_enable(i, req.data);
+	}
+
+	if(req.data) {
+		res.message = "Turning on all motors";
+	} else {
+		res.message = "Turning off all motors";
+	}
 
 	return true;
 }
