@@ -65,7 +65,7 @@
 
 	<!-- CONTROLLER SETUP -->
 
-	<rosparam file="$(find mantis_description)/config/robot_joint_control.yaml" command="load"/>
+	<rosparam file="$(find mantis_description)/config/mantis_sim_joint_control.yaml" command="load"/>
 
 	<node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
 	output="screen" ns="/mantis_uav" args="shoulder_velocity_controller elbow_velocity_controller joint_state_controller"/>

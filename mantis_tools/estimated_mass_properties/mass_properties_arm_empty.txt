@@ -1,0 +1,41 @@
+Output Coordinate Frame -> World
+X -> X
+Y -> -Y
+Z -> -Z
+
+Origin aligned at joint center
+
+-----------------------------------------
+
+Mass properties of selected components
+     Coordinate system: -- default --
+
+The center of mass and the moments of inertia are output in the coordinate system of arm
+Mass = 0.12290 kilograms
+
+Volume = 113351.78048 cubic millimeters
+
+Surface area = 0.04665 square meters
+
+Center of mass: ( meters )
+	X = 0.08855
+	Y = 0.00000
+	Z = 0.00000
+
+Principal axes of inertia and principal moments of inertia: ( kilograms * square meters )
+Taken at the center of mass.
+	 Ix = ( 1.00000,  0.00000,  0.00000)   	Px = 0.00004
+	 Iy = ( 0.00000,  1.00000,  0.00000)   	Py = 0.00032
+	 Iz = ( 0.00000,  0.00000,  1.00000)   	Pz = 0.00032
+
+Moments of inertia: ( kilograms * square meters )
+Taken at the center of mass and aligned with the output coordinate system.
+	Lxx = 0.00004	Lxy = 0.00000	Lxz = 0.00000
+	Lyx = 0.00000	Lyy = 0.00032	Lyz = 0.00000
+	Lzx = 0.00000	Lzy = 0.00000	Lzz = 0.00032
+
+Moments of inertia: ( kilograms * square meters )
+Taken at the output coordinate system.
+	Ixx = 0.00004	Ixy = 0.00000	Ixz = 0.00000
+	Iyx = 0.00000	Iyy = 0.00128	Iyz = 0.00000
+	Izx = 0.00000	Izy = 0.00000	Izz = 0.00128

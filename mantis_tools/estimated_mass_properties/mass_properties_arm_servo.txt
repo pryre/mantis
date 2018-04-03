@@ -1,0 +1,44 @@
+Output Coordinate Frame -> World
+X -> X
+Y -> -Y
+Z -> -Z
+
+Origin aligned at joint center
+
+-----------------------------------------
+
+Mass properties of arm
+     Configuration: Default
+     Coordinate system: -- default --
+
+Mass = 0.20490 kilograms
+
+Volume = 157387.47992 cubic millimeters
+
+Surface area = 0.05808 square meters
+
+Center of mass: ( meters )
+	X = 0.12164
+	Y = 0.00000
+	Z = 0.00000
+
+Principal axes of inertia and principal moments of inertia: ( kilograms * square meters )
+Taken at the center of mass.
+	 Ix = ( 1.00000,  0.00000, -0.00011)   	Px = 0.00005
+	 Iy = (-0.00011,  0.00000, -1.00000)   	Py = 0.00067
+	 Iz = ( 0.00000,  1.00000,  0.00000)   	Pz = 0.00068
+
+Moments of inertia: ( kilograms * square meters )
+Taken at the center of mass and aligned with the output coordinate system.
+	Lxx = 0.00005	Lxy = 0.00000	Lxz = 0.00000
+	Lyx = 0.00000	Lyy = 0.00068	Lyz = 0.00000
+	Lzx = 0.00000	Lzy = 0.00000	Lzz = 0.00067
+
+Moments of inertia: ( kilograms * square meters )
+Taken at the output coordinate system.
+	Ixx = 0.00005	Ixy = 0.00000	Ixz = 0.00000
+	Iyx = 0.00000	Iyy = 0.00371	Iyz = 0.00000
+	Izx = 0.00000	Izy = 0.00000	Izz = 0.00371
+
+One or more components have overridden mass properties:
+	x-430_idle
