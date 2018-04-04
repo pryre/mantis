@@ -7,25 +7,28 @@
 	</group>
 
 	<!-- LOW LEVEL CONTROL -->
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_params.yaml"/>
 
-	<node pkg="mantis_controller_id" type="controller_id_node" name="controller_id" clear_params="true" output="screen">
+	<node pkg="mantis_controller_id" type="controller_id_node" name="controller_id"
+	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />
 		<param name="model_id" value="mantis_uav" />
-		<param name="track_base" value="true" />
+		<param name="track_base" value="false" />
 		<param name="track_j2" value="false" />
 		<param name="accurate_z_tracking" value="false" />
 		<param name="accurate_end_tracking" value="true" />
 		<param name="reference_feedback" value="true" />
 		<param name="control_rate" value="100.0" />
 
-		<remap from="/controller_id/state/odom" to="/mantis_uav/odom" />
-		<remap from="/controller_id/state/joints" to="/mantis_uav/joint_states" />
+		<remap from="controller_id/state/odom" to="/mantis_uav/odom" />
+		<remap from="controller_id/state/joints" to="/mantis_uav/joint_states" />
 
-		<remap from="/controller_id/output/rc" to="/mavros/rc/override" />
-		<!-- remap from="/controller_id/output/joints" to="/mantis_uav/command/joint_torque" /-->
+		<remap from="controller_id/reference/path" to="/mantis_uav/path" />
 
-		<rosparam command="load" file="$(find mantis_description)/config/mantis_params.yaml"/>
+		<remap from="controller_id/output/rc" to="/mantis_uav/command/motor_pwm" />
+		<remap from="controller_id/output/joints" to="/mantis_uav/command/joint_torque" />
 	</node>
+
 
 	<node pkg="mantis_interface_dynamixel" type="interface_node" name="dynamixel_interface" clear_params="true" output="screen">
 		<param name="topic_input_setpoints" value="setpoints" type="str" />
@@ -50,10 +53,10 @@
 
 		<remap from="/mantis_uav/robot_config/goal/joint_state" to="/dynamixel_interface/setpoints"/>
 
-		<!-- remap from="/mantis_uav/robot_config/goal/joint1" to="/mantis_uav/joint_position_controller/joint_shoulder/command"/-->
-		<!-- remap from="/mantis_uav/robot_config/goal/joint2" to="/mantis_uav/joint_position_controller/joint_elbow/command"/-->
+		<!-- remap from="robot_config/goal/joint1" to="/mantis_uav/joint_position_controller/joint_shoulder/command"/-->
+		<!-- remap from="robot_config/goal/joint2" to="/mantis_uav/joint_position_controller/joint_elbow/command"/-->
 
-		<remap from="/mantis_uav/robot_config/pose" to="/move_base_simple/goal"/>
-		<remap from="/mantis_uav/robot_config/goal/path" to="/controller_id/goal/path"/>
+		<remap from="robot_config/pose" to="/move_base_simple/goal"/>
+		<remap from="robot_config/goal/path" to="/mantis_uav/path"/>
 	</node>
 </launch>
