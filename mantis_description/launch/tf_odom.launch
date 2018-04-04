@@ -4,13 +4,9 @@
 		<param name="frame_mav" value="vicon/mantis/mantis" type="str"/>
 
 		<param name="topic_odom" value="/mantis_uav/odom" type="str"/>
-		
-		<remap from="/tf_odom/input/imu" to="/mavros/imu/data"/>
 
-		<param name="lookup_rate" value="50.0" type="double"/>
+		<param name="lookup_rate" value="100.0" type="double"/>
 		<param name="velocity_interval" value="0.25" type="double"/>
 		<param name="velocity_filtering" value="0.4" type="double"/>
-		
-		<param name="use_imu" value="true" type="bool"/>
 	</node>
 </launch>
