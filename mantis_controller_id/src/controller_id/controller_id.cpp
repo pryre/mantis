@@ -14,6 +14,7 @@
 
 #include <mavros_msgs/OverrideRCIn.h>
 #include <sensor_msgs/JointState.h>
+#include <sensor_msgs/Imu.h>
 
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
@@ -36,6 +37,7 @@ ControllerID::ControllerID() :
 	ref_path_(&nhp_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
+	param_use_imu_state_(false),
 	param_track_base_(false),
 	param_track_j2_(false),
 	param_accurate_z_tracking_(false),
@@ -47,6 +49,7 @@ ControllerID::ControllerID() :
 
 	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
 	nhp_.param("model_id", param_model_id_, param_model_id_);
+	nhp_.param("use_imu_state", param_use_imu_state_, param_use_imu_state_);
 	nhp_.param("track_base", param_track_base_, param_track_base_);
 	nhp_.param("track_j2", param_track_j2_, param_track_j2_);
 	nhp_.param("accurate_z_tracking", param_accurate_z_tracking_, param_accurate_z_tracking_);
@@ -91,6 +94,7 @@ ControllerID::ControllerID() :
 		pub_accel_body_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
 
 		sub_state_odom_ = nhp_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
+		sub_state_imu_ = nhp_.subscribe<sensor_msgs::Imu>( "state/imu", 10, &ControllerID::callback_state_imu, this );
 		sub_state_joints_ = nhp_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
 
 		//sub_goal_path_ = nhp_.subscribe<nav_msgs::Path>( "goal/path", 10, &ControllerID::callback_goal_path, this );
@@ -118,7 +122,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	double dt = (e.current_real - e.last_real).toSec();
 
 	if( ( msg_state_odom_.header.stamp != ros::Time(0) ) &&
-		( msg_state_joints_.header.stamp != ros::Time(0) ) ) { // &&
+		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
+		( ( !param_use_imu_state_ ) || ( msg_state_imu_.header.stamp != ros::Time(0) ) ) ) { // &&
 		//( msg_goal_joints_.header.stamp != ros::Time(0) ) ) {
 
 		ROS_INFO_ONCE("Inverse dynamics controller running!");
@@ -133,9 +138,17 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		Eigen::Vector3d bv(msg_state_odom_.twist.twist.linear.x,
 						   msg_state_odom_.twist.twist.linear.y,
 						   msg_state_odom_.twist.twist.linear.z);
-		Eigen::Vector3d bw(msg_state_odom_.twist.twist.angular.x,
-						   msg_state_odom_.twist.twist.angular.y,
-						   msg_state_odom_.twist.twist.angular.z);
+
+		Eigen::Vector3d bw;
+		if( param_use_imu_state_ ) {
+			bw = Eigen::Vector3d(msg_state_imu_.angular_velocity.x,
+								 msg_state_imu_.angular_velocity.y,
+								 msg_state_imu_.angular_velocity.z);
+		} else {
+			bw = Eigen::Vector3d(msg_state_odom_.twist.twist.angular.x,
+								 msg_state_odom_.twist.twist.angular.y,
+								 msg_state_odom_.twist.twist.angular.z);
+		}
 
 		Eigen::VectorXd r = Eigen::VectorXd::Zero(p_.manip_num);
 		Eigen::VectorXd rd = Eigen::VectorXd::Zero(p_.manip_num);
@@ -706,6 +719,10 @@ void ControllerID::message_output_feedback(const ros::Time t,
 
 void ControllerID::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
 	msg_state_odom_ = *msg_in;
+}
+
+void ControllerID::callback_state_imu(const sensor_msgs::Imu::ConstPtr& msg_in) {
+	msg_state_imu_ = *msg_in;
 }
 
 void ControllerID::callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {

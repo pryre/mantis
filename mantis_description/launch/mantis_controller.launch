@@ -13,7 +13,8 @@
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />
 		<param name="model_id" value="mantis_uav" />
-		<param name="track_base" value="false" />
+		<param name="use_imu_state" value="true" />
+		<param name="track_base" value="true" />
 		<param name="track_j2" value="false" />
 		<param name="accurate_z_tracking" value="false" />
 		<param name="accurate_end_tracking" value="true" />
