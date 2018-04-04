@@ -11,6 +11,7 @@
 
 PathExtract::PathExtract( ros::NodeHandle *nh, Eigen::Affine3d init_pose ) :
 	nh_(nh),
+	have_path_(false),
 	path_hint_(1),
 	latest_g_(init_pose) {
 
@@ -20,6 +21,9 @@ PathExtract::PathExtract( ros::NodeHandle *nh, Eigen::Affine3d init_pose ) :
 PathExtract::~PathExtract( void ) {
 }
 
+bool PathExtract::received_valid_path( void ) {
+	return have_path_;
+}
 
 void PathExtract::set_latest(const Eigen::Vector3d &p, const Eigen::Quaterniond &q) {
 	latest_g_.translation() << p;
@@ -126,6 +130,7 @@ void PathExtract::callback_path(const nav_msgs::Path::ConstPtr& msg_in) {
 		if( ( msg_in->header.stamp + ( msg_in->poses.back().header.stamp - ros::Time(0) ) ) > ros::Time::now() ) {
 			ROS_INFO("Recieved new path!");
 			p_c_ = *msg_in;
+			have_path_ = true;
 			reset_hinting();
 		} else {
 			ROS_WARN("Rejecting path, timestamps are too old.");

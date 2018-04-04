@@ -1,7 +1,0 @@
-<?xml version='1.0'?>
-<launch>
-	<rosparam file="$(find mantis_description)/config/robot_joint_control.yaml" command="load"/>
-
-	<node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
-	output="screen" ns="/mantis_uav" args="shoulder_position_controller elbow_position_controller joint_state_controller"/>
-</launch>

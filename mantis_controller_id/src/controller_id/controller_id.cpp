@@ -97,15 +97,25 @@ ControllerID::ControllerID() :
 		sub_state_imu_ = nhp_.subscribe<sensor_msgs::Imu>( "state/imu", 10, &ControllerID::callback_state_imu, this );
 		sub_state_joints_ = nhp_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
 
-		//sub_goal_path_ = nhp_.subscribe<nav_msgs::Path>( "goal/path", 10, &ControllerID::callback_goal_path, this );
-		//sub_goal_joints_ = nhp_.subscribe<sensor_msgs::JointState>( "goal/joints", 10, &ControllerID::callback_goal_joints, this );
+		//XXX: Initialize takeoff goals
 		ref_path_.set_latest( Eigen::Vector3d(p_.takeoff_x, p_.takeoff_y, p_.takeoff_z), Eigen::Quaterniond::Identity() );
 
+		ROS_INFO("Inverse Dynamics controller loaded, waiting for start...");
+
+		//Lock the controller until all the inputs are satisfied
+		while( ( !ref_path_.received_valid_path() ) ||
+			 ( msg_state_odom_.header.stamp == ros::Time(0) ) ||
+			 ( msg_state_joints_.header.stamp == ros::Time(0) ) ||
+			 ( param_use_imu_state_ && ( msg_state_imu_.header.stamp == ros::Time(0) ) ) ) {
+
+			 ros::spinOnce();
+			 ros::Rate(param_rate_).sleep();
+		}
+
+		//Start the control loop
 		timer_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ControllerID::callback_control, this );
 
-		//XXX: Initialize takeoff goals
-
-		ROS_INFO("Inverse Dynamics controller loaded.");
+		ROS_INFO("Inverse dynamics controller started!");
 	} else {
 		ROS_WARN("Inverse Dynamics controller shutting down.");
 		ros::shutdown();
@@ -121,16 +131,12 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 
 	double dt = (e.current_real - e.last_real).toSec();
 
+	//If we still have all the inputs satisfied
 	if( ( msg_state_odom_.header.stamp != ros::Time(0) ) &&
 		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
-		( ( !param_use_imu_state_ ) || ( msg_state_imu_.header.stamp != ros::Time(0) ) ) ) { // &&
-		//( msg_goal_joints_.header.stamp != ros::Time(0) ) ) {
-
-		ROS_INFO_ONCE("Inverse dynamics controller running!");
+		( ( !param_use_imu_state_ ) || ( msg_state_imu_.header.stamp != ros::Time(0) ) ) ) {
 
 		double num_states = 6 + p_.manip_num;	//XXX: 6 comes from XYZ + Wrpy
-
-		//Eigen::VectorXd r_sp = Eigen::VectorXd::Zero(p_.manip_num);
 
 		//Current States
 		Eigen::Affine3d g = affine_from_msg(msg_state_odom_.pose.pose);
@@ -244,26 +250,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			}
 		}
 
-
-
-
-		/* XXX: Old MISO method
-		//Build gain matricies
-		Eigen::MatrixXd Kp = Eigen::MatrixXd::Zero(3,6);
-		Kp.block(0,0,1,2) << p_.gain_position_xy_p, p_.gain_position_xy_d;
-		Kp.block(1,2,1,2) << p_.gain_position_xy_p, p_.gain_position_xy_d;
-		Kp.block(2,4,1,2) << p_.gain_position_z_p, p_.gain_position_z_d;
-
-		//Calculate translation acceleration vector
-		Eigen::Vector3d e_p_p = g_sp.translation() - g.translation();
-		Eigen::Vector3d e_p_v = gv_sp - (g.linear()*bv);
-		//matrix_clamp(e_p_p, -p_.vel_max, p_.vel_max);
-		Eigen::VectorXd e_p = vector_interlace(e_p_p, e_p_v);
-		Eigen::Vector3d Al = Kp*e_p;
-
-		//ROS_INFO_STREAM("Pos/Vel Error:" << std::endl << "e_p_p: " << e_p_p << std::endl << "e_p_v: " << e_p_v << std::endl);
-		*/
-
+		//Trajectory Tracking Controller
 		pos_pid_x_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
 		pos_pid_y_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
 		pos_pid_z_.setGains( p_.gain_position_z_p, p_.gain_position_z_i, 0.0, 0.0 );
@@ -279,9 +266,6 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		double a_v_z = p_.gain_velocity_z_p * e_p_v.z();
 
 		Eigen::Vector3d Al(a_p_x + a_v_x, a_p_y + a_v_y, a_p_z + a_v_z);
-
-
-
 
 		//Add in gravity compensation
 		Eigen::Vector3d A = Al + Eigen::Vector3d(0.0, 0.0, CONST_GRAV);
@@ -377,6 +361,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		if(param_reference_feedback_)
 			message_output_feedback(e.current_real, g_sp, ge_sp, gv_sp, gev_sp, Al, gr_sp, ua);
 	} else {
+		ROS_ERROR_THROTTLE(0.5, "LOST INPUT!!");
+
 		//Output minimums until the input info is available
 		for(int i=0; i<p_.motor_num; i++) {
 			pwm_out[i] = p_.pwm_min;

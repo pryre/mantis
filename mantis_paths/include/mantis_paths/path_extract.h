@@ -17,6 +17,7 @@ class PathExtract {
 
 		nav_msgs::Path p_c_;
 		int path_hint_;
+		bool have_path_;
 
 		Eigen::Affine3d latest_g_;
 
@@ -28,6 +29,8 @@ class PathExtract {
 		void set_latest(const Eigen::Vector3d &p, const Eigen::Quaterniond &q);
 
 		bool get_ref_state(Eigen::Affine3d &g_c, Eigen::Vector3d &v_c, const ros::Time tc);
+
+		bool received_valid_path( void );
 
 	private:
 		void callback_path(const nav_msgs::Path::ConstPtr& msg_in);
