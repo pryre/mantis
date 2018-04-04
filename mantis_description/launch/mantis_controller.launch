@@ -24,7 +24,7 @@
 		<remap from="/controller_id/output/rc" to="/mavros/rc/override" />
 		<!-- remap from="/controller_id/output/joints" to="/mantis_uav/command/joint_torque" /-->
 
-		<rosparam command="load" file="$(find mantis_description)/config/robot_params.yaml"/>
+		<rosparam command="load" file="$(find mantis_description)/config/mantis_params.yaml"/>
 	</node>
 
 	<node pkg="mantis_interface_dynamixel" type="interface_node" name="dynamixel_interface" clear_params="true" output="screen">

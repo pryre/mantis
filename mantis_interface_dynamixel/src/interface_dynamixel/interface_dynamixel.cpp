@@ -328,6 +328,10 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 					set_torque_enable(i, false);
 					writeMotorState("Operating_Mode", i, MOTOR_MODE_POSITION);
 					motor_output_mode_ = MOTOR_MODE_POSITION;
+
+					ROS_WARN("--- HACK TO SET MOVEMENT PROFILE ---");
+					writeMotorState("Profile_Acceleration", i, 50);
+					writeMotorState("Profile_Velocity", i, 50);
 				}
 			} else {
 				failure_reason = "Something went wrong when selecting setpoint mode!";
