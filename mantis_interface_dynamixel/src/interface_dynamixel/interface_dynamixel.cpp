@@ -306,25 +306,29 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 	if( input_ok ) {
 		joint_setpoints_ = *msg_in;
 
-		for(int i=0; i<num_motors; i++) {
-			//Use the lowest level mode that has been sent
-			if(input_size_effort_ok) {
-				if(motor_output_mode_ != MOTOR_MODE_TORQUE) {
-					ROS_INFO("Torque control setpoint accepted");
+		//Use the lowest level mode that has been sent
+		if(input_size_effort_ok) {
+			if(motor_output_mode_ != MOTOR_MODE_TORQUE) {
+				ROS_INFO("Torque control setpoint accepted");
+				for(int i=0; i<num_motors; i++) {
 					set_torque_enable(i, false);
 					writeMotorState("Operating_Mode", i, MOTOR_MODE_TORQUE);
 					motor_output_mode_ = MOTOR_MODE_TORQUE;
 				}
-			} else if( input_size_velocity_ok ) {
-				if(motor_output_mode_ != MOTOR_MODE_VELOCITY) {
-					ROS_INFO("Velocity control setpoint accepted");
+			}
+		} else if( input_size_velocity_ok ) {
+			if(motor_output_mode_ != MOTOR_MODE_VELOCITY) {
+				ROS_INFO("Velocity control setpoint accepted");
+				for(int i=0; i<num_motors; i++) {
 					set_torque_enable(i, false);
 					writeMotorState("Operating_Mode", i, MOTOR_MODE_VELOCITY);
 					motor_output_mode_ = MOTOR_MODE_VELOCITY;
 				}
-			} else if( input_size_position_ok ) {
-				if(motor_output_mode_ != MOTOR_MODE_POSITION) {
-					ROS_INFO("Position control setpoint accepted");
+			}
+		} else if( input_size_position_ok ) {
+			if(motor_output_mode_ != MOTOR_MODE_POSITION) {
+				ROS_INFO("Position control setpoint accepted");
+				for(int i=0; i<num_motors; i++) {
 					set_torque_enable(i, false);
 					writeMotorState("Operating_Mode", i, MOTOR_MODE_POSITION);
 					motor_output_mode_ = MOTOR_MODE_POSITION;
@@ -333,10 +337,10 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 					writeMotorState("Profile_Acceleration", i, 50);
 					writeMotorState("Profile_Velocity", i, 50);
 				}
-			} else {
-				failure_reason = "Something went wrong when selecting setpoint mode!";
-				success = false;
 			}
+		} else {
+			failure_reason = "Something went wrong when selecting setpoint mode!";
+			success = false;
 		}
 	} else {
 		if(!input_size_name_ok) {
