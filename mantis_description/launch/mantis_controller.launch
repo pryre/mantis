@@ -25,7 +25,7 @@
 
 		<remap from="controller_id/reference/path" to="/mantis_uav/path" />
 
-		<remap from="controller_id/output/rc" to="/mantis_uav/command/motor_pwm" />
+		<remap from="controller_id/output/rc" to="/mavros/rc/override" />
 		<remap from="controller_id/output/joints" to="/mantis_uav/command/joint_torque" />
 	</node>
 
