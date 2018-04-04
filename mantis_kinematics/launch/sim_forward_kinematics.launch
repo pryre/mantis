@@ -16,7 +16,7 @@
 
 		<remap from="/mantis_fk/visualization" to="/$(arg model_name)/visualization"/>
 
-		<rosparam command="load" file="$(find mantis_description)/config/mantis_params.yaml"/>
+		<rosparam command="load" file="$(find mantis_description)/config/mantis_sim_params.yaml"/>
 	</node>
 
 	<!-- start gazebo client -->
