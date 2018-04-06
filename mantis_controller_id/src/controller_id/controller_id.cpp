@@ -38,6 +38,7 @@ ControllerID::ControllerID() :
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_use_imu_state_(false),
+	param_wait_for_path_(false),
 	param_track_base_(false),
 	param_track_j2_(false),
 	param_accurate_z_tracking_(false),
@@ -49,6 +50,7 @@ ControllerID::ControllerID() :
 
 	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
 	nhp_.param("model_id", param_model_id_, param_model_id_);
+	nhp_.param("wait_for_path", param_wait_for_path_, param_wait_for_path_);
 	nhp_.param("use_imu_state", param_use_imu_state_, param_use_imu_state_);
 	nhp_.param("track_base", param_track_base_, param_track_base_);
 	nhp_.param("track_j2", param_track_j2_, param_track_j2_);
@@ -100,13 +102,15 @@ ControllerID::ControllerID() :
 		//XXX: Initialize takeoff goals
 		ref_path_.set_latest( Eigen::Vector3d(p_.takeoff_x, p_.takeoff_y, p_.takeoff_z), Eigen::Quaterniond::Identity() );
 
-		ROS_INFO("Inverse Dynamics controller loaded, waiting for start...");
+		ROS_INFO("Inverse dynamics controller loaded. Waiting for inputs");
 
 		//Lock the controller until all the inputs are satisfied
-		while( ( !ref_path_.received_valid_path() ) ||
-			 ( msg_state_odom_.header.stamp == ros::Time(0) ) ||
-			 ( msg_state_joints_.header.stamp == ros::Time(0) ) ||
-			 ( param_use_imu_state_ && ( msg_state_imu_.header.stamp == ros::Time(0) ) ) ) {
+		while( ( !ref_path_.received_valid_path() && param_wait_for_path_ ) ||
+			   ( msg_state_odom_.header.stamp == ros::Time(0) ) ||
+			   ( msg_state_joints_.header.stamp == ros::Time(0) ) ||
+			   ( param_use_imu_state_ && ( msg_state_imu_.header.stamp == ros::Time(0) ) ) ) {
+			if( !ros::ok() )
+				break;
 
 			 ros::spinOnce();
 			 ros::Rate(param_rate_).sleep();
@@ -132,7 +136,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	double dt = (e.current_real - e.last_real).toSec();
 
 	//If we still have all the inputs satisfied
-	if( ( msg_state_odom_.header.stamp != ros::Time(0) ) &&
+	if( ( ref_path_.received_valid_path() || !param_wait_for_path_ ) &&
+		( msg_state_odom_.header.stamp != ros::Time(0) ) &&
 		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
 		( ( !param_use_imu_state_ ) || ( msg_state_imu_.header.stamp != ros::Time(0) ) ) ) {
 

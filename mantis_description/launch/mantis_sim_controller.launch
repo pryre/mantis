@@ -10,9 +10,11 @@
 
 	<node pkg="mantis_controller_id" type="controller_id_node" name="controller_id"
 	ns="/mantis_uav" clear_params="true" output="screen">
+
 		<param name="frame_id" value="map" />
+		<param name="wait_for_path" value="false" />
 		<param name="model_id" value="mantis_uav" />
-		<param name="track_base" value="false" />
+		<param name="track_base" value="true" />
 		<param name="track_j2" value="false" />
 		<param name="accurate_z_tracking" value="false" />
 		<param name="accurate_end_tracking" value="true" />

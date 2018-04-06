@@ -49,6 +49,7 @@ class ControllerID {
 		std::string param_frame_id_;
 		std::string param_model_id_;
 		bool param_use_imu_state_;
+		bool param_wait_for_path_;
 		bool param_track_base_;
 		bool param_track_j2_;
 		bool param_accurate_z_tracking_;
