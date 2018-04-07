@@ -3,7 +3,7 @@
 motor:
   num: 6
   arm_len: 0.275 #m
-  thrust_max: 10.5225 # N
+  thrust_max: 11.6110736 # N
   drag_max: 0.63 # N
 
 servo:
