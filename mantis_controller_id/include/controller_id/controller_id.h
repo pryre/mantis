@@ -9,6 +9,7 @@
 
 #include <sensor_msgs/JointState.h>
 #include <sensor_msgs/Imu.h>
+#include <mavros_msgs/State.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 #include <geometry_msgs/TwistStamped.h>
@@ -26,6 +27,7 @@ class ControllerID {
 		ros::NodeHandle nhp_;
 		ros::Timer timer_;
 		ros::Subscriber sub_state_imu_;
+		ros::Subscriber sub_state_mav_;
 		ros::Subscriber sub_state_odom_;
 		ros::Subscriber sub_state_joints_;
 		//ros::Subscriber sub_goal_path_;
@@ -43,12 +45,14 @@ class ControllerID {
 		nav_msgs::Odometry msg_state_odom_;
 		sensor_msgs::JointState msg_state_joints_;
 		sensor_msgs::Imu msg_state_imu_;
+		mavros_msgs::State msg_state_mav_;
 		//nav_msgs::Path msg_goal_path_;
 		//sensor_msgs::JointState msg_goal_joints_;
 
 		std::string param_frame_id_;
 		std::string param_model_id_;
 		bool param_use_imu_state_;
+		bool param_use_mav_state_;
 		bool param_wait_for_path_;
 		bool param_track_base_;
 		bool param_track_j2_;
@@ -100,6 +104,7 @@ class ControllerID {
 		void callback_control(const ros::TimerEvent& e);
 		void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
 		void callback_state_imu(const sensor_msgs::Imu::ConstPtr& msg_in);
+		void callback_state_mav(const mavros_msgs::State::ConstPtr& msg_in);
 		void callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in);
 		//void callback_goal_path(const nav_msgs::Path::ConstPtr& msg_in);
 		//void callback_goal_joints(const sensor_msgs::JointState::ConstPtr& msg_in);

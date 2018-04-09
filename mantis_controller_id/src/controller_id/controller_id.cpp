@@ -12,6 +12,7 @@
 #include <dh_parameters/dh_parameters.h>
 #include <mantis_paths/path_extract.h>
 
+#include <mavros_msgs/State.h>
 #include <mavros_msgs/OverrideRCIn.h>
 #include <sensor_msgs/JointState.h>
 #include <sensor_msgs/Imu.h>
@@ -37,6 +38,7 @@ ControllerID::ControllerID() :
 	ref_path_(&nhp_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
+	param_use_mav_state_(false),
 	param_use_imu_state_(false),
 	param_wait_for_path_(false),
 	param_track_base_(false),
@@ -52,6 +54,7 @@ ControllerID::ControllerID() :
 	nhp_.param("model_id", param_model_id_, param_model_id_);
 	nhp_.param("wait_for_path", param_wait_for_path_, param_wait_for_path_);
 	nhp_.param("use_imu_state", param_use_imu_state_, param_use_imu_state_);
+	nhp_.param("use_mav_state", param_use_mav_state_, param_use_mav_state_);
 	nhp_.param("track_base", param_track_base_, param_track_base_);
 	nhp_.param("track_j2", param_track_j2_, param_track_j2_);
 	nhp_.param("accurate_z_tracking", param_accurate_z_tracking_, param_accurate_z_tracking_);
@@ -96,8 +99,14 @@ ControllerID::ControllerID() :
 		pub_accel_body_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
 
 		sub_state_odom_ = nhp_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
-		sub_state_imu_ = nhp_.subscribe<sensor_msgs::Imu>( "state/imu", 10, &ControllerID::callback_state_imu, this );
 		sub_state_joints_ = nhp_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
+
+		if(param_use_imu_state_)
+			sub_state_imu_ = nhp_.subscribe<sensor_msgs::Imu>( "state/imu", 10, &ControllerID::callback_state_imu, this );
+
+		if(param_use_mav_state_)
+			sub_state_mav_ = nhp_.subscribe<mavros_msgs::State>( "state/mav", 10, &ControllerID::callback_state_mav, this );
+
 
 		//XXX: Initialize takeoff goals
 		ref_path_.set_latest( Eigen::Vector3d(p_.takeoff_x, p_.takeoff_y, p_.takeoff_z), Eigen::Quaterniond::Identity() );
@@ -108,7 +117,8 @@ ControllerID::ControllerID() :
 		while( ( !ref_path_.received_valid_path() && param_wait_for_path_ ) ||
 			   ( msg_state_odom_.header.stamp == ros::Time(0) ) ||
 			   ( msg_state_joints_.header.stamp == ros::Time(0) ) ||
-			   ( param_use_imu_state_ && ( msg_state_imu_.header.stamp == ros::Time(0) ) ) ) {
+			   ( param_use_imu_state_ && ( msg_state_imu_.header.stamp == ros::Time(0) ) ) ||
+			   ( param_use_mav_state_ && ( msg_state_mav_.header.stamp == ros::Time(0) ) ) ) {
 
 			if( !ros::ok() )
 				break;
@@ -147,7 +157,8 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	if( ( ref_path_.received_valid_path() || !param_wait_for_path_ ) &&
 		( msg_state_odom_.header.stamp != ros::Time(0) ) &&
 		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
-		( ( !param_use_imu_state_ ) || ( msg_state_imu_.header.stamp != ros::Time(0) ) ) ) {
+		( ( !param_use_imu_state_ ) || ( msg_state_imu_.header.stamp != ros::Time(0) ) ) &&
+		( ( !param_use_mav_state_ ) || ( ( msg_state_mav_.header.stamp != ros::Time(0) ) && msg_state_mav_.armed ) ) ) {
 
 		double num_states = 6 + p_.manip_num;	//XXX: 6 comes from XYZ + Wrpy
 
@@ -736,6 +747,10 @@ void ControllerID::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_i
 
 void ControllerID::callback_state_imu(const sensor_msgs::Imu::ConstPtr& msg_in) {
 	msg_state_imu_ = *msg_in;
+}
+
+void ControllerID::callback_state_mav(const mavros_msgs::State::ConstPtr& msg_in) {
+	msg_state_mav_ = *msg_in;
 }
 
 void ControllerID::callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
