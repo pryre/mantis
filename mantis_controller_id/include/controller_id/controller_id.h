@@ -69,6 +69,7 @@ class ControllerID {
 
 		~ControllerID( void );
 
+		double double_clamp(const double v, const double min, const double max);
 		void matrix_clamp(Eigen::MatrixXd m, const double min, const double max);
 		Eigen::VectorXd vector_interlace(const Eigen::VectorXd a, const Eigen::VectorXd b);
 

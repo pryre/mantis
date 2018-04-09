@@ -83,7 +83,7 @@ ControllerID::ControllerID() :
 	pos_pid_z_.setOutputMinMax( -CONST_GRAV / 2.0, CONST_GRAV / 2.0);
 
 	if(success) {
-		ROS_INFO( "Loaded configuration for %li links", joints_.size() );
+		ROS_INFO( "Loaded configuration for %d links", joints_.size() );
 
 		pub_rc_ = nhp_.advertise<mavros_msgs::OverrideRCIn>("output/rc", 10);
 		pub_joints_ = nhp_.advertise<sensor_msgs::JointState>("output/joints", 10);
@@ -386,16 +386,20 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	message_output_control(e.current_real, pwm_out, joints_out);
 }
 
+double ControllerID::double_clamp(const double v, const double min, const double max) {
+	return (v < min) ? min : (v > max) ? max : v;
+}
+
 void ControllerID::matrix_clamp(Eigen::MatrixXd m, const double min, const double max) {
 	for(int i=0; i<m.rows(); i++) {
 		for(int j=0; j<m.cols(); j++) {
-			m(i,j) = (m(i,j) < min) ? min : (m(i,j) > max) ? max : m(i,j);
+			m(i,j) = double_clamp(m(i,j), min, max);
 		}
 	}
 }
 
 Eigen::VectorXd ControllerID::vector_interlace(const Eigen::VectorXd a, const Eigen::VectorXd b) {
-	ROS_ASSERT_MSG(a.size() == b.size(), "Vectors to be interlaced must be same size (a=%li,b=%li", a.size(), b.size());
+	ROS_ASSERT_MSG(a.size() == b.size(), "Vectors to be interlaced must be same size (a=%d,b=%d", a.size(), b.size());
 
 	Eigen::VectorXd c = Eigen::VectorXd::Zero(2*a.size());
 
@@ -531,6 +535,8 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 	//px4: calculate weight for yaw control
 	double yaw_w = e_R_z_cos * e_R_z_cos;
 
+	//ROS_INFO_STREAM("e_R_z_cos: " << e_R_z_cos << std::endl);
+
 	//px4: e_R(2) = atan2f((R_rp_x % R_sp_x) * R_sp_z, R_rp_x * R_sp_x) * yaw_w;
 	//Eigen::Vector3d R_rp_c_sp = R_rp_x.cross(R_sp_x);
 	//e_R(2) = std::atan2(R_rp_c_sp.dot(R_sp_z), R_rp_x.dot(R_sp_x)) * yaw_w;
@@ -542,6 +548,13 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 		//Should never be an issue for us
 		ROS_WARN_THROTTLE(1.0, "Large thrust vector detected!");
 	}
+
+	double rp_max = 5.0;
+	double y_max = 0.5;
+
+	e_R(0) = double_clamp(e_R(0), -rp_max, rp_max);
+	e_R(1) = double_clamp(e_R(1), -rp_max, rp_max);
+	e_R(2) = double_clamp(e_R(2), -y_max, y_max);
 
 	return p_.gain_rotation_ang_p*e_R;
 }
@@ -610,7 +623,7 @@ void ControllerID::message_output_control(const ros::Time t, const std::vector<u
 	msg_joints_out.header.frame_id = param_model_id_;
 
 	//Insert control data
-	ROS_ASSERT_MSG(pwm.size() <= 8, "Supported number of motors is 8 (%li)", pwm.size());
+	ROS_ASSERT_MSG(pwm.size() <= 8, "Supported number of motors is 8 (%d)", pwm.size());
 	for(int i=0; i<8; i++) {
 		if( i<pwm.size() ) {
 			msg_rc_out.channels[i] = pwm[i];
