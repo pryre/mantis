@@ -203,7 +203,8 @@ bool InterfaceDynamixel::add_motors() {
 		//XXX: This is a pretty bad hack for this
 		if(i==0){
 			for(int j=0; j<DCI_NUM_ITEMS; j++) {
-				dynamixel_control_items_.push_back(dxl_[0].getControlItem(dynamixel_control_items_names[j].c_str()));
+				dynamixel_control_items_.push_back(*dxl_[0].getControlItem(dynamixel_control_items_names[j].c_str()));
+				ROS_INFO("Loaded ControlTableItem \"%s\": %i; %i", dynamixel_control_items_names[j].c_str(), dynamixel_control_items_[j].address, dynamixel_control_items_[j].data_length);
 			}
 		}
 		//XXX: This is a pretty bad hack for this

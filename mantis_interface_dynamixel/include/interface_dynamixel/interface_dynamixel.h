@@ -67,7 +67,7 @@ class InterfaceDynamixel {
 		dynamixel::PacketHandler *packetHandler_;
 		std::vector<DynamixelTool> dxl_;
 		std::vector<std::string> dxl_names_;
-		std::vector<ControlTableItem*> dynamixel_control_items_;
+		std::vector<ControlTableItem> dynamixel_control_items_;
 		//dynamixel::GroupSyncWrite groupSyncWrite;
 		//dynamixel::GroupSyncRead groupSyncRead;
 

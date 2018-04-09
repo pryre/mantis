@@ -2,7 +2,7 @@
 #include <dynamixel_sdk/dynamixel_sdk.h>
 
 bool InterfaceDynamixel::writeMotorState(dynamixel_control_items_t item_id, int motor_number, uint32_t write_value) {
-	return writeDynamixelRegister(get_id(motor_number), dynamixel_control_items_[item_id]->address, dynamixel_control_items_[item_id]->data_length, write_value);
+	return writeDynamixelRegister(get_id(motor_number), dynamixel_control_items_[item_id].address, dynamixel_control_items_[item_id].data_length, write_value);
 }
 
 bool InterfaceDynamixel::writeDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, uint32_t value) {
@@ -36,8 +36,8 @@ void InterfaceDynamixel::doSyncWrite(dynamixel_control_items_t item_id) {
 	bool do_write = false;
 
 	// Initialize GroupSyncWrite instance
-	ControlTableItem* item = dynamixel_control_items_[item_id];
-	dynamixel::GroupSyncWrite groupSyncWrite(portHandler_, packetHandler_, item->address, item->data_length);
+	ControlTableItem item = dynamixel_control_items_[item_id];
+	dynamixel::GroupSyncWrite groupSyncWrite(portHandler_, packetHandler_, item.address, item.data_length);
 
 	if(item_id == DCI_GOAL_CURRENT) {
 		for(int i=0; i<dxl_.size(); i++) {
