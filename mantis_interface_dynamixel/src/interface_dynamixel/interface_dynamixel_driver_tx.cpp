@@ -1,12 +1,8 @@
 #include <interface_dynamixel/interface_dynamixel.h>
 #include <dynamixel_sdk/dynamixel_sdk.h>
 
-bool InterfaceDynamixel::writeMotorState(std::string addr_name, int motor_number, uint32_t write_value) {
-	ControlTableItem* item = dxl_[motor_number].getControlItem(addr_name.c_str());
-
-	//ROS_INFO("id: %d\naddr: %d\nlen: %d\nval: %d", get_id(motor_number), item->address, item->data_length, write_value);
-
-	return writeDynamixelRegister(get_id(motor_number), item->address, item->data_length, write_value);
+bool InterfaceDynamixel::writeMotorState(dynamixel_control_items_t item_id, int motor_number, uint32_t write_value) {
+	return writeDynamixelRegister(get_id(motor_number), dynamixel_control_items_[item_id]->address, dynamixel_control_items_[item_id]->data_length, write_value);
 }
 
 bool InterfaceDynamixel::writeDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, uint32_t value) {
@@ -36,20 +32,15 @@ bool InterfaceDynamixel::writeDynamixelRegister(uint8_t id, uint16_t addr, uint8
 	return false;
 }
 
-void InterfaceDynamixel::doSyncWrite(std::string addr_name) {
+void InterfaceDynamixel::doSyncWrite(dynamixel_control_items_t item_id) {
 	bool do_write = false;
 
 	// Initialize GroupSyncWrite instance
-
-	ControlTableItem* item;
-	//XXX: Need to do this to hardcode this to get anything working
-	item = dxl_[0].getControlItem(addr_name.c_str());
+	ControlTableItem* item = dynamixel_control_items_[item_id];
 	dynamixel::GroupSyncWrite groupSyncWrite(portHandler_, packetHandler_, item->address, item->data_length);
 
-	if(addr_name == "Goal_Current") {
+	if(item_id == DCI_GOAL_CURRENT) {
 		for(int i=0; i<dxl_.size(); i++) {
-			item = dxl_[i].getControlItem(addr_name.c_str());
-
 			// Allocate goal position value into byte array
 			uint8_t param_goal_current[2];
 			uint16_t goal_current = convert_torque_value(joint_setpoints_.effort[i], i);
@@ -92,10 +83,8 @@ void InterfaceDynamixel::doSyncWrite(std::string addr_name) {
 		do_write = true;
 	}
 	*/
-	if(addr_name == "Goal_Position") {
+	if(item_id == DCI_GOAL_POSITION) {
 		for(int i=0; i<dxl_.size(); i++) {
-			item = dxl_[i].getControlItem(addr_name.c_str());
-
 			// Allocate goal position value into byte array
 			uint8_t param_goal_position[4];
 			int32_t goal_position = convert_radian_value(joint_setpoints_.position[i], i);

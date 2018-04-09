@@ -12,6 +12,19 @@
 #include <string>
 #include <math.h>
 
+static const std::string dynamixel_control_items_names[DCI_NUM_ITEMS] {
+	"Torque_Enable",
+	"Operating_Mode",
+	"Profile_Velocity",
+	"Profile_Acceleration",
+	"Present_Position",
+	"Present_Velocity",
+	"Present_Current",
+	"Goal_Position",
+	"Goal_Velocity",
+	"Goal_Current"
+};
+
 InterfaceDynamixel::InterfaceDynamixel() :
 	nh_("~"),
 	motor_output_mode_(MOTOR_MODE_INVALID),
@@ -116,7 +129,7 @@ void InterfaceDynamixel::shutdown_node( void ) {
 }
 
 bool InterfaceDynamixel::set_torque_enable(int motor_number, bool onoff) {
-	return writeMotorState("Torque_Enable", motor_number, onoff);
+	return writeMotorState(DCI_TORQUE_ENABLE, motor_number, onoff);
 }
 
 bool InterfaceDynamixel::enable_torque_specific(mantis_interface_dynamixel::EnableTorque::Request& req, mantis_interface_dynamixel::EnableTorque::Response& res) {
@@ -187,10 +200,19 @@ bool InterfaceDynamixel::add_motors() {
 		ROS_INFO("Initializing motor #%i", i);
 		init_motor(motor_model, (uint8_t)motor_id, protocol_version, motor_name);
 
+		//XXX: This is a pretty bad hack for this
+		if(i==0){
+			for(int j=0; j<DCI_NUM_ITEMS; j++) {
+				dynamixel_control_items_.push_back(dxl_[0].getControlItem(dynamixel_control_items_names[j].c_str()));
+			}
+		}
+		//XXX: This is a pretty bad hack for this
+
 		ROS_INFO("Contacting motor #%i", i);
 		int64_t tmp_val;
 
-		if( readMotorState("Torque_Enable", i, &tmp_val) ) {
+		//if( readMotorState("Torque_Enable", i, &tmp_val) ) {
+		if( readMotorState(DCI_TORQUE_ENABLE, i, &tmp_val) ) {
 			set_torque_enable(i, false);	//Make sure motor is not turned on
 			ROS_INFO("Motor %i successfully added", i);
 		} else {
@@ -263,19 +285,19 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 	if(motor_output_mode_ != MOTOR_MODE_INVALID) {
 		switch(motor_output_mode_) {
 			case MOTOR_MODE_TORQUE: {
-				doSyncWrite("Goal_Current");
+				doSyncWrite(DCI_GOAL_CURRENT);
 				//writeMotorState("goal_current", i, convert_torque_value(joint_setpoints_.effort[i], i));
 
 				break;
 			}
 			case MOTOR_MODE_VELOCITY: {
-				doSyncWrite("Goal_Velocity");
+				doSyncWrite(DCI_GOAL_VELOCITY);
 				//writeMotorState("goal_velocity", i, convert_velocity_value(joint_setpoints_.velocity[i], i));
 
 				break;
 			}
 			case MOTOR_MODE_POSITION: {
-				doSyncWrite("Goal_Position");
+				doSyncWrite(DCI_GOAL_POSITION);
 				//writeMotorState("goal_position", i, convert_radian_value(joint_setpoints_.position[i], i));
 
 				break;
@@ -312,7 +334,7 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 				ROS_INFO("Torque control setpoint accepted");
 				for(int i=0; i<num_motors; i++) {
 					set_torque_enable(i, false);
-					writeMotorState("Operating_Mode", i, MOTOR_MODE_TORQUE);
+					writeMotorState(DCI_OPERATING_MODE, i, MOTOR_MODE_TORQUE);
 					motor_output_mode_ = MOTOR_MODE_TORQUE;
 				}
 			}
@@ -321,7 +343,7 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 				ROS_INFO("Velocity control setpoint accepted");
 				for(int i=0; i<num_motors; i++) {
 					set_torque_enable(i, false);
-					writeMotorState("Operating_Mode", i, MOTOR_MODE_VELOCITY);
+					writeMotorState(DCI_OPERATING_MODE, i, MOTOR_MODE_VELOCITY);
 					motor_output_mode_ = MOTOR_MODE_VELOCITY;
 				}
 			}
@@ -330,12 +352,12 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 				ROS_INFO("Position control setpoint accepted");
 				for(int i=0; i<num_motors; i++) {
 					set_torque_enable(i, false);
-					writeMotorState("Operating_Mode", i, MOTOR_MODE_POSITION);
+					writeMotorState(DCI_OPERATING_MODE, i, MOTOR_MODE_POSITION);
 					motor_output_mode_ = MOTOR_MODE_POSITION;
 
 					ROS_WARN("--- HACK TO SET MOVEMENT PROFILE ---");
-					writeMotorState("Profile_Acceleration", i, 50);
-					writeMotorState("Profile_Velocity", i, 50);
+					writeMotorState(DCI_PROFILE_ACCELERATION, i, 50);
+					writeMotorState(DCI_PROFILE_VELOCITY, i, 50);
 				}
 			}
 		} else {

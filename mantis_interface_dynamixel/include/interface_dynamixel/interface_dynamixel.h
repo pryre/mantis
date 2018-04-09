@@ -20,6 +20,20 @@ enum dynamixel_mode_t {
 	MOTOR_MODE_INVALID = 255
 };
 
+enum dynamixel_control_items_t {
+	DCI_TORQUE_ENABLE,
+	DCI_OPERATING_MODE,
+	DCI_PROFILE_VELOCITY,
+	DCI_PROFILE_ACCELERATION,
+	DCI_PRESENT_POSITION,
+	DCI_PRESENT_VELOCITY,
+	DCI_PRESENT_CURRENT,
+	DCI_GOAL_POSITION,
+	DCI_GOAL_VELOCITY,
+	DCI_GOAL_CURRENT,
+	DCI_NUM_ITEMS
+};
+
 class InterfaceDynamixel {
 	private:
 		ros::NodeHandle nh_;
@@ -53,6 +67,7 @@ class InterfaceDynamixel {
 		dynamixel::PacketHandler *packetHandler_;
 		std::vector<DynamixelTool> dxl_;
 		std::vector<std::string> dxl_names_;
+		std::vector<ControlTableItem*> dynamixel_control_items_;
 		//dynamixel::GroupSyncWrite groupSyncWrite;
 		//dynamixel::GroupSyncRead groupSyncRead;
 
@@ -82,15 +97,18 @@ class InterfaceDynamixel {
 		//Control
 		bool set_torque_enable(int motor_number, bool onoff);
 
-		bool readMotorState(std::string addr_name, int motor_number, int64_t *read_value);
+		//bool readMotorState(std::string addr_name, int motor_number, int64_t *read_value);
+		bool readMotorState(dynamixel_control_items_t item_id, int motor_number, int64_t *read_value);
 		bool readDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, int64_t *value);
 
-		bool writeMotorState(std::string addr_name, int motor_number, uint32_t write_value);
+		//bool writeMotorState(std::string addr_name, int motor_number, uint32_t write_value);
+		bool writeMotorState(dynamixel_control_items_t item_id, int motor_number, uint32_t write_value);
 		bool writeDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, uint32_t value);
 
 		void initSyncRead();
 		bool doSyncRead(std::vector<std::vector<std::int32_t>> *states);
-		void doSyncWrite(std::string addr_name);
+		//void doSyncWrite(std::string addr_name);
+		void doSyncWrite(dynamixel_control_items_t item_id);
 
 		//bool bulk_read_states(std::vector<std::string> *states, std::vector<std::vector<int32_t>> *result);
 

@@ -1,12 +1,9 @@
 #include <interface_dynamixel/interface_dynamixel.h>
 #include <dynamixel_sdk/dynamixel_sdk.h>
 
-bool InterfaceDynamixel::readMotorState(std::string addr_name, int motor_number, int64_t *read_value) {
-	ControlTableItem* item = dxl_[motor_number].getControlItem(addr_name.c_str());
+bool InterfaceDynamixel::readMotorState(dynamixel_control_items_t item_id, int motor_number, int64_t *read_value) {
 
-	//ROS_INFO("id: %d\naddr: %d\nlen: %d", get_id(motor_number), item->address, item->data_length);
-
-	return readDynamixelRegister(get_id(motor_number), item->address, item->data_length, read_value);
+	return readDynamixelRegister(get_id(motor_number), dynamixel_control_items_[item_id]->address, dynamixel_control_items_[item_id]->data_length, read_value);
 }
 
 bool InterfaceDynamixel::readDynamixelRegister(uint8_t id, uint16_t addr, uint8_t length, int64_t *value) {
@@ -58,19 +55,19 @@ void InterfaceDynamixel::initSyncRead() {
 		uint8_t length = 2;
 
 		ControlTableItem* item;
-		item = dxl_[i].getControlItem("Torque_Enable");
+		item = dynamixel_control_items_[DCI_TORQUE_ENABLE];
 		writeDynamixelRegister(id, addr + 0, length, item->address + 0);
-		item = dxl_[i].getControlItem("Present_Position");
+		item = dynamixel_control_items_[DCI_PRESENT_POSITION];
 		writeDynamixelRegister(id, addr + 2, length, item->address + 0);
 		writeDynamixelRegister(id, addr + 4, length, item->address + 1);
 		writeDynamixelRegister(id, addr + 6, length, item->address + 2);
 		writeDynamixelRegister(id, addr + 8, length, item->address + 3);
-		item = dxl_[i].getControlItem("Present_Velocity");
+		item = dynamixel_control_items_[DCI_PRESENT_VELOCITY];
 		writeDynamixelRegister(id, addr + 10, length, item->address + 0);
 		writeDynamixelRegister(id, addr + 12, length, item->address + 1);
 		writeDynamixelRegister(id, addr + 14, length, item->address + 2);
 		writeDynamixelRegister(id, addr + 16, length, item->address + 3);
-		item = dxl_[i].getControlItem("Present_Current");
+		item = dynamixel_control_items_[DCI_PRESENT_CURRENT];
 		writeDynamixelRegister(id, addr + 18, length, item->address + 0);
 		writeDynamixelRegister(id, addr + 20, length, item->address + 1);
 	}
@@ -102,13 +99,14 @@ bool InterfaceDynamixel::doSyncRead(std::vector<std::vector<std::int32_t>> *stat
 				uint8_t id = get_id(i);
 
 				ControlTableItem* item;
-				item = dxl_[i].getControlItem("Torque_Enable");
+				item = dynamixel_control_items_[DCI_PRESENT_POSITION];
+				item = dynamixel_control_items_[DCI_TORQUE_ENABLE];
 				uint8_t len_te = item->data_length;
-				item = dxl_[i].getControlItem("Present_Position");
+				item = dynamixel_control_items_[DCI_PRESENT_POSITION];
 				uint8_t len_pos = item->data_length;
-				item = dxl_[i].getControlItem("Present_Velocity");
+				item = dynamixel_control_items_[DCI_PRESENT_VELOCITY];
 				uint8_t len_vel = item->data_length;
-				item = dxl_[i].getControlItem("Present_Current");
+				item = dynamixel_control_items_[DCI_PRESENT_CURRENT];
 				uint8_t len_cur = item->data_length;
 
 				uint32_t offset = 0;
