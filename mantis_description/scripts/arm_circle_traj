@@ -26,7 +26,7 @@ time_start_traj = rospy.Time(0)
 
 pub_j1 = rospy.Publisher('/mantis_uav/joint_position_controller/joint_shoulder/command', Float64, queue_size=10)
 pub_j2 = rospy.Publisher('/mantis_uav/joint_position_controller/joint_elbow/command', Float64, queue_size=10)
-pub_ja = rospy.Publisher('/dynamixel_interface/setpoints', JointState, queue_size=10)
+pub_ja = rospy.Publisher('/mantis_uav/joint_setpoints', JointState, queue_size=10)
 
 def timer_callback(e):
 	global start_traj
