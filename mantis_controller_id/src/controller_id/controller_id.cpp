@@ -80,7 +80,7 @@ ControllerID::ControllerID() :
 	pos_pid_z_.setGains( p_.gain_position_z_p, p_.gain_position_z_i, 0.0, 0.0 );
 	pos_pid_x_.setOutputMinMax( -CONST_GRAV / 2.0, CONST_GRAV / 2.0);
 	pos_pid_y_.setOutputMinMax( -CONST_GRAV / 2.0, CONST_GRAV / 2.0);
-	pos_pid_z_.setOutputMinMax( -CONST_GRAV / 2.0, CONST_GRAV / 2.0);
+	pos_pid_z_.setOutputMinMax( -3.0 * CONST_GRAV / 4.0, 3.0 * CONST_GRAV / 4.0);
 
 	if(success) {
 		ROS_INFO( "Loaded configuration for %d links", joints_.size() );
@@ -109,11 +109,19 @@ ControllerID::ControllerID() :
 			   ( msg_state_odom_.header.stamp == ros::Time(0) ) ||
 			   ( msg_state_joints_.header.stamp == ros::Time(0) ) ||
 			   ( param_use_imu_state_ && ( msg_state_imu_.header.stamp == ros::Time(0) ) ) ) {
+
 			if( !ros::ok() )
 				break;
 
-			 ros::spinOnce();
-			 ros::Rate(param_rate_).sleep();
+			ros::spinOnce();
+
+			mavros_msgs::OverrideRCIn msg_rc_out;
+			for(int i=0; i<p_.motor_num; i++) {
+					msg_rc_out.channels[i] = msg_rc_out.CHAN_NOCHANGE;
+			}
+			pub_rc_.publish(msg_rc_out);
+
+			ros::Rate(param_rate_).sleep();
 		}
 
 		//Start the control loop
