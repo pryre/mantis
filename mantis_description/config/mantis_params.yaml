@@ -25,16 +25,16 @@ controller_id:
   gain:
     pos:
       xy:
-        p: 2.0
-        i: 2.0
+        p: 3.0
+        i: 5.0
       z:
-        p: 2.0
-        i: 1.0
+        p: 5.0
+        i: 5.0
     vel:
       xy:
-        p: 1.0
+        p: 10.0
       z:
-        p: 1.0
+        p: 10.0
     rot:
       ang:
         p: 3.0

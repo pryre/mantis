@@ -561,7 +561,8 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 
 int16_t ControllerID::map_pwm(double val) {
 	//Constrain from 0 -> 1
-	double c = (val > 1.0) ? 1.0 : (val < 0.0) ? 0.0 : val;
+	//double c = (val > 1.0) ? 1.0 : (val < 0.0) ? 0.0 : val;
+	double c = double_clamp(val, 0.0, 1.0);
 
 	//Scale c to the pwm values
 	return int16_t((p_.pwm_max - p_.pwm_min)*c) + p_.pwm_min;
