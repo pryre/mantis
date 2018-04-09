@@ -34,7 +34,7 @@
 	</node>
 
 	<node pkg="mantis_interface_dynamixel" type="interface_node" name="dynamixel_interface" clear_params="true" output="screen">
-		<param name="topic_input_setpoints" value="setpoints" type="str" />
+		<param name="topic_input_setpoints" value="/mantis_uav/joint_setpoints" type="str" />
 		<param name="topic_output_states" value="/mantis_uav/joint_states" type="str" />
 
 		<param name="port_name" value="/dev/ttyUSB0" type="str" />
@@ -65,7 +65,7 @@
 		<param name="frame_id" value="map" />
 		<param name="hover_height" value="1.0" />
 
-		<remap from="/mantis_uav/robot_config/goal/joint_state" to="/dynamixel_interface/setpoints"/>
+		<remap from="/mantis_uav/robot_config/goal/joint_state" to="/mantis_uav/joint_setpoints"/>
 
 		<!-- remap from="robot_config/goal/joint1" to="/mantis_uav/joint_position_controller/joint_shoulder/command"/-->
 		<!-- remap from="robot_config/goal/joint2" to="/mantis_uav/joint_position_controller/joint_elbow/command"/-->

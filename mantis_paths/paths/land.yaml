@@ -1,5 +1,5 @@
 start:
-  position: [0.0, 0.0, 1.5]
+  position: [0.0, 0.0, 1.0]
   alpha: 0.0
   #theta: 0.0
 
@@ -16,5 +16,5 @@ path:
     type: "line"
     velocity: 0.1
     length: 0.0
-    height: -1.5
+    height: -1.0
     #theta: 0.0
