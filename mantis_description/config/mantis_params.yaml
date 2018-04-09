@@ -25,21 +25,21 @@ controller_id:
   gain:
     pos:
       xy:
-        p: 10
-        i: 15
+        p: 7
+        i: 0
       z:
-        p: 15
-        i: 5
+        p: 10
+        i: 0
     vel:
       xy:
-        p: 3
+        p: 5
       z:
-        p: 10
+        p: 7
     rot:
       ang:
         p: 3
       rate:
-        p: 10
+        p: 5
 
 links:
   num: 3
