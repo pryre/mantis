@@ -14,6 +14,7 @@
 
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/OverrideRCIn.h>
+#include <sensor_msgs/BatteryState.h>
 #include <sensor_msgs/JointState.h>
 #include <sensor_msgs/Imu.h>
 
@@ -99,6 +100,7 @@ ControllerID::ControllerID() :
 		pub_accel_body_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
 
 		sub_state_odom_ = nhp_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerID::callback_state_odom, this );
+		sub_state_battery_ = nhp_.subscribe<sensor_msgs::BatteryState>( "state/battery", 10, &ControllerID::callback_state_battery, this );
 		sub_state_joints_ = nhp_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerID::callback_state_joints, this );
 
 		if(param_use_imu_state_)
@@ -106,7 +108,6 @@ ControllerID::ControllerID() :
 
 		if(param_use_mav_state_)
 			sub_state_mav_ = nhp_.subscribe<mavros_msgs::State>( "state/mav", 10, &ControllerID::callback_state_mav, this );
-
 
 		//XXX: Initialize takeoff goals
 		ref_path_.set_latest( Eigen::Vector3d(p_.takeoff_x, p_.takeoff_y, p_.takeoff_z), Eigen::Quaterniond::Identity() );
@@ -116,6 +117,7 @@ ControllerID::ControllerID() :
 		//Lock the controller until all the inputs are satisfied
 		while( ( !ref_path_.received_valid_path() && param_wait_for_path_ ) ||
 			   ( msg_state_odom_.header.stamp == ros::Time(0) ) ||
+			   ( msg_state_battery_.header.stamp == ros::Time(0) ) ||
 			   ( msg_state_joints_.header.stamp == ros::Time(0) ) ||
 			   ( param_use_imu_state_ && ( msg_state_imu_.header.stamp == ros::Time(0) ) ) ||
 			   ( param_use_mav_state_ && ( msg_state_mav_.header.stamp == ros::Time(0) ) ) ) {
@@ -156,6 +158,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	//If we still have all the inputs satisfied
 	if( ( ref_path_.received_valid_path() || !param_wait_for_path_ ) &&
 		( msg_state_odom_.header.stamp != ros::Time(0) ) &&
+		( msg_state_battery_.header.stamp != ros::Time(0) ) &&
 		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
 		( ( !param_use_imu_state_ ) || ( msg_state_imu_.header.stamp != ros::Time(0) ) ) &&
 		( ( !param_use_mav_state_ ) || ( ( msg_state_mav_.header.stamp != ros::Time(0) ) && msg_state_mav_.armed ) ) ) {
@@ -614,9 +617,13 @@ void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 	//TODO: This all needs to be better defined generically
 	double arm_ang = M_PI / 3.0;
 
-	double kT = 1.0 / (p_.motor_num * p_.motor_thrust_max);
-	double ktx = 1.0 / (2.0 * p_.la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * p_.motor_thrust_max);
-	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * p_.motor_thrust_max);
+	//Calculate the thrust curve
+	double rpm_max = p_.motor_kv * msg_state_battery_.voltage;	//Get the theoretical maximum rpm at the current battery voltage
+	double thrust_max = p_.rpm_thrust_m * rpm_max + p_.rpm_thrust_c;	//Use the RPM to calculate maximum thrust
+
+	double kT = 1.0 / (p_.motor_num * thrust_max);
+	double ktx = 1.0 / (2.0 * p_.la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * thrust_max);
+	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * thrust_max);
 	double km = -1.0 / (p_.motor_num * p_.motor_drag_max);
 
 	//Generate the copter map
@@ -743,6 +750,10 @@ void ControllerID::message_output_feedback(const ros::Time t,
 
 void ControllerID::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
 	msg_state_odom_ = *msg_in;
+}
+
+void ControllerID::callback_state_battery(const sensor_msgs::BatteryState::ConstPtr& msg_in) {
+	msg_state_battery_ = *msg_in;
 }
 
 void ControllerID::callback_state_imu(const sensor_msgs::Imu::ConstPtr& msg_in) {

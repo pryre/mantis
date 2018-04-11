@@ -19,7 +19,10 @@ class ControllerIDParams {
 		int pwm_max;
 
 		int motor_num;
-		double motor_thrust_max;
+		//double motor_thrust_max;
+		double motor_kv;
+		double rpm_thrust_m;
+		double rpm_thrust_c;
 		double motor_drag_max;
 
 		double servo_torque_max;

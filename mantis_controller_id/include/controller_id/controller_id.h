@@ -9,6 +9,7 @@
 
 #include <sensor_msgs/JointState.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/BatteryState.h>
 #include <mavros_msgs/State.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
@@ -29,6 +30,7 @@ class ControllerID {
 		ros::Subscriber sub_state_imu_;
 		ros::Subscriber sub_state_mav_;
 		ros::Subscriber sub_state_odom_;
+		ros::Subscriber sub_state_battery_;
 		ros::Subscriber sub_state_joints_;
 		//ros::Subscriber sub_goal_path_;
 		//ros::Subscriber sub_goal_joints_;
@@ -43,6 +45,7 @@ class ControllerID {
 		ros::Publisher pub_pose_end_;
 
 		nav_msgs::Odometry msg_state_odom_;
+		sensor_msgs::BatteryState msg_state_battery_;
 		sensor_msgs::JointState msg_state_joints_;
 		sensor_msgs::Imu msg_state_imu_;
 		mavros_msgs::State msg_state_mav_;
@@ -105,6 +108,7 @@ class ControllerID {
 		void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
 		void callback_state_imu(const sensor_msgs::Imu::ConstPtr& msg_in);
 		void callback_state_mav(const mavros_msgs::State::ConstPtr& msg_in);
+		void callback_state_battery(const sensor_msgs::BatteryState::ConstPtr& msg_in);
 		void callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in);
 		//void callback_goal_path(const nav_msgs::Path::ConstPtr& msg_in);
 		//void callback_goal_joints(const sensor_msgs::JointState::ConstPtr& msg_in);

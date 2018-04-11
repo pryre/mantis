@@ -9,7 +9,10 @@ ControllerIDParams::ControllerIDParams(ros::NodeHandle *nh, ros::NodeHandle *nhp
 	pwm_min(1000),
 	pwm_max(2000),
 	motor_num(0),
-	motor_thrust_max(0.0),
+	//motor_thrust_max(0.0),
+	motor_kv(0.0),
+	rpm_thrust_m(0.0),
+	rpm_thrust_c(0.0),
 	motor_drag_max(0.0),
 	link_num(0),
 	servo_torque_max(0.0),
@@ -59,7 +62,9 @@ void ControllerIDParams::load( void ) {
 
 	nh_->param("motor/num", motor_num, motor_num);
 	nh_->param("motor/arm_len", la, la);
-	nh_->param("motor/thrust_max", motor_thrust_max, motor_thrust_max);
+	nh_->param("motor/kv", motor_kv, motor_kv);
+	nh_->param("motor/rpm_thrust_curve/m", rpm_thrust_m, rpm_thrust_m);
+	nh_->param("motor/rpm_thrust_curve/c", rpm_thrust_c, rpm_thrust_c);
 	nh_->param("motor/drag_max", motor_drag_max, motor_drag_max);
 
 	nh_->param("servo/torque_max", servo_torque_max, servo_torque_max);
