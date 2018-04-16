@@ -18,15 +18,13 @@ class ControllerIDParams {
 		int pwm_min;
 		int pwm_max;
 
+		double la;
 		int motor_num;
 		//double motor_thrust_max;
 		double motor_kv;
 		double rpm_thrust_m;
 		double rpm_thrust_c;
 		double motor_drag_max;
-
-		double servo_torque_max;
-		double servo_ang_max;
 
 		int link_num;
 
@@ -39,15 +37,12 @@ class ControllerIDParams {
 		double gain_rotation_ang_p;
 		double gain_rotation_rate_p;
 
-		double vel_max;
-
 		double takeoff_x;
 		double takeoff_y;
 		double takeoff_z;
 
 		int body_num;
 		int manip_num;
-		double la;
 		double lc1;
 		double lc2;
 		double m0;

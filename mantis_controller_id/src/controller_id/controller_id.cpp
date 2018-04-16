@@ -66,9 +66,9 @@ ControllerID::ControllerID() :
 	//Load the robot parameters
 	p_.load();	//TODO have this give a success if loaded correctly
 
-	//Load in the joint definitions
-	for(int i=0; i<p_.link_num; i++) {
-		DHParameters dh( &nh_, "links/l" + std::to_string(i) );
+	//Load in the link definitions
+	for(int i=0; i<p_.body_num; i++) {
+		DHParameters dh( &nh_, "body/b" + std::to_string(i) + "/link" );
 
 		if( dh.is_valid() ) {
 			joints_.push_back(dh);

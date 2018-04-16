@@ -10,15 +10,9 @@ motor:
     c: -1.8044052
   drag_max: 6.3 # N
 
-servo:
-  torque_max: 2.0 # N
-  ang_max: 1.570796326794897 # radians
-
 pwm:
   min: 1000
   max: 2000
-
-vel_max: 0.5
 
 takeoff:
   x: 0.0
@@ -45,32 +39,6 @@ controller_id:
       rate:
         p: 7.0
 
-links:
-  num: 3
-  l0:
-    name: "mount"
-    d: -0.05025
-    t: 0.0
-    r: 0.0
-    a: 1.570796326794897
-    type: "static"
-  l1:
-    name: "joint_shoulder"
-    d: 0.0
-    t: -1.570796326794897
-    r: 0.18325
-    a: 0.0
-    type: "twist_z"
-    beta: 0.8
-  l2:
-    name: "joint_elbow"
-    d: 0.0
-    t: 0.0
-    r: 0.18325
-    a: 0.0
-    type: "twist_z"
-    beta: 0.8
-
 body:
   num: 3
   b0:
@@ -80,6 +48,13 @@ body:
       Iy: 0.03504
       Iz: 0.06791
     com: 0.0
+    link:
+      name: "mount"
+      d: -0.05025
+      t: 0.0
+      r: 0.0
+      a: 1.570796326794897
+      type: "static"
   b1:
     mass:
       m: 0.205
@@ -87,6 +62,14 @@ body:
       Iy: 0.00068
       Iz: 0.00067
     com: 0.122
+    link:
+      name: "joint_shoulder"
+      d: 0.0
+      t: -1.570796326794897
+      r: 0.18325
+      a: 0.0
+      type: "twist_z"
+      beta: 0.8
   b2:
     mass:
       m: 0.12
@@ -94,3 +77,11 @@ body:
       Iy: 0.00032
       Iz: 0.00032
     com: 0.089
+    link:
+      name: "joint_elbow"
+      d: 0.0
+      t: 0.0
+      r: 0.18325
+      a: 0.0
+      type: "twist_z"
+      beta: 0.8
