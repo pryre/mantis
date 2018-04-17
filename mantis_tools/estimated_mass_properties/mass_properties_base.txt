@@ -11,39 +11,36 @@ Mass properties of base
      Configuration: Default
      Coordinate system: -- default --
 
-Mass (user-overridden) = 2.29500 kilograms
+Mass = 2.30531857 kilograms
 
-Volume = 0.00068 cubic meters
+Volume = 0.00086519 cubic meters
 
-Surface area = 0.60903 square meters
+Surface area = 0.63477680 square meters
 
 Center of mass: ( meters )
-	X = -0.00295
-	Y = 0.03120
-	Z = -0.00004
+	X = -0.00231363
+	Y = 0.02556629
+	Z = -0.00003105
 
 Principal axes of inertia and principal moments of inertia: ( kilograms * square meters )
 Taken at the center of mass.
-	 Ix = ( 0.01230,  0.00012,  0.99992)   	Px = 0.03504
-	 Iy = ( 0.99989,  0.00788, -0.01230)   	Py = 0.03541
-	 Iz = (-0.00788,  0.99997, -0.00002)   	Pz = 0.06791
+	 Ix = ( 0.01257365,  0.00009251,  0.99992094)   	Px = 0.02821762
+	 Iy = ( 0.99989863,  0.00667994, -0.01257399)   	Py = 0.02850547
+	 Iz = (-0.00668057,  0.99997768, -0.00000851)   	Pz = 0.05416892
 
 Moments of inertia: ( kilograms * square meters )
 Taken at the center of mass and aligned with the output coordinate system.
-	Lxx = 0.03541	Lxy = 0.00026	Lxz = 0.00000
-	Lyx = 0.00026	Lyy = 0.06791	Lyz = 0.00000
-	Lzx = 0.00000	Lzy = 0.00000	Lzz = 0.03504
+	Lxx = 0.02850657	Lxy = 0.00017144	Lxz = 0.00000362
+	Lyx = 0.00017144	Lyy = 0.05416778	Lyz = 0.00000025
+	Lzx = 0.00000362	Lzy = 0.00000025	Lzz = 0.02821766
 
 Moments of inertia: ( kilograms * square meters )
 Taken at the output coordinate system.
-	Ixx = 0.03764	Ixy = 0.00004	Ixz = 0.00000
-	Iyx = 0.00004	Iyy = 0.06793	Iyz = 0.00000
-	Izx = 0.00000	Izy = 0.00000	Izz = 0.03729
+	Ixx = 0.03001341	Ixy = 0.00003508	Ixz = 0.00000378
+	Iyx = 0.00003508	Iyy = 0.05418012	Iyz = -0.00000158
+	Izx = 0.00000378	Izy = -0.00000158	Izz = 0.02973684
 
-Mass Properties have been overridden at the assembly level. Therefore,
-any overrides specified at the component level are ignored in
-Moment of Inertia calculations. One or more components have
-user-overridden mass properties that are being ignored:
+One or more components have overridden mass properties:
 	Brushless motor 2212 920kv
 	Brushless motor 2212 920kv
 	Brushless motor 2212 920kv
