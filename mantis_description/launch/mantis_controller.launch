@@ -26,6 +26,7 @@
 
 		<remap from="controller_id/state/odom" to="/mantis_uav/odom" />
 		<remap from="controller_id/state/imu" to="/mavros/imu/data" />
+		<remap from="controller_id/state/battery" to="/mavros/battery" />
 		<remap from="controller_id/state/mav" to="/mavros/state" />
 		<remap from="controller_id/state/joints" to="/mantis_uav/joint_states" />
 

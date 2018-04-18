@@ -4,11 +4,11 @@ motor:
   num: 6
   arm_len: 0.275 #m
   #thrust_max: 8.5 #11.6110736 # N
-  kv: 960
+  kv: 920
   rpm_thrust_curve:
     m: 0.0008318056
     c: -1.8044052
-  drag_max: 6.3 # N
+  drag_max: 1.2 # N
 
 pwm:
   min: 1000
@@ -32,7 +32,7 @@ controller_id:
       xy:
         p: 1.5
       z:
-        p: 1.0
+        p: 2.0
     rot:
       ang:
         p: 2.0
