@@ -388,7 +388,30 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		if(param_reference_feedback_)
 			message_output_feedback(e.current_real, g_sp, ge_sp, gv_sp, gev_sp, Al, gr_sp, ua);
 	} else {
-		ROS_ERROR_THROTTLE(0.5, "LOST INPUT!!");
+		std::string error_msg = "Input error:\n";
+
+		if( ref_path_.received_valid_path() || !param_wait_for_path_ )
+			error_msg += "no valid path\n";
+
+		if( msg_state_odom_.header.stamp != ros::Time(0) )
+			error_msg += "no odometry\n";
+
+		if( msg_state_battery_.header.stamp != ros::Time(0) )
+			error_msg += "no battery data\n";
+
+		if( msg_state_joints_.header.stamp != ros::Time(0) )
+			error_msg += "no joint data\n";
+
+		if( ( !param_use_imu_state_ ) || ( msg_state_imu_.header.stamp != ros::Time(0) ) )
+			error_msg += "no imu data\n";
+
+		if( ( !param_use_mav_state_ ) || ( msg_state_mav_.header.stamp != ros::Time(0) ) )
+			error_msg += "no state data\n";
+
+		if(msg_state_mav_.armed)
+			error_msg += "not armed\n";
+
+		ROS_ERROR_THROTTLE(0.5, "%s", error_msg.c_str());
 
 		//Output minimums until the input info is available
 		for(int i=0; i<p_.motor_num; i++) {
@@ -617,8 +640,14 @@ void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 	//TODO: This all needs to be better defined generically
 	double arm_ang = M_PI / 3.0;
 
+	//XXX: Need to do this as the straight voltage reading is too slow
+	double voltage = 0.0;
+	for(int i=0; i<msg_state_battery_.cell_voltage.size(); i++) {
+		voltage += msg_state_battery_.cell_voltage[i];
+	}
+
 	//Calculate the thrust curve
-	double rpm_max = p_.motor_kv * msg_state_battery_.voltage;	//Get the theoretical maximum rpm at the current battery voltage
+	double rpm_max = p_.motor_kv * voltage;	//Get the theoretical maximum rpm at the current battery voltage
 	double thrust_max = p_.rpm_thrust_m * rpm_max + p_.rpm_thrust_c;	//Use the RPM to calculate maximum thrust
 
 	double kT = 1.0 / (p_.motor_num * thrust_max);
