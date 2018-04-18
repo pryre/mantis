@@ -43,10 +43,10 @@ body:
   num: 3
   b0:
     mass:
-      m: 2.295 # Base + props
-      Ix: 0.03541
-      Iy: 0.03504
-      Iz: 0.06791
+      m: 2.30 # Base + props
+      Ix: 0.02850657
+      Iy: 0.02821766
+      Iz: 0.05416778
     com: 0.0
     link:
       name: "mount"
