@@ -390,26 +390,28 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 	} else {
 		std::string error_msg = "Input error:\n";
 
-		if( ref_path_.received_valid_path() || !param_wait_for_path_ )
+		if( !ref_path_.received_valid_path() && param_wait_for_path_ )
 			error_msg += "no valid path\n";
 
-		if( msg_state_odom_.header.stamp != ros::Time(0) )
+		if( msg_state_odom_.header.stamp == ros::Time(0) )
 			error_msg += "no odometry\n";
 
-		if( msg_state_battery_.header.stamp != ros::Time(0) )
+		if( msg_state_battery_.header.stamp == ros::Time(0) )
 			error_msg += "no battery data\n";
 
-		if( msg_state_joints_.header.stamp != ros::Time(0) )
+		if( msg_state_joints_.header.stamp == ros::Time(0) )
 			error_msg += "no joint data\n";
 
-		if( ( !param_use_imu_state_ ) || ( msg_state_imu_.header.stamp != ros::Time(0) ) )
+		if( ( param_use_imu_state_ ) && ( msg_state_imu_.header.stamp == ros::Time(0) ) )
 			error_msg += "no imu data\n";
 
-		if( ( !param_use_mav_state_ ) || ( msg_state_mav_.header.stamp != ros::Time(0) ) )
-			error_msg += "no state data\n";
-
-		if(msg_state_mav_.armed)
-			error_msg += "not armed\n";
+		if( param_use_mav_state_ ) {
+			if( msg_state_mav_.header.stamp == ros::Time(0) ) {
+				error_msg += "no state data\n";
+			} else if(!msg_state_mav_.armed) {
+				error_msg += "not armed\n";
+			}
+		}
 
 		ROS_ERROR_THROTTLE(0.5, "%s", error_msg.c_str());
 
