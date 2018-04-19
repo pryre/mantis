@@ -96,13 +96,14 @@ class ControllerID {
 
 		void message_output_control(const ros::Time t, const std::vector<uint16_t> &pwm, const std::vector<double> &joints);
 		void message_output_feedback(const ros::Time t,
-									 const Eigen::Affine3d &g_sp,
-									 const Eigen::Affine3d &ge_sp,
-									 const Eigen::Vector3d &gv_sp,
-									 const Eigen::Vector3d &gev_sp,
-									 const Eigen::Vector3d &pa,
-									 const Eigen::Matrix3d &r_sp,
-									 const Eigen::VectorXd &ua);
+									 const Eigen::Affine3d &g_sp,	//Base position/orientation
+									 const Eigen::Affine3d &ge_sp,	//End position/orientation
+									 const Eigen::Vector3d &gv_sp,	//Base velocity
+									 const Eigen::Vector3d &gev_sp,	//End velocity
+									 const Eigen::Vector3d &pa,		//Base linear acceleration
+									 const Eigen::Matrix3d &r_sp,	//Base rotation
+									 const Eigen::Vector3d &g_bw,	//Base body rates
+									 const Eigen::VectorXd &ua);	//Base accelerations
 
 		void callback_control(const ros::TimerEvent& e);
 		void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);

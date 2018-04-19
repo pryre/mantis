@@ -33,7 +33,8 @@ ForwardKinematics::ForwardKinematics() :
 	param_model_id_("mantis_uav"),
 	param_do_end_effector_pose_(true),
 	param_do_viz_(true),
-	param_done_viz_(false) {
+	param_done_viz_(false),
+	tfBuffer_(ros::Duration(20.0)) {
 
 	int num_links = 0;
 
@@ -43,13 +44,13 @@ ForwardKinematics::ForwardKinematics() :
 	nh_.param("do_viz", param_do_viz_, param_do_viz_);
 	nh_.param("end_effector_pose", param_do_end_effector_pose_, param_do_end_effector_pose_);
 
-	nh_.param("links/num", num_links, num_links);
+	nh_.param("body/num", num_links, num_links);
 	ROS_INFO("Loading %i links...", num_links);
 
 	bool success = true;
 
 	for(int i=0; i<num_links; i++) {
-		DHParameters dh( &nh_, "links/l" + std::to_string(i) );
+		DHParameters dh( &nh_, "body/b" + std::to_string(i) + "/link");
 
 		if( dh.is_valid() ) {
 			param_joints_.push_back(dh);

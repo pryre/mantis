@@ -386,7 +386,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		}
 
 		if(param_reference_feedback_)
-			message_output_feedback(e.current_real, g_sp, ge_sp, gv_sp, gev_sp, Al, gr_sp, ua);
+			message_output_feedback(e.current_real, g_sp, ge_sp, gv_sp, gev_sp, Al, gr_sp, w_goal, ua);
 	} else {
 		std::string error_msg = "Input error:\n";
 
@@ -706,6 +706,7 @@ void ControllerID::message_output_feedback(const ros::Time t,
 										   const Eigen::Vector3d &gev_sp,
 										   const Eigen::Vector3d &pa,
 										   const Eigen::Matrix3d &r_sp,
+										   const Eigen::Vector3d &g_bw,
 										   const Eigen::VectorXd &ua) {
 	geometry_msgs::PoseStamped msg_pose_base_out;
 	geometry_msgs::PoseStamped msg_pose_end_out;
@@ -754,6 +755,9 @@ void ControllerID::message_output_feedback(const ros::Time t,
 	msg_twist_base_out.twist.linear.x = gv_sp.x();
 	msg_twist_base_out.twist.linear.y = gv_sp.y();
 	msg_twist_base_out.twist.linear.z = gv_sp.z();
+	msg_twist_base_out.twist.angular.x = g_bw.x();
+	msg_twist_base_out.twist.angular.y = g_bw.y();
+	msg_twist_base_out.twist.angular.z = g_bw.z();
 
 	msg_twist_end_out.twist.linear.x = gev_sp.x();
 	msg_twist_end_out.twist.linear.y = gev_sp.y();
