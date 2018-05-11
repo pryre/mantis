@@ -112,7 +112,13 @@ ControllerID::ControllerID() :
 		//XXX: Initialize takeoff goals
 		ref_path_.set_latest( Eigen::Vector3d(p_.takeoff_x, p_.takeoff_y, p_.takeoff_z), Eigen::Quaterniond::Identity() );
 
-		ROS_INFO("Inverse dynamics controller loaded. Waiting for inputs");
+		ROS_INFO("Inverse dynamics controller loaded. Waiting for inputs:");
+		ROS_INFO("    - state");
+		ROS_INFO("    - odom");
+		ROS_INFO("    - joints");
+		ROS_INFO("    - imu");
+		ROS_INFO("    - path");
+		ROS_INFO("    - battery");
 
 		//Lock the controller until all the inputs are satisfied
 		while( ( !ref_path_.received_valid_path() && param_wait_for_path_ ) ||
@@ -121,6 +127,24 @@ ControllerID::ControllerID() :
 			   ( msg_state_joints_.header.stamp == ros::Time(0) ) ||
 			   ( param_use_imu_state_ && ( msg_state_imu_.header.stamp == ros::Time(0) ) ) ||
 			   ( param_use_mav_state_ && ( msg_state_mav_.header.stamp == ros::Time(0) ) ) ) {
+
+			if( ( !param_use_mav_state_ ) || ( msg_state_mav_.header.stamp != ros::Time(0) ) )
+				ROS_INFO_ONCE("Inverse dynamics got input: state");
+
+			if( msg_state_odom_.header.stamp != ros::Time(0) )
+				ROS_INFO_ONCE("Inverse dynamics got input: odom");
+
+			if( msg_state_joints_.header.stamp != ros::Time(0) )
+				ROS_INFO_ONCE("Inverse dynamics got input: joints");
+
+			if( ( !param_use_imu_state_ ) || ( msg_state_imu_.header.stamp != ros::Time(0) ) )
+				ROS_INFO_ONCE("Inverse dynamics got input: imu");
+
+			if( ref_path_.received_valid_path() || !param_wait_for_path_ )
+				ROS_INFO_ONCE("Inverse dynamics got input: path");
+
+			if( msg_state_battery_.header.stamp != ros::Time(0) )
+				ROS_INFO_ONCE("Inverse dynamics got input: battery");
 
 			if( !ros::ok() )
 				break;
@@ -135,6 +159,8 @@ ControllerID::ControllerID() :
 
 			ros::Rate(param_rate_).sleep();
 		}
+
+		ROS_INFO_ONCE("Inverse dynamics got all inputs!");
 
 		//Start the control loop
 		timer_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ControllerID::callback_control, this );
