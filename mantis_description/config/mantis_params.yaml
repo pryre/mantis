@@ -6,7 +6,7 @@ motor:
   #thrust_max: 8.5 #11.6110736 # N
   kv: 920
   rpm_thrust_curve:
-    m: 0.0009 #0.0008318056
+    m: 0.0008 #0.0008318056
     c: -1.8044052
   drag_max: 1.2 # N
 
@@ -72,7 +72,7 @@ body:
       beta: 0.8 # Maybe lower the filter a bit, or maybe set to 1 to remove it?
   b2:
     mass:
-      m: 0.05
+      m: 0.06
       Ix: 0.00004
       Iy: 0.00032
       Iz: 0.00032
