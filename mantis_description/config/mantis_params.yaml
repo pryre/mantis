@@ -30,7 +30,7 @@ controller_id:
         i: 4.0
     vel:
       xy:
-        p: 1.5
+        p: 0.5
       z:
         p: 2.0
     rot:
@@ -61,12 +61,12 @@ body:
       Ix: 0.00005
       Iy: 0.00068
       Iz: 0.00067
-    com: 0.122
+    com: 0.15
     link:
       name: "joint_shoulder"
       d: 0.0
       t: -1.570796326794897
-      r: 0.18325 # Update this
+      r: 0.24
       a: 0.0
       type: "twist_z"
       beta: 0.8 # Maybe lower the filter a bit, or maybe set to 1 to remove it?
@@ -76,12 +76,12 @@ body:
       Ix: 0.00004
       Iy: 0.00032
       Iz: 0.00032
-    com: 0.089
+    com: 0.11
     link:
       name: "joint_elbow"
       d: 0.0
       t: 0.0
-      r: 0.18325 # Update this
+      r: 0.21
       a: 0.0
       type: "twist_z"
       beta: 0.8 # Maybe lower the filter a bit, or maybe set to 1 to remove it?
