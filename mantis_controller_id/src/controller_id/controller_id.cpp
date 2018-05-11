@@ -826,15 +826,18 @@ void ControllerID::callback_state_mav(const mavros_msgs::State::ConstPtr& msg_in
 }
 
 void ControllerID::callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
-	double dt = (msg_state_joints_.header.stamp - msg_in->header.stamp).toSec();
+	double dt = (msg_in->header.stamp - msg_state_joints_.header.stamp).toSec();
 
-	for(int i=0; i<joints_.size(); i++) {
-		//Only update the dynamic links
-		if(joints_[i].jt() != DHParameters::JointType::Static) {
-			for(int j=0; j<msg_in->name.size(); j++) {
-				//If we have the right joint
-				if(joints_[i].name() == msg_in->name[j])
-					joints_[i].update(msg_in->position[j], msg_in->velocity[j], dt);
+	//Only updating if dt is acceptable
+	if( (dt > 0.0) && (dt < 1.0) ) {
+		for(int i=0; i<joints_.size(); i++) {
+			//Only update the dynamic links
+			if(joints_[i].jt() != DHParameters::JointType::Static) {
+				for(int j=0; j<msg_in->name.size(); j++) {
+					//If we have the right joint
+					if(joints_[i].name() == msg_in->name[j])
+						joints_[i].update(msg_in->position[j], msg_in->velocity[j], dt);
+				}
 			}
 		}
 	}
