@@ -2,26 +2,33 @@
 <launch>
 	<arg name="arm" default="false"/>
 
-	<node pkg="rosservice" type="rosservice" name="arm_system" args="call --wait /mantis_uav/arm/motors '{arm: $(arg arm)}'"/>
+	<group if="$(arg arm)">
+		<node pkg="rosservice" type="rosservice" name="arm_system" args="call --wait /mantis_uav/arm/motors '{arm: $(arg arm)}'"/>
+	</group>
 
 	<!-- LOW LEVEL CONTROL -->
-
 	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_params.yaml"/>
 
 	<node pkg="mantis_controller_id" type="controller_id_node" name="controller_id"
 	ns="/mantis_uav" clear_params="true" output="screen">
-
 		<param name="frame_id" value="map" />
-		<param name="wait_for_path" value="false" />
 		<param name="model_id" value="mantis_uav" />
-		<param name="track_base" value="true" />
+		<param name="control_rate" value="50.0" />
+
+		<param name="wait_for_path" value="true" />
+		<param name="use_imu_state" value="false" />
+		<param name="use_mav_state" value="true" />
 		<param name="track_j2" value="false" />
+		<param name="track_end" value="false" />
 		<param name="accurate_z_tracking" value="false" />
 		<param name="accurate_end_tracking" value="true" />
 		<param name="reference_feedback" value="true" />
 		<param name="control_rate" value="100.0" />
 
 		<remap from="controller_id/state/odom" to="/mantis_uav/odom" />
+		<remap from="controller_id/state/imu" to="/mantis_uav/imu_data" />
+		<remap from="controller_id/state/battery" to="/mantis_uav/battery" />
+		<remap from="controller_id/state/mav" to="/mantis_uav/state" />
 		<remap from="controller_id/state/joints" to="/mantis_uav/joint_states" />
 
 		<remap from="controller_id/reference/path" to="/mantis_uav/path" />

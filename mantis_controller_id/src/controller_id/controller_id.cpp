@@ -42,8 +42,8 @@ ControllerID::ControllerID() :
 	param_use_mav_state_(false),
 	param_use_imu_state_(false),
 	param_wait_for_path_(false),
-	param_track_base_(false),
 	param_track_j2_(false),
+	param_track_end_(false),
 	param_accurate_z_tracking_(false),
 	param_accurate_end_tracking_(false),
 	param_reference_feedback_(false),
@@ -56,8 +56,8 @@ ControllerID::ControllerID() :
 	nhp_.param("wait_for_path", param_wait_for_path_, param_wait_for_path_);
 	nhp_.param("use_imu_state", param_use_imu_state_, param_use_imu_state_);
 	nhp_.param("use_mav_state", param_use_mav_state_, param_use_mav_state_);
-	nhp_.param("track_base", param_track_base_, param_track_base_);
 	nhp_.param("track_j2", param_track_j2_, param_track_j2_);
+	nhp_.param("track_end", param_track_end_, param_track_end_);
 	nhp_.param("accurate_z_tracking", param_accurate_z_tracking_, param_accurate_z_tracking_);
 	nhp_.param("accurate_end_tracking", param_accurate_end_tracking_, param_accurate_end_tracking_);
 	nhp_.param("reference_feedback", param_reference_feedback_, param_reference_feedback_);
@@ -243,10 +243,7 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			//gev_sp = Eigen::Vector3d::Zero();
 		}
 
-		if(param_track_base_) {
-			g_sp = ge_sp;
-			gv_sp = gev_sp;
-		} else {
+		if(param_track_end_) {
 			//Compute transform for all joints in the chain to get base to end effector
 			Eigen::Affine3d gbe = Eigen::Affine3d::Identity();
 			Eigen::MatrixXd Je = Eigen::MatrixXd::Zero(6, rd.size());
@@ -301,6 +298,10 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			} else {
 				gv_sp = gev_sp;
 			}
+		} else {
+			//Just track the robot base
+			g_sp = ge_sp;
+			gv_sp = gev_sp;
 		}
 
 		//Trajectory Tracking Controller

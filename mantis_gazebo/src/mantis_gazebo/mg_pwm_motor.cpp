@@ -6,11 +6,18 @@
 #include <ros/ros.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <mavros_msgs/OverrideRCIn.h>
+#include <mavros_msgs/State.h>
+#include <sensor_msgs/BatteryState.h>
 
 #include <mantis_gazebo_msgs/DoArm.h>
 
 #include <vector>
 #include <string>
+
+#define BATTERY_CELLS 4
+
+#define VOLTAGE_LIPO_CELL 4.2
+
 
 namespace gazebo
 {
@@ -43,7 +50,50 @@ class MantisGazeboPWMMotor : public ModelPlugin
 
 			srv_arm_motors_ = nh_.advertiseService(model_->GetName() + "/arm/motors", &MantisGazeboPWMMotor::arm_safety_srv, this);
 
+			timer_state_ = nh_.createTimer(ros::Duration(1.0), &MantisGazeboPWMMotor::callback_state, this );
+			pub_state_ = nh_.advertise<mavros_msgs::State>(model_->GetName() + "/state", 10);
+			pub_battery_ = nh_.advertise<sensor_msgs::BatteryState>(model_->GetName() + "/battery", 10);
+
 			ROS_INFO("Loaded mantis pwm motor plugin!");
+		}
+
+		void callback_state( const ros::TimerEvent& e ) {
+			mavros_msgs::State state_out;
+			sensor_msgs::BatteryState battery_out;
+
+			state_out.header.stamp = e.current_real;
+			state_out.header.frame_id = model_->GetName();
+			state_out.connected = true;
+			state_out.armed = safety_armed_;
+			state_out.guided = true;
+			state_out.mode = "AUTO";
+			if(safety_armed_) {
+				state_out.system_status = 4;
+			} else {
+				state_out.system_status = 3;
+			}
+
+			battery_out.header.stamp = e.current_real;
+			battery_out.header.frame_id = model_->GetName();
+			battery_out.current = gazebo::math::NAN_D;
+			battery_out.charge = gazebo::math::NAN_D;
+			battery_out.capacity = gazebo::math::NAN_D;
+			battery_out.design_capacity = gazebo::math::NAN_D;
+			battery_out.percentage = 1.0;
+			battery_out.power_supply_status = battery_out.POWER_SUPPLY_STATUS_DISCHARGING;
+			battery_out.power_supply_health = battery_out.POWER_SUPPLY_HEALTH_GOOD;
+			battery_out.power_supply_technology = battery_out.POWER_SUPPLY_TECHNOLOGY_LIPO;
+			double voltage = 0.0;
+			for(int i=0; i<BATTERY_CELLS; i++) {
+				voltage += VOLTAGE_LIPO_CELL;
+				battery_out.cell_voltage.push_back(VOLTAGE_LIPO_CELL);
+			}
+			battery_out.voltage = voltage;
+			battery_out.location = "PLUG0";
+			battery_out.serial_number = "00000001";
+
+			pub_state_.publish(state_out);
+			pub_battery_.publish(battery_out);
 		}
 
 		void rc_out_cb( const mavros_msgs::OverrideRCIn::ConstPtr& msg_in ) {
@@ -99,6 +149,10 @@ class MantisGazeboPWMMotor : public ModelPlugin
 		ros::Subscriber sub_rc_out_;
 		ros::Publisher pub_motor_velocity_;
 		ros::ServiceServer srv_arm_motors_;
+
+		ros::Timer timer_state_;
+		ros::Publisher pub_state_;
+		ros::Publisher pub_battery_;
 
 		std_msgs::Float64MultiArray msg_motor_velocity_;
 };
