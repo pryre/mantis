@@ -17,9 +17,9 @@ mantis_uav:
   joint_position_controller:
     joint_shoulder:
       command: shoulder_velocity_controller
-      pid: {p: 1.25, i: 0.0, d: 0.0}
-      limits: {min: -0.5, max: 0.5}
+      pid: {p: 2.5, i: 0.0, d: 0.0}
+      limits: {min: -2.0, max: 2.0}
     joint_elbow:
       command: elbow_velocity_controller
-      pid: {p: 1.25, i: 0.0, d: 0.0}
-      limits: {min: -0.5, max: 0.5}
+      pid: {p: 2.5, i: 0.0, d: 0.0}
+      limits: {min: -2.0, max: 2.0}
