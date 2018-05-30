@@ -1,0 +1,59 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+    <model name="ball_and_stand">
+	<static>true</static>
+      <link name="ball_stand">
+        <pose>2.0 0 0.5 0 0 0</pose>
+
+        <collision name="ball_stand_collision">
+          <geometry>
+			  <box>
+				<size>0.05 0.05 1.0</size>
+			  </box>
+          </geometry>
+        </collision>
+
+        <visual name="ball_stand_visual">
+          <geometry>
+			  <box>
+				<size>0.05 0.05 1.0</size>
+			  </box>
+          </geometry>
+        </visual>
+      </link>
+
+      <model name="ball">
+	    <pose>2.0 0 1.025 0 0 0</pose>
+		  <link name="ball">
+
+			  <inertial>
+				<mass>0.05</mass>
+				<inertia>
+				  <ixx>0.0001</ixx>
+				  <ixy>0</ixy>
+				  <ixz>0</ixz>
+				  <iyy>0.0001</iyy>
+				  <iyz>0</iyz>
+				  <izz>0.0001</izz>
+				</inertia>
+			  </inertial>
+
+			<collision name="ball_collision">
+			  <geometry>
+				<sphere>
+					<radius>0.025</radius>
+				</sphere>
+			  </geometry>
+			</collision>
+
+			<visual name="ball_visual">
+			  <geometry>
+				<sphere>
+					<radius>0.025</radius>
+				</sphere>
+			  </geometry>
+			</visual>
+        </link>
+	  </model>
+    </model>
+</sdf>

@@ -16,6 +16,10 @@
 	</gazebo>
 
 	<gazebo>
+		<plugin name="mantis_ball_grasp" filename="libmantis_gazebo_ball_grasp.so"/>
+	</gazebo>
+
+	<gazebo>
 		<plugin name="mantis_gazebo_safety" filename="libmantis_gazebo_safety.so"/>
 	</gazebo>
 

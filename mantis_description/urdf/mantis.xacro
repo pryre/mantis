@@ -36,7 +36,7 @@
 			<!-- Old estimate
 			<mass value="1.5480" />
 			<inertia ixx="0.015198135489664" iyy="0.014353211169664" izz="0.027767959346667" ixy="0.0" ixz="0.0" iyz="0.0" />
-			-->	
+			-->
 			<mass value="1.80497" />
 			<inertia ixx="0.02961" iyy="0.02933" izz="0.05342" ixy="0.0" ixz="0.00004" iyz="0.0" />
 
@@ -89,6 +89,35 @@
 	<xacro:arm_joint suffix="elbow" parent="link_upperarm" child="link_forearm" xyz="0.18325 0 0" rpy="0 0 0" />
 
 	<xacro:arm_link suffix="forearm" />
+
+	<!--
+	<joint name="joint_wrist" type="fixed">
+		<parent link="link_forearm"/>
+		<child link="link_end_effector"/>
+		<origin xyz="0.18325 0 0" rpy="0 0 0"/>
+	</joint>
+
+	<link name="link_end_effector">
+		<inertial name='inertial_end_effector'>>
+			<origin xyz="0.025 0 0" rpy="0 0 0"/>
+			<mass value="0.001" />
+			<inertia ixx="1.0e-07" iyy="1.0e-07" izz="1.0e-07" ixy="0.0" ixz="0.0" iyz="0.0" />
+		</inertial>
+
+		<collision name='collision_end_effector'>
+			<geometry>
+				<box size="0.05 0.05 0.05"/>
+			</geometry>
+		</collision>
+
+		<visual name="visual_end_effector">
+			<geometry>
+				<box size="0.05 0.05 0.05"/>
+			</geometry>
+			<material name="black"/>
+		</visual>
+	</link>
+	-->
 
 	<xacro:motor_joint motor_number="1" parent="base_link" xyz="0 -0.275 0.0455" direction="cw" />
 	<xacro:motor_joint motor_number="2" parent="base_link" xyz="0 0.275 0.0475" direction="ccw" />
