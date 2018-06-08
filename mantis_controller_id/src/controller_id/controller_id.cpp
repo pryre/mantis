@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <dynamic_reconfigure/server.h>
 
 #include <controller_id/controller_id.h>
 #include <controller_id/controller_id_params.h>
@@ -11,6 +12,7 @@
 #include <dynamics/calc_Je.h>
 #include <dh_parameters/dh_parameters.h>
 #include <mantis_paths/path_extract.h>
+#include <mantis_controller_id/ControlParamsConfig.h>
 
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/OverrideRCIn.h>
@@ -41,13 +43,8 @@ ControllerID::ControllerID() :
 	param_model_id_("mantis_uav"),
 	param_use_mav_state_(false),
 	param_use_imu_state_(false),
-	param_wait_for_path_(false),
-	param_track_j2_(false),
-	param_track_end_(false),
-	param_accurate_z_tracking_(false),
-	param_accurate_end_tracking_(false),
-	param_reference_feedback_(false),
-	param_rate_(100) {
+	param_rate_(100),
+	dyncfg_control_settings_(ros::NodeHandle(nhp_, "control_settings")) {
 
 	bool success = true;
 
@@ -56,12 +53,9 @@ ControllerID::ControllerID() :
 	nhp_.param("wait_for_path", param_wait_for_path_, param_wait_for_path_);
 	nhp_.param("use_imu_state", param_use_imu_state_, param_use_imu_state_);
 	nhp_.param("use_mav_state", param_use_mav_state_, param_use_mav_state_);
-	nhp_.param("track_j2", param_track_j2_, param_track_j2_);
-	nhp_.param("track_end", param_track_end_, param_track_end_);
-	nhp_.param("accurate_z_tracking", param_accurate_z_tracking_, param_accurate_z_tracking_);
-	nhp_.param("accurate_end_tracking", param_accurate_end_tracking_, param_accurate_end_tracking_);
-	nhp_.param("reference_feedback", param_reference_feedback_, param_reference_feedback_);
 	nhp_.param("control_rate", param_rate_, param_rate_);
+
+	dyncfg_control_settings_.setCallback(boost::bind(&ControllerID::callback_cfg_control_settings, this, _1, _2));
 
 	//Load the robot parameters
 	p_.load();	//TODO have this give a success if loaded correctly
@@ -173,6 +167,15 @@ ControllerID::ControllerID() :
 }
 
 ControllerID::~ControllerID() {
+}
+
+void ControllerID::callback_cfg_control_settings(mantis_controller_id::ControlParamsConfig &config, uint32_t level) {
+	param_wait_for_path_ = config.wait_for_path;
+	param_track_end_ = config.track_end;
+	param_track_j2_ = config.track_j2;
+	param_accurate_z_tracking_ = config.accurate_z_tracking;
+	param_accurate_end_tracking_ = config.accurate_end_tracking;
+	param_reference_feedback_ = config.reference_feedback;
 }
 
 void ControllerID::callback_control(const ros::TimerEvent& e) {

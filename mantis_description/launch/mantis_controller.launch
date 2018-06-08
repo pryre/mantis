@@ -13,17 +13,16 @@
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />
 		<param name="model_id" value="mantis_uav" />
-		<param name="control_rate" value="50.0" />
 
-		<param name="wait_for_path" value="true" />
+		<param name="control_rate" value="50.0" />
 		<param name="use_imu_state" value="true" />
 		<param name="use_mav_state" value="true" />
-		<param name="track_j2" value="false" />
-		<param name="track_end" value="false" />
-		<param name="accurate_z_tracking" value="false" />
-		<param name="accurate_end_tracking" value="true" />
-		<param name="reference_feedback" value="true" />
-		<param name="control_rate" value="100.0" />
+		<param name="control_settings/wait_for_path" value="true" />
+		<param name="control_settings/track_j2" value="false" />
+		<param name="control_settings/track_end" value="false" />
+		<param name="control_settings/accurate_z_tracking" value="false" />
+		<param name="control_settings/accurate_end_tracking" value="true" />
+		<param name="control_settings/reference_feedback" value="true" />
 
 		<remap from="controller_id/state/odom" to="/mantis_uav/odom" />
 		<remap from="controller_id/state/imu" to="/mavros/imu/data" />

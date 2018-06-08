@@ -1,11 +1,13 @@
 #pragma once
 
 #include <ros/ros.h>
+#include <dynamic_reconfigure/server.h>
 
 #include <controller_id/controller_id_params.h>
 #include <pidController/pidController.h>
 #include <mantis_paths/path_extract.h>
 #include <dh_parameters/dh_parameters.h>
+#include <mantis_controller_id/ControlParamsConfig.h>
 
 #include <sensor_msgs/JointState.h>
 #include <sensor_msgs/Imu.h>
@@ -63,6 +65,8 @@ class ControllerID {
 		bool param_accurate_end_tracking_;
 		bool param_reference_feedback_;
 		double param_rate_;
+		dynamic_reconfigure::Server<mantis_controller_id::ControlParamsConfig> dyncfg_control_settings_;
+
 
 		ControllerIDParams p_;
 		std::vector<DHParameters,Eigen::aligned_allocator<DHParameters> > joints_;
@@ -75,6 +79,8 @@ class ControllerID {
 		ControllerID( void );
 
 		~ControllerID( void );
+
+		void callback_cfg_control_settings(mantis_controller_id::ControlParamsConfig &config, uint32_t level);
 
 		double double_clamp(const double v, const double min, const double max);
 		void matrix_clamp(Eigen::MatrixXd m, const double min, const double max);
