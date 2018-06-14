@@ -4,6 +4,7 @@
 #include <dynamic_reconfigure/server.h>
 
 #include <controller_id/controller_id_params.h>
+#include <controller_id/controller_id_state.h>
 #include <pidController/pidController.h>
 #include <mantis_paths/path_extract.h>
 #include <dh_parameters/dh_parameters.h>
@@ -21,21 +22,21 @@
 #include <geometry_msgs/Quaternion.h>
 
 #include <eigen3/Eigen/Dense>
-#include <string>
 #include <eigen3/Eigen/StdVector>
+#include <string>
 
 class ControllerID {
 	private:
 		ros::NodeHandle nh_;
 		ros::NodeHandle nhp_;
-		ros::Timer timer_;
+		ros::Timer timer_high_level_;
+		ros::Timer timer_low_level_;
+		ros::Timer timer_ready_check_;
 		ros::Subscriber sub_state_imu_;
 		ros::Subscriber sub_state_mav_;
 		ros::Subscriber sub_state_odom_;
 		ros::Subscriber sub_state_battery_;
 		ros::Subscriber sub_state_joints_;
-		//ros::Subscriber sub_goal_path_;
-		//ros::Subscriber sub_goal_joints_;
 
 		ros::Publisher pub_rc_;
 		ros::Publisher pub_joints_;
@@ -46,13 +47,11 @@ class ControllerID {
 		ros::Publisher pub_pose_base_;
 		ros::Publisher pub_pose_end_;
 
-		nav_msgs::Odometry msg_state_odom_;
-		sensor_msgs::BatteryState msg_state_battery_;
-		sensor_msgs::JointState msg_state_joints_;
-		sensor_msgs::Imu msg_state_imu_;
-		mavros_msgs::State msg_state_mav_;
-		//nav_msgs::Path msg_goal_path_;
-		//sensor_msgs::JointState msg_goal_joints_;
+		ros::Time msg_odom_tr_;
+		ros::Time msg_battery_tr_;
+		ros::Time msg_joints_tr_;
+		ros::Time msg_imu_tr_;
+		ros::Time msg_mav_state_tr_;
 
 		std::string param_frame_id_;
 		std::string param_model_id_;
@@ -64,12 +63,17 @@ class ControllerID {
 		bool param_accurate_z_tracking_;
 		bool param_accurate_end_tracking_;
 		bool param_reference_feedback_;
-		double param_rate_;
+		double param_safety_rate_;
+		double param_high_level_rate_;
+		double param_low_level_rate_;
 		dynamic_reconfigure::Server<mantis_controller_id::ControlParamsConfig> dyncfg_control_settings_;
 
+		bool ready_for_flight_;
 
 		ControllerIDParams p_;
+		ControllerIDState state_;
 		std::vector<DHParameters,Eigen::aligned_allocator<DHParameters> > joints_;
+
 		PathExtract ref_path_;
 		pidController pos_pid_x_;
 		pidController pos_pid_y_;
@@ -111,7 +115,9 @@ class ControllerID {
 									 const Eigen::Vector3d &g_bw,	//Base body rates
 									 const Eigen::VectorXd &ua);	//Base accelerations
 
-		void callback_control(const ros::TimerEvent& e);
+		void callback_ready_check(const ros::TimerEvent& e);
+		void callback_high_level(const ros::TimerEvent& e);
+		void callback_low_level(const ros::TimerEvent& e);
 		void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
 		void callback_state_imu(const sensor_msgs::Imu::ConstPtr& msg_in);
 		void callback_state_mav(const mavros_msgs::State::ConstPtr& msg_in);

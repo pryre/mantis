@@ -13,7 +13,9 @@
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />
 		<param name="model_id" value="mantis_uav" />
-		<param name="control_rate" value="50.0" />
+		<param name="safety_rate" value="20.0" />
+		<param name="high_level_rate" value="20.0" />
+		<param name="low_level_rate" value="200.0" />
 
 		<param name="use_imu_state" value="true" />
 		<param name="use_mav_state" value="true" />

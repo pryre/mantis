@@ -43,8 +43,11 @@ ControllerID::ControllerID() :
 	param_model_id_("mantis_uav"),
 	param_use_mav_state_(false),
 	param_use_imu_state_(false),
-	param_rate_(100),
-	dyncfg_control_settings_(ros::NodeHandle(nhp_, "control_settings")) {
+	param_safety_rate_(20.0),
+	param_high_level_rate_(20.0),
+	param_low_level_rate_(200.0),
+	dyncfg_control_settings_(ros::NodeHandle(nhp_, "control_settings")),
+	ready_for_flight_(false) {
 
 	bool success = true;
 
@@ -53,7 +56,9 @@ ControllerID::ControllerID() :
 	nhp_.param("wait_for_path", param_wait_for_path_, param_wait_for_path_);
 	nhp_.param("use_imu_state", param_use_imu_state_, param_use_imu_state_);
 	nhp_.param("use_mav_state", param_use_mav_state_, param_use_mav_state_);
-	nhp_.param("control_rate", param_rate_, param_rate_);
+	nhp_.param("safety_rate", param_safety_rate_, param_safety_rate_);
+	nhp_.param("high_level_rate", param_high_level_rate_, param_high_level_rate_);
+	nhp_.param("low_level_rate", param_low_level_rate_, param_low_level_rate_);
 
 	dyncfg_control_settings_.setCallback(boost::bind(&ControllerID::callback_cfg_control_settings, this, _1, _2));
 
@@ -72,6 +77,8 @@ ControllerID::ControllerID() :
 			break;
 		}
 	}
+
+	state_.init(p_.manip_num);	//Initialize the state container
 
 	pos_pid_x_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
 	pos_pid_y_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
@@ -114,30 +121,27 @@ ControllerID::ControllerID() :
 		ROS_INFO("    - path");
 		ROS_INFO("    - battery");
 
-		//Lock the controller until all the inputs are satisfied
-		while( ( !ref_path_.received_valid_path() && param_wait_for_path_ ) ||
-			   ( msg_state_odom_.header.stamp == ros::Time(0) ) ||
-			   ( msg_state_battery_.header.stamp == ros::Time(0) ) ||
-			   ( msg_state_joints_.header.stamp == ros::Time(0) ) ||
-			   ( param_use_imu_state_ && ( msg_state_imu_.header.stamp == ros::Time(0) ) ) ||
-			   ( param_use_mav_state_ && ( msg_state_mav_.header.stamp == ros::Time(0) ) ) ) {
+		timer_ready_check_ = nhp_.createTimer(ros::Duration(1.0/param_safety_rate_), &ControllerID::callback_ready_check, this );
 
-			if( ( !param_use_mav_state_ ) || ( msg_state_mav_.header.stamp != ros::Time(0) ) )
+		//Lock the controller until all the inputs are satisfied
+		while( !ready_for_flight_ ) {
+
+			if( ( !param_use_mav_state_ ) || ( msg_mav_state_tr_ != ros::Time(0) ) )
 				ROS_INFO_ONCE("Inverse dynamics got input: state");
 
-			if( msg_state_odom_.header.stamp != ros::Time(0) )
+			if( msg_odom_tr_ != ros::Time(0) )
 				ROS_INFO_ONCE("Inverse dynamics got input: odom");
 
-			if( msg_state_joints_.header.stamp != ros::Time(0) )
+			if( msg_joints_tr_ != ros::Time(0) )
 				ROS_INFO_ONCE("Inverse dynamics got input: joints");
 
-			if( ( !param_use_imu_state_ ) || ( msg_state_imu_.header.stamp != ros::Time(0) ) )
+			if( ( !param_use_imu_state_ ) || ( msg_imu_tr_ != ros::Time(0) ) )
 				ROS_INFO_ONCE("Inverse dynamics got input: imu");
 
 			if( ref_path_.received_valid_path() || !param_wait_for_path_ )
 				ROS_INFO_ONCE("Inverse dynamics got input: path");
 
-			if( msg_state_battery_.header.stamp != ros::Time(0) )
+			if( msg_battery_tr_ != ros::Time(0) )
 				ROS_INFO_ONCE("Inverse dynamics got input: battery");
 
 			if( !ros::ok() )
@@ -151,13 +155,14 @@ ControllerID::ControllerID() :
 			}
 			pub_rc_.publish(msg_rc_out);
 
-			ros::Rate(param_rate_).sleep();
+			ros::Rate(param_safety_rate_).sleep();
 		}
 
 		ROS_INFO_ONCE("Inverse dynamics got all inputs!");
 
-		//Start the control loop
-		timer_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ControllerID::callback_control, this );
+		//Start the control loops
+		timer_high_level_ = nhp_.createTimer(ros::Duration(1.0/param_high_level_rate_), &ControllerID::callback_low_level, this );
+		timer_low_level_ = nhp_.createTimer(ros::Duration(1.0/param_low_level_rate_), &ControllerID::callback_high_level, this );
 
 		ROS_INFO("Inverse dynamics controller started!");
 	} else {
@@ -178,64 +183,59 @@ void ControllerID::callback_cfg_control_settings(mantis_controller_id::ControlPa
 	param_reference_feedback_ = config.reference_feedback;
 }
 
-void ControllerID::callback_control(const ros::TimerEvent& e) {
-	std::vector<uint16_t> pwm_out(p_.motor_num);	//Allocate space for the number of motors
-	std::vector<double> joints_out(p_.manip_num);
+void ControllerID::callback_ready_check(const ros::TimerEvent& e) {
+//If we still have all the inputs satisfied
+	if( ( ref_path_.received_valid_path() || !param_wait_for_path_ ) &&
+		( msg_odom_tr_ != ros::Time(0) ) &&
+		( msg_battery_tr_ != ros::Time(0) ) &&
+		( msg_joints_tr_ != ros::Time(0) ) &&
+		( ( !param_use_imu_state_ ) || ( msg_imu_tr_ != ros::Time(0) ) ) &&
+		( ( !param_use_mav_state_ ) || ( ( msg_mav_state_tr_ != ros::Time(0) ) && state_.status_armed() ) ) ) {
 
+		ready_for_flight_ = true;
+	} else {
+		if(ready_for_flight_) {
+			std::string error_msg = "Input error:\n";
+
+			if( !ref_path_.received_valid_path() && param_wait_for_path_ )
+				error_msg += "no valid path\n";
+
+			if( msg_odom_tr_ == ros::Time(0) )
+				error_msg += "no odometry\n";
+
+			if( msg_battery_tr_ == ros::Time(0) )
+				error_msg += "no battery data\n";
+
+			if( msg_joints_tr_ == ros::Time(0) )
+				error_msg += "no joint data\n";
+
+			if( ( param_use_imu_state_ ) && ( msg_imu_tr_ == ros::Time(0) ) )
+				error_msg += "no imu data\n";
+
+			if( param_use_mav_state_ ) {
+				if( msg_mav_state_tr_ == ros::Time(0) ) {
+					error_msg += "no state data\n";
+				} else if(!state_.status_armed()) {
+					error_msg += "not armed\n";
+				}
+			}
+
+			ROS_ERROR("%s", error_msg.c_str());
+		}
+
+		ready_for_flight_ = false;
+		state_.update_status_hl_control(false);
+	}
+}
+
+void ControllerID::callback_high_level(const ros::TimerEvent& e) {
 	double dt = (e.current_real - e.last_real).toSec();
 
 	//If we still have all the inputs satisfied
-	if( ( ref_path_.received_valid_path() || !param_wait_for_path_ ) &&
-		( msg_state_odom_.header.stamp != ros::Time(0) ) &&
-		( msg_state_battery_.header.stamp != ros::Time(0) ) &&
-		( msg_state_joints_.header.stamp != ros::Time(0) ) &&
-		( ( !param_use_imu_state_ ) || ( msg_state_imu_.header.stamp != ros::Time(0) ) ) &&
-		( ( !param_use_mav_state_ ) || ( ( msg_state_mav_.header.stamp != ros::Time(0) ) && msg_state_mav_.armed ) ) ) {
-
-		double num_states = 6 + p_.manip_num;	//XXX: 6 comes from XYZ + Wrpy
-
-		//Current States
-		Eigen::Affine3d g = affine_from_msg(msg_state_odom_.pose.pose);
-
-		Eigen::Vector3d bv(msg_state_odom_.twist.twist.linear.x,
-						   msg_state_odom_.twist.twist.linear.y,
-						   msg_state_odom_.twist.twist.linear.z);
-
-		Eigen::Vector3d bw;
-		if( param_use_imu_state_ ) {
-			bw = Eigen::Vector3d(msg_state_imu_.angular_velocity.x,
-								 msg_state_imu_.angular_velocity.y,
-								 msg_state_imu_.angular_velocity.z);
-		} else {
-			bw = Eigen::Vector3d(msg_state_odom_.twist.twist.angular.x,
-								 msg_state_odom_.twist.twist.angular.y,
-								 msg_state_odom_.twist.twist.angular.z);
-		}
-
-		Eigen::VectorXd r = Eigen::VectorXd::Zero(p_.manip_num);
-		Eigen::VectorXd rd = Eigen::VectorXd::Zero(p_.manip_num);
-		Eigen::VectorXd rdd = Eigen::VectorXd::Zero(p_.manip_num);
-
-		int jc = 0;
-		for(int i=0; i<joints_.size(); i++) {
-			//Only update the dynamic links
-			if(joints_[i].jt() != DHParameters::JointType::Static) {
-				r(jc) = joints_[i].q();
-				rd(jc) = joints_[i].qd();
-				rdd(jc) = joints_[i].qdd();
-
-				jc++;
-			}
-		}
-
-		Eigen::VectorXd qd = Eigen::VectorXd::Zero(num_states);
-		qd << bv, bw, rd;	//Full body-frame velocity state vector
-
+	if( ready_for_flight_ ) {
 		//Goal States
 		Eigen::Affine3d ge_sp = Eigen::Affine3d::Identity();
 		Eigen::Vector3d gev_sp = Eigen::Vector3d::Zero();
-		Eigen::Affine3d g_sp = Eigen::Affine3d::Identity();
-		Eigen::Vector3d gv_sp = Eigen::Vector3d::Zero();
 
 		if( !ref_path_.get_ref_state(ge_sp, gev_sp, e.current_real) ) {
 			//There was an issue setting the path goal
@@ -246,10 +246,10 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			//gev_sp = Eigen::Vector3d::Zero();
 		}
 
-		if(param_track_end_) {
+		if( param_track_end_ ) {
 			//Compute transform for all joints in the chain to get base to end effector
 			Eigen::Affine3d gbe = Eigen::Affine3d::Identity();
-			Eigen::MatrixXd Je = Eigen::MatrixXd::Zero(6, rd.size());
+			Eigen::MatrixXd Je = Eigen::MatrixXd::Zero(6, state_.rd().size());
 
 			//This is only really here for the paper test case
 			//This hole thing could be done dynamically for any joint
@@ -277,11 +277,13 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			}
 
 			//Calculate the tracking offset for the base
-			g_sp = calc_goal_base_transform(ge_sp, gbe);
+			state_.update_g_sp( calc_goal_base_transform(ge_sp, gbe) );
 
 			if(param_accurate_z_tracking_) {
+				ROS_WARN_THROTTLE(1.0, "Accurate end tracking not implemented");
+				/*
 				//Get the current end effector pose
-				Eigen::Affine3d ge_c = g*gbe;
+				Eigen::Affine3d ge_c = state_.g()*gbe;
 				//Translate it to the desired setpoint
 				ge_c.translation() = ge_sp.translation();
 				//Get the base pose based off of the translated setpoint
@@ -292,19 +294,20 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 				ROS_INFO_STREAM("z_corr: " << z_corr);
 				//Override the calculated z translation with one that matches the current pose
 				g_sp.translation().z() += z_corr;
+				*/
 			}
 
 			//Compensate for velocity terms in manipulator movement
 			//This is more accurate, but can make things more unstable
 			if(param_accurate_end_tracking_) {
-				gv_sp = calc_goal_base_velocity(gev_sp, g.linear()*gbe.linear(), Je, rd);
+				state_.update_gv_sp( calc_goal_base_velocity(gev_sp, state_.g().linear()*gbe.linear(), Je, state_.rd()) );
 			} else {
-				gv_sp = gev_sp;
+				state_.update_gv_sp( gev_sp );
 			}
 		} else {
 			//Just track the robot base
-			g_sp = ge_sp;
-			gv_sp = gev_sp;
+			state_.update_g_sp( ge_sp );
+			state_.update_gv_sp( gev_sp );
 		}
 
 		//Trajectory Tracking Controller
@@ -312,61 +315,92 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		pos_pid_y_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
 		pos_pid_z_.setGains( p_.gain_position_z_p, p_.gain_position_z_i, 0.0, 0.0 );
 
-		Eigen::Vector3d bv_world = g.linear()*bv;
-		double a_p_x = pos_pid_x_.step(dt, g_sp.translation().x(), g.translation().x(), bv_world.x());
-		double a_p_y = pos_pid_y_.step(dt, g_sp.translation().y(), g.translation().y(), bv_world.y());
-		double a_p_z = pos_pid_z_.step(dt, g_sp.translation().z(), g.translation().z(), bv_world.z());
+		Eigen::Vector3d bv_world = state_.g().linear()*state_.bv();
+		double a_p_x = pos_pid_x_.step(dt, state_.g_sp().translation().x(), state_.g().translation().x(), bv_world.x());
+		double a_p_y = pos_pid_y_.step(dt, state_.g_sp().translation().y(), state_.g().translation().y(), bv_world.y());
+		double a_p_z = pos_pid_z_.step(dt, state_.g_sp().translation().z(), state_.g().translation().z(), bv_world.z());
 
-		Eigen::Vector3d e_p_v = gv_sp - bv_world;
+		Eigen::Vector3d e_p_v = state_.gv_sp() - bv_world;
 		double a_v_x = p_.gain_velocity_xy_p * e_p_v.x();
 		double a_v_y = p_.gain_velocity_xy_p * e_p_v.y();
 		double a_v_z = p_.gain_velocity_z_p * e_p_v.z();
 
-		Eigen::Vector3d Al(a_p_x + a_v_x, a_p_y + a_v_y, a_p_z + a_v_z);
+		Eigen::Vector3d al_sp(a_p_x + a_v_x, a_p_y + a_v_y, a_p_z + a_v_z);
 
 		//Add in gravity compensation
-		Eigen::Vector3d A = Al + Eigen::Vector3d(0.0, 0.0, CONST_GRAV);
+		Eigen::Vector3d a_sp = al_sp + Eigen::Vector3d(0.0, 0.0, CONST_GRAV);
 
-		A(2) = (A(2) < 0.1) ? 0.1 : A(2);	//Can't accelerate downward faster than -g (take a little)
+		a_sp(2) = (a_sp(2) < 0.1) ? 0.1 : a_sp(2);	//Can't accelerate downward faster than -g (take a little)
 		//XXX:
 		//	A bit dirty, but this will stop acceleration going less than
 		//	-g and will keep the gr_sp from rotating by more than pi/2
-		Eigen::Vector3d Axy(A.x(), A.y(), 0.0);
-		if(Axy.norm() > A.z()) {
-			double axy_scale = Axy.norm() / A.z();
-			Axy = Axy / axy_scale;
-			A.segment(0,2) << Axy.segment(0,2);
+		Eigen::Vector3d axy(a_sp.x(), a_sp.y(), 0.0);
+		if(axy.norm() > a_sp.z()) {
+			double axy_scale = axy.norm() / a_sp.z();
+			axy = axy / axy_scale;
+			a_sp.segment(0,2) << axy.segment(0,2);
 		}
 		//TODO: Constrain vertical max accel(?)
 
+		state_.update_a_sp(a_sp);
+
+		state_.update_status_hl_control(true);
+
+		//if(param_reference_feedback_)
+		//	message_output_feedback(e.current_real, g_sp, ge_sp, gv_sp, gev_sp, Al, gr_sp, w_goal, ua);
+	} else {
+		state_.update_status_hl_control(false);
+
+		//Reset the PIDs and keep the integrator down
+		pos_pid_x_.reset(state_.g().translation().x());
+		pos_pid_y_.reset(state_.g().translation().y());
+		pos_pid_z_.reset(state_.g().translation().z());
+	}
+}
+
+
+void ControllerID::callback_low_level(const ros::TimerEvent& e) {
+	std::vector<uint16_t> pwm_out(p_.motor_num);	//Allocate space for the number of motors
+	std::vector<double> joints_out(p_.manip_num);
+
+	double dt = (e.current_real - e.last_real).toSec();
+
+	if( ready_for_flight_ && state_.status_hl_control() ) {
 		//Calculate the corresponding rotation to reach desired acceleration
 		//We generate at it base on now yaw, then rotate it to reach the desired orientation
-		Eigen::Vector3d An = A.normalized();
-		Eigen::Vector3d y_c = g_sp.linear().col(1).normalized();
-		Eigen::Vector3d r_sp_x = y_c.cross(An).normalized();
-		Eigen::Vector3d r_sp_y = An.cross(r_sp_x).normalized();
+		Eigen::Vector3d an = state_.a_sp().normalized();
+		Eigen::Vector3d y_c = state_.g_sp().linear().col(1).normalized();
+		Eigen::Vector3d r_sp_x = y_c.cross(an).normalized();
+		Eigen::Vector3d r_sp_y = an.cross(r_sp_x).normalized();
 		Eigen::Matrix3d gr_sp;
-		gr_sp << r_sp_x, r_sp_y, An;
+		gr_sp << r_sp_x, r_sp_y, an;
 
 		//Calculate the goal rates to achieve the right acceleration vector
 		//Eigen::VectorXd e_w = vector_interlace(calc_ang_error(gr_sp, g.linear()), Eigen::Vector3d::Zero() - bw);
 		//Eigen::Vector3d wa = Kw*e_w;
-		Eigen::Vector3d w_goal = calc_ang_error(gr_sp, g.linear());
-		Eigen::Vector3d wa = p_.gain_rotation_rate_p*(w_goal - bw);
+		Eigen::Vector3d w_goal = calc_ang_error(gr_sp, state_.g().linear());
+		Eigen::Vector3d wa = p_.gain_rotation_rate_p*(w_goal - state_.bw());
 
 		//Calculate the required manipulator accelerations
 		//Eigen::VectorXd e_r = vector_interlace(r_sp - r, Eigen::VectorXd::Zero(p_.manip_num) - rd);
 		//Eigen::VectorXd ra = Kr*e_r;
 
 		//Calculate Abz such that it doesn't apply too much thrust until fully rotated
-		Eigen::Vector3d body_z = g.linear()*Eigen::Vector3d::UnitZ();
-		double Az_scale = A.z() / body_z.z();
-		Eigen::Vector3d Abz_accel = Az_scale*body_z;
+		Eigen::Vector3d body_z = state_.g().linear()*Eigen::Vector3d::UnitZ();
+		double az_scale = state_.a_sp().z() / body_z.z();
+		Eigen::Vector3d abz_accel = az_scale*body_z;
 
-		Eigen::VectorXd ua = Eigen::VectorXd::Zero(num_states);	//vd(6,1) + rdd(2,1)
+		//Need to copy this data to access it directly
+		Eigen::VectorXd r = state_.r();
+		Eigen::VectorXd rd = state_.rd();
+		Eigen::VectorXd rdd = state_.rdd();
+		Eigen::VectorXd bw = state_.bw();
+		Eigen::VectorXd bv = state_.bv();
+
+		Eigen::VectorXd ua = Eigen::VectorXd::Zero(state_.num());	//vd(6,1) + rdd(2,1)
 		ua(0) = 0.0;
 		ua(1) = 0.0;
-		ua(2) = Abz_accel.norm();
+		ua(2) = abz_accel.norm();
 		//ua(2) = A.norm();
 		ua.segment(3,3) << wa;
 		ua.segment(6,p_.manip_num) << rdd;
@@ -374,9 +408,9 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		//ROS_INFO_STREAM("Error: " << A.z() - Abz_accel.z() << std::endl << "Linear: " << A.norm() << std::endl << "Body: " << Abz_accel.norm());
 
 		//Calculate dynamics matricies
-		Eigen::MatrixXd D = Eigen::MatrixXd::Zero(num_states, num_states);
-		Eigen::MatrixXd C = Eigen::MatrixXd::Zero(num_states, num_states);
-		Eigen::MatrixXd L = Eigen::MatrixXd::Zero(num_states, num_states);
+		Eigen::MatrixXd D = Eigen::MatrixXd::Zero(state_.num(), state_.num());
+		Eigen::MatrixXd C = Eigen::MatrixXd::Zero(state_.num(), state_.num());
+		Eigen::MatrixXd L = Eigen::MatrixXd::Zero(state_.num(), state_.num());
 
 		//XXX: Take care!
 		double l0 = joints_[0].d();
@@ -398,10 +432,10 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 				  p_.m1, p_.m2,
 				  r(0), rd(0), r(1), rd(1));
 
-		Eigen::VectorXd tau = D*ua + (C + L)*qd;
+		Eigen::VectorXd tau = D*ua + (C + L)*state_.qd();
 
 		//XXX: Hardcoded for hex in function because lazy
-		Eigen::MatrixXd M = Eigen::MatrixXd::Zero(p_.motor_num + p_.manip_num, num_states);
+		Eigen::MatrixXd M = Eigen::MatrixXd::Zero(p_.motor_num + p_.manip_num, state_.num());
 		calc_motor_map(M);
 
 		Eigen::MatrixXd u = M*tau;
@@ -415,36 +449,9 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 			joints_out[i] = u(p_.motor_num + i);
 		}
 
-		if(param_reference_feedback_)
-			message_output_feedback(e.current_real, g_sp, ge_sp, gv_sp, gev_sp, Al, gr_sp, w_goal, ua);
+		//if(param_reference_feedback_)
+		//	message_output_feedback(e.current_real, g_sp, ge_sp, gv_sp, gev_sp, Al, gr_sp, w_goal, ua);
 	} else {
-		std::string error_msg = "Input error:\n";
-
-		if( !ref_path_.received_valid_path() && param_wait_for_path_ )
-			error_msg += "no valid path\n";
-
-		if( msg_state_odom_.header.stamp == ros::Time(0) )
-			error_msg += "no odometry\n";
-
-		if( msg_state_battery_.header.stamp == ros::Time(0) )
-			error_msg += "no battery data\n";
-
-		if( msg_state_joints_.header.stamp == ros::Time(0) )
-			error_msg += "no joint data\n";
-
-		if( ( param_use_imu_state_ ) && ( msg_state_imu_.header.stamp == ros::Time(0) ) )
-			error_msg += "no imu data\n";
-
-		if( param_use_mav_state_ ) {
-			if( msg_state_mav_.header.stamp == ros::Time(0) ) {
-				error_msg += "no state data\n";
-			} else if(!msg_state_mav_.armed) {
-				error_msg += "not armed\n";
-			}
-		}
-
-		ROS_ERROR_THROTTLE(0.5, "%s", error_msg.c_str());
-
 		//Output minimums until the input info is available
 		for(int i=0; i<p_.motor_num; i++) {
 			pwm_out[i] = p_.pwm_min;
@@ -453,11 +460,6 @@ void ControllerID::callback_control(const ros::TimerEvent& e) {
 		for(int i=0; i<p_.manip_num; i++) {
 			joints_out[i] = 0.0;
 		}
-
-		//Reset the PIDs and keep the integrator down
-		pos_pid_x_.reset(msg_state_odom_.pose.pose.position.x);
-		pos_pid_y_.reset(msg_state_odom_.pose.pose.position.y);
-		pos_pid_z_.reset(msg_state_odom_.pose.pose.position.z);
 	}
 
 	message_output_control(e.current_real, pwm_out, joints_out);
@@ -672,14 +674,8 @@ void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 	//TODO: This all needs to be better defined generically
 	double arm_ang = M_PI / 3.0;
 
-	//XXX: Need to do this as the straight voltage reading is too slow
-	double voltage = 0.0;
-	for(int i=0; i<msg_state_battery_.cell_voltage.size(); i++) {
-		voltage += msg_state_battery_.cell_voltage[i];
-	}
-
 	//Calculate the thrust curve
-	double rpm_max = p_.motor_kv * voltage;	//Get the theoretical maximum rpm at the current battery voltage
+	double rpm_max = p_.motor_kv * state_.voltage();	//Get the theoretical maximum rpm at the current battery voltage
 	double thrust_max = p_.rpm_thrust_m * rpm_max + p_.rpm_thrust_c;	//Use the RPM to calculate maximum thrust
 
 	double kT = 1.0 / (p_.motor_num * thrust_max);
@@ -720,10 +716,11 @@ void ControllerID::message_output_control(const ros::Time t, const std::vector<u
 		}
 	}
 
+	/* TODO:
 	msg_joints_out.name = msg_state_joints_.name;
 	msg_joints_out.position = msg_state_joints_.position;
 	msg_joints_out.effort = joints;
-
+	*/
 	//Publish messages
 	pub_rc_.publish(msg_rc_out);
 	pub_joints_.publish(msg_joints_out);
@@ -814,23 +811,59 @@ void ControllerID::message_output_feedback(const ros::Time t,
 }
 
 void ControllerID::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
-	msg_state_odom_ = *msg_in;
+	msg_odom_tr_ = msg_in->header.stamp;
+
+	//Update pose
+	Eigen::Affine3d g = affine_from_msg(msg_in->pose.pose);
+	state_.update_g( g );
+
+	//Update body velocities
+	Eigen::Vector3d bv(msg_in->twist.twist.linear.x,
+					   msg_in->twist.twist.linear.y,
+					   msg_in->twist.twist.linear.z);
+	state_.update_bv( bv );
+
+	if( !param_use_imu_state_ ) {
+		Eigen::Vector3d bw = Eigen::Vector3d(msg_in->twist.twist.angular.x,
+											 msg_in->twist.twist.angular.y,
+											 msg_in->twist.twist.angular.z);
+
+		state_.update_bw( bw );
+	}
 }
 
 void ControllerID::callback_state_battery(const sensor_msgs::BatteryState::ConstPtr& msg_in) {
-	msg_state_battery_ = *msg_in;
+	msg_battery_tr_ = msg_in->header.stamp;
+
+	//XXX: Need to do this as the straight voltage reading is too slow
+	double voltage = 0.0;
+	for(int i=0; i<msg_in->cell_voltage.size(); i++) {
+		voltage += msg_in->cell_voltage[i];
+	}
+
+	state_.update_voltage( voltage );
 }
 
 void ControllerID::callback_state_imu(const sensor_msgs::Imu::ConstPtr& msg_in) {
-	msg_state_imu_ = *msg_in;
+	msg_imu_tr_ = msg_in->header.stamp;
+
+	if( param_use_imu_state_ ) {
+		Eigen::Vector3d bw = Eigen::Vector3d(msg_in->angular_velocity.x,
+											 msg_in->angular_velocity.y,
+											 msg_in->angular_velocity.z);
+
+		state_.update_bw( bw );
+	}
 }
 
 void ControllerID::callback_state_mav(const mavros_msgs::State::ConstPtr& msg_in) {
-	msg_state_mav_ = *msg_in;
+	msg_mav_state_tr_ = msg_in->header.stamp;
+
+	state_.update_status_armed(msg_in->armed);
 }
 
 void ControllerID::callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
-	double dt = (msg_in->header.stamp - msg_state_joints_.header.stamp).toSec();
+	double dt = (msg_in->header.stamp - msg_joints_tr_).toSec();
 
 	//Only updating if dt is acceptable
 	if( (dt > 0.0) && (dt < 1.0) ) {
@@ -846,5 +879,25 @@ void ControllerID::callback_state_joints(const sensor_msgs::JointState::ConstPtr
 		}
 	}
 
-	msg_state_joints_ = *msg_in;
+	int jc = 0;
+	Eigen::VectorXd r(state_.r().size());
+	Eigen::VectorXd rd(state_.rd().size());
+	Eigen::VectorXd rdd(state_.rdd().size());
+
+	for(int i=0; i<joints_.size(); i++) {
+		//Only update the dynamic links
+		if(joints_[i].jt() != DHParameters::JointType::Static) {
+			r(jc) = joints_[i].q();
+			rd(jc) = joints_[i].qd();
+			rdd(jc) = joints_[i].qdd();
+
+			jc++;
+		}
+	}
+
+	state_.update_r(r);
+	state_.update_rd(rd);
+	state_.update_rdd(rdd);
+
+	msg_joints_tr_ = msg_in->header.stamp;
 }

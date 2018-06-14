@@ -4,31 +4,31 @@
 #include <assert.h>
 
 pidController::pidController() :
-	kp_( 0.0f ),
-	ki_( 0.0f ),
-	kd_( 0.0f ),
-	tau_( 0.0f ),
-	x_( 0.0f ),
-	x_dot_( 0.0f ),
-	sp_( 0.0f ),
-	control_output_( 0.0f ) {
+	kp_( 0.0 ),
+	ki_( 0.0 ),
+	kd_( 0.0 ),
+	tau_( 0.0 ),
+	x_( 0.0 ),
+	x_dot_( 0.0 ),
+	sp_( 0.0 ),
+	control_output_( 0.0 ) {
 
-	setOutputMinMax( -1.0f, 1.0f );
+	setOutputMinMax( -1.0, 1.0 );
 
 	this->reset();
 }
 
 pidController::pidController( double initial_x, double initial_x_dot, double initial_setpoint, double initial_output ) :
-	kp_( 0.0f ),
-	ki_( 0.0f ),
-	kd_( 0.0f ),
-	tau_( 0.0f ),
+	kp_( 0.0 ),
+	ki_( 0.0 ),
+	kd_( 0.0 ),
+	tau_( 0.0 ),
 	x_( initial_x ),
 	x_dot_( initial_x_dot ),
 	sp_( initial_setpoint ),
 	control_output_( initial_output ) {
 
-	setOutputMinMax( -1.0f, 1.0f );
+	setOutputMinMax( -1.0, 1.0 );
 
 	this->reset();
 }
@@ -57,7 +57,7 @@ void pidController::reset() {
 }
 
 void pidController::reset( double x_prev ) {
-	integrator_ = 0.0f;
+	integrator_ = 0.0;
 	x_prev_ = x_prev;
 }
 
@@ -66,6 +66,14 @@ void pidController::setKp( double Kp ) {
 }
 
 void pidController::setKi( double Ki ) {
+	if(Ki == 0.0) {
+		//Clear the integrator so it starts fresh
+		integrator_ = 0.0;
+	} else if (ki_ != 0.0) {
+		//Scale integrator so it has same weighting
+		integrator_ *= (ki_ / Ki);
+	}
+
 	ki_ = Ki;
 }
 
@@ -94,14 +102,14 @@ void pidController::setOutputMinMax( double min, double max ) {
 //Calculate x_dot
 double pidController::step( double dt, double sp, double x ) {
 	//Check to make sure the controller hasn't gone stale
-	if( dt > 1.0f ) {
+	if( dt > 1.0 ) {
 		this->reset( x );
-		dt = 0.0f;
+		dt = 0.0;
 	}
 
 	//Calculate D term (use dirty derivative if we don't have access to a measurement of the derivative)
 	//The dirty derivative is a sort of low-pass filtered version of the derivative.
-	double x_dot = ( ( 2.0f * tau_ - dt ) / ( 2.0f * tau_ + dt ) * x_dot_ ) + ( 2.0f / ( 2.0f * tau_ + dt ) * ( x - x_prev_ ) );
+	double x_dot = ( ( 2.0 * tau_ - dt ) / ( 2.0 * tau_ + dt ) * x_dot_ ) + ( 2.0 / ( 2.0 * tau_ + dt ) * ( x - x_prev_ ) );
 
 	double output = this->step( dt, sp, x, x_dot );
 
@@ -117,9 +125,9 @@ double pidController::step( double dt, double sp, double x, double x_dot ) {
 	x_dot_ = x_dot;
 
 	//Check to make sure the controller hasn't gone stale
-	if( dt > 1.0f ) {
+	if( dt > 1.0 ) {
 		this->reset( x );
-		dt = 0.0f;
+		dt = 0.0;
 	}
 
 	x_ = x;
@@ -130,11 +138,11 @@ double pidController::step( double dt, double sp, double x, double x_dot ) {
 
 	//Initialize Terms
 	double p_term = error * kp_;
-	double i_term = 0.0f;
-	double d_term = 0.0f;
+	double i_term = 0.0;
+	double d_term = 0.0;
 
 	//If it is a stale controller, just skip this section
-	if( dt > 0.0f ) {
+	if( dt > 0.0 ) {
 		d_term = kd_ * x_dot_;
 
 		//Integrate over dt

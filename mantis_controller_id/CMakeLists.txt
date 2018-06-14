@@ -140,6 +140,10 @@ add_library(${PROJECT_NAME}_params
   src/controller_id/controller_id_params.cpp
 )
 
+add_library(${PROJECT_NAME}_state
+  src/controller_id/controller_id_state.cpp
+)
+
 add_library(${PROJECT_NAME}
   src/controller_id/controller_id.cpp
 )
@@ -149,6 +153,7 @@ add_library(${PROJECT_NAME}
 ## either from message generation or dynamic reconfigure
 add_dependencies(${PROJECT_NAME}_pid ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(${PROJECT_NAME}_params ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+add_dependencies(${PROJECT_NAME}_state ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 ## Declare a C++ executable
@@ -178,9 +183,14 @@ target_link_libraries(${PROJECT_NAME}_params
   ${catkin_LIBRARIES}
 )
 
+target_link_libraries(${PROJECT_NAME}_state
+  ${catkin_LIBRARIES}
+)
+
 target_link_libraries(${PROJECT_NAME}
   ${PROJECT_NAME}_pid
   ${PROJECT_NAME}_params
+  ${PROJECT_NAME}_state
   ${catkin_LIBRARIES}
 )
 
