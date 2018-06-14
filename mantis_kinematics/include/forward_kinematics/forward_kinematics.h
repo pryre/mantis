@@ -37,10 +37,15 @@ class ForwardKinematics {
 		bool param_do_viz_;
 		bool param_done_viz_;
 
+		ros::Time time_last_update_;
+
 	public:
 		ForwardKinematics( void );
 
 		~ForwardKinematics( void );
+
+		void do_reset();
+		void check_update_time();
 
 		void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
 		void callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in);

@@ -72,7 +72,7 @@ ForwardKinematics::ForwardKinematics() :
 		sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ForwardKinematics::callback_state_joints, this );
 
 		ROS_INFO("Configuring static mounts...");
-		configure_static_joints();
+		do_reset();
 
 		ROS_INFO("Forward kinematics running!");
 	} else {
@@ -84,6 +84,8 @@ ForwardKinematics::~ForwardKinematics() {
 }
 
 void ForwardKinematics::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
+	check_update_time();
+
 	geometry_msgs::TransformStamped t;
 
 	t.header.frame_id = msg_in->header.frame_id;
@@ -103,6 +105,8 @@ void ForwardKinematics::callback_state_odom(const nav_msgs::Odometry::ConstPtr& 
 }
 
 void ForwardKinematics::callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
+	check_update_time();
+
 	for(int i=0; i<param_joints_.size(); i++) {
 		if( param_joints_[i].jt() != DHParameters::JointType::Static ) {
 			for(int j=0; j<msg_in->name.size(); j++) {
@@ -167,6 +171,24 @@ void ForwardKinematics::configure_static_joints() {
 		}
 	}
 }
+
+void ForwardKinematics::do_reset() {
+	tfBuffer_.clear();
+
+	configure_static_joints();
+
+	time_last_update_ = ros::Time::now();
+}
+
+void ForwardKinematics::check_update_time() {
+	if(ros::Time::now() < time_last_update_) {
+		ROS_INFO("Detected jump back in time, reseting transforms");
+		do_reset();
+	} else {
+		time_last_update_ = ros::Time::now();
+	}
+}
+
 
 void ForwardKinematics::do_viz( const std::vector<std::string> *arm_names ) {
 	/*
