@@ -47,7 +47,7 @@
 		<param name="protocol" value="2.0" type="double" />
 
 		<param name="frame_id" value="mantis" type="str" />
-		<param name="update_rate" value="50.0" type="double" />
+		<param name="update_rate" value="25.0" type="double" />
 
 		<rosparam command="load" file="$(find mantis_description)/config/mantis_dynamixel_interface.yaml"/>
 	</node>

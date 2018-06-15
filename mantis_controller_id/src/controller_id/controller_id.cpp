@@ -83,9 +83,14 @@ ControllerID::ControllerID() :
 	pos_pid_x_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
 	pos_pid_y_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
 	pos_pid_z_.setGains( p_.gain_position_z_p, p_.gain_position_z_i, 0.0, 0.0 );
+	/*
 	pos_pid_x_.setOutputMinMax( -CONST_GRAV / 2.0, CONST_GRAV / 2.0);
 	pos_pid_y_.setOutputMinMax( -CONST_GRAV / 2.0, CONST_GRAV / 2.0);
 	pos_pid_z_.setOutputMinMax( -3.0 * CONST_GRAV / 4.0, 3.0 * CONST_GRAV / 4.0);
+	*/
+	pos_pid_x_.setOutputMinMax( -1.0, 1.0);
+	pos_pid_y_.setOutputMinMax( -1.0, 1.0);
+	pos_pid_z_.setOutputMinMax( -2.0, 2.0);
 
 	if(success) {
 		ROS_INFO( "Loaded configuration for %li links", (int64_t)joints_.size() );
