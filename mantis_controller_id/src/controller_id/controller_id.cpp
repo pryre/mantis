@@ -88,7 +88,7 @@ ControllerID::ControllerID() :
 	pos_pid_z_.setOutputMinMax( -3.0 * CONST_GRAV / 4.0, 3.0 * CONST_GRAV / 4.0);
 
 	if(success) {
-		ROS_INFO( "Loaded configuration for %d links", joints_.size() );
+		ROS_INFO( "Loaded configuration for %li links", (int64_t)joints_.size() );
 
 		pub_rc_ = nhp_.advertise<mavros_msgs::OverrideRCIn>("output/rc", 10);
 		pub_joints_ = nhp_.advertise<sensor_msgs::JointState>("output/joints", 10);
@@ -345,9 +345,6 @@ void ControllerID::callback_high_level(const ros::TimerEvent& e) {
 		state_.update_a_sp(a_sp);
 
 		state_.update_status_hl_control(true);
-
-		//if(param_reference_feedback_)
-		//	message_output_feedback(e.current_real, g_sp, ge_sp, gv_sp, gev_sp, Al, gr_sp, w_goal, ua);
 	} else {
 		state_.update_status_hl_control(false);
 
@@ -449,8 +446,8 @@ void ControllerID::callback_low_level(const ros::TimerEvent& e) {
 			joints_out[i] = u(p_.motor_num + i);
 		}
 
-		//if(param_reference_feedback_)
-		//	message_output_feedback(e.current_real, g_sp, ge_sp, gv_sp, gev_sp, Al, gr_sp, w_goal, ua);
+		if(param_reference_feedback_)
+			message_output_feedback(e.current_real, state_.g_sp(), state_.a_sp(), gr_sp, w_goal, ua);
 	} else {
 		//Output minimums until the input info is available
 		for(int i=0; i<p_.motor_num; i++) {
@@ -478,7 +475,7 @@ void ControllerID::matrix_clamp(Eigen::MatrixXd m, const double min, const doubl
 }
 
 Eigen::VectorXd ControllerID::vector_interlace(const Eigen::VectorXd a, const Eigen::VectorXd b) {
-	ROS_ASSERT_MSG(a.size() == b.size(), "Vectors to be interlaced must be same size (a=%d,b=%d", a.size(), b.size());
+	ROS_ASSERT_MSG(a.size() == b.size(), "Vectors to be interlaced must be same size (a=%li,b=%li", (int64_t)a.size(),  (int64_t)b.size());
 
 	Eigen::VectorXd c = Eigen::VectorXd::Zero(2*a.size());
 
@@ -707,7 +704,7 @@ void ControllerID::message_output_control(const ros::Time t, const std::vector<u
 	msg_joints_out.header.frame_id = param_model_id_;
 
 	//Insert control data
-	ROS_ASSERT_MSG(pwm.size() <= 8, "Supported number of motors is 8 (%d)", pwm.size());
+	ROS_ASSERT_MSG(pwm.size() <= 8, "Supported number of motors is 8 (%li)", (int64_t)pwm.size());
 	for(int i=0; i<8; i++) {
 		if( i<pwm.size() ) {
 			msg_rc_out.channels[i] = pwm[i];
@@ -728,30 +725,21 @@ void ControllerID::message_output_control(const ros::Time t, const std::vector<u
 
 void ControllerID::message_output_feedback(const ros::Time t,
 										   const Eigen::Affine3d &g_sp,
-										   const Eigen::Affine3d &ge_sp,
-										   const Eigen::Vector3d &gv_sp,
-										   const Eigen::Vector3d &gev_sp,
 										   const Eigen::Vector3d &pa,
 										   const Eigen::Matrix3d &r_sp,
 										   const Eigen::Vector3d &g_bw,
 										   const Eigen::VectorXd &ua) {
 	geometry_msgs::PoseStamped msg_pose_base_out;
-	geometry_msgs::PoseStamped msg_pose_end_out;
 	geometry_msgs::TwistStamped msg_twist_base_out;
-	geometry_msgs::TwistStamped msg_twist_end_out;
 	geometry_msgs::AccelStamped msg_accel_linear_out;
 	geometry_msgs::AccelStamped msg_accel_body_out;
 
 	//Prepare headers
 	msg_pose_base_out.header.stamp = t;
 	msg_pose_base_out.header.frame_id = param_frame_id_;
-	msg_pose_end_out.header.stamp = t;
-	msg_pose_end_out.header.frame_id = param_frame_id_;
 
 	msg_twist_base_out.header.stamp = t;
 	msg_twist_base_out.header.frame_id = param_frame_id_;
-	msg_twist_end_out.header.stamp = t;
-	msg_twist_end_out.header.frame_id = param_frame_id_;
 
 	msg_accel_linear_out.header.stamp = t;
 	msg_accel_linear_out.header.frame_id = param_frame_id_;
@@ -769,26 +757,9 @@ void ControllerID::message_output_feedback(const ros::Time t,
 	msg_pose_base_out.pose.orientation.y = r_sp_q.y();
 	msg_pose_base_out.pose.orientation.z = r_sp_q.z();
 
-	Eigen::Quaterniond ge_sp_q(ge_sp.linear());
-	ge_sp_q.normalize();
-	msg_pose_end_out.pose.position.x = ge_sp.translation().x();
-	msg_pose_end_out.pose.position.y = ge_sp.translation().y();
-	msg_pose_end_out.pose.position.z = ge_sp.translation().z();
-	msg_pose_end_out.pose.orientation.w = ge_sp_q.w();
-	msg_pose_end_out.pose.orientation.x = ge_sp_q.x();
-	msg_pose_end_out.pose.orientation.y = ge_sp_q.y();
-	msg_pose_end_out.pose.orientation.z = ge_sp_q.z();
-
-	msg_twist_base_out.twist.linear.x = gv_sp.x();
-	msg_twist_base_out.twist.linear.y = gv_sp.y();
-	msg_twist_base_out.twist.linear.z = gv_sp.z();
 	msg_twist_base_out.twist.angular.x = g_bw.x();
 	msg_twist_base_out.twist.angular.y = g_bw.y();
 	msg_twist_base_out.twist.angular.z = g_bw.z();
-
-	msg_twist_end_out.twist.linear.x = gev_sp.x();
-	msg_twist_end_out.twist.linear.y = gev_sp.y();
-	msg_twist_end_out.twist.linear.z = gev_sp.z();
 
 	msg_accel_linear_out.accel.linear.x = pa.x();
 	msg_accel_linear_out.accel.linear.y = pa.y();
@@ -803,9 +774,7 @@ void ControllerID::message_output_feedback(const ros::Time t,
 
 	//Publish messages
 	pub_pose_base_.publish(msg_pose_base_out);
-	pub_pose_end_.publish(msg_pose_end_out);
 	pub_twist_base_.publish(msg_twist_base_out);
-	pub_twist_end_.publish(msg_twist_end_out);
 	pub_accel_linear_.publish(msg_accel_linear_out);
 	pub_accel_body_.publish(msg_accel_body_out);
 }
