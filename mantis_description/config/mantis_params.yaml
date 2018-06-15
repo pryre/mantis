@@ -6,8 +6,8 @@ motor:
   #thrust_max: 8.5 #11.6110736 # N
   kv: 660 #Rated to 960, but real is ~660 under load
   rpm_thrust_curve:
-    m: 0.0001155 #0.0008318056
-    c: -0.29832
+    m: 0.0011323 #0.0008318056
+    c: -2.9235
   drag_max: 1.2 # N
 
 pwm:
