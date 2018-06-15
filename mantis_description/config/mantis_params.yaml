@@ -30,9 +30,9 @@ controller_id:
         i: 0.0
     vel:
       xy:
-        p: 1.0
-      z:
         p: 2.0
+      z:
+        p: 4.0
     rot:
       ang:
         p: 3.0

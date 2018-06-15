@@ -43,9 +43,7 @@ class ControllerID {
 		ros::Publisher pub_accel_linear_;
 		ros::Publisher pub_accel_body_;
 		ros::Publisher pub_twist_base_;
-		ros::Publisher pub_twist_end_;
 		ros::Publisher pub_pose_base_;
-		ros::Publisher pub_pose_end_;
 
 		ros::Time msg_odom_tr_;
 		ros::Time msg_battery_tr_;

@@ -99,9 +99,7 @@ ControllerID::ControllerID() :
 		pub_joints_ = nhp_.advertise<sensor_msgs::JointState>("output/joints", 10);
 
 		pub_pose_base_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/pose/base", 10);
-		pub_pose_end_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/pose/end_effector", 10);
-		pub_twist_base_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/twist/end_effector", 10);
-		pub_twist_end_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/twist/base", 10);
+		pub_twist_base_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/twist/base", 10);
 		pub_accel_linear_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel/linear", 10);
 		pub_accel_body_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
 
