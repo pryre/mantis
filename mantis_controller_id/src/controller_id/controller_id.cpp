@@ -234,20 +234,22 @@ void ControllerID::callback_ready_check(const ros::TimerEvent& e) {
 void ControllerID::callback_high_level(const ros::TimerEvent& e) {
 	double dt = (e.current_real - e.last_real).toSec();
 
+	//Goal States
+	Eigen::Affine3d ge_sp = Eigen::Affine3d::Identity();
+	Eigen::Vector3d gev_sp = Eigen::Vector3d::Zero();
+
+	//This needs to be checked every loop to keep the fallback pose correct
+	if( !ref_path_.get_ref_state(ge_sp, gev_sp, e.current_real) ) {
+		//There was an issue setting the path goal
+		//Hold latest position
+
+		//XXX: This isn't needed as it is done internally
+		//ge_sp = latest_g_sp_;
+		//gev_sp = Eigen::Vector3d::Zero();
+	}
+
 	//If we still have all the inputs satisfied
 	if( ready_for_flight_ ) {
-		//Goal States
-		Eigen::Affine3d ge_sp = Eigen::Affine3d::Identity();
-		Eigen::Vector3d gev_sp = Eigen::Vector3d::Zero();
-
-		if( !ref_path_.get_ref_state(ge_sp, gev_sp, e.current_real) ) {
-			//There was an issue setting the path goal
-			//Hold latest position
-
-			//XXX: This isn't needed as it is done internally
-			//ge_sp = latest_g_sp_;
-			//gev_sp = Eigen::Vector3d::Zero();
-		}
 
 		if( param_track_end_ ) {
 			//Compute transform for all joints in the chain to get base to end effector
