@@ -40,10 +40,10 @@ class ControllerAug {
 
 		ros::Publisher pub_rc_;
 		ros::Publisher pub_joints_;
-		ros::Publisher pub_accel_linear_;
-		ros::Publisher pub_accel_body_;
-		ros::Publisher pub_twist_base_;
-		ros::Publisher pub_pose_base_;
+		ros::Publisher pub_accel_;
+		ros::Publisher pub_twist_;
+		ros::Publisher pub_pose_;
+		ros::Publisher pub_wrench_;
 
 		ros::Time msg_odom_tr_;
 		ros::Time msg_battery_tr_;
@@ -57,6 +57,8 @@ class ControllerAug {
 		bool param_use_mav_state_;
 		bool param_wait_for_path_;
 		bool param_force_compensation_;
+		bool param_use_wa_est_;
+		bool param_coriolis_compensation_;
 		bool param_track_end_;
 		bool param_accurate_end_tracking_;
 		bool param_reference_feedback_;

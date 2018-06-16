@@ -28,7 +28,8 @@
 //TODO: Add goal joints
 
 ForwardKinematics::ForwardKinematics() :
-	nh_("~"),
+	nh_(),
+	nhp_("~"),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_do_end_effector_pose_(true),
@@ -39,10 +40,10 @@ ForwardKinematics::ForwardKinematics() :
 	int num_links = 0;
 
 	//Load parameters
-	nh_.param("frame_id", param_frame_id_, param_frame_id_);
-	nh_.param("model_id", param_model_id_, param_model_id_);
-	nh_.param("do_viz", param_do_viz_, param_do_viz_);
-	nh_.param("end_effector_pose", param_do_end_effector_pose_, param_do_end_effector_pose_);
+	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
+	nhp_.param("model_id", param_model_id_, param_model_id_);
+	nhp_.param("do_viz", param_do_viz_, param_do_viz_);
+	nhp_.param("end_effector_pose", param_do_end_effector_pose_, param_do_end_effector_pose_);
 
 	nh_.param("body/num", num_links, num_links);
 	ROS_INFO("Loading %i links...", num_links);
@@ -65,11 +66,11 @@ ForwardKinematics::ForwardKinematics() :
 		ROS_INFO("All links loaded!");
 
 		//Configure publishers and subscribers
-		pub_end_ = nh_.advertise<geometry_msgs::PoseStamped>("end_effector", 10);
+		pub_end_ = nh_.advertise<geometry_msgs::PoseStamped>("pose/end_effector", 10);
 		pub_viz_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization", 10, true);
 
-		sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ForwardKinematics::callback_state_odom, this );
-		sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ForwardKinematics::callback_state_joints, this );
+		sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "odom", 10, &ForwardKinematics::callback_state_odom, this );
+		sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "joint_states", 10, &ForwardKinematics::callback_state_joints, this );
 
 		ROS_INFO("Configuring static mounts...");
 		do_reset();

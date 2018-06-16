@@ -25,6 +25,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/AccelStamped.h>
+#include <geometry_msgs/WrenchStamped.h>
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Quaternion.h>
 
@@ -106,12 +107,12 @@ ControllerAug::ControllerAug() :
 
 
 	mixer_ = Eigen::MatrixXd(6,4);
-	mixer_ << 1.0,	-1.0,	 0.0,		 1.0, // Motor 1
-			  1.0,	 1.0,	 0.0,		-1.0, // Motor 2
-			  1.0,	 0.5,	-0.866025,	 1.0, // Motor 3
-			  1.0,	-0.5,	 0.866025,	-1.0, // Motor 4
-			  1.0,	-0.5,	-0.866025,	-1.0, // Motor 5
-			  1.0,	 0.5,	 0.866025,	 1.0; // Motor 6
+	mixer_ << 1.0,	-1.0,	 0.0,	 1.0, // Motor 1
+			  1.0,	 1.0,	 0.0,	-1.0, // Motor 2
+			  1.0,	 0.5,	-1.0,	 1.0, // Motor 3
+			  1.0,	-0.5,	 1.0,	-1.0, // Motor 4
+			  1.0,	-0.5,	-1.0,	-1.0, // Motor 5
+			  1.0,	 0.5,	 1.0,	 1.0; // Motor 6
 
 	if(success) {
 		ROS_INFO( "Loaded configuration for %i links", int(joints_.size()) );
@@ -119,10 +120,10 @@ ControllerAug::ControllerAug() :
 		pub_rc_ = nhp_.advertise<mavros_msgs::OverrideRCIn>("output/rc", 10);
 		pub_joints_ = nhp_.advertise<sensor_msgs::JointState>("output/joints", 10);
 
-		pub_pose_base_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/pose/base", 10);
-		pub_twist_base_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/twist/base", 10);
-		pub_accel_linear_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel/linear", 10);
-		pub_accel_body_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
+		pub_pose_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/base/pose", 10);
+		pub_twist_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/base/twist", 10);
+		pub_accel_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/base/accel", 10);
+		pub_wrench_ = nhp_.advertise<geometry_msgs::WrenchStamped>("feedback/wrench_compensation", 10);
 
 		sub_state_odom_ = nhp_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerAug::callback_state_odom, this );
 		sub_state_battery_ = nhp_.subscribe<sensor_msgs::BatteryState>( "state/battery", 10, &ControllerAug::callback_state_battery, this );
@@ -202,6 +203,8 @@ void ControllerAug::callback_cfg_control_settings(mantis_controller_aug::Control
 	param_wait_for_path_ = config.wait_for_path;
 	param_track_end_ = config.track_end;
 	param_force_compensation_ = config.force_compensation;
+	param_use_wa_est_ = config.use_wa_estimate;
+	param_coriolis_compensation_ = config.coriolis_compensation;
 	param_accurate_end_tracking_ = config.accurate_end_tracking;
 	param_reference_feedback_ = config.reference_feedback;
 }
@@ -385,81 +388,100 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 		wan.y() = rate_pid_y_.step(dt, w_goal.y(), state_.bw().y());
 		wan.z() = rate_pid_z_.step(dt, w_goal.z(), state_.bw().z());
 
-
-		//XXX: TODO: HERE!
-
-
 		//Calculate Abz such that it doesn't apply too much thrust until fully rotated
 		Eigen::Vector3d body_z = state_.g().linear()*Eigen::Vector3d::UnitZ();
 		double az_scale = state_.a_sp().z() / body_z.z();
 		Eigen::Vector3d abz_accel = az_scale*body_z;
 
-		//Need to copy this data to access it directly
-		Eigen::VectorXd r = state_.r();
-		Eigen::VectorXd rd = state_.rd();
-		Eigen::VectorXd rdd = state_.rdd();
-		Eigen::VectorXd bw = state_.bw();
-		Eigen::VectorXd bv = state_.bv();
-
-		Eigen::VectorXd ua = Eigen::VectorXd::Zero(state_.num());	//vd(6,1) + rdd(2,1)
-		/*
-		ua(0) = 0.0;
-		ua(1) = 0.0;
-		ua(2) = abz_accel.norm();
-		//ua(2) = A.norm();
-		ua.segment(3,3) << wa;
-		ua.segment(6,p_.manip_num) << rdd;
-
-		//ROS_INFO_STREAM("Error: " << A.z() - Abz_accel.z() << std::endl << "Linear: " << A.norm() << std::endl << "Body: " << Abz_accel.norm());
-
-		//Calculate dynamics matricies
-		Eigen::MatrixXd D = Eigen::MatrixXd::Zero(state_.num(), state_.num());
-		Eigen::MatrixXd C = Eigen::MatrixXd::Zero(state_.num(), state_.num());
-		Eigen::MatrixXd L = Eigen::MatrixXd::Zero(state_.num(), state_.num());
-
-		//XXX: Take care!
-		double l0 = joints_[0].d();
-		double l1 = joints_[1].r();
-
-		calc_Dq(D,
-				p_.I0x, p_.I0y, p_.I0z,
-				p_.I1x, p_.I1y, p_.I1z,
-				p_.I2x, p_.I2y, p_.I2z,
-				l0, l1, p_.lc1, p_.lc2,
-				p_.m0, p_.m1, p_.m2,
-				r(0), r(1));
-
-		calc_Cqqd(C,
-				  p_.I1x, p_.I1y,
-				  p_.I2x, p_.I2y,
-				  bv(0), bv(1), bv(2), bw(0), bw(1), bw(2),
-				  l0, l1, p_.lc1, p_.lc2,
-				  p_.m1, p_.m2,
-				  r(0), rd(0), r(1), rd(1));
-
-		Eigen::VectorXd tau = D*ua + (C + L)*state_.qd();
-
-		//XXX: Hardcoded for hex in function because lazy
-		Eigen::MatrixXd M = Eigen::MatrixXd::Zero(p_.motor_num + p_.manip_num, state_.num());
-		calc_motor_map(M);
-
-		Eigen::MatrixXd u = M*tau;
-		*/
-
 		//Calculate the desired amount of thrust to meet the accel vector
 		double rpm_max = p_.motor_kv * state_.voltage();	//Get the theoretical maximum rpm at the current battery voltage
 		double thrust_single = p_.rpm_thrust_m * rpm_max + p_.rpm_thrust_c;	//Use the RPM to calculate maximum thrust
-		double thrust_max = p_.motor_num*thrust_single;
+		double kT = 1.0 / (p_.motor_num * thrust_single);
 		double uav_mass = p_.m0 + p_.m1 + p_.m2;
-		// F_Treq = mass * accel_req
-		// Tn = F_Treq / Tmax
-		double Tn = (uav_mass * abz_accel.norm()) / thrust_max;
 
 		//Build the normalized thrust and rotational accel input vector
+		// F_Treq = mass * accel_req
+		// Tn = F_Treq * (1/(6*Tmax))
+		double Tn = (uav_mass * abz_accel.norm()) * kT;
 		Eigen::VectorXd uan(4);
 		uan << Tn, wan;
 
-		//TODO: This is where the augmentation should be performed
+		//==-- Calculate forces induced by the arm
+		Eigen::VectorXd tau(state_.num());
+
+		if(param_force_compensation_) {
+			double arm_ang = M_PI / 3.0;
+			double ktx = 1.0 / (2.0 * p_.la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * thrust_single);
+			double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * thrust_single);
+			double km = -1.0 / (p_.motor_num * p_.motor_drag_max);
+
+			//Need to copy this data to access it directly
+			Eigen::VectorXd r = state_.r();
+			Eigen::VectorXd rd = state_.rd();
+			Eigen::VectorXd rdd = state_.rdd();
+			Eigen::VectorXd bw = state_.bw();
+			Eigen::VectorXd bv = state_.bv();
+
+			Eigen::VectorXd ua(state_.num());	//vd(6,1) + rdd(2,1)
+			ua(0) = 0.0;
+			ua(1) = 0.0;
+			ua(2) = abz_accel.norm();	//XXX: Maybe should be 0.0 (?)
+			//ua(2) = A.norm();
+			if(param_use_wa_est_) {
+				ua.segment(3,3) << state_.bwa();
+			} else {
+				//XXX: Not having this enabled can cause instabilities
+				ua.segment(3,3) << Eigen::Vector3d::Zero();
+			}
+			ua.segment(6,p_.manip_num) << rdd;
+
+			//Calculate dynamics matricies
+			Eigen::MatrixXd D = Eigen::MatrixXd::Zero(state_.num(), state_.num());
+			Eigen::MatrixXd C = Eigen::MatrixXd::Zero(state_.num(), state_.num());
+			Eigen::MatrixXd L = Eigen::MatrixXd::Zero(state_.num(), state_.num());
+
+			//XXX: Take care!
+			double l0 = joints_[0].d();
+			double l1 = joints_[1].r();
+
+			calc_Dq(D,
+					p_.I0x, p_.I0y, p_.I0z,
+					p_.I1x, p_.I1y, p_.I1z,
+					p_.I2x, p_.I2y, p_.I2z,
+					l0, l1, p_.lc1, p_.lc2,
+					p_.m0, p_.m1, p_.m2,
+					r(0), r(1));
+
+			calc_Cqqd(C,
+					  p_.I1x, p_.I1y,
+					  p_.I2x, p_.I2y,
+					  bv(0), bv(1), bv(2), bw(0), bw(1), bw(2),
+					  l0, l1, p_.lc1, p_.lc2,
+					  p_.m1, p_.m2,
+					  r(0), rd(0), r(1), rd(1));
+
+
+			if(param_coriolis_compensation_) {
+				tau = D*ua + (C + L)*state_.qd();
+			} else {
+				tau = D*ua;
+			}
+
+			//XXX: Hardcoded for hex in function because lazy
+			//Eigen::MatrixXd M = Eigen::MatrixXd::Zero(p_.motor_num + p_.manip_num, state_.num());
+			//calc_motor_map(M);
+
+			//Eigen::MatrixXd u = M*tau;
+
+			//Normalize and add in the augmentation force calcs
+			Eigen::VectorXd uaug(4);
+			uaug(0) = 0.0; //Thrust augmentation is done above, otherwise: tau(2)*kT; //vertical accel compensation
+			uaug(1) = tau(3)*ktx;//roll accel compensation
+			uaug(2) = tau(4)*kty;//pitch accel compensation
+			uaug(3) = tau(5)*km;//yaw accel compensation
+
+			uan += uaug;
+		}
 
 		//Perform the motor mixing
 		Eigen::MatrixXd u = mixer_*uan;
@@ -476,7 +498,7 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 		//}
 
 		if(param_reference_feedback_)
-			message_output_feedback(e.current_real, state_.g_sp(), state_.a_sp(), gr_sp, w_goal, ua);
+			message_output_feedback(e.current_real, state_.g_sp(), state_.a_sp(), gr_sp, w_goal, tau);
 	} else {
 		//Output minimums until the input info is available
 		for(int i=0; i<p_.motor_num; i++) {
@@ -750,58 +772,57 @@ void ControllerAug::message_output_feedback(const ros::Time t,
 										   const Eigen::Vector3d &pa,
 										   const Eigen::Matrix3d &r_sp,
 										   const Eigen::Vector3d &g_bw,
-										   const Eigen::VectorXd &ua) {
-	geometry_msgs::PoseStamped msg_pose_base_out;
-	geometry_msgs::TwistStamped msg_twist_base_out;
-	geometry_msgs::AccelStamped msg_accel_linear_out;
-	geometry_msgs::AccelStamped msg_accel_body_out;
+										   const Eigen::VectorXd &tau) {
+	geometry_msgs::PoseStamped msg_pose_out;
+	geometry_msgs::TwistStamped msg_twist_out;
+	geometry_msgs::AccelStamped msg_accel_out;
+	geometry_msgs::WrenchStamped msg_wrench_out;
 
 	//Prepare headers
-	msg_pose_base_out.header.stamp = t;
-	msg_pose_base_out.header.frame_id = param_frame_id_;
-
-	msg_twist_base_out.header.stamp = t;
-	msg_twist_base_out.header.frame_id = param_frame_id_;
-
-	msg_accel_linear_out.header.stamp = t;
-	msg_accel_linear_out.header.frame_id = param_frame_id_;
-	msg_accel_body_out.header.stamp = t;
-	msg_accel_body_out.header.frame_id = param_model_id_;
+	msg_pose_out.header.stamp = t;
+	msg_pose_out.header.frame_id = param_frame_id_;
+	msg_twist_out.header.stamp = t;
+	msg_twist_out.header.frame_id = param_frame_id_;
+	msg_accel_out.header.stamp = t;
+	msg_accel_out.header.frame_id = param_frame_id_;
+	msg_wrench_out.header.stamp = t;
+	msg_wrench_out.header.frame_id = param_model_id_;
 
 	//Insert feedback data
 	Eigen::Quaterniond r_sp_q(r_sp);
 	r_sp_q.normalize();
-	msg_pose_base_out.pose.position.x = g_sp.translation().x();
-	msg_pose_base_out.pose.position.y = g_sp.translation().y();
-	msg_pose_base_out.pose.position.z = g_sp.translation().z();
-	msg_pose_base_out.pose.orientation.w = r_sp_q.w();
-	msg_pose_base_out.pose.orientation.x = r_sp_q.x();
-	msg_pose_base_out.pose.orientation.y = r_sp_q.y();
-	msg_pose_base_out.pose.orientation.z = r_sp_q.z();
+	msg_pose_out.pose.position.x = g_sp.translation().x();
+	msg_pose_out.pose.position.y = g_sp.translation().y();
+	msg_pose_out.pose.position.z = g_sp.translation().z();
+	msg_pose_out.pose.orientation.w = r_sp_q.w();
+	msg_pose_out.pose.orientation.x = r_sp_q.x();
+	msg_pose_out.pose.orientation.y = r_sp_q.y();
+	msg_pose_out.pose.orientation.z = r_sp_q.z();
 
-	msg_twist_base_out.twist.angular.x = g_bw.x();
-	msg_twist_base_out.twist.angular.y = g_bw.y();
-	msg_twist_base_out.twist.angular.z = g_bw.z();
+	msg_twist_out.twist.angular.x = g_bw.x();
+	msg_twist_out.twist.angular.y = g_bw.y();
+	msg_twist_out.twist.angular.z = g_bw.z();
 
-	msg_accel_linear_out.accel.linear.x = pa.x();
-	msg_accel_linear_out.accel.linear.y = pa.y();
-	msg_accel_linear_out.accel.linear.z = pa.z();
+	msg_accel_out.accel.linear.x = pa.x();
+	msg_accel_out.accel.linear.y = pa.y();
+	msg_accel_out.accel.linear.z = pa.z();
 
-	msg_accel_body_out.accel.linear.x = ua(0);
-	msg_accel_body_out.accel.linear.y = ua(1);
-	msg_accel_body_out.accel.linear.z = ua(2);
-	msg_accel_body_out.accel.angular.x = ua(3);
-	msg_accel_body_out.accel.angular.y = ua(4);
-	msg_accel_body_out.accel.angular.z = ua(5);
+	msg_wrench_out.wrench.force.x = tau(0);
+	msg_wrench_out.wrench.force.y = tau(1);
+	msg_wrench_out.wrench.force.z = tau(2);
+	msg_wrench_out.wrench.torque.x = tau(3);
+	msg_wrench_out.wrench.torque.y = tau(4);
+	msg_wrench_out.wrench.torque.z = tau(5);
 
 	//Publish messages
-	pub_pose_base_.publish(msg_pose_base_out);
-	pub_twist_base_.publish(msg_twist_base_out);
-	pub_accel_linear_.publish(msg_accel_linear_out);
-	pub_accel_body_.publish(msg_accel_body_out);
+	pub_pose_.publish(msg_pose_out);
+	pub_twist_.publish(msg_twist_out);
+	pub_accel_.publish(msg_accel_out);
+	pub_wrench_.publish(msg_wrench_out);
 }
 
 void ControllerAug::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
+	double dt = (msg_in->header.stamp - msg_imu_tr_).toSec();
 	msg_odom_tr_ = msg_in->header.stamp;
 
 	//Update pose
@@ -819,7 +840,7 @@ void ControllerAug::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_
 											 msg_in->twist.twist.angular.y,
 											 msg_in->twist.twist.angular.z);
 
-		state_.update_bw( bw );
+		state_.update_bw( bw, dt );
 	}
 }
 
@@ -836,14 +857,14 @@ void ControllerAug::callback_state_battery(const sensor_msgs::BatteryState::Cons
 }
 
 void ControllerAug::callback_state_imu(const sensor_msgs::Imu::ConstPtr& msg_in) {
+	double dt = (msg_in->header.stamp - msg_imu_tr_).toSec();
 	msg_imu_tr_ = msg_in->header.stamp;
 
 	if( param_use_imu_state_ ) {
 		Eigen::Vector3d bw = Eigen::Vector3d(msg_in->angular_velocity.x,
 											 msg_in->angular_velocity.y,
 											 msg_in->angular_velocity.z);
-
-		state_.update_bw( bw );
+		state_.update_bw( bw, dt );
 	}
 }
 

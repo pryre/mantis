@@ -1,8 +1,6 @@
-#include <ros/ros.h>
+#include <eigen3/Eigen/Dense>
 
 #include <controller_aug/controller_aug_state.h>
-
-#include <eigen3/Eigen/Dense>
 
 ControllerAugState::ControllerAugState() :
 		new_odom_data_(true),
@@ -14,6 +12,7 @@ ControllerAugState::ControllerAugState() :
 		wv_ = Eigen::Vector3d::Zero();
 		bv_ = Eigen::Vector3d::Zero();
 		bw_ = Eigen::Vector3d::Zero();
+		bwa_ = Eigen::Vector3d::Zero();
 
 		//Additional state information
 		voltage_ = 0.0;
@@ -51,6 +50,12 @@ void ControllerAugState::update_bw( const Eigen::Vector3d &bw ) {
 	new_qd_data_ = true;
 
 	bw_ = bw;
+}
+
+void ControllerAugState::update_bw( const Eigen::Vector3d &bw, const double dt ) {
+	bwa_ = (bw - bw_) / dt;
+
+	this->update_bw(bw);
 }
 
 void ControllerAugState::update_bv( const Eigen::Vector3d &bv ) {
@@ -121,6 +126,11 @@ Eigen::Vector3d ControllerAugState::wv( void ) {
 
 Eigen::Vector3d ControllerAugState::bw( void ) {
 	return bw_;
+}
+
+
+Eigen::Vector3d ControllerAugState::bwa( void ) {
+	return bwa_;
 }
 
 Eigen::Vector3d ControllerAugState::bv( void ) {

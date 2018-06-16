@@ -19,8 +19,10 @@
 
 		<param name="use_imu_state" value="true" />
 		<param name="use_mav_state" value="true" />
-		<param name="control_settings/wait_for_path" value="true" />
-		<param name="control_settings/force_compensation" value="false" />
+		<param name="control_settings/wait_for_path" value="false" />
+		<param name="control_settings/force_compensation" value="true" />
+		<param name="control_settings/use_wa_estimate" value="true" />
+		<param name="control_settings/coriolis_compensation" value="true" />
 		<param name="control_settings/track_end" value="false" />
 		<param name="control_settings/accurate_end_tracking" value="true" />
 		<param name="control_settings/reference_feedback" value="true" />

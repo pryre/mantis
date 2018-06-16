@@ -20,6 +20,7 @@
 class ForwardKinematics {
 	private:
 		ros::NodeHandle nh_;
+		ros::NodeHandle nhp_;
 		ros::Publisher pub_end_;
 		ros::Publisher pub_viz_;
 		ros::Subscriber sub_state_odom_;

@@ -1,9 +1,5 @@
 #pragma once
 
-#include <ros/ros.h>
-
-#include <dh_parameters/dh_parameters.h>
-
 #include <eigen3/Eigen/Dense>
 
 class ControllerAugState {
@@ -17,6 +13,7 @@ class ControllerAugState {
 		Eigen::Vector3d wv_;
 		Eigen::Vector3d bv_;
 		Eigen::Vector3d bw_;
+		Eigen::Vector3d bwa_;
 
 		Eigen::VectorXd r_;
 		Eigen::VectorXd rd_;
@@ -41,6 +38,7 @@ class ControllerAugState {
 
 		void update_g( const Eigen::Affine3d &g );
 		void update_bw( const Eigen::Vector3d &bw );
+		void update_bw( const Eigen::Vector3d &bw, const double dt );
 		void update_bv( const Eigen::Vector3d &bv );
 		void update_r( const Eigen::VectorXd &r );
 		void update_rd( const Eigen::VectorXd &rd );
@@ -57,6 +55,7 @@ class ControllerAugState {
 		Eigen::Affine3d g( void );
 		Eigen::Vector3d wv( void );
 		Eigen::Vector3d bw( void );
+		Eigen::Vector3d bwa( void );
 		Eigen::Vector3d bv( void );
 		Eigen::VectorXd r( void );
 		Eigen::VectorXd rd( void );
