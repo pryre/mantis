@@ -113,6 +113,7 @@ ControllerAug::ControllerAug() :
 			  1.0,	-0.5,	 1.0,	-1.0, // Motor 4
 			  1.0,	-0.5,	-1.0,	-1.0, // Motor 5
 			  1.0,	 0.5,	 1.0,	 1.0; // Motor 6
+	uaug_f_ = Eigen::VectorXd::Zero(4);
 
 	if(success) {
 		ROS_INFO( "Loaded configuration for %i links", int(joints_.size()) );
@@ -203,7 +204,7 @@ void ControllerAug::callback_cfg_control_settings(mantis_controller_aug::Control
 	param_wait_for_path_ = config.wait_for_path;
 	param_track_end_ = config.track_end;
 	param_force_compensation_ = config.force_compensation;
-	param_use_wa_est_ = config.use_wa_estimate;
+	param_force_comp_alpha_ = config.force_comp_filter_a;
 	param_coriolis_compensation_ = config.coriolis_compensation;
 	param_accurate_end_tracking_ = config.accurate_end_tracking;
 	param_reference_feedback_ = config.reference_feedback;
@@ -422,18 +423,14 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 			Eigen::VectorXd bw = state_.bw();
 			Eigen::VectorXd bv = state_.bv();
 
-			Eigen::VectorXd ua(state_.num());	//vd(6,1) + rdd(2,1)
-			ua(0) = 0.0;
-			ua(1) = 0.0;
-			ua(2) = abz_accel.norm();	//XXX: Maybe should be 0.0 (?)
-			//ua(2) = A.norm();
-			if(param_use_wa_est_) {
-				ua.segment(3,3) << state_.bwa();
-			} else {
-				//XXX: Not having this enabled can cause instabilities
-				ua.segment(3,3) << Eigen::Vector3d::Zero();
-			}
-			ua.segment(6,p_.manip_num) << rdd;
+			//Use this to account for acceleration / translational forces
+			//  but assume that all rotations want to maintain 0 acceleration
+			Eigen::VectorXd ua = Eigen::VectorXd::Zero(state_.num());	//vd(6,1) + rdd(2,1)
+			//ua(0) = 0.0;
+			//ua(1) = 0.0;
+			ua(2) = abz_accel.norm();
+			//ua.segment(3,3) << Eigen::Vector3d::Zero();
+			//ua.segment(6,p_.manip_num) << rdd;
 
 			//Calculate dynamics matricies
 			Eigen::MatrixXd D = Eigen::MatrixXd::Zero(state_.num(), state_.num());
@@ -480,7 +477,10 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 			uaug(2) = tau(4)*kty;//pitch accel compensation
 			uaug(3) = tau(5)*km;//yaw accel compensation
 
-			uan += uaug;
+			//Low level filter to help reduce issues caused by low level oscilations in the other controllers
+			uaug_f_ = param_force_comp_alpha_*uaug + (1.0-param_force_comp_alpha_)*uaug_f_;
+
+			uan += uaug_f_;
 		}
 
 		//Perform the motor mixing
@@ -500,6 +500,15 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 		if(param_reference_feedback_)
 			message_output_feedback(e.current_real, state_.g_sp(), state_.a_sp(), gr_sp, w_goal, tau);
 	} else {
+		uaug_f_ = Eigen::VectorXd::Zero(4);
+
+		ang_pid_x_.reset();
+		ang_pid_y_.reset();
+		ang_pid_z_.reset();
+		rate_pid_x_.reset(state_.bw().x());
+		rate_pid_y_.reset(state_.bw().y());
+		rate_pid_z_.reset(state_.bw().z());
+
 		//Output minimums until the input info is available
 		for(int i=0; i<p_.motor_num; i++) {
 			pwm_out[i] = p_.pwm_min;
