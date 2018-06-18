@@ -1,6 +1,5 @@
 #include <ros/ros.h>
 
-#include <dynamic_reconfigure/server.h>
 #include <controller_aug/controller_aug_params.h>
 
 ControllerAugParams::ControllerAugParams(ros::NodeHandle *nh, ros::NodeHandle *nhp) :

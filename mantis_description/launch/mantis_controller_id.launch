@@ -7,7 +7,7 @@
 	</group>
 
 	<!-- LOW LEVEL CONTROL -->
-	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_params.yaml"/>
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_params_id.yaml"/>
 
 	<node pkg="mantis_controller_id" type="controller_id_node" name="controller_id"
 	ns="/mantis_uav" clear_params="true" output="screen">

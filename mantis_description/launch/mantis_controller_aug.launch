@@ -1,0 +1,82 @@
+<?xml version='1.0'?>
+<launch>
+	<arg name="arm" default="false"/>
+
+	<group if="$(arg arm)">
+		<node pkg="mavros" type="mavsafety" name="arm_system" args="arm"/>
+	</group>
+
+	<!-- LOW LEVEL CONTROL -->
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_params.yaml"/>
+
+	<node pkg="mantis_controller_id" type="controller_id_node" name="controller_id"
+	ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="frame_id" value="map" />
+		<param name="model_id" value="mantis_uav" />
+		<param name="safety_rate" value="20.0" />
+		<param name="high_level_rate" value="20.0" />
+		<param name="low_level_rate" value="200.0" />
+
+		<param name="use_imu_state" value="true" />
+		<param name="use_mav_state" value="true" />
+		<param name="control_settings/wait_for_path" value="false" />
+		<param name="control_settings/track_end" value="false" />
+		<param name="control_settings/accurate_end_tracking" value="true" />
+		<param name="control_settings/force_compensation" value="false" />
+		<param name="control_settings/force_comp_filter_a" value="true" />
+		<param name="control_settings/coriolis_compensation" value="true" />
+		<param name="control_settings/reference_feedback" value="true" />
+
+		<remap from="controller_aug/state/odom" to="/mantis_uav/odom" />
+		<remap from="controller_aug/state/imu" to="/mavros/imu/data" />
+		<remap from="controller_aug/state/battery" to="/mavros/battery" />
+		<remap from="controller_aug/state/mav" to="/mavros/state" />
+		<remap from="controller_aug/state/joints" to="/mantis_uav/joint_states" />
+
+		<remap from="controller_aug/reference/path" to="/mantis_uav/path" />
+
+		<remap from="controller_aug/output/rc" to="/mavros/rc/override" />
+		<remap from="controller_aug/output/joints" to="/mantis_uav/command/joint_torque" />
+	</node>
+
+	<node pkg="mantis_interface_dynamixel" type="interface_node" name="dynamixel_interface" clear_params="true" output="screen">
+		<param name="topic_input_setpoints" value="/mantis_uav/joint_setpoints" type="str" />
+		<param name="topic_output_states" value="/mantis_uav/joint_states" type="str" />
+
+		<param name="port_name" value="/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A10668JA-if00-port0" type="str" />
+		<param name="port_baud" value="3000000" type="int" />
+		<param name="protocol" value="2.0" type="double" />
+
+		<param name="frame_id" value="mantis" type="str" />
+		<param name="update_rate" value="25.0" type="double" />
+
+		<rosparam command="load" file="$(find mantis_description)/config/mantis_dynamixel_interface.yaml"/>
+	</node>
+
+	<!-- TF to Odom conversion -->
+	<node pkg="mavel" type="pose_odom_node" name="pose_odom" clear_params="true" output="screen">
+		<param name="frame_world" value="map" type="str"/>
+		<param name="frame_mav" value="mantis" type="str"/>
+
+		<param name="topic_odom" value="/mantis_uav/odom" type="str"/>
+		<param name="topic_pose" value="/vicon/mantis/mantis" type="str"/>
+
+		<param name="velocity_interval" value="0.25" type="double"/>
+		<param name="velocity_filtering" value="0.4" type="double"/>
+	</node>
+
+	<!-- HIGH LEVEL CONTROL -->
+	<node name="robot_config" pkg="mantis_controller_id" type="robot_config_node" respawn="false"
+	ns="/mantis_uav" output="screen">
+		<param name="frame_id" value="map" />
+		<param name="hover_height" value="1.0" />
+
+		<remap from="/mantis_uav/robot_config/goal/joint_state" to="/mantis_uav/joint_setpoints"/>
+
+		<!-- remap from="robot_config/goal/joint1" to="/mantis_uav/joint_position_controller/joint_shoulder/command"/-->
+		<!-- remap from="robot_config/goal/joint2" to="/mantis_uav/joint_position_controller/joint_elbow/command"/-->
+
+		<remap from="robot_config/pose" to="/move_base_simple/goal"/>
+		<remap from="robot_config/goal/path" to="/mantis_uav/path"/>
+	</node>
+</launch>

@@ -20,12 +20,13 @@
 		<param name="use_imu_state" value="true" />
 		<param name="use_mav_state" value="true" />
 		<param name="control_settings/wait_for_path" value="false" />
-		<param name="control_settings/force_compensation" value="true" />
-		<param name="control_settings/use_wa_estimate" value="true" />
-		<param name="control_settings/coriolis_compensation" value="true" />
 		<param name="control_settings/track_end" value="false" />
 		<param name="control_settings/accurate_end_tracking" value="true" />
+		<param name="control_settings/force_compensation" value="true" />
+		<param name="control_settings/force_comp_filter_a" value="true" />
+		<param name="control_settings/coriolis_compensation" value="true" />
 		<param name="control_settings/reference_feedback" value="true" />
+
 
 		<remap from="controller_aug/state/odom" to="/mantis_uav/odom" />
 		<remap from="controller_aug/state/imu" to="/mantis_uav/imu_data" />

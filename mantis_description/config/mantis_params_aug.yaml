@@ -1,0 +1,158 @@
+#Parameter file for the Mantis MM-UAV
+
+motor:
+  num: 6
+  arm_len: 0.275 #m
+  #thrust_max: 8.5 #11.6110736 # N
+  kv: 660 #Rated to 960, but real is ~660 under load
+  rpm_thrust_curve:
+    m: 0.0011323 #0.0008318056
+    c: -2.9235
+  drag_max: 1.2 # N
+
+pwm:
+  min: 1000
+  max: 2000
+
+takeoff:
+  x: 0.0
+  y: 0.0
+  z: 2.0
+
+controller_aug:
+  control:
+    pos:
+      x:
+        p: 2.0
+        i: 0.0
+        d: 0.0
+        min: -2.0
+        max: 2.0
+        tau: 0.02
+      y:
+        p: 2.0
+        i: 0.0
+        d: 0.0
+        min: -2.0
+        max: 2.0
+        tau: 0.02
+      z:
+        p: 4.0
+        i: 0.0
+        d: 0.0
+        min: -5.0
+        max: 5.0
+        tau: 0.02
+    vel:
+      x:
+        p: 1.0
+        i: 0.0
+        d: 0.0
+        min: -2.0
+        max: 2.0
+        tau: 0.02
+      y:
+        p: 1.0
+        i: 0.0
+        d: 0.0
+        min: -2.0
+        max: 2.0
+        tau: 0.02
+      z:
+        p: 2.0
+        i: 0.0
+        d: 0.0
+        min: -5.0
+        max: 5.0
+        tau: 0.02
+    ang:
+      x:
+        p: 6.5
+        i: 0.0
+        d: 0.0
+        min: -1.57
+        max: 1.57
+        tau: 0.02
+      y:
+        p: 6.5
+        i: 0.0
+        d: 0.0
+        min: -1.57
+        max: 1.57
+        tau: 0.02
+      z:
+        p: 2.8
+        i: 0.0
+        d: 0.0
+        min: -0.75
+        max: 0.75
+        tau: 0.02
+    rate:
+      x:
+        p: 0.0433 #Slightly less than roll (cos(30)%) to even out motor thrust difference in the Hex
+        i: 0.0
+        d: 0.005
+        min: -1.0
+        max: 1.0
+        tau: 0.02
+      y:
+        p: 0.05
+        i: 0.0
+        d: 0.005
+        min: -1.0
+        max: 1.0
+        tau: 0.02
+      z:
+        p: 0.2
+        i: 0.1
+        d: 0.0
+        min: -1.0
+        max: 1.0
+        tau: 0.02
+
+body:
+  num: 3
+  b0:
+    mass:
+      m: 2.30 # Base + props
+      Ix: 0.02850657
+      Iy: 0.02821766
+      Iz: 0.05416778
+    com: 0.0
+    link:
+      name: "mount"
+      d: -0.10 # Update this
+      t: 0.0
+      r: 0.0
+      a: 1.570796326794897
+      type: "static"
+  b1:
+    mass:
+      m: 0.1
+      Ix: 0.00005
+      Iy: 0.00068
+      Iz: 0.00067
+    com: 0.15
+    link:
+      name: "joint_shoulder"
+      d: 0.0
+      t: -1.570796326794897
+      r: 0.24
+      a: 0.0
+      type: "twist_z"
+      beta: 0.8 # Maybe lower the filter a bit, or maybe set to 1 to remove it?
+  b2:
+    mass:
+      m: 0.06
+      Ix: 0.00004
+      Iy: 0.00032
+      Iz: 0.00032
+    com: 0.11
+    link:
+      name: "joint_elbow"
+      d: 0.0
+      t: 0.0
+      r: 0.21
+      a: 0.0
+      type: "twist_z"
+      beta: 0.8 # Maybe lower the filter a bit, or maybe set to 1 to remove it?

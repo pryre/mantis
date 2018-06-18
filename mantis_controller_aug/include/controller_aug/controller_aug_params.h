@@ -2,10 +2,6 @@
 
 #include <ros/ros.h>
 
-#include <dynamic_reconfigure/server.h>
-#include <mantis_controller_aug/PIGainsConfig.h>
-#include <mantis_controller_aug/PGainsConfig.h>
-
 #include <string>
 #include <vector>
 

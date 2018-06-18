@@ -4,19 +4,14 @@
 	<arg name="frame_id" default="map"/>
 	<arg name="rviz" default="false"/>
 
-	<node pkg="mantis_kinematics" type="mantis_forward_kinematics_node" name="mantis_fk" clear_params="true" output="screen">
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_params_aug.yaml"/>
+
+	<node pkg="mantis_kinematics" type="mantis_forward_kinematics_node" name="mantis_fk" clear_params="true" output="screen" ns="mantis_uav">
 		<param name="frame_id" value="$(arg frame_id)" />
 		<param name="model_id" value="$(arg model_name)" />
 
 		<param name="do_viz" value="false" />
 		<param name="end_effector_pose" value="true" />
-
-		<remap from="/mantis_fk/state/odom" to="/$(arg model_name)/odom"/>
-		<remap from="/mantis_fk/state/joints" to="/$(arg model_name)/joint_states"/>
-
-		<remap from="/mantis_fk/visualization" to="/$(arg model_name)/visualization"/>
-
-		<rosparam command="load" file="$(find mantis_description)/config/mantis_params.yaml"/>
 	</node>
 
 	<!-- start gazebo client -->
