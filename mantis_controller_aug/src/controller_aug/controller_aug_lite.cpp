@@ -15,7 +15,7 @@
 #include <mantis_controller_aug/ControlParamsLiteConfig.h>
 
 #include <mavros_msgs/AttitudeTarget.h>
-#include <mavros_msgs/PositionTarget.h>
+#include <mavros_msgs/ActuatorControl.h>
 #include <sensor_msgs/BatteryState.h>
 #include <sensor_msgs/JointState.h>
 #include <sensor_msgs/Imu.h>
@@ -68,7 +68,7 @@ ControllerAugLite::ControllerAugLite() :
 	if(success) {
 		ROS_INFO( "Loaded configuration for %i links", int(joints_.size()) );
 
-		pub_force_target_ = nhp_.advertise<mavros_msgs::PositionTarget>("output/force_target", 10);
+		pub_np_force_ = nhp_.advertise<mavros_msgs::ActuatorControl>("output/normalized_payload_torque", 10);
 		pub_wrench_ = nhp_.advertise<geometry_msgs::WrenchStamped>("feedback/wrench_compensation", 10);
 
 		sub_state_battery_ = nhp_.subscribe<sensor_msgs::BatteryState>( "state/battery", 10, &ControllerAugLite::callback_state_battery, this );
@@ -216,30 +216,20 @@ void ControllerAugLite::callback_est(const ros::TimerEvent& e) {
 		pub_wrench_.publish(msg_wrench_out);
 	}
 
-	mavros_msgs::PositionTarget msg_force_target_out;
-	msg_force_target_out.header.stamp = e.current_real;
-	msg_force_target_out.header.frame_id = param_model_id_;
+	mavros_msgs::ActuatorControl msg_np_force_out;
+	msg_np_force_out.header.stamp = e.current_real;
+	msg_np_force_out.header.frame_id = param_model_id_;
 
 	//Set the message to be a force input only message in the body frame
-	msg_force_target_out.coordinate_frame = msg_force_target_out.FRAME_BODY_NED;
-
-	msg_force_target_out.type_mask = msg_force_target_out.IGNORE_PX |
-									 msg_force_target_out.IGNORE_PY |
-									 msg_force_target_out.IGNORE_PZ |
-									 msg_force_target_out.IGNORE_VX |
-									 msg_force_target_out.IGNORE_VY |
-									 msg_force_target_out.IGNORE_VZ |
-									 msg_force_target_out.IGNORE_YAW |
-									 msg_force_target_out.IGNORE_YAW_RATE |
-									 msg_force_target_out.FORCE;
+	msg_np_force_out.group_mix = msg_np_force_out.PX4_MIX_PAYLOAD;
 
 	//Put in the force input
-	msg_force_target_out.acceleration_or_force.x = uaug_out(0);
-	msg_force_target_out.acceleration_or_force.y = uaug_out(1);
-	msg_force_target_out.acceleration_or_force.z = uaug_out(2);
+	msg_np_force_out.controls[0] = uaug_out(0);
+	msg_np_force_out.controls[1] = uaug_out(1);
+	msg_np_force_out.controls[2] = uaug_out(2);
 
 	//Publish!
-	pub_force_target_.publish(msg_force_target_out);
+	pub_np_force_.publish(msg_np_force_out);
 }
 
 void ControllerAugLite::callback_state_battery(const sensor_msgs::BatteryState::ConstPtr& msg_in) {

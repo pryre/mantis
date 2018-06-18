@@ -12,7 +12,7 @@
 #include <sensor_msgs/JointState.h>
 #include <sensor_msgs/BatteryState.h>
 #include <mavros_msgs/AttitudeTarget.h>
-#include <mavros_msgs/PositionTarget.h>
+#include <mavros_msgs/ActuatorControl.h>
 
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/StdVector>
@@ -28,7 +28,7 @@ class ControllerAugLite {
 		ros::Subscriber sub_state_joints_;
 		ros::Subscriber sub_state_imu_;
 
-		ros::Publisher pub_force_target_;
+		ros::Publisher pub_np_force_;
 		ros::Publisher pub_wrench_;
 
 		ros::Time msg_attitude_target_tr_;
