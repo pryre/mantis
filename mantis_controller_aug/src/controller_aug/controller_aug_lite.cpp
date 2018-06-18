@@ -191,9 +191,9 @@ void ControllerAugLite::callback_est(const ros::TimerEvent& e) {
 
 		//Normalize and add in the augmentation force calcs
 		Eigen::VectorXd uaug(3);
-		uaug(1) = tau(3)*ktx;//roll accel compensation
-		uaug(2) = tau(4)*kty;//pitch accel compensation
-		uaug(3) = tau(5)*km;//yaw accel compensation
+		uaug(0) = tau(3)*ktx;//roll accel compensation
+		uaug(1) = tau(4)*kty;//pitch accel compensation
+		uaug(2) = tau(5)*km;//yaw accel compensation
 
 		//Low level filter to help reduce issues caused by low level oscilations in the other controllers
 		uaug_f_ = param_force_comp_alpha_*uaug + (1.0-param_force_comp_alpha_)*uaug_f_;
