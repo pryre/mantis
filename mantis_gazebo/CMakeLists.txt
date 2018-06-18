@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   gazebo_ros
   gazebo_ros_control
+  pid_controller_lib
   controller_manager
   joint_state_controller
   robot_state_publisher
@@ -153,10 +154,6 @@ add_library(${PROJECT_NAME}_motor_model
   src/rotors/gazebo_motor_model.cpp
 )
 
-add_library(${PROJECT_NAME}_pid_controller
-  src/pidController/pidController.cpp
-)
-
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -217,7 +214,6 @@ target_link_libraries(model_state_odom_node
 )
 
 target_link_libraries(controller_acro_node
-  ${PROJECT_NAME}_pid_controller
   ${catkin_LIBRARIES}
 )
 

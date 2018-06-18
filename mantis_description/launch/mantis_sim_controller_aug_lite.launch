@@ -1,0 +1,53 @@
+<?xml version='1.0'?>
+<launch>
+	<arg name="arm" default="false"/>
+
+	<group if="$(arg arm)">
+		<node pkg="rosservice" type="rosservice" name="arm_system" args="call --wait /mantis_uav/arm/motors '{arm: $(arg arm)}'"/>
+	</group>
+
+	<!-- HIGH LEVEL CONTROL -->
+	<node pkg="mavel" type="mavel_node" name="mavel" clear_params="true" output="screen">
+		<!-- Controller Parameters /-->
+		<rosparam command="load" file="$(find mantis_description)/config/mavel_params.yaml"/>
+
+		<remap from="/mavel/goal/attitude" to="/mantis_uav/command/attitude"/>
+		<remap from="/mavel/reference/odometry" to="/mantis_uav/odom"/>
+		<remap from="/mavel/reference/state" to="/mantis_uav/state"/>
+	</node>
+
+	<!-- LOW LEVEL CONTROL -->
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_params_aug.yaml"/>
+
+	<node pkg="mantis_controller_aug" type="controller_aug_lite_node" name="controller_aug"
+	ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="frame_id" value="map" />
+		<param name="model_id" value="mantis_uav" />
+		<param name="est_rate" value="200.0" />
+
+		<param name="control_settings/force_compensation" value="false" />
+		<param name="control_settings/force_comp_filter_a" value="true" />
+		<param name="control_settings/coriolis_compensation" value="true" />
+		<param name="control_settings/reference_feedback" value="true" />
+
+		<remap from="controller_aug/state/imu" to="/mantis_uav/imu_data" />
+		<remap from="controller_aug/state/battery" to="/mantis_uav/battery" />
+		<remap from="controller_aug/state/joints" to="/mantis_uav/joint_states" />
+		<remap from="controller_aug/state/attitude_target" to="/mantis_uav/command/attitude" />
+
+		<remap from="controller_aug/output/normalized_payload_torque" to="/mantis_uav/command/force_compensation" />
+	</node>
+
+	<!-- HELPER NODES -->
+	<node name="robot_config" pkg="mantis_controller_id" type="robot_config_node" respawn="false"
+	ns="/mantis_uav" output="screen">
+		<param name="frame_id" value="map" />
+		<param name="hover_height" value="1.0" />
+
+		<remap from="robot_config/goal/joint1" to="/mantis_uav/joint_position_controller/joint_shoulder/command"/>
+		<remap from="robot_config/goal/joint2" to="/mantis_uav/joint_position_controller/joint_elbow/command"/>
+
+		<remap from="robot_config/pose" to="/move_base_simple/goal"/>
+		<remap from="robot_config/goal/path" to="/mantis_uav/path"/>
+	</node>
+</launch>

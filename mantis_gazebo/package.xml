@@ -41,7 +41,9 @@
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
 
+
   <build_depend>roscpp</build_depend>
+  <build_depend>pid_controller_lib</build_depend>
   <build_depend>gazebo_ros</build_depend>
   <build_depend>gazebo_ros_control</build_depend>
   <build_depend>controller_manager</build_depend>
@@ -57,6 +59,7 @@
   <build_depend>hector_gazebo_plugins</build_depend>
 
   <run_depend>roscpp</run_depend>
+  <run_depend>pid_controller_lib</run_depend>
   <run_depend>gazebo_ros</run_depend>
   <run_depend>gazebo_ros_control</run_depend>
   <run_depend>controller_manager</run_depend>

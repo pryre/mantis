@@ -1,0 +1,25 @@
+# Common configuration for the mavel velocity controller
+
+# PID Controllers
+rates:
+  x:
+    p: 0.05
+    i: 0.0
+    d: 0.003
+    tau: 0.02
+    min: -0.5
+    max: 0.5
+  y:
+    p: 0.05
+    i: 0.0
+    d: 0.003
+    tau: 0.02
+    min: -0.5
+    max: 0.5
+  z:
+    p: 0.2
+    i: 0.1
+    d: 0.0
+    tau: 0.02
+    min: -0.2
+    max: 0.2
