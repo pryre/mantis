@@ -12,7 +12,7 @@
 		<rosparam command="load" file="$(find mantis_description)/config/mavel_params.yaml"/>
 
 		<remap from="/mavel/goal/attitude" to="/mavros/setpoint_raw/attitude"/>
-		<remap from="/mavel/reference/odometry" to="/odom"/>
+		<remap from="/mavel/reference/odometry" to="/mantis_uav/odom"/>
 		<remap from="/mavel/reference/state" to="/mavros/state"/>
 	</node>
 
