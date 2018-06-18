@@ -6,7 +6,7 @@ control_frame: "map"
 
 throttle:
   min: 0.0
-  mid: 0.35
+  mid: 0.45
   max: 0.9
 
 # Maximum roll/pitch in radians
