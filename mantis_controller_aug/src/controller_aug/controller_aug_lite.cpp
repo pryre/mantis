@@ -125,7 +125,7 @@ void ControllerAugLite::callback_est(const ros::TimerEvent& e) {
 	double dt = (e.current_real - e.last_real).toSec();
 
 	//==-- Calculate forces induced by the arm
-	Eigen::VectorXd tau(state_.num());
+	Eigen::VectorXd tau = Eigen::VectorXd::Zero(state_.num());
 	Eigen::Vector3d uaug_out = Eigen::Vector3d::Zero();
 
 	if(param_force_compensation_) {

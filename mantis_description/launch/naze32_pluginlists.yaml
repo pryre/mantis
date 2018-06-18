@@ -11,3 +11,4 @@ plugin_whitelist:
 - sys_time
 # extras
 - distance_sensor
+- mocap_pose_estimate

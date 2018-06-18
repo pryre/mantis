@@ -6,6 +6,16 @@
 		<node pkg="mavros" type="mavsafety" name="arm_system" args="arm"/>
 	</group>
 
+	<!-- HIGH LEVEL CONTROL -->
+	<node pkg="mavel" type="mavel_node" name="mavel" clear_params="true" output="screen">
+		<!-- Controller Parameters /-->
+		<rosparam command="load" file="$(find mantis_description)/config/mavel_params.yaml"/>
+
+		<remap from="/mavel/goal/attitude" to="/mavros/setpoint_raw/attitude"/>
+		<remap from="/mavel/reference/odometry" to="/odom"/>
+		<remap from="/mavel/reference/state" to="/mavros/state"/>
+	</node>
+
 	<!-- LOW LEVEL CONTROL -->
 	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_params_aug.yaml"/>
 
@@ -23,6 +33,7 @@
 		<remap from="controller_aug/state/imu" to="/mavros/imu/data" />
 		<remap from="controller_aug/state/battery" to="/mavros/battery" />
 		<remap from="controller_aug/state/joints" to="/mantis_uav/joint_states" />
+		<remap from="controller_aug/state/attitude_target" to="/mavros/setpoint_raw/attitude" />
 
 		<remap from="controller_aug/output/force_target" to="/mavros/setpoint_raw/local" />
 	</node>
@@ -41,6 +52,7 @@
 		<rosparam command="load" file="$(find mantis_description)/config/mantis_dynamixel_interface.yaml"/>
 	</node>
 
+	<!-- HELPER NODES -->
 	<!-- TF to Odom conversion -->
 	<node pkg="mavel" type="pose_odom_node" name="pose_odom" clear_params="true" output="screen">
 		<param name="frame_world" value="map" type="str"/>
@@ -53,7 +65,7 @@
 		<param name="velocity_filtering" value="0.4" type="double"/>
 	</node>
 
-	<!-- HIGH LEVEL CONTROL -->
+	<!-- Joint position control -->
 	<node name="robot_config" pkg="mantis_controller_id" type="robot_config_node" respawn="false"
 	ns="/mantis_uav" output="screen">
 		<param name="frame_id" value="map" />
