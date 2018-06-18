@@ -57,7 +57,7 @@ class ControllerAug {
 		bool param_use_mav_state_;
 		bool param_wait_for_path_;
 		bool param_force_compensation_;
-		bool param_force_comp_alpha_;
+		double param_force_comp_alpha_;
 		bool param_coriolis_compensation_;
 		bool param_track_end_;
 		bool param_accurate_end_tracking_;
