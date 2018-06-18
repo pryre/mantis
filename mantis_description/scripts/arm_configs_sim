@@ -4,7 +4,7 @@ import sys
 from math import *
 
 import rospy
-from sensor_msgs.msg import JointState
+from std_msgs.msg import Float64
 
 global duration_hold
 
@@ -13,15 +13,16 @@ def joint_pub():
 
 	rospy.init_node('talker', anonymous=True)
 
-	pub_js = rospy.Publisher('/mantis_uav/joint_setpoints', JointState, queue_size=10)
+	pub_j1 = rospy.Publisher('/mantis_uav/joint_position_controller/joint_shoulder/command', Float64, queue_size=10)
+	pub_j2 = rospy.Publisher('/mantis_uav/joint_position_controller/joint_elbow/command', Float64, queue_size=10)
 
 	duration_hold = rospy.Duration(float(sys.argv[1]))
 	update_rate = rospy.Rate(50)
 
 	update_rate.sleep()
 
-	config_j1 = [0.0, 0.0, 0.75, 0.75, 0.0]
-	config_j2 = [0.0, 0.75, 0.0, 0.75, 0.0]
+	config_j1 = [0.0, 0.785398163, 0.785398163, 1.57079632679, 0.0]
+	config_j2 = [0.0, 0.0, 0.785398163, 0.0, 0.0]
 	assert len(config_j1) == len(config_j2), "Joint config lists are not equal"
 	num_configs = len(config_j1)
 	configs = [config_j1, config_j2]
@@ -30,17 +31,11 @@ def joint_pub():
 	done = False
 	moved_time = rospy.Time.now()
 
-	js = JointState()
-	js.header.frame_id = "mantis_uav"
-	js.name = ["joint_shoulder", "joint_elbow"]
-
-	while((not done) and not rospy.is_shutdown()):
-		js.header.stamp = rospy.Time.now()
-		js.position = [configs[0][i], configs[1][i]]
-		pub_js.publish(js)
+	while(not done):
+		pub_j1.publish(configs[0][i])
+		pub_j2.publish(configs[1][i])
 
 		if(rospy.Time.now() > (moved_time + duration_hold)):
-			rospy.loginfo("Finished hold on config %i" % i)
 			i = i + 1
 			moved_time = rospy.Time.now()
 
