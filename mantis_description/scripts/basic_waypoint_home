@@ -1,0 +1,54 @@
+#!/usr/bin/env python
+
+import sys
+from math import *
+
+import rospy
+from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Path
+from sensor_msgs.msg import JointState
+
+global pos_x
+global pos_y
+global pos_z
+global pub_pos
+
+pos_x = float(sys.argv[1])
+pos_y = float(sys.argv[2])
+pos_z = float(sys.argv[3])
+
+pub_pos = rospy.Publisher('/mavel/setpoint/position', PoseStamped, queue_size=10)
+
+def timer_callback(e):
+	global pos_x
+	global pos_y
+	global pos_z
+	global pub_pos
+
+	msg_out = PoseStamped()
+	msg_out.header.frame_id = "map"
+	msg_out.header.stamp = e.current_real
+
+	msg_out.pose.position.x = pos_x
+	msg_out.pose.position.y = pos_y
+	msg_out.pose.position.z = pos_z
+	msg_out.pose.orientation.w = 1.0
+	msg_out.pose.orientation.x = 0.0
+	msg_out.pose.orientation.y = 0.0
+	msg_out.pose.orientation.z = 0.0
+
+	pub_pos.publish(msg_out)
+
+def waypoint_pub():
+	rospy.init_node('talker', anonymous=True)
+
+	t = rospy.Timer(rospy.Duration(1.0/50.0), timer_callback)
+
+	rospy.spin()
+
+if __name__ == '__main__':
+	try:
+		waypoint_pub()
+	except rospy.ROSInterruptException:
+		pub_j1.unsubscribe()
+		pub_j2.unsubscribe()
