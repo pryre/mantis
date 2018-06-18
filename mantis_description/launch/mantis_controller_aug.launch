@@ -7,9 +7,9 @@
 	</group>
 
 	<!-- LOW LEVEL CONTROL -->
-	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_params.yaml"/>
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_params_aug.yaml"/>
 
-	<node pkg="mantis_controller_id" type="controller_id_node" name="controller_id"
+	<node pkg="mantis_controller_aug" type="controller_aug_node" name="controller_aug"
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />
 		<param name="model_id" value="mantis_uav" />
