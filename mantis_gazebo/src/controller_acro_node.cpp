@@ -46,6 +46,7 @@ class ControllerAcro {
 		ros::Subscriber sub_actuator_control_;
 		ros::Subscriber sub_imu_;
 		ros::Publisher pub_rc_out_;
+		ros::Publisher pub_attitude_target_;
 
 		std::string model_name_;
 		sensor_msgs::Imu model_imu_;
@@ -85,6 +86,11 @@ class ControllerAcro {
 		void mixerCallback(const ros::TimerEvent& event) {
 			double dt = (event.current_real - event.last_real).toSec();
 
+			mavros_msgs::AttitudeTarget msg_att_out;
+			msg_att_out.header.stamp = event.current_real;
+			msg_att_out.header.frame_id = frame_id_;
+			msg_att_out.type_mask = goal_att_.type_mask;
+
 			if(!( goal_att_.type_mask & goal_att_.IGNORE_THRUST)) {
 				control_angle_.T = goal_att_.thrust;
 				control_rates_.T = goal_att_.thrust;
@@ -96,6 +102,8 @@ class ControllerAcro {
 			}
 
 			if(!( goal_att_.type_mask & goal_att_.IGNORE_ATTITUDE)) {
+				msg_att_out.orientation = goal_att_.orientation;
+
 				tf2::Quaternion q_c( goal_att_.orientation.x,
 									 goal_att_.orientation.y,
 									 goal_att_.orientation.z,
@@ -103,6 +111,11 @@ class ControllerAcro {
 
 				tf2::Matrix3x3(q_c).getRPY(control_angle_.r, control_angle_.p, control_angle_.y);
 			} else {
+				msg_att_out.orientation.w = 1.0;
+				msg_att_out.orientation.x = 0.0;
+				msg_att_out.orientation.y = 0.0;
+				msg_att_out.orientation.z = 0.0;
+
 				control_angle_.r = 0.0;
 				control_angle_.p = 0.0;
 				control_angle_.y = 0.0;
@@ -144,6 +157,10 @@ class ControllerAcro {
 			control_forces_.r = controller_rates_x_.step( dt, control_rates_.r, model_imu_.angular_velocity.x );
 			control_forces_.p = controller_rates_y_.step( dt, control_rates_.p, model_imu_.angular_velocity.y );
 			control_forces_.y = controller_rates_z_.step( dt, control_rates_.y, model_imu_.angular_velocity.z );
+
+			msg_att_out.body_rate.x = control_rates_.r;
+			msg_att_out.body_rate.y = control_rates_.p;
+			msg_att_out.body_rate.z = control_rates_.y;
 
 			//Check to see if the force compensation message is still recent
 			if( (event.current_real - force_compensation_.header.stamp).toSec() < force_comp_timeout_) {
@@ -191,6 +208,7 @@ class ControllerAcro {
 			}
 
 			pub_rc_out_.publish(msg_rc_out);
+			pub_attitude_target_.publish(msg_att_out);
 		}
 
 		void imuCallback(const sensor_msgs::Imu::ConstPtr& msg_in) {
@@ -208,7 +226,7 @@ class ControllerAcro {
 		ControllerAcro() :
 			nh_(),
 			nhp_( "~" ),
-			frame_id_("world"),
+			frame_id_("map"),
 			model_name_("mantis_uav"),
 			pwm_update_rate_(250.0),
 			force_comp_timeout_(0.1),
@@ -217,6 +235,7 @@ class ControllerAcro {
 			controller_rates_z_( &nhp_, "rates/z") {
 
 			sub_attitude_target_ = nh_.subscribe<mavros_msgs::AttitudeTarget>("command/attitude", 1, &ControllerAcro::attitudeTargetCallback, this);
+			pub_attitude_target_ = nhp_.advertise<mavros_msgs::AttitudeTarget>( "feedback/attitude_target", 10 );
 			sub_imu_ = nh_.subscribe<sensor_msgs::Imu>("imu_data", 10, &ControllerAcro::imuCallback, this);
 			pub_rc_out_ = nh_.advertise<mavros_msgs::OverrideRCIn>( "command/motor_pwm", 10 );
 			sub_actuator_control_ = nh_.subscribe<mavros_msgs::ActuatorControl>("command/force_compensation", 1, &ControllerAcro::forceCompCallback, this);

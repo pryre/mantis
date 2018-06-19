@@ -9,7 +9,7 @@
 	<!-- HIGH LEVEL CONTROL -->
 	<node pkg="mavel" type="mavel_node" name="mavel" clear_params="true" output="screen">
 		<!-- Controller Parameters /-->
-		<rosparam command="load" file="$(find mantis_description)/config/mavel_params.yaml"/>
+		<rosparam command="load" file="$(find mantis_description)/config/mavel_sim_params.yaml"/>
 
 		<remap from="/mavel/goal/attitude" to="/mantis_uav/command/attitude"/>
 		<remap from="/mavel/reference/odometry" to="/mantis_uav/odom"/>

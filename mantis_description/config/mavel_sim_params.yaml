@@ -1,0 +1,88 @@
+# Common configuration for the mavel velocity controller
+
+# Control
+control_rate: 50.0
+control_frame: "map"
+
+throttle:
+  min: 0.0
+  mid: 0.30
+  max: 0.9
+
+# Maximum roll/pitch in radians
+tilt_max: 0.39
+
+# Emergency Landing Velocity (must be negative!)
+failsafe_land_vel: -0.2
+
+# Data Stream
+stream:
+  min_rate:
+    reference:
+      state: 0.5
+      odometry: 10.0
+    setpoint:
+      position: 5.0
+      velocity: 10.0
+      acceleration: 20.0
+  topic:
+    reference:
+      odometry: "reference/odometry"
+      state: "reference/state"
+    setpoint:
+      position: "setpoint/position"
+      velocity: "setpoint/velocity"
+      acceleration: "setpoint/acceleration"
+    feedback:
+      position: "goal/position"
+      velocity: "goal/velocity"
+      acceleration: "goal/acceleration"
+      attitude: "goal/attitude"
+
+# PID Controllers
+control:
+  pos:
+    x:
+      p: 1.25
+      i: 0.0
+      d: 0.5
+      tau: 0.05
+      min: -2.0
+      max: 2.0
+    y:
+      p: 1.25
+      i: 0.0
+      d: 0.5
+      tau: 0.05
+      min: -2.0
+      max: 2.0
+    z:
+      p: 1.0
+      i: 0.0
+      d: 0.1
+      tau: 0.05
+      min: -1.0
+      max: 2.0
+  vel:
+    x:
+      p: 0.09
+      i: 0.02
+      d: 0.04
+      tau: 0.05
+      min: -0.2
+      max: 0.2
+    y:
+      p: 0.09
+      i: 0.02
+      d: 0.04
+      tau: 0.05
+      min: -0.2
+      max: 0.2
+    z:
+      p: 0.2
+      i: 0.02
+      d: 0.0
+      tau: 0.05
+      min: -0.5
+      max: 0.5
+
