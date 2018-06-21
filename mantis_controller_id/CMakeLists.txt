@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   mavros_msgs
   message_generation
   dynamic_reconfigure
-  mantis_paths
+  contrail
 )
 
 ## System dependencies are found with CMake's conventions

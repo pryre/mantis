@@ -44,7 +44,7 @@
   <build_depend>roscpp</build_depend>
   <build_depend>dh_parameters</build_depend>
   <build_depend>pid_controller_lib</build_depend>
-  <build_depend>mantis_paths</build_depend>
+  <build_depend>contrail</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
@@ -57,7 +57,7 @@
   <run_depend>roscpp</run_depend>
   <run_depend>dh_parameters</run_depend>
   <run_depend>pid_controller_lib</run_depend>
-  <run_depend>mantis_paths</run_depend>
+  <run_depend>contrail</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>nav_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>

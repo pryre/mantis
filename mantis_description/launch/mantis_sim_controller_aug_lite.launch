@@ -12,9 +12,9 @@
 		<!-- Controller Parameters /-->
 		<rosparam command="load" file="$(find mantis_description)/config/mavel_sim_params.yaml"/>
 
-		<remap from="mavel/command/attitude" to="/mantis_uav/command/attitude"/>
-		<remap from="mavel/state/odometry" to="/mantis_uav/odom"/>
-		<remap from="mavel/state/mav_state" to="/mantis_uav/state"/>
+		<remap from="mavel/command/attitude" to="command/attitude"/>
+		<remap from="mavel/state/odometry" to="odom"/>
+		<remap from="mavel/state/mav_state" to="state"/>
 	</node>
 
 	<!-- LOW LEVEL CONTROL -->
@@ -31,12 +31,12 @@
 		<param name="control_settings/coriolis_compensation" value="true" />
 		<param name="control_settings/reference_feedback" value="true" />
 
-		<remap from="controller_aug/state/imu" to="/mantis_uav/imu_data" />
-		<remap from="controller_aug/state/battery" to="/mantis_uav/battery" />
-		<remap from="controller_aug/state/joints" to="/mantis_uav/joint_states" />
-		<remap from="controller_aug/state/attitude_target" to="/mantis_uav/command/attitude" />
+		<remap from="controller_aug/state/imu" to="imu_data" />
+		<remap from="controller_aug/state/battery" to="battery" />
+		<remap from="controller_aug/state/joints" to="joint_states" />
+		<remap from="controller_aug/state/attitude_target" to="command/attitude" />
 
-		<remap from="controller_aug/output/normalized_payload_torque" to="/mantis_uav/command/force_compensation" />
+		<remap from="controller_aug/output/normalized_payload_torque" to="command/force_compensation" />
 	</node>
 
 	<!-- HELPER NODES -->
@@ -45,10 +45,10 @@
 		<param name="frame_id" value="map" />
 		<param name="hover_height" value="1.0" />
 
-		<remap from="robot_config/goal/joint1" to="/mantis_uav/joint_position_controller/joint_shoulder/command"/>
-		<remap from="robot_config/goal/joint2" to="/mantis_uav/joint_position_controller/joint_elbow/command"/>
+		<remap from="robot_config/goal/joint1" to="joint_position_controller/joint_shoulder/command"/>
+		<remap from="robot_config/goal/joint2" to="joint_position_controller/joint_elbow/command"/>
 
 		<remap from="robot_config/pose" to="/move_base_simple/goal"/>
-		<remap from="robot_config/goal/path" to="/mantis_uav/path"/>
+		<remap from="robot_config/goal/path" to="path"/>
 	</node>
 </launch>

@@ -6,7 +6,7 @@
 #include <controller_aug/controller_aug_params.h>
 #include <controller_aug/controller_aug_state.h>
 #include <pid_controller_lib/pidController.h>
-#include <mantis_paths/path_extract.h>
+#include <contrail/path_extract.h>
 #include <dh_parameters/dh_parameters.h>
 #include <mantis_controller_aug/ControlParamsConfig.h>
 

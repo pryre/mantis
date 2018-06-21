@@ -11,7 +11,6 @@
 #include <controller_aug/dynamics/calc_Je.h>
 #include <pid_controller_lib/pidController.h>
 #include <dh_parameters/dh_parameters.h>
-#include <mantis_paths/path_extract.h>
 #include <mantis_controller_aug/ControlParamsLiteConfig.h>
 
 #include <mavros_msgs/AttitudeTarget.h>

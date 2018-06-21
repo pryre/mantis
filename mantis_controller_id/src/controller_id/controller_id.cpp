@@ -11,7 +11,7 @@
 #include <dynamics/calc_Jj2.h>
 #include <dynamics/calc_Je.h>
 #include <dh_parameters/dh_parameters.h>
-#include <mantis_paths/path_extract.h>
+#include <contrail/path_extract.h>
 #include <mantis_controller_id/ControlParamsConfig.h>
 
 #include <mavros_msgs/State.h>
@@ -114,7 +114,15 @@ ControllerID::ControllerID() :
 			sub_state_mav_ = nhp_.subscribe<mavros_msgs::State>( "state/mav", 10, &ControllerID::callback_state_mav, this );
 
 		//XXX: Initialize takeoff goals
-		ref_path_.set_latest( Eigen::Vector3d(p_.takeoff_x, p_.takeoff_y, p_.takeoff_z), Eigen::Quaterniond::Identity() );
+		geometry_msgs::Pose takeoff_fallback;
+		takeoff_fallback.position.x = p_.takeoff_x;
+		takeoff_fallback.position.y = p_.takeoff_y;
+		takeoff_fallback.position.z = p_.takeoff_z;
+		takeoff_fallback.orientation.w = 1.0;
+		takeoff_fallback.orientation.x = 0.0;
+		takeoff_fallback.orientation.y = 0.0;
+		takeoff_fallback.orientation.z = 0.0;
+		ref_path_.set_fallback( takeoff_fallback );
 
 		ROS_INFO("Inverse dynamics controller loaded. Waiting for inputs:");
 		ROS_INFO("    - state");
@@ -141,7 +149,7 @@ ControllerID::ControllerID() :
 			if( ( !param_use_imu_state_ ) || ( msg_imu_tr_ != ros::Time(0) ) )
 				ROS_INFO_ONCE("Inverse dynamics got input: imu");
 
-			if( ref_path_.received_valid_path() || !param_wait_for_path_ )
+			if( ( ref_path_.has_valid_path() || ref_path_.has_valid_fallback() ) || !param_wait_for_path_ )
 				ROS_INFO_ONCE("Inverse dynamics got input: path");
 
 			if( msg_battery_tr_ != ros::Time(0) )
@@ -188,7 +196,7 @@ void ControllerID::callback_cfg_control_settings(mantis_controller_id::ControlPa
 
 void ControllerID::callback_ready_check(const ros::TimerEvent& e) {
 //If we still have all the inputs satisfied
-	if( ( ref_path_.received_valid_path() || !param_wait_for_path_ ) &&
+	if( ( ( ref_path_.has_valid_path() || ref_path_.has_valid_fallback() ) || !param_wait_for_path_ ) &&
 		( msg_odom_tr_ != ros::Time(0) ) &&
 		( msg_battery_tr_ != ros::Time(0) ) &&
 		( msg_joints_tr_ != ros::Time(0) ) &&
@@ -200,7 +208,7 @@ void ControllerID::callback_ready_check(const ros::TimerEvent& e) {
 		if(ready_for_flight_) {
 			std::string error_msg = "Input error:\n";
 
-			if( !ref_path_.received_valid_path() && param_wait_for_path_ )
+			if( !( ref_path_.has_valid_path() || ref_path_.has_valid_fallback() ) && param_wait_for_path_ )
 				error_msg += "no valid path\n";
 
 			if( msg_odom_tr_ == ros::Time(0) )

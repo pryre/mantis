@@ -17,13 +17,14 @@ failsafe_land_vel: -0.2
 
 # Data Stream
 min_rate:
-  reference:
+  state:
     state: 0.2
-    odometry: 25.0
-  setpoint:
+    odometry: 15.0
+  reference:
+    trajectory: 15.0
     position: 5.0
-    velocity: 10.0
-    acceleration: 20.0
+    velocity: 15.0
+    acceleration: 30.0
 
 # PID Controllers
 control:
