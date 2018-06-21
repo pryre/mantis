@@ -315,9 +315,9 @@ void ControllerAug::callback_high_level(const ros::TimerEvent& e) {
 		//pos_pid_y_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
 		//pos_pid_z_.setGains( p_.gain_position_z_p, p_.gain_position_z_i, 0.0, 0.0 );
 
-		double a_p_x = pos_pid_x_.step(dt, state_.g_sp().translation().x(), state_.g().translation().x(), state_.wv().x());
-		double a_p_y = pos_pid_y_.step(dt, state_.g_sp().translation().y(), state_.g().translation().y(), state_.wv().y());
-		double a_p_z = pos_pid_z_.step(dt, state_.g_sp().translation().z(), state_.g().translation().z(), state_.wv().z());
+		double a_p_x = pos_pid_x_.step(dt, state_.g_sp().translation().x(), state_.g().translation().x());
+		double a_p_y = pos_pid_y_.step(dt, state_.g_sp().translation().y(), state_.g().translation().y());
+		double a_p_z = pos_pid_z_.step(dt, state_.g_sp().translation().z(), state_.g().translation().z());
 
 		double a_v_x = vel_pid_x_.step(dt, state_.gv_sp().x(), state_.wv().x());
 		double a_v_y = vel_pid_y_.step(dt, state_.gv_sp().y(), state_.wv().y());
@@ -379,9 +379,9 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 
 		//XXX: This is more of a hack to reuse the pid control, but it works out (I think...)
 		// Only proportional gains should be used for this controller
-		w_goal.x() = ang_pid_x_.step(dt, e_R.x(), 0.0, state_.bw().x());
-		w_goal.y() = ang_pid_y_.step(dt, e_R.y(), 0.0, state_.bw().y());
-		w_goal.z() = ang_pid_z_.step(dt, e_R.z(), 0.0, state_.bw().z());
+		w_goal.x() = ang_pid_x_.step(dt, e_R.x(), 0.0);
+		w_goal.y() = ang_pid_y_.step(dt, e_R.y(), 0.0);
+		w_goal.z() = ang_pid_z_.step(dt, e_R.z(), 0.0);
 
 		//Calculate the normalized angular accelerations
 		Eigen::Vector3d wan;

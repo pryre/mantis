@@ -1,0 +1,31 @@
+start:
+  position: [0.0, 0.0, 2.0]
+  alpha: 0.0
+  #theta: 0.0
+
+path:
+  s0:
+    present: true
+    velocity: 0.2
+    length: 0.5
+  s1:
+    present: true
+    length: 1.5
+  s2:
+    present: true
+    length: 2.0
+    height: 1.0
+  s3:
+    present: true
+    length: 1.0
+  s4:
+    present: true
+    length: 2.0
+    height: -1.0
+  s5:
+    present: true
+    length: 1.5
+  s6:
+    present: true
+    velocity: 0.0
+    length: 0.5
