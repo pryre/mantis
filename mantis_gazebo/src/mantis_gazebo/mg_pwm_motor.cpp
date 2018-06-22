@@ -51,8 +51,8 @@ class MantisGazeboPWMMotor : public ModelPlugin
 			srv_arm_motors_ = nh_.advertiseService(model_->GetName() + "/arm/motors", &MantisGazeboPWMMotor::arm_safety_srv, this);
 
 			timer_state_ = nh_.createTimer(ros::Duration(1.0), &MantisGazeboPWMMotor::callback_state, this );
-			pub_state_ = nh_.advertise<mavros_msgs::State>(model_->GetName() + "/state", 10);
-			pub_battery_ = nh_.advertise<sensor_msgs::BatteryState>(model_->GetName() + "/battery", 10);
+			pub_state_ = nh_.advertise<mavros_msgs::State>(model_->GetName() + "/state/mav_state", 10);
+			pub_battery_ = nh_.advertise<sensor_msgs::BatteryState>(model_->GetName() + "/state/battery", 10);
 
 			ROS_INFO("Loaded mantis pwm motor plugin!");
 		}
@@ -66,7 +66,7 @@ class MantisGazeboPWMMotor : public ModelPlugin
 			state_out.connected = true;
 			state_out.armed = safety_armed_;
 			state_out.guided = true;
-			state_out.mode = "AUTO";
+			state_out.mode = "OFFBOARD";
 			if(safety_armed_) {
 				state_out.system_status = 4;
 			} else {

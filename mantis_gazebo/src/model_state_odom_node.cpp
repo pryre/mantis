@@ -29,7 +29,7 @@ class ModelStatesOdom {
 			model_name_("mantis_uav"),
 			parent_name_("map"),
 			topic_model_states_("/gazebo/model_states"),
-			topic_odom_("/mantis_uav/odom") {
+			topic_odom_("/mantis_uav/state/odom") {
 
 			sub_model_states_ = nh_.subscribe<gazebo_msgs::ModelStates>(topic_model_states_, 1, &ModelStatesOdom::statesCallback, this);
 			pub_odom_ = nh_.advertise<nav_msgs::Odometry>( topic_odom_, 10 );

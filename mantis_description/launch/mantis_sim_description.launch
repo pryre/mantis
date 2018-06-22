@@ -1,0 +1,29 @@
+<?xml version='1.0'?>
+<launch>
+	<arg name="model_name" default="mantis_uav"/>
+	<arg name="frame_id" default="map"/>
+	<arg name="rviz" default="false"/>
+
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_params.yaml"/>
+
+	<node pkg="mantis_description" type="mantis_description_node" name="mantis_description"
+	ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="update_rate" value="100.0" />
+		<param name="use_odom_angular_velocity" value="false" />
+
+		<remap from="state/joints" to="joint_states"/>
+	</node>
+
+	<!-- visualization -->
+	<node pkg="mantis_kinematics" type="mantis_forward_kinematics_node" name="mantis_fk" clear_params="true" output="screen" ns="mantis_uav">
+		<param name="frame_id" value="$(arg frame_id)" />
+		<param name="model_id" value="$(arg model_name)" />
+
+		<param name="do_viz" value="false" />
+		<param name="end_effector_pose" value="true" />
+	</node>
+
+	<group if="$(arg rviz)">
+		<node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
+	</group>
+</launch>

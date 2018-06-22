@@ -18,7 +18,7 @@ Spawner::Spawner( const std::vector<std::string> &c_names ) :
 	nhp_.param("controller_name", param_controller_name_, param_controller_name_);
 	nhp_.param("update_rate", param_update_rate_, param_update_rate_);
 
-	sub_state_ = nh_.subscribe<sensor_msgs::JointState>( "joint_states", 10, &Spawner::callback_state, this );
+	sub_state_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &Spawner::callback_state, this );
 
 	if( c_names.size() > 0) {
 		controllers_.resize( c_names.size() );

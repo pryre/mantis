@@ -35,7 +35,7 @@
 			<alwaysOn>true</alwaysOn>
 			<frameName>world</frameName>
 			<bodyName>base_link</bodyName>
-			<topicName>mantis_uav/imu_data</topicName>
+			<topicName>mantis_uav/state/imu_data</topicName>
 			<serviceName>mantis_uav/imu_service</serviceName>
 			<gaussianNoise>0.0</gaussianNoise>
 			<updateRate>500.0</updateRate>

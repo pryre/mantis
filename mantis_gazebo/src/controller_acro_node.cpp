@@ -236,7 +236,7 @@ class ControllerAcro {
 
 			sub_attitude_target_ = nh_.subscribe<mavros_msgs::AttitudeTarget>("command/attitude", 1, &ControllerAcro::attitudeTargetCallback, this);
 			pub_attitude_target_ = nhp_.advertise<mavros_msgs::AttitudeTarget>( "feedback/attitude_target", 10 );
-			sub_imu_ = nh_.subscribe<sensor_msgs::Imu>("imu_data", 10, &ControllerAcro::imuCallback, this);
+			sub_imu_ = nh_.subscribe<sensor_msgs::Imu>("state/imu_data", 10, &ControllerAcro::imuCallback, this);
 			pub_rc_out_ = nh_.advertise<mavros_msgs::OverrideRCIn>( "command/motor_pwm", 10 );
 			sub_actuator_control_ = nh_.subscribe<mavros_msgs::ActuatorControl>("command/force_compensation", 1, &ControllerAcro::forceCompCallback, this);
 

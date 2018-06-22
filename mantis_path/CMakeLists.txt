@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(mantis_controller_aug)
+project(mantis_path)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
 add_definitions(-std=c++11)
@@ -9,14 +9,9 @@ add_definitions(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  dh_parameters
-  pid_controller_lib
-  mantis_description
   std_msgs
-  nav_msgs
-  sensor_msgs
   geometry_msgs
-  mavros_msgs
+  mantis_description
   message_generation
   dynamic_reconfigure
   contrail
@@ -99,7 +94,6 @@ find_package(Eigen3 REQUIRED)
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
 generate_dynamic_reconfigure_options(
   cfg/ControlParams.cfg
-  cfg/ControlParamsLite.cfg
 )
 
 ###################################
@@ -132,35 +126,19 @@ include_directories(
 )
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}_params
-  src/controller_aug/controller_aug_params.cpp
-)
-
-add_library(${PROJECT_NAME}_state
-  src/controller_aug/controller_aug_state.cpp
-)
-
 add_library(${PROJECT_NAME}
-  src/controller_aug/controller_aug.cpp
-)
-
-add_library(${PROJECT_NAME}_lite
-  src/controller_aug/controller_aug_lite.cpp
+  src/mantis_path/mantis_path.cpp
 )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(${PROJECT_NAME}_params ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
-add_dependencies(${PROJECT_NAME}_state ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
-add_dependencies(${PROJECT_NAME}_lite ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(controller_aug_node src/controller_aug_node.cpp)
-add_executable(controller_aug_lite_node src/controller_aug_lite_node.cpp)
+add_executable(${PROJECT_NAME}_node src/mantis_path_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -170,37 +148,16 @@ add_executable(controller_aug_lite_node src/controller_aug_lite_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(controller_aug_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(controller_aug_lite_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}_params
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(${PROJECT_NAME}_state
-  ${catkin_LIBRARIES}
-)
 
 target_link_libraries(${PROJECT_NAME}
-  ${PROJECT_NAME}_params
-  ${PROJECT_NAME}_state
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(${PROJECT_NAME}_lite
-  ${PROJECT_NAME}_params
-  ${PROJECT_NAME}_state
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(controller_aug_node
+target_link_libraries(${PROJECT_NAME}_node
   ${PROJECT_NAME}
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(controller_aug_lite_node
-  ${PROJECT_NAME}_lite
   ${catkin_LIBRARIES}
 )
 

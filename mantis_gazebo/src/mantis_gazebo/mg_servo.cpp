@@ -33,7 +33,7 @@ class MantisGazeboServo : public ModelPlugin
 			//joint_shoulder_upperarm_servo_->SetPosition(0, -1.570796327);
 
 			sub_joint_goals_ = nh_.subscribe<sensor_msgs::JointState>(model_->GetName() + "/command/joint_torque", 100, &MantisGazeboServo::cmd_joints_cb, this );
-			pub_joint_state_ = nh_.advertise<sensor_msgs::JointState>(model_->GetName() + "/state/joint_states", 10);
+			pub_joint_state_ = nh_.advertise<sensor_msgs::JointState>(model_->GetName() + "/state/joints", 10);
 
 			msg_joint_state_.header.frame_id = model_->GetName();
 			msg_joint_state_.name.push_back("shoulder");

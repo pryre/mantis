@@ -74,5 +74,8 @@
 	output="screen" ns="/mantis_uav" args="joint_shoulder joint_elbow">
 		<param name="controller_name" value="joint_position_controller" />
 		<param name="update_rate" value="50.0" />
+
+		<remap from="state/joints" to="joint_states" />
 	</node>
+
 </launch>

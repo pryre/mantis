@@ -21,9 +21,9 @@ min_rate:
     state: 0.2
     odometry: 15.0
   reference:
-    trajectory: 15.0
+    trajectory: 10.0
     position: 5.0
-    velocity: 15.0
+    velocity: 10.0
     acceleration: 30.0
 
 # PID Controllers

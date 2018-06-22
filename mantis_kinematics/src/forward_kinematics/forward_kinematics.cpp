@@ -69,7 +69,7 @@ ForwardKinematics::ForwardKinematics() :
 		pub_end_ = nh_.advertise<geometry_msgs::PoseStamped>("pose/end_effector", 10);
 		pub_viz_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization", 10, true);
 
-		sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "odom", 10, &ForwardKinematics::callback_state_odom, this );
+		sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ForwardKinematics::callback_state_odom, this );
 		sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "joint_states", 10, &ForwardKinematics::callback_state_joints, this );
 
 		ROS_INFO("Configuring static mounts...");
