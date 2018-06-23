@@ -6,7 +6,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
 
-#include <mantis_gazebo_msgs/DoArm.h>
+#include <mantis_gazebo/DoArm.h>
 
 namespace gazebo
 {
@@ -79,8 +79,8 @@ class MantisGazeboServo : public ModelPlugin
 			pub_joint_state_.publish(msg_joint_state_);
 		}
 
-		bool arm_safety_srv( mantis_gazebo_msgs::DoArm::Request  &req,
-							 mantis_gazebo_msgs::DoArm::Response &res ) {
+		bool arm_safety_srv( mantis_gazebo::DoArm::Request  &req,
+							 mantis_gazebo::DoArm::Response &res ) {
 
 			safety_armed_ = req.arm;
 

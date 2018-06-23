@@ -21,8 +21,8 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   gazebo_msgs
   dynamixel_msgs
-  mantis_gazebo_msgs
   hector_gazebo_plugins
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -72,6 +72,9 @@ find_package(gazebo REQUIRED)
 #   Service1.srv
 #   Service2.srv
 # )
+add_service_files(FILES
+	DoArm.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -85,6 +88,9 @@ find_package(gazebo REQUIRED)
 #   DEPENDENCIES
 #   geometry_msgs
 # )
+generate_messages(DEPENDENCIES
+	std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -122,6 +128,7 @@ catkin_package(
   DEPENDS
     roscpp
 	gazebo_ros
+#	mantis_gazebo_generate_messages
 )
 
 ###########
@@ -157,10 +164,10 @@ add_library(${PROJECT_NAME}_motor_model
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(${PROJECT_NAME}_servo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_servo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
 add_dependencies(${PROJECT_NAME}_ball_grasp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(${PROJECT_NAME}_pwm_motor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(${PROJECT_NAME}_safety ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_pwm_motor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
+add_dependencies(${PROJECT_NAME}_safety ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context

@@ -31,6 +31,6 @@ generate_messages(DEPENDENCIES
 
 ## Declare a catkin package
 catkin_package(
-	DEPENDS
-	mantis_msgs_generate_messages
+#	DEPENDS
+#	mantis_msgs_generate_messages
 )

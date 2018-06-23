@@ -4,7 +4,7 @@
 #include <gazebo/common/common.hh>
 
 #include <ros/ros.h>
-#include <mantis_gazebo_msgs/DoArm.h>
+#include <mantis_gazebo/DoArm.h>
 
 namespace gazebo
 {
@@ -24,17 +24,17 @@ class MantisGazeboSafety : public ModelPlugin
 			model_ = _parent;
 			srv_arm_system_ = nh_.advertiseService(model_->GetName() + "/arm/system", &MantisGazeboSafety::arm_safety_srv, this);
 
-			cli_arm_motors_ = nh_.serviceClient<mantis_gazebo_msgs::DoArm>(model_->GetName() + "/arm/motors");
-			cli_arm_servos_ = nh_.serviceClient<mantis_gazebo_msgs::DoArm>(model_->GetName() + "/arm/servos");
+			cli_arm_motors_ = nh_.serviceClient<mantis_gazebo::DoArm>(model_->GetName() + "/arm/motors");
+			cli_arm_servos_ = nh_.serviceClient<mantis_gazebo::DoArm>(model_->GetName() + "/arm/servos");
 
 			ROS_INFO("Loaded mantis safety plugin!");
 		}
 
-		bool arm_safety_srv( mantis_gazebo_msgs::DoArm::Request  &req,
-							 mantis_gazebo_msgs::DoArm::Response &res ) {
+		bool arm_safety_srv( mantis_gazebo::DoArm::Request  &req,
+							 mantis_gazebo::DoArm::Response &res ) {
 
-			mantis_gazebo_msgs::DoArm srv_motors;
-			mantis_gazebo_msgs::DoArm srv_servos;
+			mantis_gazebo::DoArm srv_motors;
+			mantis_gazebo::DoArm srv_servos;
 			srv_motors.request = req;
 			srv_servos.request = req;
 

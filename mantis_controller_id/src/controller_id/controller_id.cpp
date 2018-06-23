@@ -72,7 +72,7 @@ ControllerID::ControllerID() :
 		if( dh.is_valid() ) {
 			joints_.push_back(dh);
 		} else {
-			ROS_FATAL("Error loading joint %i", i);
+			ROS_FATAL_STREAM("Error loading joint " << i);
 			success = false;
 			break;
 		}
@@ -93,7 +93,7 @@ ControllerID::ControllerID() :
 	pos_pid_z_.setOutputMinMax( -2.0, 2.0);
 
 	if(success) {
-		ROS_INFO( "Loaded configuration for %i links", joints_.size() );
+		ROS_INFO_STREAM( "Loaded configuration for " << joints_.size() << "links" );
 
 		pub_rc_ = nhp_.advertise<mavros_msgs::OverrideRCIn>("output/rc", 10);
 		pub_joints_ = nhp_.advertise<sensor_msgs::JointState>("output/joints", 10);
@@ -488,7 +488,7 @@ void ControllerID::matrix_clamp(Eigen::MatrixXd m, const double min, const doubl
 }
 
 Eigen::VectorXd ControllerID::vector_interlace(const Eigen::VectorXd a, const Eigen::VectorXd b) {
-	ROS_ASSERT_MSG(a.size() == b.size(), "Vectors to be interlaced must be same size (a=%i,b=%i)", a.size(),  b.size());
+	ROS_ASSERT_MSG(a.size() == b.size(), "Vectors to be interlaced must be same size");
 
 	Eigen::VectorXd c = Eigen::VectorXd::Zero(2*a.size());
 
@@ -717,7 +717,7 @@ void ControllerID::message_output_control(const ros::Time t, const std::vector<u
 	msg_joints_out.header.frame_id = param_model_id_;
 
 	//Insert control data
-	ROS_ASSERT_MSG(pwm.size() <= 8, "Supported number of motors is 8 (%i)", pwm.size());
+	ROS_ASSERT_MSG(pwm.size() <= 8, "Supported number of motors is 8");
 	for(int i=0; i<8; i++) {
 		if( i<pwm.size() ) {
 			msg_rc_out.channels[i] = pwm[i];

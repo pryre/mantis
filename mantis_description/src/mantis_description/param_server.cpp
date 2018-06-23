@@ -133,9 +133,9 @@ void MantisParamServer::load( void ) {
 
 	ROS_INFO("pwm: [%i, %i]", pwm_min_, pwm_max_);
 
-	ROS_INFO("bodies: %i", body_num_);
-	ROS_INFO("  inertials: %i", bodies_.size());
-	ROS_INFO("  joints: %i", joints_.size());
+	ROS_INFO_STREAM("bodies: " << body_num_);
+	ROS_INFO_STREAM("  inertials: " << bodies_.size());
+	ROS_INFO_STREAM("  joints: " << joints_.size());
 
 	if( (bodies_.size() != body_num_) || (joints_.size() != body_num_) )
 		ROS_WARN("Number of loaded joints and bodies do not match, some params may be invalid");

@@ -99,7 +99,7 @@ class ControllerAug {
 
 		double double_clamp(const double v, const double min, const double max);
 		void matrix_clamp(Eigen::MatrixXd m, const double min, const double max);
-		Eigen::VectorXd vector_interlace(const Eigen::VectorXd a, const Eigen::VectorXd b);
+		//Eigen::VectorXd vector_interlace(const Eigen::VectorXd a, const Eigen::VectorXd b);
 
 		Eigen::Vector3d position_from_msg(const geometry_msgs::Point p);
 		Eigen::Quaterniond quaternion_from_msg(const geometry_msgs::Quaternion q);

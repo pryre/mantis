@@ -85,7 +85,7 @@ ControllerAug::ControllerAug() :
 		if( dh.is_valid() ) {
 			joints_.push_back(dh);
 		} else {
-			ROS_FATAL("Error loading joint %i", int(i));
+			ROS_FATAL_STREAM("Error loading joint " << i);
 			success = false;
 			break;
 		}
@@ -116,7 +116,7 @@ ControllerAug::ControllerAug() :
 	uaug_f_ = Eigen::VectorXd::Zero(4);
 
 	if(success) {
-		ROS_INFO( "Loaded configuration for %i links", int(joints_.size()) );
+		ROS_INFO_STREAM( "Loaded configuration for " << joints_.size() << " links" );
 
 		pub_rc_ = nhp_.advertise<mavros_msgs::OverrideRCIn>("output/rc", 10);
 		pub_joints_ = nhp_.advertise<sensor_msgs::JointState>("output/joints", 10);
@@ -542,18 +542,6 @@ void ControllerAug::matrix_clamp(Eigen::MatrixXd m, const double min, const doub
 	}
 }
 
-Eigen::VectorXd ControllerAug::vector_interlace(const Eigen::VectorXd a, const Eigen::VectorXd b) {
-	ROS_ASSERT_MSG(a.size() == b.size(), "Vectors to be interlaced must be same size (a=%i,b=%i)", int(a.size()),  int(b.size()));
-
-	Eigen::VectorXd c = Eigen::VectorXd::Zero(2*a.size());
-
-	for(int i=0; i<a.size(); i++) {
-		c.segment(2*i,2) << a(i), b(i);
-	}
-
-	return c;
-}
-
 Eigen::Vector3d ControllerAug::position_from_msg(const geometry_msgs::Point p) {
 		return Eigen::Vector3d(p.x, p.y, p.z);
 }
@@ -765,7 +753,7 @@ void ControllerAug::message_output_control(const ros::Time t, const std::vector<
 	msg_joints_out.header.frame_id = param_model_id_;
 
 	//Insert control data
-	ROS_ASSERT_MSG(pwm.size() <= 8, "Supported number of motors is 8 (%i)", int(pwm.size()));
+	ROS_ASSERT_MSG(pwm.size() <= 8, "Supported number of motors is 8");
 	for(int i=0; i<8; i++) {
 		if( i<pwm.size() ) {
 			msg_rc_out.channels[i] = pwm[i];

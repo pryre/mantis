@@ -9,7 +9,7 @@
 #include <mavros_msgs/State.h>
 #include <sensor_msgs/BatteryState.h>
 
-#include <mantis_gazebo_msgs/DoArm.h>
+#include <mantis_gazebo/DoArm.h>
 
 #include <vector>
 #include <string>
@@ -119,8 +119,8 @@ class MantisGazeboPWMMotor : public ModelPlugin
 			pub_motor_velocity_.publish(msg_motor_velocity_);
 		}
 
-		bool arm_safety_srv( mantis_gazebo_msgs::DoArm::Request  &req,
-							 mantis_gazebo_msgs::DoArm::Response &res ) {
+		bool arm_safety_srv( mantis_gazebo::DoArm::Request  &req,
+							 mantis_gazebo::DoArm::Response &res ) {
 
 			safety_armed_ = req.arm;
 
