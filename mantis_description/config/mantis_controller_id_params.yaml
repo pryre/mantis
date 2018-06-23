@@ -1,0 +1,25 @@
+#Parameter file for the Mantis MM-UAV
+takeoff:
+  x: 0.0
+  y: 0.0
+  z: 1.0
+
+controller_id:
+  gain:
+    pos:
+      xy:
+        p: 2.0
+        i: 0.0
+      z:
+        p: 2.0
+        i: 0.0
+    vel:
+      xy:
+        p: 2.0
+      z:
+        p: 4.0
+    rot:
+      ang:
+        p: 3.0
+      rate:
+        p: 10.0

@@ -9,7 +9,7 @@
 	<!-- LOW LEVEL CONTROL -->
 	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_params_aug.yaml"/>
 
-	<node pkg="mantis_controller_aug" type="controller_aug_node" name="controller_aug"
+	<node pkg="mantis_controller_aug" type="mantis_controller_aug_node" name="controller_aug"
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />
 		<param name="model_id" value="mantis_uav" />
@@ -23,21 +23,13 @@
 		<param name="control_settings/track_end" value="false" />
 		<param name="control_settings/accurate_end_tracking" value="true" />
 		<param name="control_settings/force_compensation" value="true" />
-		<param name="control_settings/force_comp_filter_a" value="true" />
+		<param name="control_settings/force_comp_filter_a" value="1.0" />
 		<param name="control_settings/coriolis_compensation" value="true" />
 		<param name="control_settings/reference_feedback" value="true" />
 
+		<remap from="controller_aug/reference/path" to="path" />
 
-		<remap from="controller_aug/state/odom" to="/mantis_uav/odom" />
-		<remap from="controller_aug/state/imu" to="/mantis_uav/imu_data" />
-		<remap from="controller_aug/state/battery" to="/mantis_uav/battery" />
-		<remap from="controller_aug/state/mav" to="/mantis_uav/state" />
-		<remap from="controller_aug/state/joints" to="/mantis_uav/joint_states" />
-
-		<remap from="controller_aug/reference/path" to="/mantis_uav/path" />
-
-		<remap from="controller_aug/output/rc" to="/mantis_uav/command/motor_pwm" />
-		<remap from="controller_aug/output/joints" to="/mantis_uav/command/joint_torque" />
+		<remap from="controller_aug/output/rc" to="command/motor_pwm" />
 	</node>
 
 	<!-- HIGH LEVEL CONTROL -->

@@ -1,19 +1,4 @@
 #Parameter file for the Mantis MM-UAV
-
-motor:
-  num: 6
-  arm_len: 0.275 #m
-  #thrust_max: 8.5 #11.6110736 # N
-  kv: 660 #Rated to 960, but real is ~660 under load
-  rpm_thrust_curve:
-    m: 0.0011323 #0.0008318056
-    c: -2.9235
-  drag_max: 1.2 # N
-
-pwm:
-  min: 1000
-  max: 2000
-
 takeoff:
   x: 0.0
   y: 0.0
@@ -109,50 +94,3 @@ controller_aug:
         min: -1.0
         max: 1.0
         tau: 0.02
-
-body:
-  num: 3
-  b0:
-    mass:
-      m: 2.30 # Base + props
-      Ix: 0.02850657
-      Iy: 0.02821766
-      Iz: 0.05416778
-    com: 0.0
-    link:
-      name: "mount"
-      d: -0.10 # Update this
-      t: 0.0
-      r: 0.0
-      a: 1.570796326794897
-      type: "static"
-  b1:
-    mass:
-      m: 0.1
-      Ix: 0.00005
-      Iy: 0.00068
-      Iz: 0.00067
-    com: 0.15
-    link:
-      name: "joint_shoulder"
-      d: 0.0
-      t: -1.570796326794897
-      r: 0.24
-      a: 0.0
-      type: "twist_z"
-      beta: 0.8 # Maybe lower the filter a bit, or maybe set to 1 to remove it?
-  b2:
-    mass:
-      m: 0.06
-      Ix: 0.00004
-      Iy: 0.00032
-      Iz: 0.00032
-    com: 0.11
-    link:
-      name: "joint_elbow"
-      d: 0.0
-      t: 0.0
-      r: 0.21
-      a: 0.0
-      type: "twist_z"
-      beta: 0.8 # Maybe lower the filter a bit, or maybe set to 1 to remove it?

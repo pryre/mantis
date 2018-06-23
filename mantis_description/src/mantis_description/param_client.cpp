@@ -20,6 +20,15 @@ bool MantisParamClient::ok( void ) {
 	return ( time_updated() != ros::Time(0) );
 }
 
+bool MantisParamClient::wait_for_params( void ) {
+	while( ros::ok() && ( !ok() ) ) {
+			ros::spinOnce();
+			ros::Rate(10).sleep();
+	}
+
+	return ok();
+}
+
 void MantisParamClient::callback_params(const mantis_msgs::Params::ConstPtr &msg_in) {
 	params_ = *msg_in;
 
@@ -30,39 +39,39 @@ void MantisParamClient::callback_params(const mantis_msgs::Params::ConstPtr &msg
 	}
 }
 
-ros::Time MantisParamClient::time_updated( void ) {
+const ros::Time& MantisParamClient::time_updated( void ) {
 	return params_.header.stamp;
 }
 
-int MantisParamClient::pwm_min( void ) {
+const int16_t& MantisParamClient::pwm_min( void ) {
 	return params_.pwm_min;
 }
 
-int MantisParamClient::pwm_max( void ) {
+const int16_t& MantisParamClient::pwm_max( void ) {
 	return params_.pwm_max;
 }
 
-double MantisParamClient::base_arm_length( void ) {
+const double& MantisParamClient::base_arm_length( void ) {
 	return params_.base_arm_length;
 }
 
-double MantisParamClient::motor_num( void ) {
+const int32_t& MantisParamClient::motor_num( void ) {
 	return params_.motor_num;
 }
 
-double MantisParamClient::motor_kv( void ) {
+const double& MantisParamClient::motor_kv( void ) {
 	return params_.motor_kv;
 }
 
-double MantisParamClient::rpm_thrust_m( void ) {
+const double& MantisParamClient::rpm_thrust_m( void ) {
 	return params_.rpm_thrust_m;
 }
 
-double MantisParamClient::rpm_thrust_c( void ) {
+const double& MantisParamClient::rpm_thrust_c( void ) {
 	return params_.rpm_thrust_c;
 }
 
-double MantisParamClient::motor_drag_max( void ) {
+const double& MantisParamClient::motor_drag_max( void ) {
 	return params_.motor_drag_max;
 }
 
@@ -70,14 +79,18 @@ int MantisParamClient::get_body_num( void ) {
 	return params_.bodies.size();
 }
 
-mantis_msgs::BodyInertial MantisParamClient::body_inertial( const unsigned int i ) {
-	mantis_msgs::BodyInertial i_out;
+double MantisParamClient::get_total_mass( void ) {
+	double m = 0.0;
 
-	if(i < params_.bodies.size() ) {
-		i_out = params_.bodies[i];
+	for(int i=0; i<params_.bodies.size(); i++) {
+		m += params_.bodies[i].mass;
 	}
 
-	return i_out;
+	return m;
+}
+
+const mantis_msgs::BodyInertial& MantisParamClient::body_inertial( const unsigned int i ) {
+	return params_.bodies[i];
 }
 
 int MantisParamClient::get_joint_num( void ) {
@@ -88,12 +101,6 @@ int MantisParamClient::get_dynamic_joint_num( void ) {
 	return num_dynamic_joints_;
 }
 
-dh_parameters::JointDescription MantisParamClient::joint( const unsigned int i ) {
-	dh_parameters::JointDescription j_out;
-
-	if(i < params_.joints.size() ) {
-		j_out = params_.joints[i];
-	}
-
-	return j_out;
+const dh_parameters::JointDescription& MantisParamClient::joint( const unsigned int i ) {
+	return params_.joints[i];
 }

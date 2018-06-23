@@ -21,24 +21,27 @@ class MantisParamClient {
 
 		~MantisParamClient( void );
 
-		ros::Time time_updated( void );
+		bool wait_for_params( void );
 
-		int pwm_min( void );
-		int pwm_max( void );
+		const ros::Time& time_updated( void );
 
-		double base_arm_length( void );
-		double motor_num( void );
-		double motor_kv( void );
-		double rpm_thrust_m( void );
-		double rpm_thrust_c( void );
-		double motor_drag_max( void );
+		const int16_t& pwm_min( void );
+		const int16_t& pwm_max( void );
+
+		const double& base_arm_length( void );
+		const int32_t& motor_num( void );
+		const double& motor_kv( void );
+		const double& rpm_thrust_m( void );
+		const double& rpm_thrust_c( void );
+		const double& motor_drag_max( void );
 
 		int get_body_num( void );
-		mantis_msgs::BodyInertial body_inertial( const unsigned int i );
+		double get_total_mass( void );
+		const mantis_msgs::BodyInertial& body_inertial( const unsigned int i );
 
 		int get_joint_num( void );
 		int get_dynamic_joint_num( void );
-		dh_parameters::JointDescription joint(const unsigned int i);
+		const dh_parameters::JointDescription& joint(const unsigned int i);
 
 		bool ok( void );
 

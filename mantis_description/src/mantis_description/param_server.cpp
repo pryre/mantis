@@ -82,7 +82,7 @@ void MantisParamServer::load( void ) {
 
 	//TODO: Should be loaded dynamically
 	nh_->param("body/num", body_num_, body_num_);
-
+	bodies_.clear();
 	for(int i=0; i<body_num_; i++) {
 		mantis_msgs::BodyInertial bi;
 
@@ -103,6 +103,7 @@ void MantisParamServer::load( void ) {
 	}
 
 	//Load in the link definitions
+	joints_.clear();
 	for(int i=0; i<body_num_; i++) {
 		dh_parameters::JointDescription jd;
 

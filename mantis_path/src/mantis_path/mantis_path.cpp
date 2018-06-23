@@ -81,8 +81,6 @@ void MantisPath::callback_path(const ros::TimerEvent& e) {
 		ref_path_.get_ref_state(ge_sp, gev_sp, e.current_real);
 
 		if( param_track_end_ ) {
-
-
 			//This hole thing could be done dynamically for any joint
 			//Compute transform for all joints in the chain to get base to end effector
 

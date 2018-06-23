@@ -1,8 +1,8 @@
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
 
-#include <controller_aug/se_tools.h>
-#include <controller_aug/controller_aug_lite.h>
+#include <mantis_description/se_tools.h>
+#include <mantis_controller_aug/controller_aug_lite.h>
 #include <mantis_controller_aug/ControlParamsLiteConfig.h>
 
 #include <mavros_msgs/AttitudeTarget.h>
@@ -34,15 +34,10 @@ ControllerAugLite::ControllerAugLite() :
 
 	dyncfg_control_settings_.setCallback(boost::bind(&ControllerAugLite::callback_cfg_control_settings, this, _1, _2));
 
-	//Wait here for parameters to be loaded
-	while( ros::ok() && ( !p_.ok() ) ) {
-			ros::spinOnce();
-			ros::Rate(param_est_rate_).sleep();
-	}
-
 	uaug_f_ = Eigen::Vector3d::Zero();
 
-	if(success) {
+	//Wait here for parameters to be loaded
+	if( p_.wait_for_params() ) {
 		pub_np_force_ = nhp_.advertise<mavros_msgs::ActuatorControl>("output/normalized_payload_torque", 10);
 		pub_wrench_ = nhp_.advertise<geometry_msgs::WrenchStamped>("feedback/wrench_compensation", 10);
 
@@ -53,8 +48,7 @@ ControllerAugLite::ControllerAugLite() :
 		ROS_INFO("    - state");
 
 		//Lock the controller until all the inputs are satisfied
-		while( ros::ok() &&
-			   ( ( msg_attitude_target_tr_ == ros::Time(0) ) || ( !s_.ok() ) ) ) {
+		while( ros::ok() && ( ( !s_.ok() ) || ( msg_attitude_target_tr_ == ros::Time(0) ) ) ) {
 
 			if( msg_attitude_target_tr_ != ros::Time(0) )
 				ROS_INFO_ONCE("Augmented dynamics got input: attitude target");
@@ -108,12 +102,7 @@ void ControllerAugLite::callback_est(const ros::TimerEvent& e) {
 		double kty = 1.0 / (4.0 * la * std::cos(arm_ang  / 2.0) * thrust_single);
 		double km = -1.0 / (p_.motor_num() * p_.motor_drag_max());
 
-		double uav_mass = 0.0;
-		for(int i=0; i<p_.get_body_num(); i++) {
-			uav_mass += p_.body_inertial(i).mass;
-		}
-
-		double accel_z = cmd_throttle_ / (kT * uav_mass);
+		double accel_z = cmd_throttle_ / (kT * p_.get_total_mass());
 
 		//Use this to account for acceleration / translational forces
 		//  but assume that all rotations want to maintain 0 acceleration

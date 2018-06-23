@@ -36,28 +36,22 @@ class MantisStateClient {
 
 		~MantisStateClient( void );
 
-		ros::Time time_updated( void );
+		const ros::Time& time_updated( void );
 
-		Eigen::Affine3d g( void );
-		Eigen::Vector3d bv( void );
+		const Eigen::Affine3d& g( void );
+		const Eigen::Vector3d& bv( void );
 		Eigen::Vector3d wv( void );
-		Eigen::Vector3d bw( void );
-		Eigen::Vector3d ba( void );
-		Eigen::Vector3d bwa( void );
-		Eigen::VectorXd r( void );
-		Eigen::VectorXd rd( void );
-		Eigen::VectorXd rdd( void );
-		double voltage( void );
-		bool flight_ready( void );
+		const Eigen::Vector3d& bw( void );
+		const Eigen::Vector3d& ba( void );
+		const Eigen::Vector3d& bwa( void );
+		const Eigen::VectorXd& r( void );
+		const Eigen::VectorXd& rd( void );
+		const Eigen::VectorXd& rdd( void );
+		const double& voltage( void );
+		const bool& flight_ready( void );
 
 		bool ok( void );
 
 	private:
 		void callback_state(const mantis_msgs::State::ConstPtr &msg_in);
-
-		//Conversion Helpers
-		Eigen::Vector3d vector_from_msg(const geometry_msgs::Vector3 v);
-		Eigen::Vector3d point_from_msg(const geometry_msgs::Point p);
-		Eigen::Quaterniond quaternion_from_msg(const geometry_msgs::Quaternion q);
-		Eigen::Affine3d affine_from_msg(const geometry_msgs::Pose pose);
 };

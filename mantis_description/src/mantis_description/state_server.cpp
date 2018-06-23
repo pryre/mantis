@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include <dh_parameters/JointDescription.h>
 #include <mantis_msgs/State.h>
+#include <mantis_description/se_tools.h>
 #include <mantis_description/param_client.h>
 #include <mantis_description/state_server.h>
 
@@ -233,66 +234,4 @@ void MantisStateServer::callback_state_joints(const sensor_msgs::JointState::Con
 		update_rdd(rdd);
 
 	msg_joints_tr_ = msg_in->header.stamp;
-}
-
-Eigen::Vector3d MantisStateServer::vector_from_msg(const geometry_msgs::Vector3 v) {
-		return Eigen::Vector3d(v.x, v.y, v.z);
-}
-
-Eigen::Vector3d MantisStateServer::point_from_msg(const geometry_msgs::Point p) {
-		return Eigen::Vector3d(p.x, p.y, p.z);
-}
-
-Eigen::Quaterniond MantisStateServer::quaternion_from_msg(const geometry_msgs::Quaternion q) {
-		return Eigen::Quaterniond(q.w, q.x, q.y, q.z).normalized();
-}
-
-Eigen::Affine3d MantisStateServer::affine_from_msg(const geometry_msgs::Pose pose) {
-		Eigen::Affine3d a;
-
-		a.translation() << point_from_msg(pose.position);
-		a.linear() << quaternion_from_msg(pose.orientation).toRotationMatrix();
-
-		return a;
-}
-
-geometry_msgs::Vector3 MantisStateServer::vector_from_eig(const Eigen::Vector3d &v) {
-	geometry_msgs::Vector3 vec;
-
-	vec.x = v.x();
-	vec.y = v.y();
-	vec.z = v.z();
-
-	return vec;
-}
-
-geometry_msgs::Point MantisStateServer::point_from_eig(const Eigen::Vector3d &p) {
-	geometry_msgs::Point point;
-
-	point.x = p.x();
-	point.y = p.y();
-	point.z = p.z();
-
-	return point;
-}
-
-geometry_msgs::Quaternion MantisStateServer::quaternion_from_eig(const Eigen::Quaterniond &q) {
-	geometry_msgs::Quaternion quat;
-	Eigen::Quaterniond qn = q.normalized();
-
-	quat.w = qn.w();
-	quat.x = qn.x();
-	quat.y = qn.y();
-	quat.z = qn.z();
-
-	return quat;
-}
-
-geometry_msgs::Pose MantisStateServer::pose_from_eig(const Eigen::Affine3d &g) {
-	geometry_msgs::Pose pose;
-
-	pose.position = point_from_eig(g.translation());
-	pose.orientation = quaternion_from_eig(Eigen::Quaterniond(g.linear()));
-
-	return pose;
 }

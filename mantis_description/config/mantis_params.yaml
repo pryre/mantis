@@ -14,43 +14,18 @@ pwm:
   min: 1000
   max: 2000
 
-takeoff:
-  x: 0.0
-  y: 0.0
-  z: 1.0
-
-controller_id:
-  gain:
-    pos:
-      xy:
-        p: 2.0
-        i: 0.0
-      z:
-        p: 2.0
-        i: 0.0
-    vel:
-      xy:
-        p: 2.0
-      z:
-        p: 4.0
-    rot:
-      ang:
-        p: 3.0
-      rate:
-        p: 10.0
-
 body:
   num: 3
   b0:
     mass:
       m: 2.30 # Base + props
-      Ix: 0.02850657
-      Iy: 0.02821766
-      Iz: 0.05416778
-    com: 0.0
+      Ixx: 0.02850657
+      Iyy: 0.02821766
+      Izz: 0.05416778
+      com: 0.0
     link:
       name: "mount"
-      d: -0.05025 # Update this
+      d: -0.10 # Update this
       t: 0.0
       r: 0.0
       a: 1.570796326794897
@@ -58,10 +33,10 @@ body:
   b1:
     mass:
       m: 0.1
-      Ix: 0.00005
-      Iy: 0.00068
-      Iz: 0.00067
-    com: 0.15
+      Ixx: 0.00005
+      Iyy: 0.00068
+      Izz: 0.00067
+      com: 0.15
     link:
       name: "joint_shoulder"
       d: 0.0
@@ -73,10 +48,10 @@ body:
   b2:
     mass:
       m: 0.06
-      Ix: 0.00004
-      Iy: 0.00032
-      Iz: 0.00032
-    com: 0.11
+      Ixx: 0.00004
+      Iyy: 0.00032
+      Izz: 0.00032
+      com: 0.11
     link:
       name: "joint_elbow"
       d: 0.0

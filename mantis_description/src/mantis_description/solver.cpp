@@ -62,6 +62,8 @@ bool MantisSolver::load_parameters( void ) {
 	bool success = true;
 
 	//Load in the link definitions
+	joints_.clear();
+
 	for(int i=0; i<p_->get_joint_num(); i++) {
 		DHParameters dh( p_->joint(i) );
 
@@ -93,8 +95,8 @@ bool MantisSolver::load_state( void ) {
 	if( ( r.size() == rd.size() ) && (p_->get_dynamic_joint_num() == r.size() ) ) {
 		int jc = 0;
 		for(int i=0; i<joints_.size(); i++) {
-			if(joints_[i].jt() == DHParameters::JointType::Static) {
-				joints_[i].update(rd[jc], rd[jc]);
+			if(joints_[i].jt() != DHParameters::JointType::Static) {
+				joints_[i].update(r[jc], rd[jc]);
 				jc++;
 			}
 		}
@@ -153,7 +155,7 @@ bool MantisSolver::solve_inverse_dynamics( Eigen::VectorXd &tau, const Eigen::Ve
 					  p_->body_inertial(1).mass, p_->body_inertial(2).mass,
 					  r(0), rd(0), r(1), rd(1));
 
-			Eigen::VectorXd tau = D*ua + (C + L)*qd;
+			tau = D*ua + (C + L)*qd;
 
 			success = true;
 		} else {

@@ -19,10 +19,10 @@ body:
   b0:
     mass:
       m: 1.83497 # Base + props
-      Ix: 0.02961 # Maybe need to halve this
-      Iy: 0.02933 # Maybe need to halve this
-      Iz: 0.05342 # Maybe need to halve this
-    com: 0.0
+      Ixx: 0.02961 # Maybe need to halve this
+      Iyy: 0.02933 # Maybe need to halve this
+      Izz: 0.05342 # Maybe need to halve this
+      com: 0.0
     link:
       name: "mount"
       d: -0.05025
@@ -33,10 +33,10 @@ body:
   b1:
     mass:
       m: 0.10022841
-      Ix: 0.00001678
-      Iy: 0.00025428
-      Iz: 0.00024944
-    com: 0.15047991
+      Ixx: 0.00001678
+      Iyy: 0.00025428
+      Izz: 0.00024944
+      com: 0.15047991
     link:
       name: "joint_shoulder"
       d: 0.0
@@ -48,10 +48,10 @@ body:
   b2:
     mass:
       m: 0.10022841
-      Ix: 0.00001678
-      Iy: 0.00025428
-      Iz: 0.00024944
-    com: 0.15047991
+      Ixx: 0.00001678
+      Iyy: 0.00025428
+      Izz: 0.00024944
+      com: 0.15047991
     link:
       name: "joint_elbow"
       d: 0.0
