@@ -44,22 +44,20 @@
   <build_depend>roscpp</build_depend>
   <build_depend>eigen</build_depend>
   <build_depend>dh_parameters</build_depend>
+  <build_depend>mantis_description</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>tf2_ros</build_depend>
   <build_depend>tf2_eigen</build_depend>
-  <build_depend>nav_msgs</build_depend>
-  <build_depend>sensor_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>eigen</run_depend>
   <run_depend>dh_parameters</run_depend>
+  <run_depend>mantis_description</run_depend>
   <run_depend>tf2</run_depend>
   <run_depend>tf2_ros</run_depend>
   <run_depend>tf2_eigen</run_depend>
-  <run_depend>nav_msgs</run_depend>
-  <run_depend>sensor_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>visualization_msgs</run_depend>
 

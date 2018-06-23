@@ -9,14 +9,12 @@ add_definitions(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  dh_parameters
   tf2
   tf2_ros
   tf2_eigen
-  nav_msgs
-  sensor_msgs
   geometry_msgs
   visualization_msgs
+  mantis_description
 )
 
 ## System dependencies are found with CMake's conventions
@@ -129,19 +127,19 @@ include_directories(
 )
 
 ## Declare a C++ library
-add_library(forward_kinematics
-  src/forward_kinematics/forward_kinematics.cpp
+add_library(${PROJECT_NAME}_forward
+  src/${PROJECT_NAME}/forward_kinematics.cpp
 )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(forward_kinematics ${forward_kinematics_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_forward ${forward_kinematics_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(mantis_forward_kinematics_node src/mantis_forward_kinematics_node.cpp)
+add_executable(${PROJECT_NAME}_forward_node src/mantis_kinematics_forward_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -151,16 +149,16 @@ add_executable(mantis_forward_kinematics_node src/mantis_forward_kinematics_node
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(mantis_forward_kinematics_node ${forward_kinematics_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_forward_node ${forward_kinematics_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 
-target_link_libraries(forward_kinematics
+target_link_libraries(${PROJECT_NAME}_forward
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(mantis_forward_kinematics_node
-  forward_kinematics
+target_link_libraries(${PROJECT_NAME}_forward_node
+  ${PROJECT_NAME}_forward
   ${catkin_LIBRARIES}
 )
 

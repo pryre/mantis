@@ -4,14 +4,12 @@
 	<arg name="frame_id" default="map"/>
 	<arg name="rviz" default="false"/>
 
-	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_params.yaml"/>
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_params.yaml"/>
 
 	<node pkg="mantis_description" type="mantis_description_node" name="mantis_description"
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="update_rate" value="100.0" />
 		<param name="use_odom_angular_velocity" value="false" />
-
-		<remap from="state/joints" to="joint_states"/>
 	</node>
 
 	<!-- visualization -->

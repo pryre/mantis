@@ -198,3 +198,32 @@ bool MantisSolver::calculate_gbe( Eigen::Affine3d &gbe ) {
 
 	return success;
 }
+
+bool MantisSolver::calculate_gxy( Eigen::Affine3d &g, const unsigned int x, const unsigned int y ) {
+	bool success = false;
+
+	g = Eigen::Affine3d::Identity();
+
+	if( check_description() ) {
+		if( (x <= joints_.size()) && (y <= joints_.size()) && (x !=y ) ) {
+			//The inverse calculation was requested
+			if(x > y) {
+				for(int i=y; i<x; i++) {
+					g = g * joints_[i].transform();
+				}
+
+				g = g.inverse();
+			} else {
+				for(int i=x; i<y; i++) {
+					g = g * joints_[i].transform();
+				}
+			}
+
+			success = true;
+		} else {
+			ROS_ERROR("Error: MantisSolver::calculate_gxy(): frame inputs invalid");
+		}
+	}
+
+	return success;
+}

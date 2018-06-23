@@ -29,6 +29,7 @@ class MantisSolver {
 		bool solve_inverse_dynamics( Eigen::VectorXd &tau, const Eigen::VectorXd &ua );
 		bool calculate_Je( Eigen::MatrixXd &Je );
 		bool calculate_gbe( Eigen::Affine3d &gbe );
+		bool calculate_gxy( Eigen::Affine3d &g, const unsigned int x, const unsigned int y );
 
 	private:
 		bool load_parameters( void );

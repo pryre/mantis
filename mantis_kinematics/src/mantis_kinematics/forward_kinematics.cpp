@@ -1,11 +1,7 @@
 #include <ros/ros.h>
 
-#include <forward_kinematics/forward_kinematics.h>
-
-#include <dh_parameters/dh_parameters.h>
-
-#include <nav_msgs/Odometry.h>
-#include <sensor_msgs/JointState.h>
+#include <mantis_kinematics/forward_kinematics.h>
+#include <mantis_description/se_tools.h>
 
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -30,50 +26,33 @@
 ForwardKinematics::ForwardKinematics() :
 	nh_(),
 	nhp_("~"),
+	p_(&nh_),
+	s_(&nh_),
+	solver_(&p_, &s_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
+	param_rate_(30.0),
 	param_do_end_effector_pose_(true),
 	param_do_viz_(true),
 	param_done_viz_(false),
 	tfBuffer_(ros::Duration(20.0)) {
 
-	int num_links = 0;
-
 	//Load parameters
 	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
 	nhp_.param("model_id", param_model_id_, param_model_id_);
+	nhp_.param("update_rate", param_rate_, param_rate_);
 	nhp_.param("do_viz", param_do_viz_, param_do_viz_);
 	nhp_.param("end_effector_pose", param_do_end_effector_pose_, param_do_end_effector_pose_);
 
-	nh_.param("body/num", num_links, num_links);
-	ROS_INFO("Loading %i links...", num_links);
-
-	bool success = true;
-
-	for(int i=0; i<num_links; i++) {
-		DHParameters dh( &nh_, "body/b" + std::to_string(i) + "/link");
-
-		if( dh.is_valid() ) {
-			param_joints_.push_back(dh);
-		} else {
-			ROS_FATAL("Error loading joint %i", i);
-			success = false;
-			break;
-		}
-	}
-
-	if(success) {
-		ROS_INFO("All links loaded!");
-
+	if( p_.wait_for_params() ) {
 		//Configure publishers and subscribers
 		pub_end_ = nh_.advertise<geometry_msgs::PoseStamped>("pose/end_effector", 10);
 		pub_viz_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization", 10, true);
 
-		sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ForwardKinematics::callback_state_odom, this );
-		sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "joint_states", 10, &ForwardKinematics::callback_state_joints, this );
-
 		ROS_INFO("Configuring static mounts...");
 		do_reset();
+
+		timer_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ForwardKinematics::callback_timer, this );
 
 		ROS_INFO("Forward kinematics running!");
 	} else {
@@ -84,47 +63,47 @@ ForwardKinematics::ForwardKinematics() :
 ForwardKinematics::~ForwardKinematics() {
 }
 
-void ForwardKinematics::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
+void ForwardKinematics::callback_timer(const ros::TimerEvent& e) {
 	check_update_time();
 
 	geometry_msgs::TransformStamped t;
 
-	t.header.frame_id = msg_in->header.frame_id;
-	t.header.stamp = msg_in->header.stamp;
+	t.header.frame_id = param_frame_id_;
+	t.header.stamp = e.current_real;
 	t.child_frame_id = param_model_id_;
 
-	t.transform.translation.x = msg_in->pose.pose.position.x;
-	t.transform.translation.y = msg_in->pose.pose.position.y;
-	t.transform.translation.z = msg_in->pose.pose.position.z;
-	t.transform.rotation.w = msg_in->pose.pose.orientation.w;
-	t.transform.rotation.x = msg_in->pose.pose.orientation.x;
-	t.transform.rotation.y = msg_in->pose.pose.orientation.y;
-	t.transform.rotation.z = msg_in->pose.pose.orientation.z;
+	geometry_msgs::Pose p = pose_from_eig(s_.g());
+	t.transform.translation.x = p.position.x;
+	t.transform.translation.y = p.position.y;
+	t.transform.translation.z = p.position.z;
+	t.transform.rotation = p.orientation;
 
 	tfbr_.sendTransform(t);
 	tfBuffer_.setTransform(t, ros::this_node::getName());	//Set the base link
+
+	for(int i=0; i<p_.get_joint_num(); i++) {
+		if( p_.joint(i).type != "static" ) {
+			Eigen::Affine3d g;
+			if(solver_.calculate_gxy(g,i,i+1)) {
+				geometry_msgs::TransformStamped transform = tf2::eigenToTransform(g);
+				transform.header.stamp = e.current_real;
+				transform.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/link_" + std::to_string(i);
+				transform.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
+
+				tfbr_.sendTransform(transform);
+				tfBuffer_.setTransform(transform, ros::this_node::getName());	//Set the internal dynamic joints
+			}
+		}
+	}
+}
+
+/*
+void ForwardKinematics::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
+
 }
 
 void ForwardKinematics::callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in) {
 	check_update_time();
-
-	for(int i=0; i<param_joints_.size(); i++) {
-		if( param_joints_[i].jt() != DHParameters::JointType::Static ) {
-			for(int j=0; j<msg_in->name.size(); j++) {
-				if(param_joints_[i].name() == msg_in->name[j]) {
-					param_joints_[i].update(msg_in->position[j]);
-
-					geometry_msgs::TransformStamped transform = tf2::eigenToTransform(param_joints_[i].transform());
-					transform.header.stamp = msg_in->header.stamp;
-					transform.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/link_" + std::to_string(i);
-					transform.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
-
-					tfbr_.sendTransform(transform);
-					tfBuffer_.setTransform(transform, ros::this_node::getName());	//Set the internal dynamic joints
-				}
-			}
-		}
-	}
 
 	//Send out the end effector pose
 	if(param_do_end_effector_pose_) {
@@ -156,19 +135,23 @@ void ForwardKinematics::callback_state_joints(const sensor_msgs::JointState::Con
 	//if(param_do_viz_ && !param_done_viz_)
 	//	do_viz(&(msg_in->name));
 }
+*/
 
 void ForwardKinematics::configure_static_joints() {
 	ros::Time stamp = ros::Time::now();
 
-	for(int i=0; i<param_joints_.size(); i++) {
-		if( param_joints_[i].jt() == DHParameters::JointType::Static ) {
-			geometry_msgs::TransformStamped tf = tf2::eigenToTransform( param_joints_[i].transform() );
-			tf.header.stamp = stamp;
-			tf.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/link_" + std::to_string(i);
-			tf.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
+	for(int i=0; i<p_.get_joint_num(); i++) {
+		if( p_.joint(i).type == "static" ) {
+			Eigen::Affine3d g;
+			if(solver_.calculate_gxy(g,i,i+1)) {
+				geometry_msgs::TransformStamped tf = tf2::eigenToTransform(g);
+				tf.header.stamp = stamp;
+				tf.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/link_" + std::to_string(i);
+				tf.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
 
-			tfsbr_.sendTransform(tf);
-			tfBuffer_.setTransform(tf, ros::this_node::getName(), true);	//Set the internal static joints
+				tfsbr_.sendTransform(tf);
+				tfBuffer_.setTransform(tf, ros::this_node::getName(), true);	//Set the internal static joints
+			}
 		}
 	}
 }

@@ -37,6 +37,7 @@ enum dynamixel_control_items_t {
 class InterfaceDynamixel {
 	private:
 		ros::NodeHandle nh_;
+		ros::NodeHandle nhp_;
 		ros::Timer timer_;
 		ros::Publisher pub_states_;
 		ros::Subscriber sub_setpoints_;

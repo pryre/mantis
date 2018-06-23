@@ -27,10 +27,9 @@ static const std::string dynamixel_control_items_names[DCI_NUM_ITEMS] {
 
 InterfaceDynamixel::InterfaceDynamixel() :
 	nh_("~"),
+	nhp_("~"),
 	motor_output_mode_(MOTOR_MODE_INVALID),
 	param_update_rate_(50.0),
-	topic_input_setpoints_("setpoints"),
-	topic_output_states_("states"),
 	param_port_name_("/dev/ttyUSB0"),
 	param_port_buad_(57600),
 	param_port_version_(0.0),
@@ -39,17 +38,15 @@ InterfaceDynamixel::InterfaceDynamixel() :
 
 
 	//ROS Setup
-	nh_.param("topic_input_setpoints", topic_input_setpoints_, topic_input_setpoints_);
-	nh_.param("topic_output_states", topic_output_states_, topic_output_states_);
-	nh_.param("port_name", param_port_name_, param_port_name_);
-	nh_.param("port_baud", param_port_buad_, param_port_buad_);
-	nh_.param("protocol", param_port_version_, param_port_version_);
-	nh_.param("num_motors", param_num_motors_, param_num_motors_);
-	nh_.param("frame_id", param_frame_id_, param_frame_id_);
-	nh_.param("update_rate", param_update_rate_, param_update_rate_);
+	nhp_.param("port_name", param_port_name_, param_port_name_);
+	nhp_.param("port_baud", param_port_buad_, param_port_buad_);
+	nhp_.param("protocol", param_port_version_, param_port_version_);
+	nhp_.param("num_motors", param_num_motors_, param_num_motors_);
+	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
+	nhp_.param("update_rate", param_update_rate_, param_update_rate_);
 
-	sub_setpoints_ = nh_.subscribe<sensor_msgs::JointState>( topic_input_setpoints_, 10, &InterfaceDynamixel::callback_setpoints, this );
-	pub_states_ = nh_.advertise<sensor_msgs::JointState>(topic_output_states_, 10);
+	sub_setpoints_ = nh_.subscribe<sensor_msgs::JointState>( "joint_setpoints", 10, &InterfaceDynamixel::callback_setpoints, this );
+	pub_states_ = nh_.advertise<sensor_msgs::JointState>( "joints_states", 10);
 
 
 	//Dynamixel Setup
@@ -95,9 +92,9 @@ InterfaceDynamixel::InterfaceDynamixel() :
 			initSyncRead();
 			ROS_INFO("SyncRead done!");
 
-			timer_ = nh_.createTimer(ros::Duration(1.0 / param_update_rate_), &InterfaceDynamixel::callback_timer, this );
-			srv_enable_torque_specific_ = nh_.advertiseService("enable_torque_specific", &InterfaceDynamixel::enable_torque_specific, this);
-			srv_enable_torque_all_ = nh_.advertiseService("enable_torque_all", &InterfaceDynamixel::enable_torque_all, this);
+			timer_ = nhp_.createTimer(ros::Duration(1.0 / param_update_rate_), &InterfaceDynamixel::callback_timer, this );
+			srv_enable_torque_specific_ = nhp_.advertiseService("enable_torque_specific", &InterfaceDynamixel::enable_torque_specific, this);
+			srv_enable_torque_all_ = nhp_.advertiseService("enable_torque_all", &InterfaceDynamixel::enable_torque_all, this);
 
 			ROS_INFO("Dynamixel interface started successfully!");
 		} else {
