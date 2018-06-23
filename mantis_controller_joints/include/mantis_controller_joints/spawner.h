@@ -2,7 +2,7 @@
 
 #include <ros/ros.h>
 
-#include <controller/controller.h>
+#include <mantis_controller_joints/controller.h>
 
 #include <sensor_msgs/JointState.h>
 #include <vector>
@@ -15,9 +15,7 @@ class Spawner {
 		ros::Subscriber sub_state_;
 		ros::Publisher pub_goal_;
 
-		std::string param_controller_name_;
-
-		std::vector<Controller> controllers_;
+		std::vector<Controller*> controllers_;
 
 		double param_update_rate_;
 

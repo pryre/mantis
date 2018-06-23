@@ -30,8 +30,6 @@ ControllerAug::ControllerAug() :
 	ref_path_(&nhp_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
-	param_use_mav_state_(false),
-	param_use_imu_state_(false),
 	param_safety_rate_(20.0),
 	param_high_level_rate_(20.0),
 	param_low_level_rate_(200.0),
@@ -54,26 +52,11 @@ ControllerAug::ControllerAug() :
 
 	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
 	nhp_.param("model_id", param_model_id_, param_model_id_);
-	nhp_.param("wait_for_path", param_wait_for_path_, param_wait_for_path_);
-	nhp_.param("use_imu_state", param_use_imu_state_, param_use_imu_state_);
-	nhp_.param("use_mav_state", param_use_mav_state_, param_use_mav_state_);
 	nhp_.param("safety_rate", param_safety_rate_, param_safety_rate_);
 	nhp_.param("high_level_rate", param_high_level_rate_, param_high_level_rate_);
 	nhp_.param("low_level_rate", param_low_level_rate_, param_low_level_rate_);
 
 	dyncfg_control_settings_.setCallback(boost::bind(&ControllerAug::callback_cfg_control_settings, this, _1, _2));
-
-	/*
-	pos_pid_x_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
-	pos_pid_y_.setGains( p_.gain_position_xy_p, p_.gain_position_xy_i, 0.0, 0.0 );
-	pos_pid_z_.setGains( p_.gain_position_z_p, p_.gain_position_z_i, 0.0, 0.0 );
-	//pos_pid_x_.setOutputMinMax( -CONST_GRAV / 2.0, CONST_GRAV / 2.0);
-	//pos_pid_y_.setOutputMinMax( -CONST_GRAV / 2.0, CONST_GRAV / 2.0);
-	//pos_pid_z_.setOutputMinMax( -3.0 * CONST_GRAV / 4.0, 3.0 * CONST_GRAV / 4.0);
-	pos_pid_x_.setOutputMinMax( -1.0, 1.0);
-	pos_pid_y_.setOutputMinMax( -1.0, 1.0);
-	pos_pid_z_.setOutputMinMax( -2.0, 2.0);
-	*/
 
 	g_sp_ = Eigen::Affine3d::Identity();
 	gv_sp_ = Eigen::Vector3d::Zero();
@@ -95,29 +78,6 @@ ControllerAug::ControllerAug() :
 		pub_twist_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/base/twist", 10);
 		pub_accel_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/base/accel", 10);
 		pub_wrench_ = nhp_.advertise<geometry_msgs::WrenchStamped>("feedback/wrench_compensation", 10);
-		/*
-		sub_state_odom_ = nhp_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &ControllerAug::callback_state_odom, this );
-		sub_state_battery_ = nhp_.subscribe<sensor_msgs::BatteryState>( "state/battery", 10, &ControllerAug::callback_state_battery, this );
-		sub_state_joints_ = nhp_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &ControllerAug::callback_state_joints, this );
-
-		if(param_use_imu_state_)
-			sub_state_imu_ = nhp_.subscribe<sensor_msgs::Imu>( "state/imu", 10, &ControllerAug::callback_state_imu, this );
-
-		if(param_use_mav_state_)
-			sub_state_mav_ = nhp_.subscribe<mavros_msgs::State>( "state/mav", 10, &ControllerAug::callback_state_mav, this );
-		*/
-		//XXX: Initialize takeoff goals
-		/*
-		geometry_msgs::Pose takeoff_fallback;
-		takeoff_fallback.position.x = p_.takeoff_x;
-		takeoff_fallback.position.y = p_.takeoff_y;
-		takeoff_fallback.position.z = p_.takeoff_z;
-		takeoff_fallback.orientation.w = 1.0;
-		takeoff_fallback.orientation.x = 0.0;
-		takeoff_fallback.orientation.y = 0.0;
-		takeoff_fallback.orientation.z = 0.0;
-		ref_path_.set_fallback( takeoff_fallback );
-		*/
 
 		ROS_INFO("Augmented dynamics controller loaded. Waiting for inputs:");
 		ROS_INFO("    - state");
@@ -170,7 +130,7 @@ void ControllerAug::callback_cfg_control_settings(mantis_controller_aug::Control
 }
 
 void ControllerAug::callback_ready_check(const ros::TimerEvent& e) {
-//If we still have all the inputs satisfied
+	//If we still have all the inputs satisfied
 	if( ( s_.ok() ) && ( ref_path_.has_valid_path() || ref_path_.has_valid_fallback() ) ) {
 		ready_for_flight_ = true;
 	} else {
@@ -262,7 +222,7 @@ void ControllerAug::callback_high_level(const ros::TimerEvent& e) {
 		if(axy.norm() > a_sp.z()) {
 			double axy_scale = axy.norm() / a_sp.z();
 			axy = axy / axy_scale;
-			a_sp_.segment(0,2) << axy.segment(0,2);
+			a_sp.segment(0,2) << axy.segment(0,2);
 		}
 		//TODO: Constrain vertical max accel(?)
 

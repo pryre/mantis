@@ -9,8 +9,10 @@ add_compile_options(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  pid_controller_lib
   sensor_msgs
   std_msgs
+  dynamic_reconfigure
 )
 
 ## System dependencies are found with CMake's conventions
@@ -88,10 +90,9 @@ find_package(catkin REQUIRED COMPONENTS
 ##     and list every .cfg file to be processed
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
+generate_dynamic_reconfigure_options(
+  cfg/JointGoals.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -122,15 +123,11 @@ include_directories(
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}_spawner
-  src/spawner/spawner.cpp
+  src/${PROJECT_NAME}/spawner.cpp
 )
 
 add_library(${PROJECT_NAME}_controller
-  src/controller/controller.cpp
-)
-
-add_library(${PROJECT_NAME}_pid_controller
-  src/pidController/pidController.cpp
+  src/${PROJECT_NAME}/controller.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -142,7 +139,8 @@ add_dependencies(${PROJECT_NAME}_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(controller_node src/controller_node.cpp)
+add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp)
+add_executable(${PROJECT_NAME}_config_node src/${PROJECT_NAME}_config_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -152,11 +150,11 @@ add_executable(controller_node src/controller_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(controller_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_config_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_controller
-  ${PROJECT_NAME}_pid_controller
   ${catkin_LIBRARIES}
 )
 
@@ -165,8 +163,12 @@ target_link_libraries(${PROJECT_NAME}_spawner
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(controller_node
+target_link_libraries(${PROJECT_NAME}_node
   ${PROJECT_NAME}_spawner
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(${PROJECT_NAME}_config_node
   ${catkin_LIBRARIES}
 )
 

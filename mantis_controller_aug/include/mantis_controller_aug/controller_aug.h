@@ -31,9 +31,6 @@ class ControllerAug {
 
 		std::string param_frame_id_;
 		std::string param_model_id_;
-		bool param_use_imu_state_;
-		bool param_use_mav_state_;
-		bool param_wait_for_path_;
 		bool param_force_compensation_;
 		double param_force_comp_alpha_;
 		bool param_coriolis_compensation_;

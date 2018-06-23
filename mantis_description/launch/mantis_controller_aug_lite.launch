@@ -67,15 +67,10 @@
 
 	<!-- Joint position control -->
 	<!--
-	<node name="robot_config" pkg="mantis_controller_id" type="robot_config_node" respawn="false"
+	<node name="robot_joint_config" pkg="mantis_controller_joints" type="mantis_controller_joints_config_node" respawn="false"
 	ns="/mantis_uav" output="screen">
-		<param name="frame_id" value="map" />
+		<param name="frame_id" value="mantis_uav" />
 		<param name="hover_height" value="1.0" />
-
-		<remap from="/mantis_uav/robot_config/goal/joint_state" to="/mantis_uav/joint_setpoints"/>
-
-		<remap from="robot_config/pose" to="/move_base_simple/goal"/>
-		<remap from="robot_config/goal/path" to="/mantis_uav/path"/>
 	</node>
 	-->
 </launch>

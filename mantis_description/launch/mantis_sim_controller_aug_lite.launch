@@ -46,15 +46,12 @@
 	</node>
 
 	<!-- HELPER NODES -->
-	<node name="robot_config" pkg="mantis_controller_id" type="robot_config_node" respawn="false"
+	<node name="robot_joint_config" pkg="mantis_controller_joints" type="mantis_controller_joints_config_node" respawn="false"
 	ns="/mantis_uav" output="screen">
-		<param name="frame_id" value="map" />
+		<param name="frame_id" value="mantis_uav" />
 		<param name="hover_height" value="1.0" />
 
-		<remap from="robot_config/goal/joint1" to="joint_position_controller/joint_shoulder/command"/>
-		<remap from="robot_config/goal/joint2" to="joint_position_controller/joint_elbow/command"/>
-
-		<remap from="robot_config/pose" to="/move_base_simple/goal"/>
-		<remap from="robot_config/goal/path" to="path"/>
+		<remap from="command/joint/1" to="joint_position_controller/joint_shoulder/reference"/>
+		<remap from="command/joint/2" to="joint_position_controller/joint_elbow/reference"/>
 	</node>
 </launch>

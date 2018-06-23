@@ -2,7 +2,7 @@
 
 #include <ros/ros.h>
 
-#include <pidController/pidController.h>
+#include <pid_controller_lib/pidController.h>
 
 #include <std_msgs/Float64.h>
 
@@ -10,6 +10,7 @@
 
 class Controller {
 	private:
+		ros::NodeHandle *nhp_;
 		ros::Publisher pub_output_;
 		ros::Subscriber sub_reference_;
 
@@ -22,20 +23,13 @@ class Controller {
 
 		bool have_reference_;
 
-		double param_limit_min_;
-		double param_limit_max_;
-		double param_gain_p_;
-		double param_gain_i_;
-		double param_gain_d_;
 		double output_;
 		double ref_;
 
 	public:
-		Controller( void );
+		Controller( ros::NodeHandle *nhp, std::string joint_name );
 
 		~Controller( void );
-
-		bool init( ros::NodeHandle *nh, std::string controller_name, std::string joint_name );
 
 		void callback_reference( const std_msgs::Float64::ConstPtr& msg_in );
 
@@ -46,5 +40,4 @@ class Controller {
 		double output( void );
 		double reference( void );
 		std::string name( void );
-
 };

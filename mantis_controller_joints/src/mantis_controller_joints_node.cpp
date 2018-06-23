@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <spawner/spawner.h>
+#include <mantis_controller_joints/spawner.h>
 
 #include <string>
 
