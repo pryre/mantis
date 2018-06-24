@@ -6,9 +6,9 @@
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
 
-#include <mantis_description/state_client.h>
+#include <mantis_state/state_client.h>
 #include <mantis_description/param_client.h>
-#include <mantis_description/solver.h>
+#include <mantis_kinematics/solver.h>
 
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>

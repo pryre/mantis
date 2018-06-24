@@ -120,7 +120,6 @@ ControllerAug::~ControllerAug() {
 }
 
 void ControllerAug::callback_cfg_control_settings(mantis_controller_aug::ControlParamsConfig &config, uint32_t level) {
-	param_wait_for_path_ = config.wait_for_path;
 	param_track_end_ = config.track_end;
 	param_force_compensation_ = config.force_compensation;
 	param_force_comp_alpha_ = config.force_comp_filter_a;

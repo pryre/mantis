@@ -2,7 +2,7 @@
 
 #include <ros/ros.h>
 #include <mantis_description/param_client.h>
-#include <mantis_description/state_client.h>
+#include <mantis_state/state_client.h>
 
 #include <dh_parameters/dh_parameters.h>
 

@@ -5,9 +5,9 @@
 
 #include <contrail/path_extract.h>
 #include <mantis_path/ControlParamsConfig.h>
-#include <mantis_description/state_client.h>
 #include <mantis_description/param_client.h>
-#include <mantis_description/solver.h>
+#include <mantis_state/state_client.h>
+#include <mantis_kinematics/solver.h>
 
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Pose.h>

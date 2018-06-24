@@ -9,17 +9,11 @@ find_package(catkin REQUIRED COMPONENTS
   dh_parameters
   mantis_msgs
   std_srvs
-  nav_msgs
-  sensor_msgs
-  geometry_msgs
-  mavros_msgs
 )
-
-find_package(Eigen3 REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}_param_client ${PROJECT_NAME}_state_client ${PROJECT_NAME}_solver
+  LIBRARIES ${PROJECT_NAME}_param_client
   CATKIN_DEPENDS dh_parameters
 #  DEPENDS system_lib
 )
@@ -34,7 +28,6 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${EIGEN3_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -42,35 +35,20 @@ add_library(${PROJECT_NAME}_param_server
   src/mantis_description/param_server.cpp
 )
 
-add_library(${PROJECT_NAME}_state_server
-  src/mantis_description/state_server.cpp
-)
-
 add_library(${PROJECT_NAME}_param_client
   src/mantis_description/param_client.cpp
-)
-
-add_library(${PROJECT_NAME}_state_client
-  src/mantis_description/state_client.cpp
-)
-
-add_library(${PROJECT_NAME}_solver
-  src/mantis_description/solver.cpp
 )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 add_dependencies(${PROJECT_NAME}_param_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(${PROJECT_NAME}_state_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(${PROJECT_NAME}_param_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(${PROJECT_NAME}_state_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(${PROJECT_NAME}_solver ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp)
+add_executable(${PROJECT_NAME}_param_node src/${PROJECT_NAME}_param_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -80,7 +58,7 @@ add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_param_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_param_server
@@ -91,25 +69,8 @@ target_link_libraries(${PROJECT_NAME}_param_client
   ${catkin_LIBRARIES}
 )
 
-
-target_link_libraries(${PROJECT_NAME}_state_server
-  ${PROJECT_NAME}_param_client
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(${PROJECT_NAME}_state_client
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(${PROJECT_NAME}_solver
-  ${PROJECT_NAME}_param_client
+target_link_libraries(${PROJECT_NAME}_param_node
   ${PROJECT_NAME}_param_server
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(${PROJECT_NAME}_node
-  ${PROJECT_NAME}_param_server
-  ${PROJECT_NAME}_state_server
   ${catkin_LIBRARIES}
 )
 

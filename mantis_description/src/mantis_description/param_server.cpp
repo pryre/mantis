@@ -6,8 +6,8 @@
 
 #include <mantis_description/param_server.h>
 
-MantisParamServer::MantisParamServer(ros::NodeHandle *nh) :
-	nh_(nh),
+MantisParamServer::MantisParamServer( void ) :
+	nh_(),
 	pwm_min_(1000),
 	pwm_max_(2000),
 	motor_num_(0),
@@ -18,8 +18,8 @@ MantisParamServer::MantisParamServer(ros::NodeHandle *nh) :
 	la_(0.0),
 	body_num_(1) {
 
-	pub_params_ = nh_->advertise<mantis_msgs::Params>("params", 1, true);
-	srv_reload_ = nh_->advertiseService("reload_params", &MantisParamServer::reload, this);
+	pub_params_ = nh_.advertise<mantis_msgs::Params>("params", 1, true);
+	srv_reload_ = nh_.advertiseService("reload_params", &MantisParamServer::reload, this);
 
 	update();
 }
@@ -70,30 +70,30 @@ void MantisParamServer::load( void ) {
 
 	ROS_INFO("--== Loading ControllerAug Parameters ==--");
 
-	nh_->param("motor/num", motor_num_, motor_num_);
-	nh_->param("motor/arm_len", la_, la_);
-	nh_->param("motor/kv", motor_kv_, motor_kv_);
-	nh_->param("motor/rpm_thrust_curve/m", rpm_thrust_m_, rpm_thrust_m_);
-	nh_->param("motor/rpm_thrust_curve/c", rpm_thrust_c_, rpm_thrust_c_);
-	nh_->param("motor/drag_max", motor_drag_max_, motor_drag_max_);
+	nh_.param("motor/num", motor_num_, motor_num_);
+	nh_.param("motor/arm_len", la_, la_);
+	nh_.param("motor/kv", motor_kv_, motor_kv_);
+	nh_.param("motor/rpm_thrust_curve/m", rpm_thrust_m_, rpm_thrust_m_);
+	nh_.param("motor/rpm_thrust_curve/c", rpm_thrust_c_, rpm_thrust_c_);
+	nh_.param("motor/drag_max", motor_drag_max_, motor_drag_max_);
 
-	nh_->param("pwm/min", pwm_min_, pwm_min_);
-	nh_->param("pwm/max", pwm_max_, pwm_max_);
+	nh_.param("pwm/min", pwm_min_, pwm_min_);
+	nh_.param("pwm/max", pwm_max_, pwm_max_);
 
 	//TODO: Should be loaded dynamically
-	nh_->param("body/num", body_num_, body_num_);
+	nh_.param("body/num", body_num_, body_num_);
 	bodies_.clear();
 	for(int i=0; i<body_num_; i++) {
 		mantis_msgs::BodyInertial bi;
 
-		if( nh_->getParam( "body/b" + std::to_string(i) + "/mass/m", bi.mass) ) {
-			nh_->getParam( "body/b" + std::to_string(i) + "/mass/Ixx", bi.Ixx);
-			nh_->getParam( "body/b" + std::to_string(i) + "/mass/Ixy", bi.Ixx);
-			nh_->getParam( "body/b" + std::to_string(i) + "/mass/Ixz", bi.Ixx);
-			nh_->getParam( "body/b" + std::to_string(i) + "/mass/Iyy", bi.Iyy);
-			nh_->getParam( "body/b" + std::to_string(i) + "/mass/Iyz", bi.Iyy);
-			nh_->getParam( "body/b" + std::to_string(i) + "/mass/Izz", bi.Izz);
-			nh_->getParam( "body/b" + std::to_string(i) + "/mass/com", bi.com);
+		if( nh_.getParam( "body/b" + std::to_string(i) + "/mass/m", bi.mass) ) {
+			nh_.getParam( "body/b" + std::to_string(i) + "/mass/Ixx", bi.Ixx);
+			nh_.getParam( "body/b" + std::to_string(i) + "/mass/Ixy", bi.Ixx);
+			nh_.getParam( "body/b" + std::to_string(i) + "/mass/Ixz", bi.Ixx);
+			nh_.getParam( "body/b" + std::to_string(i) + "/mass/Iyy", bi.Iyy);
+			nh_.getParam( "body/b" + std::to_string(i) + "/mass/Iyz", bi.Iyy);
+			nh_.getParam( "body/b" + std::to_string(i) + "/mass/Izz", bi.Izz);
+			nh_.getParam( "body/b" + std::to_string(i) + "/mass/com", bi.com);
 
 			bodies_.push_back(bi);
 		} else {
@@ -107,16 +107,16 @@ void MantisParamServer::load( void ) {
 	for(int i=0; i<body_num_; i++) {
 		dh_parameters::JointDescription jd;
 
-		if( nh_->getParam( "body/b" + std::to_string(i) + "/link/type", jd.type) ) {
-			nh_->getParam( "body/b" + std::to_string(i) + "/link/name", jd.name);
+		if( nh_.getParam( "body/b" + std::to_string(i) + "/link/type", jd.type) ) {
+			nh_.getParam( "body/b" + std::to_string(i) + "/link/name", jd.name);
 
-			nh_->getParam( "body/b" + std::to_string(i) + "/link/d", jd.d);
-			nh_->getParam( "body/b" + std::to_string(i) + "/link/t", jd.t);
-			nh_->getParam( "body/b" + std::to_string(i) + "/link/r", jd.r);
-			nh_->getParam( "body/b" + std::to_string(i) + "/link/a", jd.a);
+			nh_.getParam( "body/b" + std::to_string(i) + "/link/d", jd.d);
+			nh_.getParam( "body/b" + std::to_string(i) + "/link/t", jd.t);
+			nh_.getParam( "body/b" + std::to_string(i) + "/link/r", jd.r);
+			nh_.getParam( "body/b" + std::to_string(i) + "/link/a", jd.a);
 
-			nh_->getParam( "body/b" + std::to_string(i) + "/link/q", jd.q);
-			nh_->getParam( "body/b" + std::to_string(i) + "/link/beta", jd.beta);
+			nh_.getParam( "body/b" + std::to_string(i) + "/link/q", jd.q);
+			nh_.getParam( "body/b" + std::to_string(i) + "/link/beta", jd.beta);
 
 			joints_.push_back(jd);
 		} else {

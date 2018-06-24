@@ -18,8 +18,8 @@
 
 class MantisStateServer {
 	private:
-		ros::NodeHandle *nh_;
-		ros::NodeHandle *nhp_;
+		ros::NodeHandle nh_;
+		ros::NodeHandle nhp_;
 		ros::Timer timer_estimator_;
 
 		ros::Subscriber sub_state_imu_;
@@ -56,7 +56,7 @@ class MantisStateServer {
 		bool mav_ready_;
 
 	public:
-		MantisStateServer( ros::NodeHandle *nh, ros::NodeHandle *nhp );
+		MantisStateServer( void );
 
 		~MantisStateServer( void );
 

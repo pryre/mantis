@@ -6,9 +6,9 @@
 #include <pid_controller_lib/pidController.h>
 #include <contrail/path_extract.h>
 
-#include <mantis_description/state_client.h>
 #include <mantis_description/param_client.h>
-#include <mantis_description/solver.h>
+#include <mantis_state/state_client.h>
+#include <mantis_kinematics/solver.h>
 #include <mantis_controller_aug/ControlParamsConfig.h>
 
 #include <eigen3/Eigen/Dense>

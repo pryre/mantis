@@ -2,14 +2,14 @@
 
 #include <ros/ros.h>
 
-#include <mantis_description/solver.h>
+#include <mantis_kinematics/solver.h>
 
 #include <mantis_description/se_tools.h>
-#include <mantis_description/dynamics/calc_Dq.h>
-#include <mantis_description/dynamics/calc_Cqqd.h>
-#include <mantis_description/dynamics/calc_Lqd.h>
-#include <mantis_description/dynamics/calc_Jj2.h>
-#include <mantis_description/dynamics/calc_Je.h>
+#include <mantis_kinematics/dynamics/calc_Dq.h>
+#include <mantis_kinematics/dynamics/calc_Cqqd.h>
+#include <mantis_kinematics/dynamics/calc_Lqd.h>
+#include <mantis_kinematics/dynamics/calc_Jj2.h>
+#include <mantis_kinematics/dynamics/calc_Je.h>
 
 
 MantisSolver::MantisSolver( MantisParamClient *p, MantisStateClient *s ) :

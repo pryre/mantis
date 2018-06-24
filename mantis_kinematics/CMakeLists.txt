@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   visualization_msgs
   mantis_description
+  mantis_state
 )
 
 ## System dependencies are found with CMake's conventions
@@ -107,8 +108,8 @@ find_package(Eigen3 REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES kinetic_sample_sub_cpp
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME}_solver
 #  CATKIN_DEPENDS roscpp std_msgs
 #  DEPENDS system_lib
 )
@@ -127,6 +128,10 @@ include_directories(
 )
 
 ## Declare a C++ library
+add_library(${PROJECT_NAME}_solver
+  src/${PROJECT_NAME}/solver.cpp
+)
+
 add_library(${PROJECT_NAME}_forward
   src/${PROJECT_NAME}/forward_kinematics.cpp
 )
@@ -134,12 +139,13 @@ add_library(${PROJECT_NAME}_forward
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(${PROJECT_NAME}_forward ${forward_kinematics_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_solver ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_forward ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_forward_node src/mantis_kinematics_forward_node.cpp)
+add_executable(${PROJECT_NAME}_forward_node src/${PROJECT_NAME}_forward_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -149,11 +155,16 @@ add_executable(${PROJECT_NAME}_forward_node src/mantis_kinematics_forward_node.c
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(${PROJECT_NAME}_forward_node ${forward_kinematics_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_forward_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 
+target_link_libraries(${PROJECT_NAME}_solver
+  ${catkin_LIBRARIES}
+)
+
 target_link_libraries(${PROJECT_NAME}_forward
+  ${PROJECT_NAME}_solver
   ${catkin_LIBRARIES}
 )
 

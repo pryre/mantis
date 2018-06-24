@@ -3,7 +3,7 @@
 #include <ros/ros.h>
 #include <mantis_msgs/State.h>
 #include <mantis_description/se_tools.h>
-#include <mantis_description/state_client.h>
+#include <mantis_state/state_client.h>
 
 MantisStateClient::MantisStateClient( ros::NodeHandle *nh ) :
 	nh_(nh),

@@ -11,7 +11,7 @@
 
 class MantisParamServer {
 	private:
-		ros::NodeHandle *nh_;
+		ros::NodeHandle nh_;
 		ros::Publisher pub_params_;
 
 		ros::ServiceServer srv_reload_;
@@ -34,7 +34,7 @@ class MantisParamServer {
 		std::vector<dh_parameters::JointDescription> joints_;
 
 	public:
-		MantisParamServer( ros::NodeHandle *nh );
+		MantisParamServer( void );
 
 		~MantisParamServer( void );
 

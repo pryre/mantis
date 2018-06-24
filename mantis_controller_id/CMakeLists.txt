@@ -12,7 +12,9 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   pid_controller_lib
   mantis_description
+  mantis_state
   dynamic_reconfigure
+  mantis_kinematics
   contrail
 )
 

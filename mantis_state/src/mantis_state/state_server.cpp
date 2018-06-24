@@ -5,7 +5,7 @@
 #include <mantis_msgs/State.h>
 #include <mantis_description/se_tools.h>
 #include <mantis_description/param_client.h>
-#include <mantis_description/state_server.h>
+#include <mantis_state/state_server.h>
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
@@ -13,21 +13,18 @@
 #include <sensor_msgs/BatteryState.h>
 #include <mavros_msgs/State.h>
 
-MantisStateServer::MantisStateServer( ros::NodeHandle *nh, ros::NodeHandle *nhp ) :
-	nh_(nh),
-	nhp_(nhp),
-	p_(nh),
+MantisStateServer::MantisStateServer( void ) :
+	nh_(),
+	nhp_("~"),
+	p_(&nh_),
 	param_use_odom_avel_(false),
 	param_rate_(100.0),
 	time_last_est_(0) {
 
-	nhp_->param("use_odom_angular_velocity", param_use_odom_avel_, param_use_odom_avel_);
-	nhp_->param("update_rate", param_rate_, param_rate_);
+	nhp_.param("use_odom_angular_velocity", param_use_odom_avel_, param_use_odom_avel_);
+	nhp_.param("update_rate", param_rate_, param_rate_);
 
-	bool success = true;
-
-	if(success) {
-
+	if( p_.wait_for_params() ) {
 		//Current States
 		g_ = Eigen::Affine3d::Identity();
 		bv_ = Eigen::Vector3d::Zero();
@@ -44,14 +41,14 @@ MantisStateServer::MantisStateServer( ros::NodeHandle *nh, ros::NodeHandle *nhp 
 		rd_ = Eigen::VectorXd::Zero(p_.get_dynamic_joint_num());
 		rdd_ = Eigen::VectorXd::Zero(p_.get_dynamic_joint_num());
 
-		sub_state_odom_ = nh_->subscribe<nav_msgs::Odometry>( "state/odom", 10, &MantisStateServer::callback_state_odom, this );
-		sub_state_battery_ = nh_->subscribe<sensor_msgs::BatteryState>( "state/battery", 10, &MantisStateServer::callback_state_battery, this );
-		sub_state_joints_ = nh_->subscribe<sensor_msgs::JointState>( "state/joints", 10, &MantisStateServer::callback_state_joints, this );
-		sub_state_imu_ = nh_->subscribe<sensor_msgs::Imu>( "state/imu_data", 10, &MantisStateServer::callback_state_imu, this );
-		sub_state_mav_ = nh_->subscribe<mavros_msgs::State>( "state/mav_state", 10, &MantisStateServer::callback_state_mav, this );
+		sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &MantisStateServer::callback_state_odom, this );
+		sub_state_battery_ = nh_.subscribe<sensor_msgs::BatteryState>( "state/battery", 10, &MantisStateServer::callback_state_battery, this );
+		sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &MantisStateServer::callback_state_joints, this );
+		sub_state_imu_ = nh_.subscribe<sensor_msgs::Imu>( "state/imu_data", 10, &MantisStateServer::callback_state_imu, this );
+		sub_state_mav_ = nh_.subscribe<mavros_msgs::State>( "state/mav_state", 10, &MantisStateServer::callback_state_mav, this );
 
-		pub_state_ = nh_->advertise<mantis_msgs::State>("state", 10);
-		timer_estimator_ = nhp_->createTimer(ros::Duration(1.0/param_rate_), &MantisStateServer::callback_estimator, this );
+		pub_state_ = nh_.advertise<mantis_msgs::State>("state", 10);
+		timer_estimator_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &MantisStateServer::callback_estimator, this );
 
 		ROS_INFO("Mantis state server running!");
 	}
