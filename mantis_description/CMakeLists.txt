@@ -32,11 +32,11 @@ include_directories(
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}_param_server
-  src/mantis_description/param_server.cpp
+  src/${PROJECT_NAME}/param_server.cpp
 )
 
 add_library(${PROJECT_NAME}_param_client
-  src/mantis_description/param_client.cpp
+  src/${PROJECT_NAME}/param_client.cpp
 )
 
 ## Add cmake target dependencies of the library

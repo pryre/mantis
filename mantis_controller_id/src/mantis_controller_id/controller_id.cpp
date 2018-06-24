@@ -13,6 +13,8 @@
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Quaternion.h>
 
+#include <mavros_msgs/OverrideRCIn.h>
+
 #include <eigen3/Eigen/Dense>
 #include <math.h>
 #include <iostream>
@@ -108,7 +110,6 @@ ControllerID::~ControllerID() {
 }
 
 void ControllerID::callback_cfg_control_settings(mantis_controller_id::ControlParamsConfig &config, uint32_t level) {
-	param_wait_for_path_ = config.wait_for_path;
 	param_track_end_ = config.track_end;
 	param_track_j2_ = config.track_j2;
 	param_accurate_z_tracking_ = config.accurate_z_tracking;
@@ -259,17 +260,18 @@ void ControllerID::callback_high_level(const ros::TimerEvent& e) {
 	}
 }
 
-
 void ControllerID::callback_low_level(const ros::TimerEvent& e) {
-	std::vector<uint16_t> pwm_out(p_.motor_num);	//Allocate space for the number of motors
+	std::vector<uint16_t> pwm_out(p_.motor_num());	//Allocate space for the number of motors
 
 	double dt = (e.current_real - e.last_real).toSec();
 
-	if( ready_for_flight_ && state_.status_hl_control() ) {
+	bool success = false;
+
+	if( ready_for_flight_ && status_high_level_ ) {
 		//Calculate the corresponding rotation to reach desired acceleration
 		//We generate at it base on now yaw, then rotate it to reach the desired orientation
-		Eigen::Vector3d an = state_.a_sp().normalized();
-		Eigen::Vector3d y_c = state_.g_sp().linear().col(1).normalized();
+		Eigen::Vector3d an = a_sp_.normalized();
+		Eigen::Vector3d y_c = g_sp_.linear().col(1).normalized();
 		Eigen::Vector3d r_sp_x = y_c.cross(an).normalized();
 		Eigen::Vector3d r_sp_y = an.cross(r_sp_x).normalized();
 		Eigen::Matrix3d gr_sp;
@@ -278,79 +280,72 @@ void ControllerID::callback_low_level(const ros::TimerEvent& e) {
 		//Calculate the goal rates to achieve the right acceleration vector
 		//Eigen::VectorXd e_w = vector_interlace(calc_ang_error(gr_sp, g.linear()), Eigen::Vector3d::Zero() - bw);
 		//Eigen::Vector3d wa = Kw*e_w;
-		Eigen::Vector3d w_goal = calc_ang_error(gr_sp, state_.g().linear());
-		Eigen::Vector3d wa = p_.gain_rotation_rate_p*(w_goal - state_.bw());
+		//Eigen::Vector3d w_goal = calc_ang_error(gr_sp, state_.g().linear());
+		//Eigen::Vector3d wa = p_.gain_rotation_rate_p*(w_goal - state_.bw());
+		Eigen::Vector3d e_R = calc_ang_error(gr_sp, s_.g().linear());
+		Eigen::Vector3d w_goal;
+
+		//XXX: This is more of a hack to reuse the pid control, but it works out (I think...)
+		// Only proportional gains should be used for this controller
+		w_goal.x() = ang_pid_x_.step(dt, e_R.x(), 0.0);
+		w_goal.y() = ang_pid_y_.step(dt, e_R.y(), 0.0);
+		w_goal.z() = ang_pid_z_.step(dt, e_R.z(), 0.0);
+
+		//Calculate the normalized angular accelerations
+		Eigen::Vector3d wa;
+		wa.x() = rate_pid_x_.step(dt, w_goal.x(), s_.bw().x());
+		wa.y() = rate_pid_y_.step(dt, w_goal.y(), s_.bw().y());
+		wa.z() = rate_pid_z_.step(dt, w_goal.z(), s_.bw().z());
 
 		//Calculate the required manipulator accelerations
 		//Eigen::VectorXd e_r = vector_interlace(r_sp - r, Eigen::VectorXd::Zero(p_.manip_num) - rd);
 		//Eigen::VectorXd ra = Kr*e_r;
 
 		//Calculate Abz such that it doesn't apply too much thrust until fully rotated
-		Eigen::Vector3d body_z = state_.g().linear()*Eigen::Vector3d::UnitZ();
-		double az_scale = state_.a_sp().z() / body_z.z();
+		Eigen::Vector3d body_z = s_.g().linear()*Eigen::Vector3d::UnitZ();
+		double az_scale = a_sp_.z() / body_z.z();
 		Eigen::Vector3d abz_accel = az_scale*body_z;
 
 		//Need to copy this data to access it directly
-		Eigen::VectorXd r = state_.r();
-		Eigen::VectorXd rd = state_.rd();
-		Eigen::VectorXd rdd = state_.rdd();
-		Eigen::VectorXd bw = state_.bw();
-		Eigen::VectorXd bv = state_.bv();
+		Eigen::VectorXd r = s_.r();
+		Eigen::VectorXd rd = s_.rd();
+		Eigen::VectorXd rdd = s_.rdd();
+		Eigen::VectorXd bw = s_.bw();
+		Eigen::VectorXd bv = s_.bv();
 
-		Eigen::VectorXd ua = Eigen::VectorXd::Zero(state_.num());	//vd(6,1) + rdd(2,1)
+		int num_states = solver_.num_states();
+		Eigen::VectorXd tau = Eigen::VectorXd::Zero(num_states);
+		Eigen::VectorXd ua = Eigen::VectorXd::Zero(num_states);
 		ua(0) = 0.0;
 		ua(1) = 0.0;
 		ua(2) = abz_accel.norm();
 		//ua(2) = A.norm();
 		ua.segment(3,3) << wa;
-		ua.segment(6,p_.manip_num) << rdd;
+		ua.segment(6,p_.get_dynamic_joint_num()) << rdd;
 
-		//ROS_INFO_STREAM("Error: " << A.z() - Abz_accel.z() << std::endl << "Linear: " << A.norm() << std::endl << "Body: " << Abz_accel.norm());
+		if(solver_.solve_inverse_dynamics(tau, ua)) {
+			//XXX: Hardcoded for hex in function because lazy
+			Eigen::MatrixXd M = Eigen::MatrixXd::Zero(p_.motor_num() + p_.get_dynamic_joint_num(), num_states);
+			calc_motor_map(M);
 
-		//Calculate dynamics matricies
-		Eigen::MatrixXd D = Eigen::MatrixXd::Zero(state_.num(), state_.num());
-		Eigen::MatrixXd C = Eigen::MatrixXd::Zero(state_.num(), state_.num());
-		Eigen::MatrixXd L = Eigen::MatrixXd::Zero(state_.num(), state_.num());
+			Eigen::MatrixXd u = M*tau;
 
-		//XXX: Take care!
-		double l0 = joints_[0].d();
-		double l1 = joints_[1].r();
+			//Calculate goal PWM values to generate desired torque
+			for(int i=0; i<p_.motor_num(); i++) {
+				pwm_out[i] = map_pwm(u(i));
+			}
 
-		calc_Dq(D,
-				p_.I0x, p_.I0y, p_.I0z,
-				p_.I1x, p_.I1y, p_.I1z,
-				p_.I2x, p_.I2y, p_.I2z,
-				l0, l1, p_.lc1, p_.lc2,
-				p_.m0, p_.m1, p_.m2,
-				r(0), r(1));
+			if(param_reference_feedback_)
+				message_output_feedback(e.current_real, g_sp_, a_sp_, gr_sp, w_goal, ua);
 
-		calc_Cqqd(C,
-				  p_.I1x, p_.I1y,
-				  p_.I2x, p_.I2y,
-				  bv(0), bv(1), bv(2), bw(0), bw(1), bw(2),
-				  l0, l1, p_.lc1, p_.lc2,
-				  p_.m1, p_.m2,
-				  r(0), rd(0), r(1), rd(1));
-
-		Eigen::VectorXd tau = D*ua + (C + L)*state_.qd();
-
-		//XXX: Hardcoded for hex in function because lazy
-		Eigen::MatrixXd M = Eigen::MatrixXd::Zero(p_.motor_num + p_.manip_num, state_.num());
-		calc_motor_map(M);
-
-		Eigen::MatrixXd u = M*tau;
-
-		//Calculate goal PWM values to generate desired torque
-		for(int i=0; i<p_.motor_num; i++) {
-			pwm_out[i] = map_pwm(u(i));
+			success = true;
 		}
+	}
 
-		if(param_reference_feedback_)
-			message_output_feedback(e.current_real, state_.g_sp(), state_.a_sp(), gr_sp, w_goal, ua);
-	} else {
+	if(!success) {
 		//Output minimums until the input info is available
-		for(int i=0; i<p_.motor_num; i++) {
-			pwm_out[i] = p_.pwm_min;
+		for(int i=0; i<p_.motor_num(); i++) {
+			pwm_out[i] = p_.pwm_min();
 		}
 	}
 
@@ -383,38 +378,6 @@ Eigen::Vector3d ControllerID::calc_goal_base_velocity(const Eigen::Vector3d &gev
 
 	//Only care about the translation movements
 	return gev_sp - Ve;
-}
-
-Eigen::Matrix3d ControllerID::extract_yaw_component(const Eigen::Matrix3d r) {
-	Eigen::Vector3d sp_x = Eigen::Vector3d::UnitX();
-	Eigen::Vector3d sp_y = Eigen::Vector3d::UnitY();
-
-	//As long as y isn't straight up
-	if(r.col(1) != Eigen::Vector3d::UnitZ()) {
-		//If we have ||roll|| > 90Deg
-		Eigen::Vector3d y_c;
-		if(r(2,2) > 0.0) {
-			y_c = r.col(1);
-		} else {
-			y_c = -r.col(1);
-		}
-
-		sp_x = y_c.cross(Eigen::Vector3d::UnitZ());
-		sp_y = Eigen::Vector3d::UnitZ().cross(sp_x);
-	} else { //Use X-axis for the edge-case
-		Eigen::Vector3d x_c = r.col(0);
-
-		sp_y = Eigen::Vector3d::UnitZ().cross(x_c);
-		sp_x = sp_y.cross(Eigen::Vector3d::UnitZ());
-	}
-
-	//Get the pure yaw rotation
-	Eigen::Matrix3d ry;
-	ry << sp_x.normalized(),
-		  sp_y.normalized(),
-		  Eigen::Vector3d::UnitZ();
-
-	return ry;
 }
 
 Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R) {
@@ -486,7 +449,7 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 	e_R(1) = double_clamp(e_R(1), -rp_max, rp_max);
 	e_R(2) = double_clamp(e_R(2), -y_max, y_max);
 
-	return p_.gain_rotation_ang_p*e_R;
+	return e_R;
 }
 
 int16_t ControllerID::map_pwm(double val) {
@@ -495,11 +458,10 @@ int16_t ControllerID::map_pwm(double val) {
 	double c = double_clamp(val, 0.0, 1.0);
 
 	//Scale c to the pwm values
-	return int16_t((p_.pwm_max - p_.pwm_min)*c) + p_.pwm_min;
+	return int16_t((p_.pwm_max() - p_.pwm_min())*c) + p_.pwm_min();
 }
 
-/*
-void ControllerAug::calc_motor_map(Eigen::MatrixXd &M) {
+void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 	//TODO: This all needs to be better defined generically
 	double arm_ang = M_PI / 3.0;
 	double la = p_.base_arm_length();
@@ -522,34 +484,8 @@ void ControllerAug::calc_motor_map(Eigen::MatrixXd &M) {
 		  0.0, 0.0,  kT, -ktx, -kty,  km,
 		  0.0, 0.0,  kT,  ktx,  kty, -km;
 
-	M << cm, Eigen::MatrixXd::Zero(p_.motor_num(), p_.manip_num()),
-		 Eigen::MatrixXd::Zero(p_.manip_num, 6), Eigen::MatrixXd::Identity(p_.manip_num(), p_.manip_num());
-}
-*/
-void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
-	//TODO: This all needs to be better defined generically
-	double arm_ang = M_PI / 3.0;
-
-	//Calculate the thrust curve
-	double rpm_max = p_.motor_kv * state_.voltage();	//Get the theoretical maximum rpm at the current battery voltage
-	double thrust_max = p_.rpm_thrust_m * rpm_max + p_.rpm_thrust_c;	//Use the RPM to calculate maximum thrust
-
-	double kT = 1.0 / (p_.motor_num * thrust_max);
-	double ktx = 1.0 / (2.0 * p_.la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * thrust_max);
-	double kty = 1.0 / (4.0 * p_.la * std::cos(arm_ang  / 2.0) * thrust_max);
-	double km = -1.0 / (p_.motor_num * p_.motor_drag_max);
-
-	//Generate the copter map
-	Eigen::MatrixXd cm = Eigen::MatrixXd::Zero(p_.motor_num, 6);
-	cm << 0.0, 0.0,  kT, -ktx,  0.0, -km,
-		  0.0, 0.0,  kT,  ktx,  0.0,  km,
-		  0.0, 0.0,  kT,  ktx, -kty, -km,
-		  0.0, 0.0,  kT, -ktx,  kty,  km,
-		  0.0, 0.0,  kT, -ktx, -kty,  km,
-		  0.0, 0.0,  kT,  ktx,  kty, -km;
-
-	M << cm, Eigen::MatrixXd::Zero(p_.motor_num, p_.manip_num),
-		 Eigen::MatrixXd::Zero(p_.manip_num, 6), Eigen::MatrixXd::Identity(p_.manip_num, p_.manip_num);
+	M << cm, Eigen::MatrixXd::Zero(p_.motor_num(), p_.get_dynamic_joint_num()),
+		 Eigen::MatrixXd::Zero(p_.get_dynamic_joint_num(), 6), Eigen::MatrixXd::Identity(p_.get_dynamic_joint_num(), p_.get_dynamic_joint_num());
 }
 
 void ControllerID::message_output_control(const ros::Time t, const std::vector<uint16_t> &pwm) {

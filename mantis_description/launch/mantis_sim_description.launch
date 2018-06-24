@@ -6,12 +6,15 @@
 
 	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_params.yaml"/>
 
-	<node pkg="mantis_description" type="mantis_description_node" name="mantis_description"
+	<node pkg="mantis_description" type="mantis_description_param_node" name="mantis_params"
+	ns="/mantis_uav" clear_params="true" output="screen"/>
+
+	<node pkg="mantis_state" type="mantis_state_node" name="mantis_state"
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="update_rate" value="100.0" />
 		<param name="use_odom_angular_velocity" value="false" />
 
-		<remap from="state/joints" to="joint_states"/>
+		<remap from="state/joints" to="joint_states" />
 	</node>
 
 	<!-- visualization -->

@@ -45,16 +45,29 @@ ForwardKinematics::ForwardKinematics() :
 	nhp_.param("end_effector_pose", param_do_end_effector_pose_, param_do_end_effector_pose_);
 
 	if( p_.wait_for_params() ) {
-		//Configure publishers and subscribers
-		pub_end_ = nh_.advertise<geometry_msgs::PoseStamped>("pose/end_effector", 10);
-		pub_viz_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization", 10, true);
+		bool ready = false;
 
-		ROS_INFO("Configuring static mounts...");
-		do_reset();
+		while(ros::ok() && (!ready)) {
+			ready = s_.ok();
 
-		timer_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ForwardKinematics::callback_timer, this );
+			ros::spinOnce();
+			ros::Rate(param_rate_).sleep();
+		}
 
-		ROS_INFO("Forward kinematics running!");
+		if(ready) {
+			//Configure publishers and subscribers
+			pub_end_ = nh_.advertise<geometry_msgs::PoseStamped>("pose/end_effector", 10);
+			pub_viz_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization", 10, true);
+
+			ROS_INFO("Configuring static mounts...");
+			do_reset();
+
+			timer_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ForwardKinematics::callback_timer, this );
+
+			ROS_INFO("Forward kinematics running!");
+		} else {
+			ros::shutdown();
+		}
 	} else {
 		ros::shutdown();
 	}

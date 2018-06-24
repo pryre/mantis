@@ -18,39 +18,43 @@ MantisStateServer::MantisStateServer( void ) :
 	nhp_("~"),
 	p_(&nh_),
 	param_use_odom_avel_(false),
-	param_rate_(100.0),
+	param_rate_(0.0),
 	time_last_est_(0) {
 
 	nhp_.param("use_odom_angular_velocity", param_use_odom_avel_, param_use_odom_avel_);
 	nhp_.param("update_rate", param_rate_, param_rate_);
 
 	if( p_.wait_for_params() ) {
-		//Current States
-		g_ = Eigen::Affine3d::Identity();
-		bv_ = Eigen::Vector3d::Zero();
-		bw_ = Eigen::Vector3d::Zero();
-		ba_ = Eigen::Vector3d::Zero();
-		bwa_ = Eigen::Vector3d::Zero();
+		if(param_rate_ > 0.0) {
+			//Current States
+			g_ = Eigen::Affine3d::Identity();
+			bv_ = Eigen::Vector3d::Zero();
+			bw_ = Eigen::Vector3d::Zero();
+			ba_ = Eigen::Vector3d::Zero();
+			bwa_ = Eigen::Vector3d::Zero();
 
-		//Additional state information
-		voltage_ = 0.0;
-		mav_ready_ = false;
+			//Additional state information
+			voltage_ = 0.0;
+			mav_ready_ = false;
 
-		//Parameter-reliant states
-		r_ = Eigen::VectorXd::Zero(p_.get_dynamic_joint_num());
-		rd_ = Eigen::VectorXd::Zero(p_.get_dynamic_joint_num());
-		rdd_ = Eigen::VectorXd::Zero(p_.get_dynamic_joint_num());
+			//Parameter-reliant states
+			r_ = Eigen::VectorXd::Zero(p_.get_dynamic_joint_num());
+			rd_ = Eigen::VectorXd::Zero(p_.get_dynamic_joint_num());
+			rdd_ = Eigen::VectorXd::Zero(p_.get_dynamic_joint_num());
 
-		sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &MantisStateServer::callback_state_odom, this );
-		sub_state_battery_ = nh_.subscribe<sensor_msgs::BatteryState>( "state/battery", 10, &MantisStateServer::callback_state_battery, this );
-		sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &MantisStateServer::callback_state_joints, this );
-		sub_state_imu_ = nh_.subscribe<sensor_msgs::Imu>( "state/imu_data", 10, &MantisStateServer::callback_state_imu, this );
-		sub_state_mav_ = nh_.subscribe<mavros_msgs::State>( "state/mav_state", 10, &MantisStateServer::callback_state_mav, this );
+			sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>( "state/odom", 10, &MantisStateServer::callback_state_odom, this );
+			sub_state_battery_ = nh_.subscribe<sensor_msgs::BatteryState>( "state/battery", 10, &MantisStateServer::callback_state_battery, this );
+			sub_state_joints_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &MantisStateServer::callback_state_joints, this );
+			sub_state_imu_ = nh_.subscribe<sensor_msgs::Imu>( "state/imu_data", 10, &MantisStateServer::callback_state_imu, this );
+			sub_state_mav_ = nh_.subscribe<mavros_msgs::State>( "state/mav_state", 10, &MantisStateServer::callback_state_mav, this );
 
-		pub_state_ = nh_.advertise<mantis_msgs::State>("state", 10);
-		timer_estimator_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &MantisStateServer::callback_estimator, this );
+			pub_state_ = nh_.advertise<mantis_msgs::State>("state", 10);
+			timer_estimator_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &MantisStateServer::callback_estimator, this );
 
-		ROS_INFO("Mantis state server running!");
+			ROS_INFO("Mantis state server running!");
+		} else {
+			ROS_FATAL("State server not started, no update rate given");
+		}
 	}
 }
 

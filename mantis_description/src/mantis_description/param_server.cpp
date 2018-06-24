@@ -18,10 +18,23 @@ MantisParamServer::MantisParamServer( void ) :
 	la_(0.0),
 	body_num_(1) {
 
-	pub_params_ = nh_.advertise<mantis_msgs::Params>("params", 1, true);
-	srv_reload_ = nh_.advertiseService("reload_params", &MantisParamServer::reload, this);
+	bool ready = false;
 
-	update();
+	//Wait for ros time before initializing the servers
+	while(ros::ok() && (!ready) ) {
+		ready = ros::Time::now() == ros::Time(0);
+		ros::spinOnce();
+		ros::Rate(5).sleep();
+	}
+
+	if(ready) {
+		pub_params_ = nh_.advertise<mantis_msgs::Params>("params", 1, true);
+		srv_reload_ = nh_.advertiseService("reload_params", &MantisParamServer::reload, this);
+
+		update();
+
+		ROS_INFO("Mantis param server started!");
+	}
 }
 
 MantisParamServer::~MantisParamServer() {

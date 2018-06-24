@@ -9,6 +9,7 @@ add_definitions(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  mavros_msgs
   geometry_msgs
   pid_controller_lib
   mantis_description

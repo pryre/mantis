@@ -7,7 +7,7 @@
 	</group>
 
 	<!-- LOW LEVEL CONTROL -->
-	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_params_aug.yaml"/>
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_controller_aug_param.yaml"/>
 
 	<node pkg="mantis_controller_aug" type="mantis_controller_aug_node" name="controller_aug"
 	ns="/mantis_uav" clear_params="true" output="screen">
@@ -17,9 +17,6 @@
 		<param name="high_level_rate" value="20.0" />
 		<param name="low_level_rate" value="200.0" />
 
-		<param name="use_imu_state" value="true" />
-		<param name="use_mav_state" value="true" />
-		<param name="control_settings/wait_for_path" value="false" />
 		<param name="control_settings/track_end" value="false" />
 		<param name="control_settings/accurate_end_tracking" value="true" />
 		<param name="control_settings/force_compensation" value="true" />
