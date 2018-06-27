@@ -13,6 +13,10 @@
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="update_rate" value="100.0" />
 		<param name="use_odom_angular_velocity" value="false" />
+
+		<remap from="state/imu_data" to="/mavros/imu/data"/>
+		<remap from="state/mav_state" to="/mavros/state"/>
+		<remap from="state/battery" to="/mavros/battery"/>
 	</node>
 
 	<!-- visualization -->

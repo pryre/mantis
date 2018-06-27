@@ -7,13 +7,26 @@
 	</group>
 
 	<!-- HIGH LEVEL CONTROL -->
+	<node pkg="mantis_path" type="mantis_path_node" name="mantis_path"
+	ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="frame_id" value="map" />
+		<param name="model_id" value="mantis_uav" />
+		<param name="path_rate" value="50.0" />
+
+		<param name="control_settings/track_end" value="false" />
+		<param name="control_settings/accurate_end_tracking" value="true" />
+
+		<remap from="mantis_path/reference/path" to="path"/>
+		<remap from="mantis_path/output/traj" to="mavel/reference/traj"/>
+	</node>
+
 	<node pkg="mavel" type="mavel_node" name="mavel" clear_params="true" output="screen" ns="mantis_uav">
 		<!-- Controller Parameters /-->
 		<rosparam command="load" file="$(find mantis_description)/config/mavel_params.yaml"/>
 
-		<remap from="mavel/goal/attitude" to="/mavros/setpoint_raw/attitude"/>
-		<remap from="mavel/reference/odometry" to="/mantis_uav/odom"/>
-		<remap from="mavel/reference/state" to="/mavros/state"/>
+		<remap from="mavel/command/attitude" to="/mavros/setpoint_raw/attitude"/>
+		<remap from="mavel/state/odometry" to="/mantis_uav/state/odom"/>
+		<remap from="mavel/state/mav_state" to="/mavros/state"/>
 	</node>
 
 	<!-- LOW LEVEL CONTROL -->
@@ -39,7 +52,7 @@
 		<param name="frame_world" value="map" type="str"/>
 		<param name="frame_mav" value="mantis" type="str"/>
 
-		<param name="topic_odom" value="/mantis_uav/odom" type="str"/>
+		<param name="topic_odom" value="/mantis_uav/state/odom" type="str"/>
 		<param name="topic_pose" value="/vicon/mantis/mantis" type="str"/>
 
 		<param name="velocity_interval" value="0.25" type="double"/>

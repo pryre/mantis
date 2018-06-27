@@ -22,7 +22,7 @@ MantisParamServer::MantisParamServer( void ) :
 
 	//Wait for ros time before initializing the servers
 	while(ros::ok() && (!ready) ) {
-		ready = ros::Time::now() == ros::Time(0);
+		ready = ros::Time::now() != ros::Time(0);
 		ros::spinOnce();
 		ros::Rate(5).sleep();
 	}

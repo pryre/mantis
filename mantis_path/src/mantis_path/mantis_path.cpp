@@ -34,12 +34,9 @@ MantisPath::MantisPath() :
 
 	bool success = false;
 
-	while(ros::ok) {
-		if(p_.ok() && s_.ok()) {
+	while(ros::ok() && (!success) ) {
+		if(p_.ok() && s_.ok())
 			success = true;
-
-			break;
-		}
 
 		ros::spinOnce();
 		ros::Rate(5).sleep();
