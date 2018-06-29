@@ -57,6 +57,7 @@ mantis_msgs::Params MantisParamServer::get_params( void ) {
 	p.header.stamp = load_time_;
 	p.header.frame_id = "mantis_uav";
 
+	p.airframe_type = airframe_type_;
 	p.pwm_min = pwm_min_;
 	p.pwm_max = pwm_max_;
 	p.base_arm_length = la_;
@@ -89,6 +90,8 @@ void MantisParamServer::load( void ) {
 	nh_.param("motor/rpm_thrust_curve/m", rpm_thrust_m_, rpm_thrust_m_);
 	nh_.param("motor/rpm_thrust_curve/c", rpm_thrust_c_, rpm_thrust_c_);
 	nh_.param("motor/drag_max", motor_drag_max_, motor_drag_max_);
+
+	nh_.param("airframe", airframe_type_, airframe_type_);
 
 	nh_.param("pwm/min", pwm_min_, pwm_min_);
 	nh_.param("pwm/max", pwm_max_, pwm_max_);
@@ -144,6 +147,14 @@ void MantisParamServer::load( void ) {
 	ROS_INFO("  kv: %0.4f", motor_kv_);
 	ROS_INFO("  T = %0.4fxRPM + %0.4f", rpm_thrust_m_, rpm_thrust_c_);
 	ROS_INFO("  Dmax = %0.4f", motor_drag_max_);
+
+
+	ROS_INFO("airframe_type: %s", airframe_type_.c_str());
+	if( (airframe_type_ != "hex_x4") &&
+		(airframe_type_ != "quad_x4") ) {
+
+		ROS_WARN("Specified airframe type may not be supported!");
+	}
 
 	ROS_INFO("pwm: [%i, %i]", pwm_min_, pwm_max_);
 

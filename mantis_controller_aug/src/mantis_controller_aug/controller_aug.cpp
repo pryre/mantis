@@ -62,13 +62,6 @@ ControllerAug::ControllerAug() :
 	gv_sp_ = Eigen::Vector3d::Zero();
 	a_sp_ = Eigen::Vector3d::Zero();
 	status_high_level_ = false;
-	mixer_ = Eigen::MatrixXd(6,4);
-	mixer_ << 1.0,	-1.0,	 0.0,	 1.0, // Motor 1
-			  1.0,	 1.0,	 0.0,	-1.0, // Motor 2
-			  1.0,	 0.5,	-1.0,	 1.0, // Motor 3
-			  1.0,	-0.5,	 1.0,	-1.0, // Motor 4
-			  1.0,	-0.5,	-1.0,	-1.0, // Motor 5
-			  1.0,	 0.5,	 1.0,	 1.0; // Motor 6
 	uaug_f_ = Eigen::Vector3d::Zero();
 
 	if(p_.wait_for_params()) {
@@ -306,46 +299,49 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 		Eigen::VectorXd tau = Eigen::VectorXd::Zero(num_states);
 
 		if(param_force_compensation_) {
-			double arm_ang = M_PI / 3.0;
-			double la = p_.base_arm_length();
-			double ktx = 1.0 / (2.0 * la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * thrust_single);
-			double kty = 1.0 / (4.0 * la * std::cos(arm_ang  / 2.0) * thrust_single);
-			double km = -1.0 / (p_.motor_num() * p_.motor_drag_max());
+			double kT = 0.0;
+			double ktx = 0.0;
+			double kty = 0.0;
+			double ktz = 0.0;
 
-			//Need to copy this data to access it directly
-			//Eigen::VectorXd r = s_.r();
-			//Eigen::VectorXd rd = s_.rd();
-			//Eigen::VectorXd rdd = s_.rdd();
-			//Eigen::VectorXd bw = s_.bw();
-			//Eigen::VectorXd bv = s_.bv();
+			if( solver_.calculate_thrust_coeffs(kT, ktx, kty, ktz) ) {
+				//Need to copy this data to access it directly
+				//Eigen::VectorXd r = s_.r();
+				//Eigen::VectorXd rd = s_.rd();
+				//Eigen::VectorXd rdd = s_.rdd();
+				//Eigen::VectorXd bw = s_.bw();
+				//Eigen::VectorXd bv = s_.bv();
 
-			//Use this to account for acceleration / translational forces
-			//  but assume that all rotations want to maintain 0 acceleration
-			Eigen::VectorXd ua = Eigen::VectorXd::Zero(num_states);	//vd(6,1) + rdd(2,1)
-			//ua(0) = 0.0;
-			//ua(1) = 0.0;
-			ua(2) = abz_accel.norm();
-			//ua.segment(3,3) << Eigen::Vector3d::Zero();
-			//ua.segment(6,p_.manip_num) << rdd;
+				//Use this to account for acceleration / translational forces
+				//  but assume that all rotations want to maintain 0 acceleration
+				Eigen::VectorXd ua = Eigen::VectorXd::Zero(num_states);	//vd(6,1) + rdd(2,1)
+				//ua(0) = 0.0;
+				//ua(1) = 0.0;
+				ua(2) = abz_accel.norm();
+				//ua.segment(3,3) << Eigen::Vector3d::Zero();
+				//ua.segment(6,p_.manip_num) << rdd;
 
-			if(solver_.solve_inverse_dynamics(tau, ua)) {
-				//Normalize and add in the augmentation force calcs
-				Eigen::Vector3d uaug = Eigen::Vector3d::Zero();
-				uaug.x() = tau(3)*ktx;//roll accel compensation
-				uaug.y() = tau(4)*kty;//pitch accel compensation
-				uaug.z() = tau(5)*km;//yaw accel compensation
+				if(solver_.solve_inverse_dynamics(tau, ua)) {
+					//Normalize and add in the augmentation force calcs
+					Eigen::Vector3d uaug = Eigen::Vector3d::Zero();
+					uaug.x() = tau(3)*ktx;//roll accel compensation
+					uaug.y() = tau(4)*kty;//pitch accel compensation
+					uaug.z() = tau(5)*ktz;//yaw accel compensation
 
-				//Low level filter to help reduce issues caused by low level oscilations in the other controllers
-				uaug_f_ = param_force_comp_alpha_*uaug + (1.0-param_force_comp_alpha_)*uaug_f_;
+					//Low level filter to help reduce issues caused by low level oscilations in the other controllers
+					uaug_f_ = param_force_comp_alpha_*uaug + (1.0-param_force_comp_alpha_)*uaug_f_;
 
-				uan.segment(1,3) += uaug_f_;
+					uan.segment(1,3) += uaug_f_;
+				} else {
+					ROS_ERROR_THROTTLE(2.0, "Error solving inverse dynamics");
+				}
 			} else {
-				ROS_ERROR_THROTTLE(2.0, "Error solving inverse dynamics");
+				ROS_ERROR_THROTTLE(2.0, "Unable to calculate thrust coefficients!");
 			}
 		}
 
 		//Perform the motor mixing
-		Eigen::MatrixXd u = mixer_*uan;
+		Eigen::MatrixXd u = solver_.get_mixer()*uan;
 
 		//TODO: Should do some input scaling and constraint checking
 

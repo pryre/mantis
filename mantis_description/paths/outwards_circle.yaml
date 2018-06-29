@@ -1,5 +1,5 @@
 start:
-  position: [0.0, 0.0, 2.0]
+  position: [0.0, 0.0, 1.0]
   alpha: 0.0
   #theta: 0.0
 
@@ -26,32 +26,33 @@ path:
     velocity: 0.2
     radius: 2.0
     alpha: 0.392699082
-    theta: 0.0
   s5: #travel around circle
     present: true
-    alpha: 5.497787143
+    alpha: 2.748893571
     radius: 2.0
-    theta: 0.0
-  s6: #Slow down for end circle
+  s6: #travel around circle
+    present: true
+    alpha: 2.748893571
+    radius: 2.0
+  s7: #Slow down for end circle
     present: true
     velocity: 0.05
     radius: 2.0
     alpha: 0.392699082
-    theta: 0.0
-  s7: #Slow turn circle end
+  s8: #Slow turn circle end
     present: true
     radius: 0.1
     alpha: 1.571
     theta: 0.0
-  s8: #Accelerate
+  s9: #Accelerate
     present: true
     velocity: 0.2
     length: 0.2
-  s9: #Cruise to circle start
+  s10: #Cruise to circle start
     present: true
     velocity: 0.2
     length: 0.6
-  s10: #Slow down to circle start
+  s11: #Slow down to circle start
     present: true
     velocity: 0.0
     length: 0.2

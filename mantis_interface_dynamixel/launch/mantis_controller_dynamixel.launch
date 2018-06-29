@@ -1,0 +1,17 @@
+<?xml version='1.0'?>
+<launch>
+	<node pkg="mantis_interface_dynamixel" type="interface_node" name="dynamixel_interface"
+		ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="port_name" value="/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A10668JA-if00-port0" type="str" />
+		<param name="port_baud" value="3000000" type="int" />
+		<param name="protocol" value="2.0" type="double" />
+
+		<param name="frame_id" value="mantis" type="str" />
+		<param name="update_rate" value="25.0" type="double" />
+
+		<remap from="dynamixel_interface/joint_states" to="state/joints" />
+		<remap from="dynamixel_interface/joint_setpoints" to="command/joints" />
+
+		<rosparam command="load" file="$(find mantis_dynamixel_interface)/config/mantis_dynamixel_interface.yaml"/>
+	</node>
+</launch>

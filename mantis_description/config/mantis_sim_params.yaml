@@ -10,6 +10,8 @@ motor:
     c: -1.8044052
   drag_max: 1.2 # N
 
+airframe: "hex_x"
+
 pwm:
   min: 1000
   max: 2000

@@ -67,7 +67,6 @@ class ControllerAug {
 		pidController rate_pid_y_;
 		pidController rate_pid_z_;
 
-		Eigen::MatrixXd mixer_;
 		Eigen::Vector3d uaug_f_;
 
 	public:

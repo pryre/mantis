@@ -5,6 +5,7 @@
 #include <mantis_kinematics/solver.h>
 
 #include <mantis_description/se_tools.h>
+#include <mantis_description/mixer_maps.h>
 #include <mantis_kinematics/dynamics/calc_Dq.h>
 #include <mantis_kinematics/dynamics/calc_Cqqd.h>
 #include <mantis_kinematics/dynamics/calc_Lqd.h>
@@ -223,6 +224,52 @@ bool MantisSolver::calculate_gxy( Eigen::Affine3d &g, const unsigned int x, cons
 		} else {
 			ROS_ERROR("Error: MantisSolver::calculate_gxy(): frame inputs invalid");
 		}
+	}
+
+	return success;
+}
+
+const Eigen::MatrixXd& MantisSolver::get_mixer( void ) {
+	//Check if mixer needs to be regenerated
+	if(mixer_name_ != p_->airframe_type()) {
+		mixer_name_ = p_->airframe_type();
+
+		if(mixer_name_ == "quad_x4") {
+			mixer_generate_quad_x4(mixer_);
+		} else if(mixer_name_ == "hex_x6") {
+			mixer_generate_hex_x6(mixer_);
+		}
+	}
+
+	return mixer_;
+}
+
+bool MantisSolver::calculate_thrust_coeffs( double &kT, double &ktx, double &kty, double &ktz) {
+	bool success = false;
+
+	double rpm_max = p_->motor_kv() * s_->voltage();	//Get the theoretical maximum rpm at the current battery voltage
+	double thrust_single = p_->rpm_thrust_m() * rpm_max + p_->rpm_thrust_c();	//Use the RPM to calculate maximum thrust
+
+	if(mixer_name_ == "quad_x4") {
+		double arm_ang = M_PI / 4.0; //45Deg from forward to arm rotation
+		double la = p_->base_arm_length();
+		kT = 1.0 / (p_->motor_num() * thrust_single);
+		ktx = 1.0 / (4.0 * la * std::sin(arm_ang) * thrust_single);
+		kty = ktx; //Airframe is symmetric
+		ktz = -1.0 / (p_->motor_num() * p_->motor_drag_max());
+
+		success = true;
+	} else if(mixer_name_ == "hex_x6") {
+		double arm_ang = (M_PI / 6.0); //30Deg from forward to arm rotation
+		double la = p_->base_arm_length();
+		kT = 1.0 / (p_->motor_num() * thrust_single);
+		ktx = 1.0 / (2.0 * la * (2.0 * std::sin(arm_ang) + 1.0) * thrust_single);
+		kty = 1.0 / (4.0 * la * std::cos(arm_ang) * thrust_single);
+		ktz = -1.0 / (p_->motor_num() * p_->motor_drag_max());
+
+		success = true;
+	} else {
+		ROS_ERROR("Error: MantisSolver::calculate_thrust_coeffs(): unknown mixer type");
 	}
 
 	return success;

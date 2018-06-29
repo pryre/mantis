@@ -1,14 +1,28 @@
 #Parameter file for the Mantis MM-UAV
 
+#Hex
+#motor:
+#  num: 6
+#  arm_len: 0.275 #m
+#  #thrust_max: 8.5 #11.6110736 # N
+#  kv: 660 #Rated to 960, but real is ~660 under load
+#  rpm_thrust_curve:
+#    m: 0.0011323 #0.0008318056
+#    c: -2.9235
+#  drag_max: 1.2 # N
+
+#Quad
 motor:
-  num: 6
-  arm_len: 0.275 #m
-  #thrust_max: 8.5 #11.6110736 # N
-  kv: 660 #Rated to 960, but real is ~660 under load
+  num: 4
+  arm_len: 0.225 #m
+  kv: 1240
   rpm_thrust_curve:
-    m: 0.0011323 #0.0008318056
-    c: -2.9235
+    m: 0.0005554685
+    c: -0.139859613
   drag_max: 1.2 # N
+
+
+airframe: "quad_x4"
 
 pwm:
   min: 1000
@@ -18,7 +32,7 @@ body:
   num: 3
   b0:
     mass:
-      m: 2.30 # Base + props
+      m: 1.44 #2.38 #Base + props
       Ixx: 0.02850657
       Iyy: 0.02821766
       Izz: 0.05416778

@@ -6,6 +6,8 @@
 
 #include <mantis_description/param_client.h>
 
+#include <string>
+
 MantisParamClient::MantisParamClient(ros::NodeHandle *nh) :
 	nh_(nh),
 	num_dynamic_joints_(0) {
@@ -41,6 +43,10 @@ void MantisParamClient::callback_params(const mantis_msgs::Params::ConstPtr &msg
 
 const ros::Time& MantisParamClient::time_updated( void ) {
 	return params_.header.stamp;
+}
+
+const std::string& MantisParamClient::airframe_type( void ) {
+	return params_.airframe_type;
 }
 
 const int16_t& MantisParamClient::pwm_min( void ) {

@@ -1,5 +1,6 @@
 std_msgs/Header header
 
+string airframe_type
 int16 pwm_min
 int16 pwm_max
 

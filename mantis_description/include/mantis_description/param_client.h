@@ -25,6 +25,7 @@ class MantisParamClient {
 
 		const ros::Time& time_updated( void );
 
+		const std::string& airframe_type( void );
 		const int16_t& pwm_min( void );
 		const int16_t& pwm_max( void );
 

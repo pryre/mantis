@@ -1,5 +1,5 @@
 start:
-  position: [0.0, 0.0, 2.0]
+  position: [0.0, 0.0, 1.0]
   alpha: 0.0
 
 path:
@@ -12,7 +12,7 @@ path:
     height: -0.1
   s2:
     present: true
-    height: -1.8
+    height: -0.8
   s3:
     present: true
     velocity: 0.0

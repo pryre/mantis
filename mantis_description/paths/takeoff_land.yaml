@@ -1,32 +1,30 @@
 start:
-  position: [0.0, 0.0, 2.0]
+  position: [0.0, 0.0, 0.0]
   alpha: 0.0
-  #theta: 0.0
 
 path:
   s0:
     present: true
-    velocity: 0.2
-    length: 0.2
+    velocity: 0.1
+    height: 0.1
   s1:
     present: true
-    length: 0.6
+    height: 0.8
   s2:
     present: true
     velocity: 0.0
-    length: 0.2
+    height: 0.1
   s3:
     present: true
-    hold_time: 5.0
-    alpha: 1.57
+    hold_time: 15.0
   s4:
     present: true
-    velocity: 0.2
-    length: 0.2
+    velocity: 0.1
+    height: -0.1
   s5:
     present: true
-    length: 0.6
+    height: -0.8
   s6:
     present: true
-    length: 0.2
     velocity: 0.0
+    height: -0.1

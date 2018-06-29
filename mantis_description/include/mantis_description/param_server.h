@@ -18,6 +18,7 @@ class MantisParamServer {
 
 		ros::Time load_time_;
 
+		std::string airframe_type_;
 		int pwm_min_;
 		int pwm_max_;
 

@@ -92,41 +92,42 @@ void ControllerAugLite::callback_est(const ros::TimerEvent& e) {
 	Eigen::Vector3d uaug_out = Eigen::Vector3d::Zero();
 
 	if(param_force_compensation_) {
-		//Calculate the desired amount of thrust to meet the accel vector
-		double arm_ang = M_PI / 3.0;
-		double la = p_.base_arm_length();
-		double rpm_max = p_.motor_kv() * s_.voltage();	//Get the theoretical maximum rpm at the current battery voltage
-		double thrust_single = p_.rpm_thrust_m() * rpm_max + p_.rpm_thrust_c();	//Use the RPM to calculate maximum thrust
-		double kT = 1.0 / (p_.motor_num() * thrust_single);
-		double ktx = 1.0 / (2.0 * la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * thrust_single);
-		double kty = 1.0 / (4.0 * la * std::cos(arm_ang  / 2.0) * thrust_single);
-		double km = -1.0 / (p_.motor_num() * p_.motor_drag_max());
+		double kT = 0.0;
+		double ktx = 0.0;
+		double kty = 0.0;
+		double ktz = 0.0;
 
-		double accel_z = cmd_throttle_ / (kT * p_.get_total_mass());
+		if( solver_.calculate_thrust_coeffs(kT, ktx, kty, ktz) ) {
+			double accel_z = cmd_throttle_ / (kT * p_.get_total_mass());
 
-		//Use this to account for acceleration / translational forces
-		//  but assume that all rotations want to maintain 0 acceleration
+			//Use this to account for acceleration / translational forces
+			//  but assume that all rotations want to maintain 0 acceleration
 
-		Eigen::VectorXd ua = Eigen::VectorXd::Zero(solver_.num_states());	//vd(6,1) + rdd(2,1)
-		//ua(0) = 0.0;
-		//ua(1) = 0.0;
-		ua(2) = accel_z;
-		//ua.segment(3,3) << Eigen::Vector3d::Zero();
-		//ua.segment(6,p_.manip_num) << rdd;
+			Eigen::VectorXd ua = Eigen::VectorXd::Zero(solver_.num_states());	//vd(6,1) + rdd(2,1)
+			//ua(0) = 0.0;
+			//ua(1) = 0.0;
+			ua(2) = accel_z;
+			//ua.segment(3,3) << Eigen::Vector3d::Zero();
+			//ua.segment(6,p_.manip_num) << rdd;
 
-		solved = solver_.solve_inverse_dynamics(tau, ua);
+			solved = solver_.solve_inverse_dynamics(tau, ua);
 
-		if(solved) {
-			//Normalize and add in the augmentation force calcs
-			Eigen::VectorXd uaug(3);
-			uaug(0) = tau(3)*ktx;//roll accel compensation
-			uaug(1) = tau(4)*kty;//pitch accel compensation
-			uaug(2) = tau(5)*km;//yaw accel compensation
+			if(solved) {
+				//Normalize and add in the augmentation force calcs
+				Eigen::VectorXd uaug(3);
+				uaug(0) = tau(3)*ktx;//roll accel compensation
+				uaug(1) = tau(4)*kty;//pitch accel compensation
+				uaug(2) = tau(5)*ktz;//yaw accel compensation
 
-			//Low level filter to help reduce issues caused by low level oscilations in the other controllers
-			uaug_f_ = param_force_comp_alpha_*uaug + (1.0-param_force_comp_alpha_)*uaug_f_;
+				//Low level filter to help reduce issues caused by low level oscilations in the other controllers
+				uaug_f_ = param_force_comp_alpha_*uaug + (1.0-param_force_comp_alpha_)*uaug_f_;
 
-			uaug_out = uaug_f_;
+				uaug_out = uaug_f_;
+			} else {
+				ROS_ERROR_THROTTLE(2.0, "Unable to solve inverse dynamics!");
+			}
+		} else {
+			ROS_ERROR_THROTTLE(2.0, "Unable to calculate thrust coefficients!");
 		}
 	}
 
