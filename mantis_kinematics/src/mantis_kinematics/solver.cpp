@@ -247,8 +247,12 @@ const Eigen::MatrixXd& MantisSolver::get_mixer( void ) {
 bool MantisSolver::calculate_thrust_coeffs( double &kT, double &ktx, double &kty, double &ktz) {
 	bool success = false;
 
-	double rpm_max = p_->motor_kv() * s_->voltage();	//Get the theoretical maximum rpm at the current battery voltage
-	double thrust_single = p_->rpm_thrust_m() * rpm_max + p_->rpm_thrust_c();	//Use the RPM to calculate maximum thrust
+	//double rpm_max = p_->motor_kv() * s_->voltage();	//Get the theoretical maximum rpm at the current battery voltage
+	//double thrust_single = p_->rpm_thrust_m() * rpm_max + p_->rpm_thrust_c();	//Use the RPM to calculate maximum thrust
+	double thrust_single = 0.8*9.80665;
+
+	if(mixer_name_ .empty())
+		mixer_name_ = p_->airframe_type();
 
 	if(mixer_name_ == "quad_x4") {
 		double arm_ang = M_PI / 4.0; //45Deg from forward to arm rotation

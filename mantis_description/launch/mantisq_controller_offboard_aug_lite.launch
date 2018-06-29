@@ -44,9 +44,10 @@
 		<param name="control_settings/force_comp_filter_a" value="true" />
 		<param name="control_settings/coriolis_compensation" value="true" />
 		<param name="control_settings/reference_feedback" value="true" />
-		<!--
+
+		<remap from="controller_aug/command/attitude" to="/mavros/setpoint_raw/attitude" />
 		<remap from="controller_aug/output/normalized_payload_torque" to="/mavros/actuator_control" />
-		-->
+
 	</node>
 
 	<!-- HELPER NODES -->

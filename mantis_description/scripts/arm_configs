@@ -13,7 +13,7 @@ def joint_pub():
 
 	rospy.init_node('talker', anonymous=True)
 
-	pub_js = rospy.Publisher('/mantis_uav/joint_setpoints', JointState, queue_size=10)
+	pub_js = rospy.Publisher('/mantis_uav/command/joints', JointState, queue_size=10)
 
 	duration_hold = rospy.Duration(float(sys.argv[1]))
 	update_rate = rospy.Rate(50)

@@ -1,0 +1,22 @@
+<?xml version='1.0'?>
+<launch>
+	<!-- LOW LEVEL CONTROL -->
+
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_controller_aug_params.yaml"/>
+
+	<node pkg="mantis_controller_aug" type="controller_aug_lite_node" name="controller_aug_test"
+	ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="frame_id" value="map" />
+		<param name="model_id" value="mantis_uav" />
+		<param name="est_rate" value="200.0" />
+
+		<param name="control_settings/force_compensation" value="true" />
+		<param name="control_settings/force_comp_filter_a" value="true" />
+		<param name="control_settings/coriolis_compensation" value="false" />
+		<param name="control_settings/reference_feedback" value="true" />
+
+		<remap from="controller_aug_test/command/attitude" to="/mavros/setpoint_raw/attitude" />
+
+	</node>
+
+</launch>

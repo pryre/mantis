@@ -99,14 +99,13 @@ void ControllerAugLite::callback_est(const ros::TimerEvent& e) {
 
 		if( solver_.calculate_thrust_coeffs(kT, ktx, kty, ktz) ) {
 			double accel_z = cmd_throttle_ / (kT * p_.get_total_mass());
-
 			//Use this to account for acceleration / translational forces
 			//  but assume that all rotations want to maintain 0 acceleration
 
 			Eigen::VectorXd ua = Eigen::VectorXd::Zero(solver_.num_states());	//vd(6,1) + rdd(2,1)
 			//ua(0) = 0.0;
 			//ua(1) = 0.0;
-			ua(2) = accel_z;
+			ua(2) = 9.80665;//accel_z;
 			//ua.segment(3,3) << Eigen::Vector3d::Zero();
 			//ua.segment(6,p_.manip_num) << rdd;
 

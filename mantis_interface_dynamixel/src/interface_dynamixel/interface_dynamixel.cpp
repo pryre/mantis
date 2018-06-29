@@ -46,7 +46,7 @@ InterfaceDynamixel::InterfaceDynamixel() :
 	nhp_.param("update_rate", param_update_rate_, param_update_rate_);
 
 	sub_setpoints_ = nh_.subscribe<sensor_msgs::JointState>( "joint_setpoints", 10, &InterfaceDynamixel::callback_setpoints, this );
-	pub_states_ = nh_.advertise<sensor_msgs::JointState>( "joints_states", 10);
+	pub_states_ = nh_.advertise<sensor_msgs::JointState>( "joint_states", 10);
 
 
 	//Dynamixel Setup
