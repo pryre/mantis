@@ -5,8 +5,14 @@
 #include <mantis_msgs/BodyInertial.h>
 #include <dh_parameters/JointDescription.h>
 
+#include <eigen3/Eigen/Dense>
+
 #include <string>
 #include <vector>
+
+enum class MantisMixers {
+
+};
 
 class MantisParamClient {
 	private:
@@ -15,6 +21,8 @@ class MantisParamClient {
 		mantis_msgs::Params params_;
 
 		int num_dynamic_joints_;
+
+		Eigen::MatrixXd mixer_;
 
 	public:
 		MantisParamClient( ros::NodeHandle *nh );
@@ -43,6 +51,8 @@ class MantisParamClient {
 		int get_joint_num( void );
 		int get_dynamic_joint_num( void );
 		const dh_parameters::JointDescription& joint(const unsigned int i);
+
+		const Eigen::MatrixXd& get_mixer( void );
 
 		bool ok( void );
 

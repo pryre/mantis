@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<robot name="mantis_uav" xmlns:xacro="http://ros.org/wiki/xacro">
+	<!-- Constants -->
+	<xacro:property name="pi" value="3.1415926535897931"/>
+
+	<!-- Import macros -->
+	<xacro:include filename="$(find mantis_description)/urdf/visual_servo.xacro" />
+
+	<xacro:include filename="$(find mantis_description)/urdf/frame_battery.xacro" />
+	<xacro:include filename="$(find mantis_description)/urdf/frame_servo.xacro" />
+	<xacro:include filename="$(find mantis_description)/urdf/frame_arm.xacro" />
+	<xacro:include filename="$(find mantis_description)/urdf/frame_motor.xacro" />
+	<xacro:include filename="$(find mantis_description)/urdf/frame_skid.xacro" />
+
+	<xacro:include filename="$(find mantis_description)/urdf/arm_joint.xacro" />
+	<xacro:include filename="$(find mantis_description)/urdf/arm_link.xacro" />
+
+	<xacro:include filename="$(find mantis_description)/urdf/motor_joint.xacro" />
+
+	<!-- Import all Gazebo-customization elements, including Gazebo colors -->
+	<xacro:include filename="$(find mantis_description)/urdf/mantis.gazebo" />
+	<!-- Import Rviz colors -->
+	<xacro:include filename="$(find mantis_description)/urdf/materials.xacro" />
+
+	<!-- Used for fixing robot to Gazebo 'base_link' -->
+	<link name="world"/>
+
+	<joint name="fixed" type="floating">
+		<parent link="world"/>
+		<child link="base_link"/>
+	</joint>
+
+	<!-- Base Link -->
+	<link name="base_link">
+		<inertial>
+			<!-- Old estimate
+			<mass value="1.5480" />
+			<inertia ixx="0.015198135489664" iyy="0.014353211169664" izz="0.027767959346667" ixy="0.0" ixz="0.0" iyz="0.0" />
+			-->
+			<mass value="1.80497" />
+			<inertia ixx="0.02961" iyy="0.02933" izz="0.05342" ixy="0.0" ixz="0.00004" iyz="0.0" />
+
+		</inertial>
+
+		<collision name='collision_base_link'>
+			<geometry>
+				<cylinder radius="0.075" length="0.03"/>
+			</geometry>
+		</collision>
+
+		<visual name='visual_base_link'>
+			<geometry>
+				<cylinder radius="0.075" length="0.03"/>
+			</geometry>
+			<material name="orange"/>
+		</visual>
+
+		<xacro:frame_battery suffix="battery_primary" size="0.052 0.146 0.034" color="blue" xyz="0.0 0.0 0.032" rpy="0.0 0.0 0.0" />
+
+		<xacro:frame_servo suffix="servo_shoulder" size="0.0285 0.034 0.0465" color="black" xyz="0.01425 0.019 -0.015" rpy="${-pi/2} 0 ${pi}" />
+
+		<xacro:frame_arm suffix="arm_1" length="0.15" radius="0.015" color="white" xyz="0.1061 -0.1061 0" rpy="${pi/2} 0 ${pi/4}" />
+		<xacro:frame_arm suffix="arm_2" length="0.15" radius="0.015" color="white" xyz="-0.1061 0.1061 0" rpy="${pi/2} 0 ${pi/4}" />
+		<xacro:frame_arm suffix="arm_3" length="0.15" radius="0.015" color="red" xyz="0.1061 0.1061 0" rpy="${pi/2} 0 ${-pi/4}" />
+		<xacro:frame_arm suffix="arm_4" length="0.15" radius="0.015" color="white" xyz="-0.1061 -0.1061 0" rpy="${pi/2} 0 ${-pi/4}" />
+
+		<xacro:frame_motor suffix="motor_1" length="0.024" radius="0.014" color="grey" xyz="0.1591 -0.1591 0.027" rpy="0 0 0" />
+		<xacro:frame_motor suffix="motor_2" length="0.024" radius="0.014" color="grey" xyz="-0.1591 0.1591 0.027" rpy="0 0 0" />
+		<xacro:frame_motor suffix="motor_3" length="0.024" radius="0.014" color="grey" xyz="0.1591 0.1591 0.027" rpy="0 0 0" />
+		<xacro:frame_motor suffix="motor_4" length="0.024" radius="0.014" color="grey" xyz="-0.1591 -0.1591 0.027" rpy="0 0 0" />
+
+		<xacro:frame_skid suffix="skid_1" length="0.12" radius="0.008" color="white" xyz="0.1591 -0.1591 -0.075" rpy="0 0 0" />
+		<xacro:frame_skid suffix="skid_2" length="0.12" radius="0.008" color="white" xyz="-0.1591 0.1591 -0.075" rpy="0 0 0" />
+		<xacro:frame_skid suffix="skid_3" length="0.12" radius="0.008" color="white" xyz="0.1591 0.1591 -0.075" rpy="0 0 0" />
+		<xacro:frame_skid suffix="skid_4" length="0.12" radius="0.008" color="white" xyz="-0.1591 -0.1591 -0.075" rpy="0 0 0" />
+	</link>
+
+
+	<xacro:arm_joint suffix="shoulder" parent="base_link" child="link_upperarm" xyz="0 0 -0.05025" rpy="${pi/2} ${pi/2} 0" />
+
+	<xacro:arm_link suffix="upperarm" />
+
+	<xacro:arm_joint suffix="elbow" parent="link_upperarm" child="link_forearm" xyz="0.18325 0 0" rpy="0 0 0" />
+
+	<xacro:arm_link suffix="forearm" />
+
+	<!--
+	<joint name="joint_wrist" type="fixed">
+		<parent link="link_forearm"/>
+		<child link="link_end_effector"/>
+		<origin xyz="0.18325 0 0" rpy="0 0 0"/>
+	</joint>
+
+	<link name="link_end_effector">
+		<inertial name='inertial_end_effector'>>
+			<origin xyz="0.025 0 0" rpy="0 0 0"/>
+			<mass value="0.001" />
+			<inertia ixx="1.0e-07" iyy="1.0e-07" izz="1.0e-07" ixy="0.0" ixz="0.0" iyz="0.0" />
+		</inertial>
+
+		<collision name='collision_end_effector'>
+			<geometry>
+				<box size="0.05 0.05 0.05"/>
+			</geometry>
+		</collision>
+
+		<visual name="visual_end_effector">
+			<geometry>
+				<box size="0.05 0.05 0.05"/>
+			</geometry>
+			<material name="black"/>
+		</visual>
+	</link>
+	-->
+
+	<xacro:motor_joint motor_number="1" parent="base_link" xyz="0.1591 -0.1591 0.0455" direction="ccw" />
+	<xacro:motor_joint motor_number="2" parent="base_link" xyz="-0.1591 0.1591 0.0475" direction="ccw" />
+	<xacro:motor_joint motor_number="3" parent="base_link" xyz="0.1591 0.1591 0.0455" direction="cw" />
+	<xacro:motor_joint motor_number="4" parent="base_link" xyz="-0.1591 -0.1591 0.0455" direction="cw" />
+
+</robot>

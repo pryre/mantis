@@ -148,9 +148,8 @@ void MantisParamServer::load( void ) {
 	ROS_INFO("  T = %0.4fxRPM + %0.4f", rpm_thrust_m_, rpm_thrust_c_);
 	ROS_INFO("  Dmax = %0.4f", motor_drag_max_);
 
-
 	ROS_INFO("airframe_type: %s", airframe_type_.c_str());
-	if( (airframe_type_ != "hex_x4") &&
+	if( (airframe_type_ != "hex_x6") &&
 		(airframe_type_ != "quad_x4") ) {
 
 		ROS_WARN("Specified airframe type may not be supported!");

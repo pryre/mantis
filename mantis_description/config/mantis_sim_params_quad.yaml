@@ -1,8 +1,29 @@
 #Parameter file for the Mantis MM-UAV
 
+controller_acro:
+  rates:
+    x:
+      p: 0.05
+      i: 0.01
+      d: 0.001
+      min: -0.5
+      max: 0.5
+    y:
+      p: 0.05
+      i: 0.01
+      d: 0.001
+      min: -0.5
+      max: 0.5
+    z:
+      p: 0.2
+      i: 0.1
+      d: 0.0
+      min: -0.2
+      max: 0.2
+
 motor:
-  num: 6
-  arm_len: 0.275 #m
+  num: 4
+  arm_len: 0.225 #m
   #thrust_max: 10.5225 # N
   kv: 920
   rpm_thrust_curve:
@@ -10,7 +31,7 @@ motor:
     c: -1.8044052
   drag_max: 1.2 # N
 
-airframe: "hex_x"
+airframe: "quad_x4"
 
 pwm:
   min: 1000

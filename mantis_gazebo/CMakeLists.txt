@@ -20,14 +20,15 @@ find_package(catkin REQUIRED COMPONENTS
   mavros_msgs
   nav_msgs
   gazebo_msgs
-  dynamixel_msgs
   hector_gazebo_plugins
+  mantis_description
   message_generation
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(gazebo REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures

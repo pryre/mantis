@@ -30,6 +30,8 @@
 	</node>
 
 	<!-- LOW LEVEL CONTROL -->
+	<node name="controller_acro" pkg="mantis_gazebo" type="controller_acro_node" output="screen" ns="/mantis_uav" />
+
 	<node pkg="mantis_controller_aug" type="mantis_controller_aug_lite_node" name="controller_aug"
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />

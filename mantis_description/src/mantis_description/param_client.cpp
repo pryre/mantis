@@ -5,6 +5,9 @@
 #include <dh_parameters/JointDescription.h>
 
 #include <mantis_description/param_client.h>
+#include <mantis_description/mixer_maps.h>
+
+#include <eigen3/Eigen/Dense>
 
 #include <string>
 
@@ -38,6 +41,15 @@ void MantisParamClient::callback_params(const mantis_msgs::Params::ConstPtr &msg
 	for(int i=0; i<params_.joints.size(); i++) {
 		if(params_.joints[i].type != "static")
 			num_dynamic_joints_++;
+	}
+
+	if(params_.airframe_type == "quad_x4") {
+		mixer_generate_quad_x4(mixer_);
+	} else if(params_.airframe_type == "hex_x6") {
+		mixer_generate_hex_x6(mixer_);
+	} else {
+		mixer_ = Eigen::MatrixXd();
+		ROS_ERROR_THROTTLE(2.0, "Unsupported mixer: %s", params_.airframe_type.c_str());
 	}
 }
 
@@ -109,4 +121,8 @@ int MantisParamClient::get_dynamic_joint_num( void ) {
 
 const dh_parameters::JointDescription& MantisParamClient::joint( const unsigned int i ) {
 	return params_.joints[i];
+}
+
+const Eigen::MatrixXd& MantisParamClient::get_mixer( void ) {
+	return mixer_;
 }

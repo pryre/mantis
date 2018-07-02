@@ -1,10 +1,11 @@
 <?xml version='1.0'?>
 <launch>
+	<arg name="model" default="$(find mantis_description)/urdf/mantis_quad.xacro"/>
 	<arg name="model_name" default="mantis_uav"/>
 	<arg name="frame_id" default="map"/>
 	<arg name="rviz" default="false"/>
 
-	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_params.yaml"/>
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_params_quad.yaml"/>
 
 	<node pkg="mantis_description" type="mantis_description_param_node" name="mantis_params"
 	ns="/mantis_uav" clear_params="true" output="screen"/>
@@ -30,4 +31,7 @@
 	<group if="$(arg rviz)">
 		<node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
 	</group>
+	<include file="$(find mantis_gazebo)/launch/mantis_sim_gazebo.launch">
+		<arg name="model" value="$(arg model)" />
+	</include>
 </launch>

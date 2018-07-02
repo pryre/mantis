@@ -462,27 +462,29 @@ int16_t ControllerID::map_pwm(double val) {
 }
 
 void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
-	//TODO: This all needs to be better defined generically
-	double arm_ang = M_PI / 3.0;
-	double la = p_.base_arm_length();
-
-	//Calculate the thrust curve
-	double rpm_max = p_.motor_kv() * s_.voltage();	//Get the theoretical maximum rpm at the current battery voltage
-	double thrust_max = p_.rpm_thrust_m() * rpm_max + p_.rpm_thrust_c();	//Use the RPM to calculate maximum thrust
-
-	double kT = 1.0 / (p_.motor_num() * thrust_max);
-	double ktx = 1.0 / (2.0 * la * (2.0 * std::sin(arm_ang / 2.0) + 1.0) * thrust_max);
-	double kty = 1.0 / (4.0 * la * std::cos(arm_ang  / 2.0) * thrust_max);
-	double km = -1.0 / (p_.motor_num() * p_.motor_drag_max());
-
-	//Generate the copter map
+	double kT = 0.0;
+	double ktx = 0.0;
+	double kty = 0.0;
+	double ktz = 0.0;
 	Eigen::MatrixXd cm = Eigen::MatrixXd::Zero(p_.motor_num(), 6);
-	cm << 0.0, 0.0,  kT, -ktx,  0.0, -km,
-		  0.0, 0.0,  kT,  ktx,  0.0,  km,
-		  0.0, 0.0,  kT,  ktx, -kty, -km,
-		  0.0, 0.0,  kT, -ktx,  kty,  km,
-		  0.0, 0.0,  kT, -ktx, -kty,  km,
-		  0.0, 0.0,  kT,  ktx,  kty, -km;
+
+	if( solver_.calculate_thrust_coeffs(kT, ktx, kty, ktz) ) {
+		//Generate the copter map
+		/*
+		cm << 0.0, 0.0,  kT, -ktx,  0.0, -km,
+			  0.0, 0.0,  kT,  ktx,  0.0,  km,
+			  0.0, 0.0,  kT,  ktx, -kty, -km,
+			  0.0, 0.0,  kT, -ktx,  kty,  km,
+			  0.0, 0.0,  kT, -ktx, -kty,  km,
+			  0.0, 0.0,  kT,  ktx,  kty, -km;
+		*/
+		cm.block(0,2,p_.motor_num(),1) = kT*p_.get_mixer().block(0,0,p_.motor_num(),1);
+		cm.block(0,3,p_.motor_num(),1) = ktx*p_.get_mixer().block(0,1,p_.motor_num(),1);
+		cm.block(0,4,p_.motor_num(),1) = kty*p_.get_mixer().block(0,2,p_.motor_num(),1);
+		cm.block(0,5,p_.motor_num(),1) = ktz*p_.get_mixer().block(0,3,p_.motor_num(),1);
+	} else {
+		ROS_ERROR_THROTTLE(2.0, "Unable to calculate thrust coefficients!");
+	}
 
 	M << cm, Eigen::MatrixXd::Zero(p_.motor_num(), p_.get_dynamic_joint_num()),
 		 Eigen::MatrixXd::Zero(p_.get_dynamic_joint_num(), 6), Eigen::MatrixXd::Identity(p_.get_dynamic_joint_num(), p_.get_dynamic_joint_num());

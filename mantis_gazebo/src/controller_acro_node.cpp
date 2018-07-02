@@ -8,18 +8,12 @@
 #include <mavros_msgs/OverrideRCIn.h>
 #include <sensor_msgs/Imu.h>
 
+#include <mantis_description/param_client.h>
 #include <pid_controller_lib/pidController.h>
 
+#include <eigen3/Eigen/Dense>
+
 #include <string>
-
-#define NUM_MOTORS 6
-
-typedef struct motorMixer_s {
-    double throttle;
-    double roll;
-    double pitch;
-    double yaw;
-} motorMixer_t;
 
 typedef struct controlCommand_s {
 	double T;
@@ -28,19 +22,11 @@ typedef struct controlCommand_s {
 	double y;
 } controlCommand_t;
 
-const static motorMixer_t mixer_hexacopter_x[NUM_MOTORS] = {
-	{ 1.0,	-1.0,	 0.0,	 1.0}, // Motor 1
-	{ 1.0,	 1.0,	 0.0,	-1.0}, // Motor 2
-	{ 1.0,	 0.5,	-1.0,	 1.0}, // Motor 3
-	{ 1.0,	-0.5,	 1.0,	-1.0}, // Motor 4
-	{ 1.0,	-0.5,	-1.0,	-1.0}, // Motor 5
-	{ 1.0,	 0.5,	 1.0,	 1.0}, // Motor 6
-};
-
 class ControllerAcro {
 	private:
 		ros::NodeHandle nh_;
 		ros::NodeHandle nhp_;
+		MantisParamClient p_;
 
 		ros::Subscriber sub_attitude_target_;
 		ros::Subscriber sub_actuator_control_;
@@ -173,18 +159,15 @@ class ControllerAcro {
 			//Perform the PWM mapping
 			int32_t max_output = 1000;
 			int32_t scale_factor = 1000;
-			int32_t prescaled_outputs[NUM_MOTORS];
-			int32_t pwm_output_requested[NUM_MOTORS];
+			int32_t prescaled_outputs[p_.motor_num()];
+			int32_t pwm_output_requested[p_.motor_num()];
 
-			for (uint8_t i=0; i<NUM_MOTORS; i++) {
+			Eigen::Vector4d cforces;
+			cforces << control_forces_.T, control_forces_.r, control_forces_.p, control_forces_.y;
+			Eigen::VectorXd thrust_calc = p_.get_mixer()*cforces;
 
-				double thrust_calc = ( control_forces_.T * mixer_hexacopter_x[i].throttle ) +
-									 ( control_forces_.r * mixer_hexacopter_x[i].roll ) +
-									 ( control_forces_.p * mixer_hexacopter_x[i].pitch ) +
-									 ( control_forces_.y * mixer_hexacopter_x[i].yaw );
-
-
-				prescaled_outputs[i] = (int)(thrust_calc * 1000);
+			for (uint8_t i=0; i<p_.motor_num(); i++) {
+				prescaled_outputs[i] = (int)(thrust_calc(i) * 1000);
 
 				//If the thrust is 0, zero motor outputs, as we don't want any thrust at all for safety
 				if( control_forces_.T <= 0.05 )
@@ -202,7 +185,7 @@ class ControllerAcro {
 
 			mavros_msgs::OverrideRCIn msg_rc_out;
 
-			for (uint8_t i=0; i<NUM_MOTORS; i++) {
+			for (uint8_t i=0; i<p_.motor_num(); i++) {
 					 int32_t channel_out = (prescaled_outputs[i] * scale_factor / 1000); // divide by scale factor
 					 msg_rc_out.channels[i] = 1000 + int32_constrain( channel_out, 0, 1000 );
 			}
@@ -226,6 +209,7 @@ class ControllerAcro {
 		ControllerAcro() :
 			nh_(),
 			nhp_( "~" ),
+			p_(&nh_),
 			frame_id_("map"),
 			model_name_("mantis_uav"),
 			pwm_update_rate_(250.0),

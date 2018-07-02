@@ -341,7 +341,7 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 		}
 
 		//Perform the motor mixing
-		Eigen::MatrixXd u = solver_.get_mixer()*uan;
+		Eigen::MatrixXd u = p_.get_mixer()*uan;
 
 		//TODO: Should do some input scaling and constraint checking
 

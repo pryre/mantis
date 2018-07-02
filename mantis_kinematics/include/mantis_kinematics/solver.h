@@ -19,8 +19,6 @@ class MantisSolver {
 		ros::Time state_load_time_;
 
 		std::vector<DHParameters,Eigen::aligned_allocator<DHParameters> > joints_;
-		Eigen::MatrixXd mixer_;
-		std::string mixer_name_;
 
 	public:
 		MantisSolver( MantisParamClient *p, MantisStateClient *s );
@@ -34,7 +32,6 @@ class MantisSolver {
 		bool calculate_gbe( Eigen::Affine3d &gbe );
 		bool calculate_gxy( Eigen::Affine3d &g, const unsigned int x, const unsigned int y );
 
-		const Eigen::MatrixXd& get_mixer( void );
 		bool calculate_thrust_coeffs( double &kT, double &ktx, double &kty, double &ktz);
 
 	private:

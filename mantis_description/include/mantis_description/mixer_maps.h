@@ -14,7 +14,7 @@ to get the correct output:
 */
 
 inline void mixer_generate_quad_x4(Eigen::MatrixXd &m) {
-	m = Eigen::MatrixXd(6,4);
+	m = Eigen::MatrixXd(4,4);
 	m << 1.0, -1.0,	-1.0,	-1.0, // Motor 1
 		 1.0,  1.0,	 1.0,	-1.0, // Motor 2
 		 1.0,  1.0,	-1.0,	 1.0, // Motor 3
