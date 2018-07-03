@@ -4,7 +4,6 @@ string airframe_type
 int16 pwm_min
 int16 pwm_max
 
-int32 motor_num
 float64 base_arm_length
 float64 motor_kv
 float64 rpm_thrust_m

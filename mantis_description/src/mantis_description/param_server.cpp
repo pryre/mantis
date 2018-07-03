@@ -61,7 +61,6 @@ mantis_msgs::Params MantisParamServer::get_params( void ) {
 	p.pwm_min = pwm_min_;
 	p.pwm_max = pwm_max_;
 	p.base_arm_length = la_;
-	p.motor_num = motor_num_;
 	p.motor_kv = motor_kv_;
 	p.rpm_thrust_m = rpm_thrust_m_;
 	p.rpm_thrust_c = rpm_thrust_c_;
@@ -84,7 +83,6 @@ void MantisParamServer::load( void ) {
 
 	ROS_INFO("--== Loading ControllerAug Parameters ==--");
 
-	nh_.param("motor/num", motor_num_, motor_num_);
 	nh_.param("motor/arm_len", la_, la_);
 	nh_.param("motor/kv", motor_kv_, motor_kv_);
 	nh_.param("motor/rpm_thrust_curve/m", rpm_thrust_m_, rpm_thrust_m_);

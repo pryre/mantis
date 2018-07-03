@@ -23,6 +23,7 @@ class MantisParamClient {
 		int num_dynamic_joints_;
 
 		Eigen::MatrixXd mixer_;
+		int32_t motor_num_;
 
 	public:
 		MantisParamClient( ros::NodeHandle *nh );
