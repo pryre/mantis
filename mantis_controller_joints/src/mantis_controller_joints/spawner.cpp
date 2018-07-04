@@ -14,6 +14,8 @@ Spawner::Spawner( const std::vector<std::string> &c_names ) :
 	nhp_("~"),
 	param_update_rate_(20.0) {
 
+	double traj_timeout = 0.2;
+	nhp_.param("trajectory_reference_timeout", traj_timeout, traj_timeout);
 	nhp_.param("update_rate", param_update_rate_, param_update_rate_);
 
 	sub_state_ = nh_.subscribe<sensor_msgs::JointState>( "state/joints", 10, &Spawner::callback_state, this );
@@ -22,7 +24,7 @@ Spawner::Spawner( const std::vector<std::string> &c_names ) :
 		controllers_.resize( c_names.size() );
 
 		for(int i = 0; i < c_names.size(); i++) {
-			controllers_[i] = new Controller( &nhp_, c_names[i]);
+			controllers_[i] = new Controller( &nhp_, c_names[i], traj_timeout);
 		}
 
 		ROS_INFO_STREAM("Spawned " << controllers_.size() << " joint controllers");

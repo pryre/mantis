@@ -35,7 +35,7 @@
 		<param name="frame_id" value="mantis_uav" />
 		<param name="hover_height" value="1.0" />
 
-		<remap from="command/joint/1" to="joint_position_controller/joint_shoulder/reference"/>
-		<remap from="command/joint/2" to="joint_position_controller/joint_elbow/reference"/>
+		<remap from="command/joint/1" to="joint_position_controller/joint_shoulder/reference/pos"/>
+		<remap from="command/joint/2" to="joint_position_controller/joint_elbow/reference/pos"/>
 	</node>
 </launch>

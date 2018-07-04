@@ -20,6 +20,7 @@ add_message_files(FILES
 	BodyInertial.msg
 	Params.msg
 	State.msg
+	JointTrajectoryGoal.msg
 )
 
 ## Generate added messages and services

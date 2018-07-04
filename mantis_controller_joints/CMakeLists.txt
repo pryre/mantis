@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   pid_controller_lib
   sensor_msgs
   std_msgs
+  mantis_msgs
   dynamic_reconfigure
 )
 
