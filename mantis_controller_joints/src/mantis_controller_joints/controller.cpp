@@ -64,7 +64,9 @@ void Controller::do_control( double dt ) {
 		output_ = pid_.step( dt, ref_pos_, state_position_ );
 
 		//If the trajectory target is within our timeout,
-		//  then add in the velocity constant
+		//	then add in the velocity constant
+		//Otherwise the trajectory goal is stale,
+		//	so just treat it as a position goal
 		if( (ros::Time::now() - ref_update_t_) < ref_timeout_ ) {
 			output_ += ref_vel_;
 		}

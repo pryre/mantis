@@ -44,11 +44,17 @@ void MantisParamClient::callback_params(const mantis_msgs::Params::ConstPtr &msg
 	}
 
 	if(params_.airframe_type == "quad_x4") {
-		mixer_generate_quad_x4(mixer_);
-		motor_num_ = 4;
+		motor_num_ = mixer_generate_quad_x4(mixer_);
+	} else if(params_.airframe_type == "quad_+4") {
+		motor_num_ = mixer_generate_quad_p4(mixer_);
 	} else if(params_.airframe_type == "hex_x6") {
-		mixer_generate_hex_x6(mixer_);
-		motor_num_ = 6;
+		motor_num_ = mixer_generate_hex_x6(mixer_);
+	} else if(params_.airframe_type == "hex_p6") {
+		motor_num_ = mixer_generate_hex_p6(mixer_);
+	} else if(params_.airframe_type == "octo_x8") {
+		motor_num_ = mixer_generate_octo_x8(mixer_);
+	} else if(params_.airframe_type == "octo_+8") {
+		motor_num_= mixer_generate_octo_p8(mixer_);
 	} else {
 		mixer_ = Eigen::MatrixXd();
 		ROS_ERROR_THROTTLE(2.0, "Unsupported mixer: %s", params_.airframe_type.c_str());

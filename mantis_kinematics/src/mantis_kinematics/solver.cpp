@@ -244,12 +244,53 @@ bool MantisSolver::calculate_thrust_coeffs( double &kT, double &ktx, double &kty
 		ktz = 1.0 / (p_->motor_num() * p_->motor_drag_max());
 
 		success = true;
+	} else if(p_->airframe_type() == "quad_p4") {
+		//XXX: UNTESTED!
+		//double arm_ang = M_PI / 4.0; //45Deg from forward to arm rotation
+		double la = p_->base_arm_length();
+		kT = 1.0 / (p_->motor_num() * thrust_single);
+		ktx = 1.0 / (2.0 * la * thrust_single);
+		kty = ktx; //Airframe is symmetric
+		ktz = 1.0 / (p_->motor_num() * p_->motor_drag_max());
+
+		success = true;
 	} else if(p_->airframe_type() == "hex_x6") {
 		double arm_ang = (M_PI / 6.0); //30Deg from forward to arm rotation
 		double la = p_->base_arm_length();
 		kT = 1.0 / (p_->motor_num() * thrust_single);
 		ktx = 1.0 / (2.0 * la * (2.0 * std::sin(arm_ang) + 1.0) * thrust_single);
 		kty = 1.0 / (4.0 * la * std::cos(arm_ang) * thrust_single);
+		ktz = 1.0 / (p_->motor_num() * p_->motor_drag_max());
+
+		success = true;
+	} else if(p_->airframe_type() == "hex_p6") {
+		//XXX: UNTESTED!
+		double arm_ang = (M_PI / 3.0); //30Deg from forward to arm rotation
+		double la = p_->base_arm_length();
+		kT = 1.0 / (p_->motor_num() * thrust_single);
+		ktx = 1.0 / (4.0 * la * std::sin(arm_ang) * thrust_single);
+		kty = 1.0 / (2.0 * la * (2.0 * std::cos(arm_ang) + 1.0) * thrust_single);
+		ktz = 1.0 / (p_->motor_num() * p_->motor_drag_max());
+
+		success = true;
+	} else if(p_->airframe_type() == "octo_x8") {
+		//XXX: UNTESTED!
+		double arm_ang = (M_PI / 8.0); //22.5Deg from forward to arm rotation
+		double arm_ang_2 = (M_PI / 2.0) - arm_ang; //77.5Deg from forward to arm rotation
+		double la = p_->base_arm_length();
+		kT = 1.0 / (p_->motor_num() * thrust_single);
+		ktx = 1.0 / (4.0 * la * (std::sin(arm_ang) + std::sin(arm_ang_2)) * thrust_single);
+		kty = ktx; //Airframe is symmetric
+		ktz = 1.0 / (p_->motor_num() * p_->motor_drag_max());
+
+		success = true;
+	} else if(p_->airframe_type() == "octo_p8") {
+		//XXX: UNTESTED!
+		double arm_ang = (M_PI / 4.0); //45Deg from forward to arm rotation
+		double la = p_->base_arm_length();
+		kT = 1.0 / (p_->motor_num() * thrust_single);
+		ktx = 1.0 / (2.0 * la * (2.0 * std::sin(arm_ang) + 1.0) * thrust_single);
+		kty = ktx; //Airframe is symmetric
 		ktz = 1.0 / (p_->motor_num() * p_->motor_drag_max());
 
 		success = true;

@@ -10,7 +10,6 @@ MantisParamServer::MantisParamServer( void ) :
 	nh_(),
 	pwm_min_(1000),
 	pwm_max_(2000),
-	motor_num_(0),
 	motor_kv_(0.0),
 	rpm_thrust_m_(0.0),
 	rpm_thrust_c_(0.0),
@@ -140,15 +139,18 @@ void MantisParamServer::load( void ) {
 	}
 
 	ROS_INFO("motor:");
-	ROS_INFO("  num: %i", motor_num_);
 	ROS_INFO("  len: %0.4f", la_);
 	ROS_INFO("  kv: %0.4f", motor_kv_);
 	ROS_INFO("  T = %0.4fxRPM + %0.4f", rpm_thrust_m_, rpm_thrust_c_);
 	ROS_INFO("  Dmax = %0.4f", motor_drag_max_);
 
 	ROS_INFO("airframe_type: %s", airframe_type_.c_str());
-	if( (airframe_type_ != "hex_x6") &&
-		(airframe_type_ != "quad_x4") ) {
+	if( (airframe_type_ != "quad_x4") &&
+		(airframe_type_ != "quad_p4") &&
+		(airframe_type_ != "hex_x6") &&
+		(airframe_type_ != "hex_x6") &&
+		(airframe_type_ != "octo_x8") &&
+		(airframe_type_ != "octo_p8") ) {
 
 		ROS_WARN("Specified airframe type may not be supported!");
 	}
