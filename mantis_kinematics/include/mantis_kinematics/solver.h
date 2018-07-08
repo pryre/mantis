@@ -4,10 +4,10 @@
 #include <mantis_description/param_client.h>
 #include <mantis_state/state_client.h>
 
-#include <dh_parameters/dh_parameters.h>
+#include <dh_parameters/serial_manipulator.h>
 
 #include <eigen3/Eigen/Dense>
-#include <eigen3/Eigen/StdVector>
+
 #include <string>
 
 class MantisSolver {
@@ -18,7 +18,7 @@ class MantisSolver {
 		ros::Time param_load_time_;
 		ros::Time state_load_time_;
 
-		std::vector<DHParameters,Eigen::aligned_allocator<DHParameters> > joints_;
+		SerialManipulator manip_;
 
 	public:
 		MantisSolver( MantisParamClient *p, MantisStateClient *s );
@@ -28,7 +28,10 @@ class MantisSolver {
 		int num_states( void );
 
 		bool solve_inverse_dynamics( Eigen::VectorXd &tau, const Eigen::VectorXd &ua );
-		bool calculate_Je( Eigen::MatrixXd &Je );
+
+		bool calculate_vbe( Eigen::VectorXd &vbe );
+		bool calculate_vbx( Eigen::VectorXd &vbx, const unsigned int n );
+
 		bool calculate_gbe( Eigen::Affine3d &gbe );
 		bool calculate_gxy( Eigen::Affine3d &g, const unsigned int x, const unsigned int y );
 

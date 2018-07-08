@@ -25,11 +25,14 @@ class MantisPath {
 		ros::Timer timer_path_;
 
 		ros::Publisher pub_traj_;
+		ros::Publisher pub_pose_base_;
+		ros::Publisher pub_pose_track_;
 
 		std::string param_frame_id_;
 		std::string param_model_id_;
-		bool param_track_end_;
-		bool param_accurate_end_tracking_;
+		int param_tracked_frame_;
+		bool param_use_manipulator_jacobian_;
+		bool param_send_reference_feedback_;
 		double param_path_rate_;
 		dynamic_reconfigure::Server<mantis_path::ControlParamsConfig> dyncfg_control_settings_;
 
@@ -49,16 +52,16 @@ class MantisPath {
 		//Eigen::Quaterniond quaternion_from_msg(const geometry_msgs::Quaternion q);
 		//Eigen::Affine3d affine_from_msg(const geometry_msgs::Pose pose);
 
-		geometry_msgs::Vector3 vector_from_eig(const Eigen::Vector3d &v);
-		geometry_msgs::Point point_from_eig(const Eigen::Vector3d &p);
-		geometry_msgs::Quaternion quaternion_from_eig(const Eigen::Quaterniond &q);
-		geometry_msgs::Pose pose_from_eig(const Eigen::Affine3d &g);
+		//geometry_msgs::Vector3 vector_from_eig(const Eigen::Vector3d &v);
+		//geometry_msgs::Point point_from_eig(const Eigen::Vector3d &p);
+		//geometry_msgs::Quaternion quaternion_from_eig(const Eigen::Quaterniond &q);
+		//geometry_msgs::Pose pose_from_eig(const Eigen::Affine3d &g);
 
 		Eigen::Matrix3d extract_yaw_component(const Eigen::Matrix3d r);
 
 		bool calc_goal_ge_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc);
 		Eigen::Affine3d calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe);
-		Eigen::Vector3d calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::MatrixXd &Je, const Eigen::VectorXd &rd);
+		Eigen::Vector3d calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::VectorXd &vbe);
 
 		void callback_path(const ros::TimerEvent& e);
 };

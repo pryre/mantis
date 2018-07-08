@@ -15,6 +15,7 @@
 
 		<param name="control_settings/track_end" value="false" />
 		<param name="control_settings/accurate_end_tracking" value="true" />
+		<param name="control_settings/reference_feedback" value="true" />
 
 		<remap from="mantis_path/reference/path" to="path"/>
 		<remap from="mantis_path/output/traj" to="mavel/reference/traj"/>

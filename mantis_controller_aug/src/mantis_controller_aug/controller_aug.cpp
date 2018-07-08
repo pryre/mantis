@@ -168,13 +168,14 @@ void ControllerAug::callback_high_level(const ros::TimerEvent& e) {
 				//Compensate for velocity terms in manipulator movement
 				//This is more accurate, but can make things more unstable
 				if(param_accurate_end_tracking_) {
-					//The linear velocity of the base is dependent on the joint velocities the end effector
-					//End effector velocity jacobian
-					Eigen::MatrixXd Je;
-					if( solver_.calculate_Je( Je ) ) {
-						gv_sp_ = calc_goal_base_velocity(gev_sp, s_.g().linear()*gbe.linear(), Je, s_.rd());
+					Eigen::VectorXd vbe;
+					if( solver_.calculate_vbe( vbe ) ) {
+						//Manipulator velocity in the world frame
+						Eigen::Vector3d Ve = s_.g().linear()*vbe.segment(0,3);
+						//Subtract from setpoint to compensate base movements
+						gv_sp_ = gev_sp - Ve;
 					} else {
-						ROS_ERROR("Unable to use accurate end tracking");
+						ROS_ERROR_THROTTLE(2.0, "Unable to use manipulator Jacobian");
 						gv_sp_ = gev_sp;
 					}
 				} else {

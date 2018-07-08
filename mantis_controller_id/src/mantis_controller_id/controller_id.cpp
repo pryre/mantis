@@ -161,33 +161,17 @@ void ControllerID::callback_high_level(const ros::TimerEvent& e) {
 				//Calculate the tracking offset for the base
 				g_sp_ = calc_goal_base_transform(ge_sp, gbe);
 
-				//XXX:
-				/*
-				//This is only really here for the paper test case
-				if(param_track_j2_) {
-					//Compute transform for all joints in the chain to get base to Joint 2
-					for(int i=0; i<2; i++) {
-						gbe = gbe * joints_[i].transform();
-					}
-
-					calc_Jj2(Je, joints_[1].r());
-
-					...
-
-				}
-				*/
-				//XXX:
-
 				//Compensate for velocity terms in manipulator movement
 				//This is more accurate, but can make things more unstable
 				if(param_accurate_end_tracking_) {
-					//The linear velocity of the base is dependent on the joint velocities the end effector
-					//End effector velocity jacobian
-					Eigen::MatrixXd Je;
-					if( solver_.calculate_Je( Je ) ) {
-						gv_sp_ = calc_goal_base_velocity(gev_sp, s_.g().linear()*gbe.linear(), Je, s_.rd());
+					Eigen::VectorXd vbe;
+					if( solver_.calculate_vbe( vbe ) ) {
+						//Manipulator velocity in the world frame
+						Eigen::Vector3d Ve = s_.g().linear()*vbe.segment(0,3);
+						//Subtract from setpoint to compensate base movements
+						gv_sp_ = gev_sp - Ve;
 					} else {
-						ROS_ERROR("Unable to use accurate end tracking");
+						ROS_ERROR_THROTTLE(2.0, "Unable to use manipulator Jacobian");
 						gv_sp_ = gev_sp;
 					}
 				} else {

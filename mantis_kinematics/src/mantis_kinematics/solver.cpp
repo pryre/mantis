@@ -11,6 +11,8 @@
 #include <mantis_kinematics/dynamics/calc_Jj2.h>
 #include <mantis_kinematics/dynamics/calc_Je.h>
 
+#include <string>
+
 
 MantisSolver::MantisSolver( MantisParamClient *p, MantisStateClient *s ) :
 	p_(p),
@@ -31,7 +33,7 @@ bool MantisSolver::check_description( void ) {
 	success &= check_state();
 
 	if(!success) {
-		ROS_ERROR("Unable to validate params and state");
+		ROS_ERROR_THROTTLE(2.0, "Unable to validate params and state");
 	}
 
 	return success;
@@ -62,14 +64,10 @@ bool MantisSolver::load_parameters( void ) {
 	bool success = true;
 
 	//Load in the link definitions
-	joints_.clear();
+	manip_.reset();
 
 	for(int i=0; i<p_->get_joint_num(); i++) {
-		DHParameters dh( p_->joint(i) );
-
-		if( dh.is_valid() ) {
-			joints_.push_back(dh);
-		} else {
+		if( !manip_.add_joint( p_->joint(i) ) ) {
 			ROS_FATAL("Error loading joint %i", int(i));
 			success = false;
 			break;
@@ -94,14 +92,14 @@ bool MantisSolver::load_state( void ) {
 
 	if( ( r.size() == rd.size() ) && (p_->get_dynamic_joint_num() == r.size() ) ) {
 		int jc = 0;
-		for(int i=0; i<joints_.size(); i++) {
-			if(joints_[i].jt() != DHParameters::JointType::Static) {
-				joints_[i].update(r[jc], rd[jc]);
+		for(int i=0; i<manip_.num_joints(); i++) {
+			if(manip_.joint(i).jt() != DHParameters::JointType::Static) {
+				manip_.joint(i).update(r[jc], rd[jc]);
 				jc++;
 			}
 		}
 	} else {
-		ROS_ERROR("Error: MantisSolver::load_state(): Dynamic joint sizes are inconsistent");
+		ROS_ERROR_THROTTLE(2.0, "Error: MantisSolver::load_state(): Dynamic joint sizes are inconsistent");
 		success = false;
 	}
 
@@ -136,8 +134,8 @@ bool MantisSolver::solve_inverse_dynamics( Eigen::VectorXd &tau, const Eigen::Ve
 			Eigen::MatrixXd L = Eigen::MatrixXd::Zero(num_states(), num_states());
 
 			//XXX: Take care!
-			double l0 = joints_[0].d();
-			double l1 = joints_[1].r();
+			double l0 = manip_.joint(0).d();
+			double l1 = manip_.joint(1).r();
 
 			calc_Dq(D,
 					p_->body_inertial(0).Ixx, p_->body_inertial(0).Iyy, p_->body_inertial(0).Izz,
@@ -159,31 +157,70 @@ bool MantisSolver::solve_inverse_dynamics( Eigen::VectorXd &tau, const Eigen::Ve
 
 			success = true;
 		} else {
-			ROS_ERROR("Error: MantisSolver::solve_inverse_dynamics(): Vector lengths inconsistent");
+			ROS_ERROR_THROTTLE(2.0, "Error: MantisSolver::solve_inverse_dynamics(): Vector lengths inconsistent");
 		}
 	}
 
 	return success;
 }
 
-//TODO: Failure conditions
-bool MantisSolver::calculate_Je( Eigen::MatrixXd &Je ) {
-	bool success = true;
-	Je = Eigen::MatrixXd::Zero(6, s_->rd().size());
+bool MantisSolver::calculate_vbe( Eigen::VectorXd &vbe ) {
+	return calculate_vbx(vbe, manip_.num_joints());
+}
+
+bool MantisSolver::calculate_vbx( Eigen::VectorXd &vbx, const unsigned int x ) {
+
+	bool success = false;
 
 	if( check_description() ) {
+		//Eigen::MatrixXd Je = Eigen::MatrixXd::Zero(6, s_->rd().size());
+		/*
 		calc_Je(Je,
-			joints_[1].r(),
-			joints_[2].r(),
-			joints_[2].q());
+			manip_.joint(1).r(),
+			manip_.joint(2).r(),
+			manip_.joint(2).q());
+
+
+		vbx = Je*s_->rd();//manip_.qd();
+		*/
+		Eigen::MatrixXd Jbx;
+		Eigen::VectorXd qdx;
+		manip_.calculate_Jxy( Jbx, 0, x );
+		manip_.get_qdxn(qdx, 0, x);
+		vbx = Jbx*qdx;
+		//ROS_INFO_STREAM("Je_old:\n" << Je);
+		//ROS_INFO_STREAM("Je_new:\n" << Je_new);
 
 		success = true;
 	}
 
 	return success;
 }
+/*
+bool MantisSolver::calculate_dynamic_Je( Eigen::MatrixXd &Je ) {
+	bool success = false;
+	Je = Eigen::MatrixXd::Zero(6, s_->rd().size());
 
+	if( check_description() ) {
+		calc_Je(Je,
+			manip_.joint(1).r(),
+			manip_.joint(2).r(),
+			manip_.joint(2).q());
+
+		success = true;
+	}
+
+	Eigen::MatrixXd Je_new;
+
+
+	ROS_INFO_STREAM("Je_old:\n" << Je);
+	ROS_INFO_STREAM("Je_new:\n" << Je_new);
+
+	return success;
+}
+*/
 bool MantisSolver::calculate_gbe( Eigen::Affine3d &gbe ) {
+	/*
 	bool success = false;
 
 	gbe = Eigen::Affine3d::Identity();
@@ -195,33 +232,31 @@ bool MantisSolver::calculate_gbe( Eigen::Affine3d &gbe ) {
 
 		success = true;
 	}
+	*/
 
-	return success;
+	return calculate_gxy( gbe, 0, manip_.num_joints() );;
 }
 
 bool MantisSolver::calculate_gxy( Eigen::Affine3d &g, const unsigned int x, const unsigned int y ) {
 	bool success = false;
 
-	g = Eigen::Affine3d::Identity();
-
 	if( check_description() ) {
-		if( (x <= joints_.size()) && (y <= joints_.size()) && (x !=y ) ) {
-			//The inverse calculation was requested
-			if(x > y) {
-				for(int i=y; i<x; i++) {
-					g = g * joints_[i].transform();
-				}
+		if( ( x <= manip_.num_joints() ) && ( y <= manip_.num_joints() ) ) {
 
-				g = g.inverse();
-			} else {
-				for(int i=x; i<y; i++) {
-					g = g * joints_[i].transform();
-				}
-			}
+			manip_.calculate_gxy(g,x,y);
 
 			success = true;
 		} else {
-			ROS_ERROR("Error: MantisSolver::calculate_gxy(): frame inputs invalid");
+			std::string reason;
+			if( x > manip_.num_joints() ) {
+				reason = "start frame > total frames";
+			} else if( y > manip_.num_joints() ) {
+				reason = "end frame > total frames";
+			} else {
+				reason = "undefined error";
+			}
+
+			ROS_ERROR_THROTTLE(2.0, "Error: MantisSolver::calculate_gxy(): frame inputs; %s", reason.c_str());
 		}
 	}
 
@@ -231,9 +266,10 @@ bool MantisSolver::calculate_gxy( Eigen::Affine3d &g, const unsigned int x, cons
 bool MantisSolver::calculate_thrust_coeffs( double &kT, double &ktx, double &kty, double &ktz) {
 	bool success = false;
 
-	//double rpm_max = p_->motor_kv() * s_->voltage();	//Get the theoretical maximum rpm at the current battery voltage
-	//double thrust_single = p_->rpm_thrust_m() * rpm_max + p_->rpm_thrust_c();	//Use the RPM to calculate maximum thrust
-	double thrust_single = 0.8*9.80665;
+	//XXX: TODO: Had to disable due to bad values
+	double rpm_max = p_->motor_kv() * s_->voltage();	//Get the theoretical maximum rpm at the current battery voltage
+	double thrust_single = p_->rpm_thrust_m() * rpm_max + p_->rpm_thrust_c();	//Use the RPM to calculate maximum thrust
+	//double thrust_single = 0.8*9.80665;
 
 	if(p_->airframe_type() == "quad_x4") {
 		double arm_ang = M_PI / 4.0; //45Deg from forward to arm rotation
@@ -295,7 +331,7 @@ bool MantisSolver::calculate_thrust_coeffs( double &kT, double &ktx, double &kty
 
 		success = true;
 	} else {
-		ROS_ERROR("Error: MantisSolver::calculate_thrust_coeffs(): unknown mixer type");
+		ROS_ERROR_THROTTLE(2.0, "Error: MantisSolver::calculate_thrust_coeffs(): unknown mixer type");
 	}
 
 	return success;

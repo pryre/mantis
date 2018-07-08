@@ -56,7 +56,7 @@ ForwardKinematics::ForwardKinematics() :
 
 		if(ready) {
 			//Configure publishers and subscribers
-			pub_end_ = nh_.advertise<geometry_msgs::PoseStamped>("pose/end_effector", 10);
+			pub_end_ = nh_.advertise<geometry_msgs::PoseStamped>("end_effector", 10);
 			pub_viz_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization", 10, true);
 
 			ROS_INFO("Configuring static mounts...");
@@ -108,6 +108,19 @@ void ForwardKinematics::callback_timer(const ros::TimerEvent& e) {
 			}
 		}
 	}
+
+	if(param_do_end_effector_pose_) {
+		geometry_msgs::PoseStamped msg_end_out_;
+		Eigen::Affine3d gbe;
+		solver_.calculate_gbe(gbe);
+
+		msg_end_out_.header.stamp = e.current_real;
+		msg_end_out_.header.frame_id = param_frame_id_;
+		msg_end_out_.pose = pose_from_eig(s_.g()*gbe);
+
+		pub_end_.publish(msg_end_out_);
+	}
+
 }
 
 /*

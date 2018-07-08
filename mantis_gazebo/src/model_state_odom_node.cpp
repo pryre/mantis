@@ -6,15 +6,22 @@
 
 #include <nav_msgs/Odometry.h>
 #include <gazebo_msgs/ModelStates.h>
+#include <mantis_description/param_client.h>
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <geometry_msgs/TransformStamped.h>
 
 #include <string>
 
 class ModelStatesOdom {
 	private:
 		ros::NodeHandle nh_;
+		ros::NodeHandle nhp_;
 
 		ros::Subscriber sub_model_states_;
 		ros::Publisher pub_odom_;
+
+		MantisParamClient p_;
+		tf2_ros::StaticTransformBroadcaster tfsbr_;
 
 		std::string topic_model_states_;
 		std::string topic_odom_;
@@ -25,11 +32,13 @@ class ModelStatesOdom {
 
 	public:
 		ModelStatesOdom() :
-			nh_( "~" ),
+			nh_(),
+			nhp_( "~" ),
+			p_(&nh_),
 			model_name_("mantis_uav"),
 			parent_name_("map"),
 			topic_model_states_("/gazebo/model_states"),
-			topic_odom_("/mantis_uav/state/odom") {
+			topic_odom_("state/odom") {
 
 			sub_model_states_ = nh_.subscribe<gazebo_msgs::ModelStates>(topic_model_states_, 1, &ModelStatesOdom::statesCallback, this);
 			pub_odom_ = nh_.advertise<nav_msgs::Odometry>( topic_odom_, 10 );
@@ -37,7 +46,29 @@ class ModelStatesOdom {
 			msg_odom_.header.frame_id = parent_name_;
 			msg_odom_.child_frame_id = model_name_;
 
-			ROS_INFO("Listenning for model states...");
+			if(p_.wait_for_params()) {
+				//Send static transforms for rviz model
+				//TODO: Make more dynamic with params
+				geometry_msgs::TransformStamped tf;
+				tf.header.stamp = ros::Time::now();
+				tf.transform.rotation.w = 1.0;
+				tf.header.frame_id = "world";
+				tf.child_frame_id = "map";
+				tfsbr_.sendTransform(tf);
+				tf.header.frame_id = "mantis_uav";
+				tf.child_frame_id = "base_link";
+				tfsbr_.sendTransform(tf);
+				tf.header.frame_id = "mantis_uav/link_2";
+				tf.child_frame_id = "link_upperarm";
+				tf.transform.translation.x = -p_.joint(1).r;
+				tfsbr_.sendTransform(tf);
+				tf.header.frame_id = "mantis_uav/link_3";
+				tf.child_frame_id = "link_forearm";
+				tf.transform.translation.x = -p_.joint(2).r;
+				tfsbr_.sendTransform(tf);
+
+				ROS_INFO("Listening for model states...");
+			}
 		}
 
 		~ModelStatesOdom() {

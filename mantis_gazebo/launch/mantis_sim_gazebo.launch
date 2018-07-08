@@ -52,7 +52,7 @@
 
 	<!-- INFO SETUP -->
 
-	<node name="model_state_odom" pkg="mantis_gazebo" type="model_state_odom_node" output="screen" />
+	<node name="model_state_odom" pkg="mantis_gazebo" type="model_state_odom_node" output="screen" ns="/mantis_uav" />
 	<!--
 	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
 		<remap from="/joint_states" to="/mantis_uav/robot_states" />

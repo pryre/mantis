@@ -6,7 +6,7 @@ control_frame: "map"
 
 throttle:
   min: 0.0
-  mid: 0.30
+  mid: 0.47
   max: 0.9
 
 # Maximum roll/pitch in radians
@@ -15,12 +15,15 @@ tilt_max: 0.39
 # Emergency Landing Velocity (must be negative!)
 failsafe_land_vel: -0.2
 
+allow_timeout_position: true
+
 # Data Stream
 min_rate:
   state:
-    state: 0.2
+    mav_state: 0.2
     odometry: 15.0
   reference:
+    triplet: 10.0
     trajectory: 10.0
     position: 5.0
     velocity: 10.0

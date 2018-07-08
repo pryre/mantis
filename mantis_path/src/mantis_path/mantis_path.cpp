@@ -2,10 +2,12 @@
 #include <dynamic_reconfigure/server.h>
 
 #include <contrail/path_extract.h>
+#include <mantis_description/se_tools.h>
 #include <mantis_path/mantis_path.h>
 #include <mantis_path/ControlParamsConfig.h>
 
 #include <nav_msgs/Odometry.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Quaternion.h>
@@ -44,6 +46,8 @@ MantisPath::MantisPath() :
 
 	if(success) {
 		pub_traj_ = nhp_.advertise<nav_msgs::Odometry>("output/traj", 10);
+		pub_pose_base_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/base", 10);
+		pub_pose_track_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/track", 10);
 
 		timer_path_ = nhp_.createTimer(ros::Duration(1.0/param_path_rate_), &MantisPath::callback_path, this );
 
@@ -58,8 +62,9 @@ MantisPath::~MantisPath() {
 }
 
 void MantisPath::callback_cfg_control_settings(mantis_path::ControlParamsConfig &config, uint32_t level) {
-	param_track_end_ = config.track_end;
-	param_accurate_end_tracking_ = config.accurate_end_tracking;
+	param_tracked_frame_ = config.tracked_frame;
+	param_use_manipulator_jacobian_ = config.use_manipulator_jacobian;
+	param_send_reference_feedback_ = config.reference_feedback;
 }
 
 void MantisPath::callback_path(const ros::TimerEvent& e) {
@@ -77,36 +82,44 @@ void MantisPath::callback_path(const ros::TimerEvent& e) {
 
 		ref_path_.get_ref_state(ge_sp, gev_sp, e.current_real);
 
-		if( param_track_end_ ) {
-			//This hole thing could be done dynamically for any joint
-			//Compute transform for all joints in the chain to get base to end effector
 
-			//Compute transform for all joints in the chain to get base to end effector
-			Eigen::Affine3d gbe;
-			if(solver_.calculate_gbe( gbe ) ) {
-				//XXX: Pretty sure this can be done dynamically in dh_parameters
-				//Calculate the tracking offset for the base
-				g_sp = calc_goal_base_transform(ge_sp, gbe);
+		Eigen::Affine3d gbe;
+		bool track_alter_success = false;
 
-				//Compensate for velocity terms in manipulator movement
-				//This is more accurate, but can make things more unstable
-				if(param_accurate_end_tracking_) {
-					//The linear velocity of the base is dependent on the joint velocities the end effector
-					//End effector velocity jacobian
-					Eigen::MatrixXd Je;
-					if( solver_.calculate_Je( Je ) ) {
-						gv_sp = calc_goal_base_velocity(gev_sp, s_.g().linear()*gbe.linear(), Je, s_.rd());
-					} else {
-						ROS_ERROR("Unable to use accurate end tracking");
-						gv_sp = gev_sp;
-					}
+		//Compute transform for all joints in the chain to get base to end effector
+		if(param_tracked_frame_ == -1)
+			track_alter_success = solver_.calculate_gbe( gbe );
+
+		//Compute transform for all joints in the chain to get base to specified joint
+		if(param_tracked_frame_ > 0)
+			track_alter_success = solver_.calculate_gxy( gbe, 0, param_tracked_frame_ );
+
+		if( track_alter_success ) {
+			//Calculate the tracking offset for the base
+			g_sp = calc_goal_base_transform(ge_sp, gbe);
+
+			//Compensate for velocity terms in manipulator movement
+			//This is more accurate, but can make things more unstable
+			if(param_use_manipulator_jacobian_) {
+				bool calc_manip_velocity = false;
+				Eigen::VectorXd vbe;
+
+				if(param_tracked_frame_ == -1)
+					calc_manip_velocity = solver_.calculate_vbe( vbe );
+
+				if(param_tracked_frame_ > 0)
+					calc_manip_velocity = solver_.calculate_vbx( vbe, param_tracked_frame_ );
+
+				if( calc_manip_velocity ) {
+					//Manipulator velocity in the world frame
+					Eigen::Vector3d Ve = s_.g().linear()*vbe.segment(0,3);
+					//Subtract from setpoint to compensate base movements
+					gv_sp = gev_sp - Ve;
 				} else {
+					ROS_ERROR_THROTTLE(2.0, "Unable to use manipulator Jacobian");
 					gv_sp = gev_sp;
 				}
 			} else {
-				ROS_ERROR("Unable to perform end effector tracking");
-
-				g_sp = ge_sp;
 				gv_sp = gev_sp;
 			}
 		} else {
@@ -124,6 +137,20 @@ void MantisPath::callback_path(const ros::TimerEvent& e) {
 		msg_traj_out.twist.twist.linear = vector_from_eig(gv_sp_b);
 
 		pub_traj_.publish(msg_traj_out);
+
+		if(param_send_reference_feedback_) {
+			geometry_msgs::PoseStamped msg_base_out;
+			geometry_msgs::PoseStamped msg_track_out;
+			msg_base_out.header.stamp = e.current_real;
+			msg_base_out.header.frame_id = param_frame_id_;
+			msg_track_out.header = msg_base_out.header;
+
+			msg_base_out.pose = pose_from_eig(g_sp);
+			msg_track_out.pose = pose_from_eig(ge_sp);
+
+			pub_pose_base_.publish(msg_base_out);
+			pub_pose_track_.publish(msg_track_out);
+		}
 	}
 }
 /*
@@ -144,6 +171,7 @@ Eigen::Affine3d MantisPath::affine_from_msg(const geometry_msgs::Pose pose) {
 		return a;
 }
 */
+/*
 geometry_msgs::Vector3 MantisPath::vector_from_eig(const Eigen::Vector3d &v) {
 	geometry_msgs::Vector3 vec;
 
@@ -184,7 +212,7 @@ geometry_msgs::Pose MantisPath::pose_from_eig(const Eigen::Affine3d &g) {
 
 	return pose;
 }
-
+*/
 Eigen::Affine3d MantisPath::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe) {
 	//Use this yaw only rotation to set the direction of the base (and thus end effector)
 	Eigen::Matrix3d br_sp = extract_yaw_component(ge_sp.linear());
@@ -198,9 +226,9 @@ Eigen::Affine3d MantisPath::calc_goal_base_transform(const Eigen::Affine3d &ge_s
 	return sp*gbe.inverse();
 }
 
-Eigen::Vector3d MantisPath::calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::MatrixXd &Je, const Eigen::VectorXd &rd) {
+Eigen::Vector3d MantisPath::calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::VectorXd &vbe) {
 	//Velocity of the end effector in the end effector frame
-	Eigen::VectorXd vbe = Je*rd;
+	//Eigen::VectorXd vbe = Je*rd;
 
 	//Eigen::Affine3d Vbe;
 	//Vbe.translation() << vbe.segment(0,3);
