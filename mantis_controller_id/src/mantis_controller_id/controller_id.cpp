@@ -167,7 +167,8 @@ void ControllerID::callback_high_level(const ros::TimerEvent& e) {
 					Eigen::VectorXd vbe;
 					if( solver_.calculate_vbe( vbe ) ) {
 						//Manipulator velocity in the world frame
-						Eigen::Vector3d Ve = s_.g().linear()*vbe.segment(0,3);
+						Eigen::Matrix3d br_sp = extract_yaw_component(g_sp_.linear());
+						Eigen::Vector3d Ve = br_sp*vbe.segment(0,3);
 						//Subtract from setpoint to compensate base movements
 						gv_sp_ = gev_sp - Ve;
 					} else {

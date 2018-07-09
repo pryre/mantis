@@ -112,7 +112,8 @@ void MantisPath::callback_path(const ros::TimerEvent& e) {
 
 				if( calc_manip_velocity ) {
 					//Manipulator velocity in the world frame
-					Eigen::Vector3d Ve = s_.g().linear()*vbe.segment(0,3);
+					Eigen::Matrix3d br_sp = extract_yaw_component(g_sp.linear());
+					Eigen::Vector3d Ve = br_sp*vbe.segment(0,3);
 					//Subtract from setpoint to compensate base movements
 					gv_sp = gev_sp - Ve;
 				} else {
