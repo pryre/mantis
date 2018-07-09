@@ -48,6 +48,7 @@ class MantisParamClient {
 		int get_body_num( void );
 		double get_total_mass( void );
 		const mantis_msgs::BodyInertial& body_inertial( const unsigned int i );
+		const std::string& body_name( const unsigned int i );
 
 		int get_joint_num( void );
 		int get_dynamic_joint_num( void );

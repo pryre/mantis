@@ -10,8 +10,9 @@ float64 rpm_thrust_m
 float64 rpm_thrust_c
 float64 motor_drag_max
 
-# Inertial information
+# Body information
 mantis_msgs/BodyInertial[] bodies
+string[] body_names
 
 # Joint information
 dh_parameters/JointDescription[] joints

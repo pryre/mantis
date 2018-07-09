@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-	<xacro:macro name="frame_motor" params="suffix length radius color xyz rpy">
+	<xacro:macro name="frame_motor" params="suffix length radius xyz rpy">
 		<collision name="collision_${suffix}">
 			<origin xyz="${xyz}" rpy="${rpy}"/>
 			<geometry>
@@ -14,7 +14,10 @@
 			<geometry>
 				<cylinder radius="${radius}" length="${length}" />
 			</geometry>
-			<material name="${color}"/>
+
+			<material name="grey">
+				<color rgba="0.2 0.2 0.2 1.0"/>
+			</material>
 		</visual>
 	</xacro:macro>
 </robot>

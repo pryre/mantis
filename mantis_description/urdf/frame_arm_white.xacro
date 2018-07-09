@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-	<xacro:macro name="frame_skid" params="suffix length radius xyz rpy">
+	<xacro:macro name="frame_arm_white" params="suffix length radius xyz rpy">
 		<collision name="collision_${suffix}">
 			<origin xyz="${xyz}" rpy="${rpy}"/>
 			<geometry>

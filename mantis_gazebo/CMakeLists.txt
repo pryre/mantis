@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   gazebo_ros
   gazebo_ros_control
+  dh_parameters
   pid_controller_lib
   controller_manager
   joint_state_controller

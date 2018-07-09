@@ -40,6 +40,7 @@ pwm:
 body:
   num: 3
   b0:
+    name: "base_link"
     mass:
       m: 1.83497 # Base + props
       Ixx: 0.02961 # Maybe need to halve this
@@ -54,6 +55,7 @@ body:
       a: 1.570796326794897
       type: "static"
   b1:
+    name: "link_upperarm"
     mass:
       m: 0.10022841
       Ixx: 0.00001678
@@ -69,6 +71,7 @@ body:
       type: "twist_z"
       beta: 0.8
   b2:
+    name: "link_forearm"
     mass:
       m: 0.10022841
       Ixx: 0.00001678

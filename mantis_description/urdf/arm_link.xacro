@@ -2,7 +2,6 @@
 
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 	<xacro:macro name="arm_link" params="suffix">
-
 		<link name="link_${suffix}">
 			<inertial name='inertial_${suffix}'>>
 				<origin xyz="0.15297991 0 0" rpy="0 0 0"/>
@@ -22,7 +21,10 @@
 				<geometry>
 					<mesh filename="package://mantis_description/meshes/FR12-H101.stl" scale="0.001 0.001 0.001"/>
 				</geometry>
-				<material name="black"/>
+
+				<material name="white">
+					<color rgba="1.0 1.0 1.0 1.0"/>
+				</material>
 			</visual>
 
 			<visual name="visual_${suffix}_rod">
@@ -30,7 +32,10 @@
 				<geometry>
 					<mesh filename="package://mantis_description/meshes/rod.stl" scale="0.001 0.001 0.001"/>
 				</geometry>
-				<material name="black"/>
+
+				<material name="grey">
+					<color rgba="0.2 0.2 0.2 1.0"/>
+				</material>
 			</visual>
 
 			<xacro:visual_servo suffix="${suffix}" xyz="0.148 0.01425 -0.019" rpy="0 0 ${-pi/2}" />

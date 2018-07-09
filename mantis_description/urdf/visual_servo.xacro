@@ -7,7 +7,10 @@
 			<geometry>
 				<mesh filename="package://mantis_description/meshes/X-430_IDLE.stl" scale="0.001 0.001 0.001"/>
 			</geometry>
-			<material name="black"/>
+
+			<material name="dark_grey">
+				<color rgba="0.1 0.1 0.1 1.0"/>
+			</material>
 		</visual>
 	</xacro:macro>
 </robot>

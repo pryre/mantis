@@ -7,10 +7,15 @@
 #include <nav_msgs/Odometry.h>
 #include <gazebo_msgs/ModelStates.h>
 #include <mantis_description/param_client.h>
+#include <mantis_description/se_tools.h>
+#include <dh_parameters/dh_parameters.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
 
+#include <eigen3/Eigen/Dense>
+
 #include <string>
+#include <math.h>
 
 class ModelStatesOdom {
 	private:
@@ -52,20 +57,70 @@ class ModelStatesOdom {
 				geometry_msgs::TransformStamped tf;
 				tf.header.stamp = ros::Time::now();
 				tf.transform.rotation.w = 1.0;
+
+				//World Frame
 				tf.header.frame_id = "world";
 				tf.child_frame_id = "map";
 				tfsbr_.sendTransform(tf);
+
+				//Base Link
 				tf.header.frame_id = "mantis_uav";
-				tf.child_frame_id = "base_link";
+				tf.child_frame_id = p_.body_name(0);
 				tfsbr_.sendTransform(tf);
-				tf.header.frame_id = "mantis_uav/link_2";
-				tf.child_frame_id = "link_upperarm";
-				tf.transform.translation.x = -p_.joint(1).r;
-				tfsbr_.sendTransform(tf);
-				tf.header.frame_id = "mantis_uav/link_3";
-				tf.child_frame_id = "link_forearm";
-				tf.transform.translation.x = -p_.joint(2).r;
-				tfsbr_.sendTransform(tf);
+
+				//Additional bodies
+				for(int i=0; i<p_.get_joint_num(); i++) {
+					DHParameters j(p_.joint(i));
+					if(j.jt() != DHParameters::JointType::Static) {
+						tf.header.frame_id = "mantis_uav/link_" + std::to_string(i+1);
+						tf.child_frame_id = p_.body_name(i);
+						tf.transform.translation = vector_from_eig(-(j.transform().linear().transpose()*j.transform().translation()));
+						tfsbr_.sendTransform(tf);
+					}
+				}
+
+				//Propeller links
+				Eigen::Matrix3d Ra;
+				Eigen::Matrix3d Ras;
+
+				if(p_.airframe_type() == "quad_p4") {
+					double ang = M_PI/2.0;
+					Ras = Eigen::Matrix3d::Identity();
+					Ra << std::cos(ang), -std::sin(ang), 0,
+						  std::sin(ang), std::cos(ang), 0,
+						  0, 0, 1;
+				} else if(p_.airframe_type() == "quad_x4") {
+					double ang = M_PI/2.0;
+
+					Ras << std::cos(ang/2), -std::sin(ang/2), 0,
+						   std::sin(ang/2), std::cos(ang/2), 0,
+						   0, 0, 1;
+					Ra = Ras*Ras;
+				} else if(p_.airframe_type() == "hex_p6") {
+					double ang = M_PI/3.0;
+					Ras = Eigen::Matrix3d::Identity();
+					Ra << std::cos(ang), -std::sin(ang), 0,
+						  std::sin(ang), std::cos(ang), 0,
+						  0, 0, 1;
+				} else if(p_.airframe_type() == "hex_x6") {
+					double ang = M_PI/3.0;
+
+					Ras << std::cos(ang/2), -std::sin(ang/2), 0,
+						   std::sin(ang/2), std::cos(ang/2), 0,
+						   0, 0, 1;
+					Ra = Ras*Ras;
+				}
+
+				Eigen::Vector3d arm = Ras*Eigen::Vector3d(p_.base_arm_length(), 0.0, 0.046);
+
+				tf.header.frame_id = "mantis_uav";
+				for(int i=0; i<p_.motor_num(); i++) {
+					tf.child_frame_id = "link_rotor_" + std::to_string(i+1);
+					tf.transform.translation = vector_from_eig(arm);
+					tfsbr_.sendTransform(tf);
+
+					arm = Ra*arm;
+				}
 
 				ROS_INFO("Listening for model states...");
 			}

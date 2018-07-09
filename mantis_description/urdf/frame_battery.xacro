@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
-
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-	<xacro:macro name="frame_battery" params="suffix size color xyz rpy">
+	<xacro:macro name="frame_battery" params="suffix size xyz rpy">
 		<collision name="collision_${suffix}">
 			<origin xyz="${xyz}" rpy="${rpy}"/>
 			<geometry>
@@ -14,7 +13,10 @@
 			<geometry>
 				<box size="${size}"/>
 			</geometry>
-			<material name="${color}"/>
+
+			<material name="blue">
+				<color rgba="0.0 0.0 0.8 1.0"/>
+			</material>
 		</visual>
 	</xacro:macro>
 </robot>

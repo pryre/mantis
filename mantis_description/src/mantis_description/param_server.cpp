@@ -66,6 +66,7 @@ mantis_msgs::Params MantisParamServer::get_params( void ) {
 	p.motor_drag_max = motor_drag_max_;
 
 	p.bodies = bodies_;
+	p.body_names = body_names_;
 	p.joints = joints_;
 
 	return p;
@@ -93,13 +94,19 @@ void MantisParamServer::load( void ) {
 	nh_.param("pwm/min", pwm_min_, pwm_min_);
 	nh_.param("pwm/max", pwm_max_, pwm_max_);
 
-	//TODO: Should be loaded dynamically
-	nh_.param("body/num", body_num_, body_num_);
+	//Prepare vectors
 	bodies_.clear();
+	body_names_.clear();
+	joints_.clear();
+
+	//Body definitions
+	nh_.param("body/num", body_num_, body_num_);
 	for(int i=0; i<body_num_; i++) {
 		mantis_msgs::BodyInertial bi;
+		std::string name;
+		if( nh_.getParam( "body/b" + std::to_string(i) + "/name", name) &&
+			nh_.getParam( "body/b" + std::to_string(i) + "/mass/m", bi.mass) ) {
 
-		if( nh_.getParam( "body/b" + std::to_string(i) + "/mass/m", bi.mass) ) {
 			nh_.getParam( "body/b" + std::to_string(i) + "/mass/Ixx", bi.Ixx);
 			nh_.getParam( "body/b" + std::to_string(i) + "/mass/Ixy", bi.Ixx);
 			nh_.getParam( "body/b" + std::to_string(i) + "/mass/Ixz", bi.Ixx);
@@ -108,6 +115,7 @@ void MantisParamServer::load( void ) {
 			nh_.getParam( "body/b" + std::to_string(i) + "/mass/Izz", bi.Izz);
 			nh_.getParam( "body/b" + std::to_string(i) + "/mass/com", bi.com);
 
+			body_names_.push_back(name);
 			bodies_.push_back(bi);
 		} else {
 			//Could not find any more valid links defined, give up
@@ -116,7 +124,6 @@ void MantisParamServer::load( void ) {
 	}
 
 	//Load in the link definitions
-	joints_.clear();
 	for(int i=0; i<body_num_; i++) {
 		dh_parameters::JointDescription jd;
 

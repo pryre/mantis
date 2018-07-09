@@ -8,7 +8,8 @@
 
 	<xacro:include filename="$(find mantis_description)/urdf/frame_battery.xacro" />
 	<xacro:include filename="$(find mantis_description)/urdf/frame_servo.xacro" />
-	<xacro:include filename="$(find mantis_description)/urdf/frame_arm.xacro" />
+	<xacro:include filename="$(find mantis_description)/urdf/frame_arm_red.xacro" />
+	<xacro:include filename="$(find mantis_description)/urdf/frame_arm_white.xacro" />
 	<xacro:include filename="$(find mantis_description)/urdf/frame_motor.xacro" />
 	<xacro:include filename="$(find mantis_description)/urdf/frame_skid.xacro" />
 
@@ -19,8 +20,6 @@
 
 	<!-- Import all Gazebo-customization elements, including Gazebo colors -->
 	<xacro:include filename="$(find mantis_description)/urdf/mantis.gazebo" />
-	<!-- Import Rviz colors -->
-	<xacro:include filename="$(find mantis_description)/urdf/materials.xacro" />
 
 	<!-- Used for fixing robot to Gazebo 'base_link' -->
 	<link name="world"/>
@@ -52,33 +51,36 @@
 			<geometry>
 				<cylinder radius="0.105" length="0.03"/>
 			</geometry>
-			<material name="orange"/>
+
+			<material name="grey">
+				<color rgba="0.2 0.2 0.2 1.0"/>
+			</material>
 		</visual>
 
-		<xacro:frame_battery suffix="battery_primary" size="0.052 0.146 0.034" color="blue" xyz="0.0 0.0 0.032" rpy="0.0 0.0 0.0" />
+		<xacro:frame_battery suffix="battery_primary" size="0.052 0.146 0.034" xyz="0.0 0.0 0.032" rpy="0.0 0.0 0.0" />
 
-		<xacro:frame_servo suffix="servo_shoulder" size="0.0285 0.034 0.0465" color="black" xyz="0.01425 0.019 -0.015" rpy="${-pi/2} 0 ${pi}" />
+		<xacro:frame_servo suffix="servo_shoulder" size="0.0285 0.034 0.0465" xyz="0.01425 0.019 -0.015" rpy="${-pi/2} 0 ${pi}" />
 
-		<xacro:frame_arm suffix="arm_1" length="0.17" radius="0.015" color="white" xyz="0 -0.19 0" rpy="${pi/2} 0 0" />
-		<xacro:frame_arm suffix="arm_2" length="0.17" radius="0.015" color="white" xyz="0 0.19 0" rpy="${pi/2} 0 0" />
-		<xacro:frame_arm suffix="arm_3" length="0.17" radius="0.015" color="red" xyz="0.165 0.095 0" rpy="${pi/2} 0 ${2*pi/3}" />
-		<xacro:frame_arm suffix="arm_4" length="0.17" radius="0.015" color="white" xyz="-0.165 -0.095 0" rpy="${pi/2} 0 ${2*pi/3}" />
-		<xacro:frame_arm suffix="arm_5" length="0.17" radius="0.015" color="red" xyz="0.165 -0.095 0" rpy="${pi/2} 0 ${pi/3}" />
-		<xacro:frame_arm suffix="arm_6" length="0.17" radius="0.015" color="white" xyz="-0.165 0.095 0" rpy="${pi/2} 0 ${pi/3}" />
+		<xacro:frame_arm_white suffix="arm_1" length="0.17" radius="0.015" xyz="0 -0.19 0" rpy="${pi/2} 0 0" />
+		<xacro:frame_arm_white suffix="arm_2" length="0.17" radius="0.015" xyz="0 0.19 0" rpy="${pi/2} 0 0" />
+		<xacro:frame_arm_red suffix="arm_3" length="0.17" radius="0.015" xyz="0.165 0.095 0" rpy="${pi/2} 0 ${2*pi/3}" />
+		<xacro:frame_arm_white suffix="arm_4" length="0.17" radius="0.015" xyz="-0.165 -0.095 0" rpy="${pi/2} 0 ${2*pi/3}" />
+		<xacro:frame_arm_red suffix="arm_5" length="0.17" radius="0.015" xyz="0.165 -0.095 0" rpy="${pi/2} 0 ${pi/3}" />
+		<xacro:frame_arm_white suffix="arm_6" length="0.17" radius="0.015" xyz="-0.165 0.095 0" rpy="${pi/2} 0 ${pi/3}" />
 
-		<xacro:frame_motor suffix="motor_1" length="0.024" radius="0.014" color="grey" xyz="0 -0.275 0.027" rpy="0 0 0" />
-		<xacro:frame_motor suffix="motor_2" length="0.024" radius="0.014" color="grey" xyz="0 0.275 0.027" rpy="0 0 0" />
-		<xacro:frame_motor suffix="motor_3" length="0.024" radius="0.014" color="grey" xyz="0.2382 0.1375 0.027" rpy="0 0 0" />
-		<xacro:frame_motor suffix="motor_4" length="0.024" radius="0.014" color="grey" xyz="-0.2382 -0.1375 0.027" rpy="0 0 0" />
-		<xacro:frame_motor suffix="motor_5" length="0.024" radius="0.014" color="grey" xyz="0.2382 -0.1375 0.027" rpy="0 0 0" />
-		<xacro:frame_motor suffix="motor_6" length="0.024" radius="0.014" color="grey" xyz="-0.2382 0.1375 0.027" rpy="0 0 0" />
+		<xacro:frame_motor suffix="motor_1" length="0.024" radius="0.014" xyz="0 -0.275 0.027" rpy="0 0 0" />
+		<xacro:frame_motor suffix="motor_2" length="0.024" radius="0.014" xyz="0 0.275 0.027" rpy="0 0 0" />
+		<xacro:frame_motor suffix="motor_3" length="0.024" radius="0.014" xyz="0.2382 0.1375 0.027" rpy="0 0 0" />
+		<xacro:frame_motor suffix="motor_4" length="0.024" radius="0.014" xyz="-0.2382 -0.1375 0.027" rpy="0 0 0" />
+		<xacro:frame_motor suffix="motor_5" length="0.024" radius="0.014" xyz="0.2382 -0.1375 0.027" rpy="0 0 0" />
+		<xacro:frame_motor suffix="motor_6" length="0.024" radius="0.014" xyz="-0.2382 0.1375 0.027" rpy="0 0 0" />
 
-		<xacro:frame_skid suffix="skid_1" length="0.12" radius="0.008" color="white" xyz="0 -0.275 -0.075" rpy="0 0 0" />
-		<xacro:frame_skid suffix="skid_2" length="0.12" radius="0.008" color="white" xyz="0 0.275 -0.075" rpy="0 0 0" />
-		<xacro:frame_skid suffix="skid_3" length="0.12" radius="0.008" color="white" xyz="0.2382 0.1375 -0.075" rpy="0 0 0" />
-		<xacro:frame_skid suffix="skid_4" length="0.12" radius="0.008" color="white" xyz="-0.2382 -0.1375 -0.075" rpy="0 0 0" />
-		<xacro:frame_skid suffix="skid_5" length="0.12" radius="0.008" color="white" xyz="0.2382 -0.1375 -0.075" rpy="0 0 0" />
-		<xacro:frame_skid suffix="skid_6" length="0.12" radius="0.008" color="white" xyz="-0.2382 0.1375 -0.075" rpy="0 0 0" />
+		<xacro:frame_skid suffix="skid_1" length="0.12" radius="0.008" xyz="0 -0.275 -0.075" rpy="0 0 0" />
+		<xacro:frame_skid suffix="skid_2" length="0.12" radius="0.008" xyz="0 0.275 -0.075" rpy="0 0 0" />
+		<xacro:frame_skid suffix="skid_3" length="0.12" radius="0.008" xyz="0.2382 0.1375 -0.075" rpy="0 0 0" />
+		<xacro:frame_skid suffix="skid_4" length="0.12" radius="0.008" xyz="-0.2382 -0.1375 -0.075" rpy="0 0 0" />
+		<xacro:frame_skid suffix="skid_5" length="0.12" radius="0.008" xyz="0.2382 -0.1375 -0.075" rpy="0 0 0" />
+		<xacro:frame_skid suffix="skid_6" length="0.12" radius="0.008" xyz="-0.2382 0.1375 -0.075" rpy="0 0 0" />
 	</link>
 
 

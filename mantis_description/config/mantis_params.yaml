@@ -31,6 +31,7 @@ pwm:
 body:
   num: 3
   b0:
+    name: "base_link"
     mass:
       m: 1.44 #2.38 #Base + props
       Ixx: 0.02850657
@@ -45,6 +46,7 @@ body:
       a: 1.570796326794897
       type: "static"
   b1:
+    name: "link_upperarm"
     mass:
       m: 0.1
       Ixx: 0.00005
@@ -60,6 +62,7 @@ body:
       type: "twist_z"
       beta: 0.8 # Maybe lower the filter a bit, or maybe set to 1 to remove it?
   b2:
+    name: "link_forearm"
     mass:
       m: 0.06
       Ixx: 0.00004

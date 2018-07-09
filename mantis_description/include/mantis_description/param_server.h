@@ -32,6 +32,7 @@ class MantisParamServer {
 
 		int body_num_;
 		std::vector<mantis_msgs::BodyInertial> bodies_;
+		std::vector<std::string> body_names_;
 		std::vector<dh_parameters::JointDescription> joints_;
 
 	public:

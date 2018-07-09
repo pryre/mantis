@@ -119,6 +119,10 @@ const mantis_msgs::BodyInertial& MantisParamClient::body_inertial( const unsigne
 	return params_.bodies[i];
 }
 
+const std::string& MantisParamClient::body_name( const unsigned int i ) {
+	return params_.body_names[i];
+}
+
 int MantisParamClient::get_joint_num( void ) {
 	return params_.joints.size();
 }
