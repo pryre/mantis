@@ -9,18 +9,23 @@
 	<gazebo reference="visual_battery_primary">
 		<material>Gazebo/Blue</material>
 	</gazebo>
- -->
+
 
 	<gazebo>
 		<plugin name="mantis_gazebo_pwm" filename="libmantis_gazebo_pwm_motor.so"/>
 	</gazebo>
 
 	<gazebo>
+		<plugin name="mantis_gazebo_safety" filename="libmantis_gazebo_safety.so"/>
+	</gazebo>
+ -->
+
+	<gazebo>
 		<plugin name="mantis_ball_grasp" filename="libmantis_gazebo_ball_grasp.so"/>
 	</gazebo>
 
 	<gazebo>
-		<plugin name="mantis_gazebo_safety" filename="libmantis_gazebo_safety.so"/>
+		<plugin name="mantis_gazebo_plugin" filename="libmantis_gazebo_plugin.so"/>
 	</gazebo>
 
 	<gazebo>

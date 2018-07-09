@@ -144,19 +144,23 @@ link_directories(${GAZEBO_LIBRARY_DIRS})
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS})
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}_servo
-  src/${PROJECT_NAME}/mg_servo.cpp
-)
+#add_library(${PROJECT_NAME}_servo
+#  src/${PROJECT_NAME}/mg_servo.cpp
+#)
 add_library(${PROJECT_NAME}_ball_grasp
   src/${PROJECT_NAME}/mg_ball_grasp.cpp
 )
 
-add_library(${PROJECT_NAME}_pwm_motor
-  src/${PROJECT_NAME}/mg_pwm_motor.cpp
-)
+#add_library(${PROJECT_NAME}_pwm_motor
+#  src/${PROJECT_NAME}/mg_pwm_motor.cpp
+#)
 
-add_library(${PROJECT_NAME}_safety
-  src/${PROJECT_NAME}/mg_safety.cpp
+#add_library(${PROJECT_NAME}_safety
+#  src/${PROJECT_NAME}/mg_safety.cpp
+#)
+
+add_library(${PROJECT_NAME}_plugin
+  src/${PROJECT_NAME}/mg_plugin.cpp
 )
 
 add_library(${PROJECT_NAME}_motor_model
@@ -166,15 +170,16 @@ add_library(${PROJECT_NAME}_motor_model
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(${PROJECT_NAME}_servo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
+#add_dependencies(${PROJECT_NAME}_servo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
 add_dependencies(${PROJECT_NAME}_ball_grasp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(${PROJECT_NAME}_pwm_motor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
-add_dependencies(${PROJECT_NAME}_safety ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
+#add_dependencies(${PROJECT_NAME}_pwm_motor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
+#add_dependencies(${PROJECT_NAME}_safety ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
+add_dependencies(${PROJECT_NAME}_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(model_state_odom_node src/model_state_odom_node.cpp)
+#add_executable(model_state_odom_node src/model_state_odom_node.cpp)
 add_executable(controller_acro_node src/controller_acro_node.cpp)
 
 ## Rename C++ executable without prefix
@@ -185,42 +190,48 @@ add_executable(controller_acro_node src/controller_acro_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(model_state_odom_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#add_dependencies(model_state_odom_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(controller_acro_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}_servo
-  ${catkin_LIBRARIES}
-  ${GAZEBO_LIBRARIES}
-  ${Boost_LIBRARIES}
-)
+#target_link_libraries(${PROJECT_NAME}_servo
+#  ${catkin_LIBRARIES}
+#  ${GAZEBO_LIBRARIES}
+#  ${Boost_LIBRARIES}
+#)
 target_link_libraries(${PROJECT_NAME}_ball_grasp
   ${catkin_LIBRARIES}
   ${GAZEBO_LIBRARIES}
   ${Boost_LIBRARIES}
 )
 
-target_link_libraries(${PROJECT_NAME}_pwm_motor
+#target_link_libraries(${PROJECT_NAME}_pwm_motor
+#  ${catkin_LIBRARIES}
+#  ${GAZEBO_LIBRARIES}
+#  ${Boost_LIBRARIES}
+#)
+
+#target_link_libraries(${PROJECT_NAME}_safety
+#  ${catkin_LIBRARIES}
+#  ${GAZEBO_LIBRARIES}
+#  ${Boost_LIBRARIES}
+#)
+
+target_link_libraries(${PROJECT_NAME}_plugin
   ${catkin_LIBRARIES}
   ${GAZEBO_LIBRARIES}
   ${Boost_LIBRARIES}
 )
 
-target_link_libraries(${PROJECT_NAME}_safety
-  ${catkin_LIBRARIES}
-  ${GAZEBO_LIBRARIES}
-  ${Boost_LIBRARIES}
-)
+#target_link_libraries(${PROJECT_NAME}_motor_model
+#  ${catkin_LIBRARIES}
+#  ${GAZEBO_LIBRARIES}
+#  ${Boost_LIBRARIES}
+#)
 
-target_link_libraries(${PROJECT_NAME}_motor_model
-  ${catkin_LIBRARIES}
-  ${GAZEBO_LIBRARIES}
-  ${Boost_LIBRARIES}
-)
-
-target_link_libraries(model_state_odom_node
-  ${catkin_LIBRARIES}
-)
+#target_link_libraries(model_state_odom_node
+#  ${catkin_LIBRARIES}
+#)
 
 target_link_libraries(controller_acro_node
   ${catkin_LIBRARIES}

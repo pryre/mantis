@@ -280,16 +280,18 @@ class ControllerAcro {
 			pub_rc_out_ = nh_.advertise<mavros_msgs::OverrideRCIn>( "command/motor_pwm", 10 );
 			sub_actuator_control_ = nh_.subscribe<mavros_msgs::ActuatorControl>("command/force_compensation", 1, &ControllerAcro::forceCompCallback, this);
 
-			tmr_rc_out_ = nh_.createTimer(ros::Duration(1 / pwm_update_rate_), &ControllerAcro::mixerCallback, this);
+			if(p_.wait_for_params()) {
+				tmr_rc_out_ = nh_.createTimer(ros::Duration(1 / pwm_update_rate_), &ControllerAcro::mixerCallback, this);
 
-			param_ang_r_ff_ = 6.0;
-			param_ang_p_ff_ = 6.0;
-			param_ang_y_ff_ = 2.8;
-			param_rate_r_max_ = 3.85;	//~220 deg/s
-			param_rate_p_max_ = 3.85;	//~220 deg/s
-			param_rate_y_max_ = 1.05;	//~60 deg/s
+				param_ang_r_ff_ = 6.0;
+				param_ang_p_ff_ = 6.0;
+				param_ang_y_ff_ = 2.8;
+				param_rate_r_max_ = 3.85;	//~220 deg/s
+				param_rate_p_max_ = 3.85;	//~220 deg/s
+				param_rate_y_max_ = 1.05;	//~60 deg/s
 
-			ROS_INFO("Listening for outputting motor commands...");
+				ROS_INFO("Listening for outputting motor commands...");
+			}
 		}
 
 		~ControllerAcro() {

@@ -35,6 +35,7 @@ ForwardKinematics::ForwardKinematics() :
 	param_do_end_effector_pose_(true),
 	param_do_viz_(true),
 	param_done_viz_(false),
+	prop_rate_(0.8),
 	tfBuffer_(ros::Duration(20.0)) {
 
 	//Load parameters
@@ -63,6 +64,79 @@ ForwardKinematics::ForwardKinematics() :
 			do_reset();
 
 			timer_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ForwardKinematics::callback_timer, this );
+
+			//Send static transforms for rviz model
+			//TODO: Make more dynamic with params
+			geometry_msgs::TransformStamped tf;
+			tf.header.stamp = ros::Time::now();
+			tf.transform.rotation.w = 1.0;
+
+			//World Frame
+			tf.header.frame_id = "world";
+			tf.child_frame_id = "map";
+			tfsbr_.sendTransform(tf);
+
+			//Base Link
+			tf.header.frame_id = param_model_id_;
+			tf.child_frame_id = p_.body_name(0);
+			tfsbr_.sendTransform(tf);
+
+			//Additional bodies
+			for(int i=0; i<p_.get_joint_num(); i++) {
+				DHParameters j(p_.joint(i));
+				if(j.jt() != DHParameters::JointType::Static) {
+					tf.header.frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
+					tf.child_frame_id = p_.body_name(i);
+					tf.transform.translation = vector_from_eig(-(j.transform().linear().transpose()*j.transform().translation()));
+					tfsbr_.sendTransform(tf);
+				}
+			}
+
+			//Propeller links
+			Eigen::Matrix3d Ra;
+			Eigen::Matrix3d Ras;
+			tf_props.resize(p_.motor_num());
+
+			if(p_.airframe_type() == "quad_p4") {
+				double ang = M_PI/2.0;
+				Ras = Eigen::Matrix3d::Identity();
+				Ra << std::cos(ang), -std::sin(ang), 0,
+					  std::sin(ang), std::cos(ang), 0,
+					  0, 0, 1;
+			} else if(p_.airframe_type() == "quad_x4") {
+				double ang = M_PI/2.0;
+
+				Ras << std::cos(ang/2), -std::sin(ang/2), 0,
+					   std::sin(ang/2), std::cos(ang/2), 0,
+					   0, 0, 1;
+				Ra = Ras*Ras;
+			} else if(p_.airframe_type() == "hex_p6") {
+				double ang = M_PI/3.0;
+				Ras = Eigen::Matrix3d::Identity();
+				Ra << std::cos(ang), -std::sin(ang), 0,
+					  std::sin(ang), std::cos(ang), 0,
+					  0, 0, 1;
+			} else if(p_.airframe_type() == "hex_x6") {
+				double ang = M_PI/3.0;
+
+				Ras << std::cos(ang/2), -std::sin(ang/2), 0,
+					   std::sin(ang/2), std::cos(ang/2), 0,
+					   0, 0, 1;
+				Ra = Ras*Ras;
+			}
+
+			Eigen::Vector3d arm = Ras*Eigen::Vector3d(p_.base_arm_length(), 0.0, 0.046);
+
+			for(int i=0; i<p_.motor_num(); i++) {
+				tf_props[i].header.frame_id = param_model_id_;
+				tf_props[i].child_frame_id = "link_rotor_" + std::to_string(i+1);
+				tf_props[i].transform.translation = vector_from_eig(arm);
+				tf_props[i].transform.rotation.w = 1.0;
+
+				arm = Ra*arm;
+			}
+
+			timer_prop_viz_ = nhp_.createTimer(ros::Duration(0.05), &ForwardKinematics::callback_props, this );
 
 			ROS_INFO("Forward kinematics running!");
 		} else {
@@ -123,6 +197,24 @@ void ForwardKinematics::callback_timer(const ros::TimerEvent& e) {
 
 }
 
+void ForwardKinematics::callback_props( const ros::TimerEvent& e ) {
+	if(s_.flight_ready()) {
+		Eigen::Quaterniond r(Eigen::AngleAxisd(prop_rate_, Eigen::Vector3d::UnitZ()));
+
+		for(int i=0; i<p_.motor_num(); i++) {
+			tf_props[i].header.stamp = e.current_real;
+			Eigen::Quaterniond q = quaternion_from_msg(tf_props[i].transform.rotation);
+			tf_props[i].transform.rotation = quaternion_from_eig(r*q);
+
+			tfbr_.sendTransform(tf_props[i]);
+		}
+	}
+
+	for(int i=0; i<p_.motor_num(); i++) {
+		tf_props[i].header.stamp = e.current_real;
+		tfbr_.sendTransform(tf_props[i]);
+	}
+}
 /*
 void ForwardKinematics::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
 

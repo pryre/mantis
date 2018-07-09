@@ -10,23 +10,26 @@
 #include <mantis_description/se_tools.h>
 #include <dh_parameters/dh_parameters.h>
 #include <tf2_ros/static_transform_broadcaster.h>
+#include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
 
 #include <eigen3/Eigen/Dense>
 
 #include <string>
+#include <vector>
 #include <math.h>
 
 class ModelStatesOdom {
 	private:
 		ros::NodeHandle nh_;
-		ros::NodeHandle nhp_;
 
 		ros::Subscriber sub_model_states_;
 		ros::Publisher pub_odom_;
+		ros::Timer timer_prop_viz_;
 
 		MantisParamClient p_;
 		tf2_ros::StaticTransformBroadcaster tfsbr_;
+		tf2_ros::TransformBroadcaster tfbr_;
 
 		std::string topic_model_states_;
 		std::string topic_odom_;
@@ -35,15 +38,18 @@ class ModelStatesOdom {
 		std::string model_name_;
 		nav_msgs::Odometry msg_odom_;
 
+		double prop_rate_;
+		std::vector<geometry_msgs::TransformStamped> tf_props;
+
 	public:
 		ModelStatesOdom() :
 			nh_(),
-			nhp_( "~" ),
 			p_(&nh_),
 			model_name_("mantis_uav"),
 			parent_name_("map"),
 			topic_model_states_("/gazebo/model_states"),
-			topic_odom_("state/odom") {
+			topic_odom_("state/odom"),
+			prop_rate_(1.0) {
 
 			sub_model_states_ = nh_.subscribe<gazebo_msgs::ModelStates>(topic_model_states_, 1, &ModelStatesOdom::statesCallback, this);
 			pub_odom_ = nh_.advertise<nav_msgs::Odometry>( topic_odom_, 10 );
@@ -82,6 +88,7 @@ class ModelStatesOdom {
 				//Propeller links
 				Eigen::Matrix3d Ra;
 				Eigen::Matrix3d Ras;
+				tf_props.resize(p_.motor_num());
 
 				if(p_.airframe_type() == "quad_p4") {
 					double ang = M_PI/2.0;
@@ -113,11 +120,11 @@ class ModelStatesOdom {
 
 				Eigen::Vector3d arm = Ras*Eigen::Vector3d(p_.base_arm_length(), 0.0, 0.046);
 
-				tf.header.frame_id = "mantis_uav";
 				for(int i=0; i<p_.motor_num(); i++) {
-					tf.child_frame_id = "link_rotor_" + std::to_string(i+1);
-					tf.transform.translation = vector_from_eig(arm);
-					tfsbr_.sendTransform(tf);
+					tf_props[i].header.frame_id = "mantis_uav";
+					tf_props[i].child_frame_id = "link_rotor_" + std::to_string(i+1);
+					tf_props[i].transform.translation = vector_from_eig(arm);
+					tf_props[i].transform.rotation.w = 1.0;
 
 					arm = Ra*arm;
 				}
@@ -129,6 +136,18 @@ class ModelStatesOdom {
 		~ModelStatesOdom() {
 			//This message won't actually send here, as the node will have already shut down
 			ROS_INFO("Shutting down...");
+		}
+
+		void callback_props( const ros::TimerEvent& e ) {
+				Eigen::Quaterniond r(Eigen::AngleAxisd(prop_rate_, Eigen::Vector3d::UnitZ()));
+
+				for(int i=0; i<p_.motor_num(); i++) {
+					tf_props[i].header.stamp = e.current_real;
+					Eigen::Quaterniond q = quaternion_from_msg(tf_props[i].transform.rotation);
+					tf_props[i].transform.rotation = quaternion_from_eig(r*q);
+
+					tfbr_.sendTransform(tf_props[i]);
+				}
 		}
 
 		void statesCallback(const gazebo_msgs::ModelStates::ConstPtr& msg_in) {

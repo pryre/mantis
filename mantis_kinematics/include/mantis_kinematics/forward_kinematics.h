@@ -26,6 +26,7 @@ class ForwardKinematics {
 		ros::Publisher pub_end_;
 		ros::Publisher pub_viz_;
 		ros::Timer timer_;
+		ros::Timer timer_prop_viz_;
 
 		tf2_ros::Buffer tfBuffer_;
 		tf2_ros::TransformBroadcaster tfbr_;
@@ -44,6 +45,9 @@ class ForwardKinematics {
 
 		ros::Time time_last_update_;
 
+		double prop_rate_;
+		std::vector<geometry_msgs::TransformStamped> tf_props;
+
 	public:
 		ForwardKinematics( void );
 
@@ -55,5 +59,6 @@ class ForwardKinematics {
 		void configure_static_joints();
 
 		void callback_timer(const ros::TimerEvent& e);
+		void callback_props(const ros::TimerEvent& e);
 		void do_viz( const std::vector<std::string> *arm_names );
 };
