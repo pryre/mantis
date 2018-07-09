@@ -6,6 +6,7 @@
 #include <mantis_path/mantis_path.h>
 #include <mantis_path/ControlParamsConfig.h>
 
+#include <mavros_msgs/PositionTarget.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
@@ -46,6 +47,7 @@ MantisPath::MantisPath() :
 
 	if(success) {
 		pub_traj_ = nhp_.advertise<nav_msgs::Odometry>("output/traj", 10);
+		pub_tri_ = nhp_.advertise<mavros_msgs::PositionTarget>("output/triplet", 10);
 		pub_pose_base_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/base", 10);
 		pub_pose_track_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/track", 10);
 
@@ -112,7 +114,7 @@ void MantisPath::callback_path(const ros::TimerEvent& e) {
 
 				if( calc_manip_velocity ) {
 					//Manipulator velocity in the world frame
-					Eigen::Matrix3d br_sp = extract_yaw_component(g_sp.linear());
+					Eigen::Matrix3d br_sp = extract_yaw_matrix(g_sp.linear());
 					Eigen::Vector3d Ve = br_sp*vbe.segment(0,3);
 					//Subtract from setpoint to compensate base movements
 					gv_sp = gev_sp - Ve;
@@ -139,6 +141,21 @@ void MantisPath::callback_path(const ros::TimerEvent& e) {
 
 		pub_traj_.publish(msg_traj_out);
 
+
+		mavros_msgs::PositionTarget msg_tri_out;
+		msg_tri_out.header.stamp = e.current_real;
+		msg_tri_out.header.frame_id = param_frame_id_;
+		msg_tri_out.coordinate_frame = msg_tri_out.FRAME_LOCAL_NED;
+		msg_tri_out.type_mask = msg_tri_out.IGNORE_AFX | msg_tri_out.IGNORE_AFY | msg_tri_out.IGNORE_AFZ | msg_tri_out.FORCE;
+		msg_tri_out.position = point_from_eig(g_sp.translation());
+		msg_tri_out.velocity = vector_from_eig(gv_sp);
+		//Eigen::Vector3d ea = g_sp.linear().eulerAngles(2,1,0);
+		msg_tri_out.yaw = extract_yaw_component(g_sp.linear());//1.57;//ea[2];
+		msg_tri_out.yaw_rate = 0.0;
+
+
+		pub_tri_.publish(msg_tri_out);
+
 		if(param_send_reference_feedback_) {
 			geometry_msgs::PoseStamped msg_base_out;
 			geometry_msgs::PoseStamped msg_track_out;
@@ -154,69 +171,10 @@ void MantisPath::callback_path(const ros::TimerEvent& e) {
 		}
 	}
 }
-/*
-Eigen::Vector3d MantisPath::position_from_msg(const geometry_msgs::Point p) {
-		return Eigen::Vector3d(p.x, p.y, p.z);
-}
 
-Eigen::Quaterniond MantisPath::quaternion_from_msg(const geometry_msgs::Quaternion q) {
-		return Eigen::Quaterniond(q.w, q.x, q.y, q.z).normalized();
-}
-
-Eigen::Affine3d MantisPath::affine_from_msg(const geometry_msgs::Pose pose) {
-		Eigen::Affine3d a;
-
-		a.translation() << position_from_msg(pose.position);
-		a.linear() << quaternion_from_msg(pose.orientation).toRotationMatrix();
-
-		return a;
-}
-*/
-/*
-geometry_msgs::Vector3 MantisPath::vector_from_eig(const Eigen::Vector3d &v) {
-	geometry_msgs::Vector3 vec;
-
-	vec.x = v.x();
-	vec.y = v.y();
-	vec.z = v.z();
-
-	return vec;
-}
-
-geometry_msgs::Point MantisPath::point_from_eig(const Eigen::Vector3d &p) {
-	geometry_msgs::Point point;
-
-	point.x = p.x();
-	point.y = p.y();
-	point.z = p.z();
-
-	return point;
-}
-
-geometry_msgs::Quaternion MantisPath::quaternion_from_eig(const Eigen::Quaterniond &q) {
-	geometry_msgs::Quaternion quat;
-	Eigen::Quaterniond qn = q.normalized();
-
-	quat.w = qn.w();
-	quat.x = qn.x();
-	quat.y = qn.y();
-	quat.z = qn.z();
-
-	return quat;
-}
-
-geometry_msgs::Pose MantisPath::pose_from_eig(const Eigen::Affine3d &g) {
-	geometry_msgs::Pose pose;
-
-	pose.position = point_from_eig(g.translation());
-	pose.orientation = quaternion_from_eig(Eigen::Quaterniond(g.linear()));
-
-	return pose;
-}
-*/
 Eigen::Affine3d MantisPath::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe) {
 	//Use this yaw only rotation to set the direction of the base (and thus end effector)
-	Eigen::Matrix3d br_sp = extract_yaw_component(ge_sp.linear());
+	Eigen::Matrix3d br_sp = extract_yaw_matrix(ge_sp.linear());
 
 	//Construct the true end effector
 	Eigen::Affine3d sp = Eigen::Affine3d::Identity();
@@ -242,7 +200,21 @@ Eigen::Vector3d MantisPath::calc_goal_base_velocity(const Eigen::Vector3d &gev_s
 	return gev_sp - Ve;
 }
 
-Eigen::Matrix3d MantisPath::extract_yaw_component(const Eigen::Matrix3d r) {
+double MantisPath::extract_yaw_component(const Eigen::Matrix3d& r) {
+	//As long as y isn't straight up
+	//if(r.col(1) != Eigen::Vector3d::UnitZ()) {
+		//If we have ||roll|| > 90Deg
+	Eigen::Vector3d x_c;
+	if(r(2,2) > 0.0) {
+		x_c = r.col(0);
+	} else {
+		x_c = -r.col(0);
+	}
+
+	return std::atan2(x_c[1], x_c[0]);
+}
+
+Eigen::Matrix3d MantisPath::extract_yaw_matrix(const Eigen::Matrix3d& r) {
 	Eigen::Vector3d sp_x = Eigen::Vector3d::UnitX();
 	Eigen::Vector3d sp_y = Eigen::Vector3d::UnitY();
 

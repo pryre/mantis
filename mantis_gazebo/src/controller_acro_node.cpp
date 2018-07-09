@@ -8,6 +8,7 @@
 #include <mavros_msgs/OverrideRCIn.h>
 #include <sensor_msgs/Imu.h>
 
+#include <mantis_description/se_tools.h>
 #include <mantis_description/param_client.h>
 #include <pid_controller_lib/pidController.h>
 
@@ -69,6 +70,71 @@ class ControllerAcro {
 			return (i < min) ? min : (i > max) ? max : i;
 		}
 
+		Eigen::Vector3d calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R) {
+			Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
+
+			//Method derived from px4 attitude controller:
+			//DCM from for state and setpoint
+
+			//Calculate shortest path to goal rotation without yaw (as it's slower than roll/pitch)
+			Eigen::Vector3d R_z = R.col(2);
+			Eigen::Vector3d R_sp_z = R_sp.col(2);
+
+			//px4: axis and sin(angle) of desired rotation
+			//px4: math::Vector<3> e_R = R.transposed() * (R_z % R_sp_z);
+			Eigen::Vector3d e_R = R.transpose() * R_z.cross(R_sp_z);
+
+			double e_R_z_sin = e_R.norm();
+			double e_R_z_cos = R_z.dot(R_sp_z);
+
+			//px4: calculate rotation matrix after roll/pitch only rotation
+			Eigen::Matrix3d R_rp;
+
+			if(e_R_z_sin > 0) {
+				//px4: get axis-angle representation
+				Eigen::Vector3d e_R_z_axis = e_R / e_R_z_sin;
+				e_R = e_R_z_axis * std::atan2(e_R_z_sin, e_R_z_cos);
+
+				//px4: cross product matrix for e_R_axis
+				Eigen::Matrix3d e_R_cp;
+				e_R_cp(0,1) = -e_R_z_axis.z();
+				e_R_cp(0,2) = e_R_z_axis.y();
+				e_R_cp(1,0) = e_R_z_axis.z();
+				e_R_cp(1,2) = -e_R_z_axis.x();
+				e_R_cp(2,0) = -e_R_z_axis.y();
+				e_R_cp(2,1) = e_R_z_axis.x();
+
+				//px4: rotation matrix for roll/pitch only rotation
+				R_rp = R * ( I + (e_R_cp * e_R_z_sin) + ( (e_R_cp * e_R_cp) * (1.0 - e_R_z_cos) ) );
+			} else {
+				//px4: zero roll/pitch rotation
+				R_rp = R;
+			}
+
+			//px4: R_rp and R_sp has the same Z axis, calculate yaw error
+			Eigen::Vector3d R_sp_x = R_sp.col(0);
+			Eigen::Vector3d R_rp_x = R_rp.col(0);
+
+			//px4: calculate weight for yaw control
+			double yaw_w = e_R_z_cos * e_R_z_cos;
+
+			//ROS_INFO_STREAM("e_R_z_cos: " << e_R_z_cos << std::endl);
+
+			//px4: e_R(2) = atan2f((R_rp_x % R_sp_x) * R_sp_z, R_rp_x * R_sp_x) * yaw_w;
+			//Eigen::Vector3d R_rp_c_sp = R_rp_x.cross(R_sp_x);
+			//e_R(2) = std::atan2(R_rp_c_sp.dot(R_sp_z), R_rp_x.dot(R_sp_x)) * yaw_w;
+			e_R(2) = std::atan2( (R_rp_x.cross(R_sp_x)).dot(R_sp_z), R_rp_x.dot(R_sp_x)) * yaw_w;
+
+			if(e_R_z_cos < 0) {
+				//px4: for large thrust vector rotations use another rotation method:
+				//For normal operation, this implies a roll/pitch change greater than pi
+				//Should never be an issue for us
+				ROS_WARN_THROTTLE(1.0, "Large thrust vector detected!");
+			}
+
+			return e_R;
+		}
+
 		void mixerCallback(const ros::TimerEvent& event) {
 			double dt = (event.current_real - event.last_real).toSec();
 
@@ -89,13 +155,14 @@ class ControllerAcro {
 
 			if(!( goal_att_.type_mask & goal_att_.IGNORE_ATTITUDE)) {
 				msg_att_out.orientation = goal_att_.orientation;
+				Eigen::Quaterniond q_s = quaternion_from_msg(goal_att_.orientation);
+				Eigen::Quaterniond q_c = quaternion_from_msg(model_imu_.orientation);
 
-				tf2::Quaternion q_c( goal_att_.orientation.x,
-									 goal_att_.orientation.y,
-									 goal_att_.orientation.z,
-									 goal_att_.orientation.w );
+				Eigen::Vector3d e_R = calc_ang_error(q_s.toRotationMatrix(), q_c.toRotationMatrix());
 
-				tf2::Matrix3x3(q_c).getRPY(control_angle_.r, control_angle_.p, control_angle_.y);
+				control_angle_.r = e_R.x();
+				control_angle_.p = e_R.y();
+				control_angle_.y = e_R.z();
 			} else {
 				msg_att_out.orientation.w = 1.0;
 				msg_att_out.orientation.x = 0.0;
@@ -107,33 +174,22 @@ class ControllerAcro {
 				control_angle_.y = 0.0;
 			}
 
-			double current_r = 0.0;
-			double current_p = 0.0;
-			double current_y = 0.0;
-
-			tf2::Quaternion m_q_c( model_imu_.orientation.x,
-								   model_imu_.orientation.y,
-								   model_imu_.orientation.z,
-								   model_imu_.orientation.w );
-
-			tf2::Matrix3x3(m_q_c).getRPY(current_r, current_p, current_y);
-
 			if(!( goal_att_.type_mask & goal_att_.IGNORE_ROLL_RATE )) {
 				control_rates_.r = goal_att_.body_rate.x;
 			} else {
-				control_rates_.r = param_ang_r_ff_ * (control_angle_.r - current_r);
+				control_rates_.r = param_ang_r_ff_ * control_angle_.r;
 			}
 
 			if(!( goal_att_.type_mask & goal_att_.IGNORE_PITCH_RATE )) {
 				control_rates_.p = goal_att_.body_rate.y;
 			} else {
-				control_rates_.p = param_ang_p_ff_ * (control_angle_.p - current_p);
+				control_rates_.p = param_ang_p_ff_ * control_angle_.p;
 			}
 
 			if(!( goal_att_.type_mask & goal_att_.IGNORE_YAW_RATE )) {
 				control_rates_.y = goal_att_.body_rate.z;
 			} else {
-				control_rates_.y = param_ang_y_ff_ * (control_angle_.y - current_y);
+				control_rates_.y = param_ang_y_ff_ * control_angle_.y;
 			}
 
 			double_constrain(control_rates_.r, param_rate_r_max_, param_rate_r_max_);

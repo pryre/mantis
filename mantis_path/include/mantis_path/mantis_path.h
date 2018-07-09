@@ -25,6 +25,7 @@ class MantisPath {
 		ros::Timer timer_path_;
 
 		ros::Publisher pub_traj_;
+		ros::Publisher pub_tri_;
 		ros::Publisher pub_pose_base_;
 		ros::Publisher pub_pose_track_;
 
@@ -57,7 +58,8 @@ class MantisPath {
 		//geometry_msgs::Quaternion quaternion_from_eig(const Eigen::Quaterniond &q);
 		//geometry_msgs::Pose pose_from_eig(const Eigen::Affine3d &g);
 
-		Eigen::Matrix3d extract_yaw_component(const Eigen::Matrix3d r);
+		Eigen::Matrix3d extract_yaw_matrix(const Eigen::Matrix3d& r);
+		double extract_yaw_component(const Eigen::Matrix3d& r);
 
 		bool calc_goal_ge_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc);
 		Eigen::Affine3d calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe);

@@ -18,7 +18,8 @@
 		<param name="control_settings/reference_feedback" value="true" />
 
 		<remap from="mantis_path/reference/path" to="path"/>
-		<remap from="mantis_path/output/traj" to="mavel/reference/traj"/>
+		<remap from="mantis_path/output/triplet" to="mavel/reference/triplet"/>
+		<!--remap from="mantis_path/output/traj" to="mavel/reference/traj"/-->
 	</node>
 
 	<node pkg="mavel" type="mavel_node" name="mavel"

@@ -9,6 +9,6 @@
 
 		<remap from="path_gen/path" to="path" />
 
-		<rosparam command="load" file="$(find contrail)/paths/$(arg path_name).yaml"/>
+		<rosparam command="load" file="$(find mantis_description)/paths/$(arg path_name).yaml"/>
 	</node>
 </launch>
