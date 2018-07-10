@@ -6,6 +6,8 @@
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Quaternion.h>
 
+#include <mantis_msgs/BodyInertial.h>
+
 //Math Helpers
 inline Eigen::Matrix3d vee_up(const Eigen::Vector3d& w) {
 	Eigen::Matrix3d W;
@@ -19,6 +21,27 @@ inline Eigen::Matrix3d vee_up(const Eigen::Vector3d& w) {
 
 inline Eigen::Vector3d vee_down(const Eigen::Matrix3d& W) {
 	return Eigen::Vector3d(W(2,1), W(0,2), W(1,0));
+}
+
+inline Eigen::Matrix<double,6,6> adjoint(const Eigen::Affine3d& g) {
+	Eigen::Matrix<double,6,6> ad;
+	ad << g.linear(), (vee_up(g.translation())*g.linear()),
+		  Eigen::Matrix3d::Zero(),g.linear();
+
+	return ad;
+}
+
+inline Eigen::Matrix<double,6,6> full_inertial(const mantis_msgs::BodyInertial& i) {
+	Eigen::Matrix3d Ir;
+	Ir << i.Ixx, i.Ixy, i.Ixz,
+		  i.Ixy, i.Iyy, i.Iyz,
+		  i.Ixz, i.Iyz, i.Izz;
+
+	Eigen::Matrix<double,6,6> I;
+	I << (i.mass * Eigen::Matrix3d::Identity()), Eigen::Matrix3d::Zero(),
+		 Eigen::Matrix3d::Zero(), Ir;
+
+	return I;
 }
 
 double double_clamp(const double v, const double min, const double max) {

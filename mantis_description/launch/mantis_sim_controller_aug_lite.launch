@@ -40,7 +40,7 @@
 		<param name="model_id" value="mantis_uav" />
 		<param name="est_rate" value="50.0" />
 
-		<param name="control_settings/force_compensation" value="false" />
+		<param name="control_settings/force_compensation" value="true" />
 		<param name="control_settings/force_comp_filter_a" value="1.0" />
 		<param name="control_settings/coriolis_compensation" value="true" />
 		<param name="control_settings/reference_feedback" value="true" />

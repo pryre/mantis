@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}_param_client
-  CATKIN_DEPENDS dh_parameters
+  CATKIN_DEPENDS dh_parameters mantis_msgs
 #  DEPENDS system_lib
 )
 

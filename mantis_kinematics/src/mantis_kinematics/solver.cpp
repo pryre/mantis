@@ -7,9 +7,9 @@
 #include <mantis_description/se_tools.h>
 #include <mantis_kinematics/dynamics/calc_Dq.h>
 #include <mantis_kinematics/dynamics/calc_Cqqd.h>
-#include <mantis_kinematics/dynamics/calc_Lqd.h>
-#include <mantis_kinematics/dynamics/calc_Jj2.h>
-#include <mantis_kinematics/dynamics/calc_Je.h>
+//#include <mantis_kinematics/dynamics/calc_Lqd.h>
+//#include <mantis_kinematics/dynamics/calc_Jj2.h>
+//#include <mantis_kinematics/dynamics/calc_Je.h>
 
 #include <string>
 
@@ -74,6 +74,14 @@ bool MantisSolver::load_parameters( void ) {
 		}
 	}
 
+	for(int i=0; i<p_->get_body_num(); i++) {
+		if( !manip_.add_body( p_->body_inertial(i).com, i-1 ) ) {
+			ROS_FATAL("Error loading joint %i", int(i));
+			success = false;
+			break;
+		}
+	}
+
 	//Invalidate the current state as the system may have changed
 	state_load_time_ = ros::Time(0);
 
@@ -114,48 +122,128 @@ int MantisSolver::num_states( void ) {
 	return 6 + p_->get_dynamic_joint_num();
 }
 
+bool MantisSolver::calculate_mass_matrix( Eigen::MatrixXd &Dq ) {
+	//XXX: Take care!
+	Eigen::MatrixXd Dq_old = Eigen::MatrixXd::Zero(num_states(), num_states());
+
+	Eigen::VectorXd r = s_->r();
+	double l0 = manip_.joint(0).d();
+	double l1 = manip_.joint(1).r();
+
+	calc_Dq(Dq_old,
+			p_->body_inertial(0).Ixx, p_->body_inertial(0).Iyy, p_->body_inertial(0).Izz,
+			p_->body_inertial(1).Ixx, p_->body_inertial(1).Iyy, p_->body_inertial(1).Izz,
+			p_->body_inertial(2).Ixx, p_->body_inertial(2).Iyy, p_->body_inertial(2).Izz,
+			l0, l1, p_->body_inertial(1).com, p_->body_inertial(2).com,
+			p_->body_inertial(0).mass, p_->body_inertial(1).mass, p_->body_inertial(2).mass,
+			r(0), r(1));
+	//XXX: Take care!
+
+	//Prepare required matricies
+	const unsigned int nj = p_->get_dynamic_joint_num();
+	Dq = Eigen::MatrixXd::Zero(num_states(), num_states());
+	Eigen::MatrixXd M_A_A = Eigen::MatrixXd::Zero(6,6);
+	Eigen::MatrixXd M_A_J = Eigen::MatrixXd::Zero(6,nj);
+	Eigen::MatrixXd M_J_A = Eigen::MatrixXd::Zero(nj,6);
+	Eigen::MatrixXd M_J_J = Eigen::MatrixXd::Zero(nj,nj);
+
+	M_A_A = full_inertial(p_->body_inertial(0));
+
+	for(int i=1;i<p_->get_body_num();i++) {
+		Eigen::Affine3d gbic;
+		//Eigen::Affine3d gt = Eigen::Affine3d::Identity();
+		Eigen::MatrixXd Abic;
+		manip_.calculate_g_body(gbic,i);
+		//gt.linear() = Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitY()).toRotationMatrix();
+		//gbic = gt*gbic;
+		Abic = adjoint(gbic.inverse());
+
+		Eigen::MatrixXd Jbic = Eigen::MatrixXd::Zero(6,nj);
+		Eigen::MatrixXd Jbic_calc;
+		manip_.calculate_J_body(Jbic_calc,i);
+		std::vector<bool> rmap;
+		manip_.get_dynamic_joint_map(rmap);
+
+		ROS_ASSERT_MSG(Jbic_calc.cols()<=rmap.size(), "Jacobian is larger than joint map");
+
+		int colc = 0;
+		for(int j=0; j<Jbic_calc.cols(); j++) {
+			//If the index represents a dynamic joint
+			if(rmap[j]) {
+				Jbic.col(colc) = Jbic_calc.col(j);
+				colc++;
+			}
+		}
+
+		Eigen::MatrixXd Mi = full_inertial(p_->body_inertial(i));
+
+		M_A_A += Abic.transpose()*Mi*Abic;
+		M_A_J += Abic.transpose()*Mi*Jbic;
+		M_J_A += Jbic.transpose()*Mi*Abic;
+		M_J_J += Jbic.transpose()*Mi*Jbic;
+	}
+
+	Dq << M_A_A, M_A_J,
+		  M_J_A, M_J_J;
+
+	//ROS_INFO_STREAM("Dq_old:\n" << Dq_old);
+	//ROS_INFO_STREAM("Dq:\n" << Dq);
+
+	//Dq = Dq_old;
+}
+
+bool MantisSolver::calculate_coriolis_matrix( Eigen::MatrixXd &Cqqd ) {
+	ROS_WARN_ONCE("MantisSolver::calculate_coriolis_matrix() not implemented correctly");
+
+	Eigen::MatrixXd C = Eigen::MatrixXd::Zero(num_states(), num_states());
+	//Need to copy this data to access it directly
+	Eigen::VectorXd r = s_->r();
+	Eigen::VectorXd rd = s_->rd();
+	Eigen::Vector3d bw = s_->bw();
+	Eigen::Vector3d bv = s_->bv();
+	double l0 = manip_.joint(0).d();
+	double l1 = manip_.joint(1).r();
+
+	calc_Cqqd(C,
+			  p_->body_inertial(1).Ixx, p_->body_inertial(1).Iyy,
+			  p_->body_inertial(2).Ixx, p_->body_inertial(2).Iyy,
+			  bv(0), bv(1), bv(2), bw(0), bw(1), bw(2),
+			  l0, l1, p_->body_inertial(1).com, p_->body_inertial(2).com,
+			  p_->body_inertial(1).mass, p_->body_inertial(2).mass,
+			  r(0), rd(0), r(1), rd(1));
+
+	return true;
+}
+
+//XXX: TODO: Not implemented
+bool MantisSolver::calculate_loss_matrix( Eigen::MatrixXd &Lqd ) {
+	ROS_WARN_ONCE("MantisSolver::calculate_loss_matrix() not implemented correctly");
+	Eigen::MatrixXd L = Eigen::MatrixXd::Zero(num_states(), num_states());
+
+	return true;
+}
+
 bool MantisSolver::solve_inverse_dynamics( Eigen::VectorXd &tau, const Eigen::VectorXd &ua ) {
 	bool success = false;
 
 	if( check_description() ) {
-		//Need to copy this data to access it directly
-		Eigen::VectorXd r = s_->r();
-		Eigen::VectorXd rd = s_->rd();
-		Eigen::Vector3d bw = s_->bw();
-		Eigen::Vector3d bv = s_->bv();
 
 		Eigen::VectorXd qd(num_states());
-		qd << bv, bw, rd;
+		qd << s_->bv(), s_->bw(), s_->rd();
 
 		if( ( ua.size() == qd.size() ) && ( tau.size() == qd.size() ) && ( num_states() == qd.size() ) ) {
 			//Calculate dynamics matricies
-			Eigen::MatrixXd D = Eigen::MatrixXd::Zero(num_states(), num_states());
-			Eigen::MatrixXd C = Eigen::MatrixXd::Zero(num_states(), num_states());
-			Eigen::MatrixXd L = Eigen::MatrixXd::Zero(num_states(), num_states());
+			Eigen::MatrixXd D;
+			Eigen::MatrixXd C;
+			Eigen::MatrixXd L;
 
-			//XXX: Take care!
-			double l0 = manip_.joint(0).d();
-			double l1 = manip_.joint(1).r();
+			if( calculate_mass_matrix(D) ) {// && calculate_coriolis_matrix(C) && calculate_loss_matrix(L) ) {
+				tau = D*ua;// + (C + L)*qd;
 
-			calc_Dq(D,
-					p_->body_inertial(0).Ixx, p_->body_inertial(0).Iyy, p_->body_inertial(0).Izz,
-					p_->body_inertial(1).Ixx, p_->body_inertial(1).Iyy, p_->body_inertial(1).Izz,
-					p_->body_inertial(2).Ixx, p_->body_inertial(2).Iyy, p_->body_inertial(2).Izz,
-					l0, l1, p_->body_inertial(1).com, p_->body_inertial(2).com,
-					p_->body_inertial(0).mass, p_->body_inertial(1).mass, p_->body_inertial(2).mass,
-					r(0), r(1));
-
-			calc_Cqqd(C,
-					  p_->body_inertial(1).Ixx, p_->body_inertial(1).Iyy,
-					  p_->body_inertial(2).Ixx, p_->body_inertial(2).Iyy,
-					  bv(0), bv(1), bv(2), bw(0), bw(1), bw(2),
-					  l0, l1, p_->body_inertial(1).com, p_->body_inertial(2).com,
-					  p_->body_inertial(1).mass, p_->body_inertial(2).mass,
-					  r(0), rd(0), r(1), rd(1));
-
-			tau = D*ua + (C + L)*qd;
-
-			success = true;
+				success = true;
+			} else {
+				ROS_ERROR_THROTTLE(2.0, "Error: MantisSolver::solve_inverse_dynamics(): Could not calculate dynamics matricies");
+			}
 		} else {
 			ROS_ERROR_THROTTLE(2.0, "Error: MantisSolver::solve_inverse_dynamics(): Vector lengths inconsistent");
 		}

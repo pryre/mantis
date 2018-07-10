@@ -27,6 +27,9 @@ class MantisSolver {
 
 		int num_states( void );
 
+		bool calculate_mass_matrix( Eigen::MatrixXd &Dq );
+		bool calculate_coriolis_matrix( Eigen::MatrixXd &Cqqd ); //XXX: TODO: Not implemented properly
+		bool calculate_loss_matrix( Eigen::MatrixXd &Lqd ); //XXX: TODO: Not implemented
 		bool solve_inverse_dynamics( Eigen::VectorXd &tau, const Eigen::VectorXd &ua );
 
 		bool calculate_vbe( Eigen::VectorXd &vbe );
