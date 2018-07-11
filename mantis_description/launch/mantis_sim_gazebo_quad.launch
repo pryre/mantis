@@ -24,6 +24,7 @@
 		<param name="model_id" value="$(arg model_name)" />
 		<param name="update_rate" value="30.0" />
 
+		<param name="armed_prop_velocity" value="0.6" />
 		<param name="do_viz" value="false" />
 		<param name="end_effector_pose" value="true" />
 	</node>
@@ -31,6 +32,8 @@
 	<group if="$(arg rviz)">
 		<node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
 	</group>
+
+	<!-- Gazebo -->
 	<include file="$(find mantis_gazebo)/launch/mantis_sim_gazebo.launch">
 		<arg name="model" value="$(arg model)" />
 	</include>

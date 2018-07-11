@@ -19,7 +19,12 @@
 			<visual name="visual_rotor_${motor_number}">
 				<origin xyz="0 0 -0.0036" rpy="0 0 0"/>
 				<geometry>
-					<mesh filename="package://mantis_description/meshes/prop_8045_CW.stl" scale="0.001 0.001 0.001"/>
+					<xacro:if value="${direction == 'cw'}">
+						<mesh filename="package://mantis_description/meshes/prop_8045_CW.stl" scale="0.001 0.001 0.001"/>
+					</xacro:if>
+					<xacro:if value="${direction == 'ccw'}">
+						<mesh filename="package://mantis_description/meshes/prop_8045_CCW.stl" scale="0.001 0.001 0.001"/>
+					</xacro:if>
 				</geometry>
 				<material name="black"/>
 			</visual>
