@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(mantis_gazebo)
+project(mantis_controller_acro)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
 add_definitions(-std=c++11)
@@ -9,28 +9,15 @@ add_definitions(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  gazebo_ros
-  gazebo_ros_control
-  dh_parameters
   pid_controller_lib
-  controller_manager
-  joint_state_controller
-  robot_state_publisher
-  std_msgs
+  mantis_description
   sensor_msgs
   mavros_msgs
-  nav_msgs
-  gazebo_msgs
-  hector_gazebo_plugins
-  mantis_description
-  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package(gazebo REQUIRED)
 find_package(Eigen3 REQUIRED)
-
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -63,9 +50,8 @@ find_package(Eigen3 REQUIRED)
 
 ## Generate messages in the 'msg' folder
 # add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
+#    FILES
+#    GoalPose.msg
 # )
 
 ## Generate services in the 'srv' folder
@@ -74,9 +60,6 @@ find_package(Eigen3 REQUIRED)
 #   Service1.srv
 #   Service2.srv
 # )
-add_service_files(FILES
-	DoArm.srv
-)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -86,13 +69,11 @@ add_service_files(FILES
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   geometry_msgs
-# )
-generate_messages(DEPENDENCIES
-	std_msgs
-)
+#generate_messages(
+#  DEPENDENCIES
+#  std_msgs
+#  geometry_msgs
+#)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -109,10 +90,10 @@ generate_messages(DEPENDENCIES
 ##     and list every .cfg file to be processed
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
+#generate_dynamic_reconfigure_options(
+#  cfg/ControlParams.cfg
+#  cfg/ControlParamsLite.cfg
+#)
 
 ###################################
 ## catkin specific configuration ##
@@ -125,12 +106,9 @@ generate_messages(DEPENDENCIES
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES mantis_gazebo
-#  CATKIN_DEPENDS geometry_msgs roscpp tf2
-  DEPENDS
-    roscpp
-	gazebo_ros
-#	mantis_gazebo_generate_messages
+#  LIBRARIES kinetic_sample_sub_cpp
+#  CATKIN_DEPENDS roscpp std_msgs
+#  DEPENDS system_lib
 )
 
 ###########
@@ -140,47 +118,27 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include_directories(include)
-link_directories(${GAZEBO_LIBRARY_DIRS})
-include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS})
-
-## Declare a C++ library
-#add_library(${PROJECT_NAME}_servo
-#  src/${PROJECT_NAME}/mg_servo.cpp
-#)
-add_library(${PROJECT_NAME}_ball_grasp
-  src/${PROJECT_NAME}/mg_ball_grasp.cpp
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
 )
 
-#add_library(${PROJECT_NAME}_pwm_motor
-#  src/${PROJECT_NAME}/mg_pwm_motor.cpp
-#)
-
-#add_library(${PROJECT_NAME}_safety
-#  src/${PROJECT_NAME}/mg_safety.cpp
-#)
-
-add_library(${PROJECT_NAME}_plugin
-  src/${PROJECT_NAME}/mg_plugin.cpp
-)
-
-add_library(${PROJECT_NAME}_motor_model
-  src/rotors/gazebo_motor_model.cpp
+add_library(${PROJECT_NAME}
+  src/${PROJECT_NAME}/controller_acro.cpp
 )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-#add_dependencies(${PROJECT_NAME}_servo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
-add_dependencies(${PROJECT_NAME}_ball_grasp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#add_dependencies(${PROJECT_NAME}_pwm_motor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
-#add_dependencies(${PROJECT_NAME}_safety ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
-add_dependencies(${PROJECT_NAME}_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#add_dependencies(${PROJECT_NAME}_params ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+#add_dependencies(${PROJECT_NAME}_state ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-#add_executable(model_state_odom_node src/model_state_odom_node.cpp)
-#add_executable(controller_acro_node src/controller_acro_node.cpp)
+add_executable(${PROJECT_NAME}_node src/mantis_controller_acro_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -190,52 +148,25 @@ add_dependencies(${PROJECT_NAME}_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ca
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-#add_dependencies(model_state_odom_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#add_dependencies(controller_acro_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-#target_link_libraries(${PROJECT_NAME}_servo
+#target_link_libraries(${PROJECT_NAME}_params
 #  ${catkin_LIBRARIES}
-#  ${GAZEBO_LIBRARIES}
-#  ${Boost_LIBRARIES}
 #)
-target_link_libraries(${PROJECT_NAME}_ball_grasp
+
+#target_link_libraries(${PROJECT_NAME}_state
+#  ${catkin_LIBRARIES}
+#)
+
+target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
-  ${GAZEBO_LIBRARIES}
-  ${Boost_LIBRARIES}
 )
 
-#target_link_libraries(${PROJECT_NAME}_pwm_motor
-#  ${catkin_LIBRARIES}
-#  ${GAZEBO_LIBRARIES}
-#  ${Boost_LIBRARIES}
-#)
-
-#target_link_libraries(${PROJECT_NAME}_safety
-#  ${catkin_LIBRARIES}
-#  ${GAZEBO_LIBRARIES}
-#  ${Boost_LIBRARIES}
-#)
-
-target_link_libraries(${PROJECT_NAME}_plugin
+target_link_libraries(${PROJECT_NAME}_node
+  ${PROJECT_NAME}
   ${catkin_LIBRARIES}
-  ${GAZEBO_LIBRARIES}
-  ${Boost_LIBRARIES}
 )
-
-#target_link_libraries(${PROJECT_NAME}_motor_model
-#  ${catkin_LIBRARIES}
-#  ${GAZEBO_LIBRARIES}
-#  ${Boost_LIBRARIES}
-#)
-
-#target_link_libraries(model_state_odom_node
-#  ${catkin_LIBRARIES}
-#)
-
-#target_link_libraries(controller_acro_node
-#  ${catkin_LIBRARIES}
-#)
 
 #############
 ## Install ##
@@ -266,19 +197,18 @@ target_link_libraries(${PROJECT_NAME}_plugin
 # )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-install(FILES
-  # myfile1	//TODO: models!!
-  # myfile2	//TODO: plugins!!
-  # myfile2	//TODO: launch stuff!!
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+# install(FILES
+#   # myfile1
+#   # myfile2
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
 
 #############
 ## Testing ##
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_mantis_gazebo.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_kinetic_sample_sub_cpp.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

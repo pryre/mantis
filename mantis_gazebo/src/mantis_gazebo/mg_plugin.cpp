@@ -70,6 +70,7 @@ class MantisGazeboPlugin : public ModelPlugin
 		nav_msgs::Odometry msg_odom_;
 
 		std_msgs::Float64MultiArray msg_motor_velocity_;
+
 	public:
 		MantisGazeboPlugin() : ModelPlugin(),
 								 param_pwm_min_(1000),
@@ -78,10 +79,6 @@ class MantisGazeboPlugin : public ModelPlugin
 								 param_motor_vel_armed_(100),
 								 safety_armed_(false),
 								 parent_name_("map") {
-		}
-
-		int32_t int32_constrain(const int32_t i, const int32_t min, const int32_t max) {
-			return (i < min) ? min : (i > max) ? max : i;
 		}
 
 		void Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/) {
@@ -114,6 +111,11 @@ class MantisGazeboPlugin : public ModelPlugin
 			msg_odom_.child_frame_id = model_->GetName();
 
 			ROS_INFO("Loaded mantis gazebo plugin!");
+		}
+
+	private:
+		int32_t int32_constrain(const int32_t i, const int32_t min, const int32_t max) {
+			return (i < min) ? min : (i > max) ? max : i;
 		}
 
 		void callback_state( const ros::TimerEvent& e ) {

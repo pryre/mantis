@@ -10,10 +10,17 @@
 
 namespace gazebo
 {
-class MantisGazeboServo : public ModelPlugin
+class MantisGazeboBallGrasp : public ModelPlugin
 {
+	private:
+		physics::ModelPtr model_;	// Pointer to the model
+		//event::ConnectionPtr updateConnection_;	// Pointer to the update event connection
+
+		ros::NodeHandle nh_;
+		ros::ServiceServer srv_do_grasp_;
+
 	public:
-		MantisGazeboServo() : ModelPlugin() {
+		MantisGazeboBallGrasp() : ModelPlugin() {
 		}
 
 		void Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/) {
@@ -27,7 +34,7 @@ class MantisGazeboServo : public ModelPlugin
 			//updateConnection_ = event::Events::ConnectWorldUpdateBegin( boost::bind( &MantisGazeboServo::OnUpdate, this, _1 ) );
 			//Need a better way to do these
 
-			srv_do_grasp_ = nh_.advertiseService(model_->GetName() + "/do_grasp", &MantisGazeboServo::callback_do_grasp, this);
+			srv_do_grasp_ = nh_.advertiseService(model_->GetName() + "/do_grasp", &MantisGazeboBallGrasp::callback_do_grasp, this);
 
 			ROS_INFO("Loaded mantis grasping plugin!");
 		}
@@ -36,6 +43,7 @@ class MantisGazeboServo : public ModelPlugin
 		//void OnUpdate(const common::UpdateInfo & /*_info*/) {
 		//}
 
+	private:
 		bool callback_do_grasp( std_srvs::Trigger::Request  &req,
 							 std_srvs::Trigger::Response &res ) {
 
@@ -81,14 +89,7 @@ class MantisGazeboServo : public ModelPlugin
 
 			return true;
 		}
-
-	private:
-		physics::ModelPtr model_;	// Pointer to the model
-		//event::ConnectionPtr updateConnection_;	// Pointer to the update event connection
-
-		ros::NodeHandle nh_;
-		ros::ServiceServer srv_do_grasp_;
 };
 
-GZ_REGISTER_MODEL_PLUGIN(MantisGazeboServo)
+GZ_REGISTER_MODEL_PLUGIN(MantisGazeboBallGrasp)
 }

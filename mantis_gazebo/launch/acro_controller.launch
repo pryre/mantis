@@ -1,6 +1,0 @@
-<?xml version='1.0'?>
-<launch>
-	<node name="controller_acro" pkg="mantis_gazebo" type="controller_acro_node" output="screen" ns="/mantis_uav">
-		<rosparam command="load" file="$(find mantis_gazebo)/launch/acro_params.yaml"/>
-	</node>
-</launch>

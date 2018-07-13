@@ -1,6 +1,26 @@
 # Common configuration for the mavel velocity controller
 
 # PID Controllers
+ang:
+  x:
+    p: 6.0
+    i: 0.0
+    d: 0.0
+    min: -3.85
+    max: 3.85 #~220 deg/s
+  y:
+    p: 6.0
+    i: 0.0
+    d: 0.0
+    min: -3.85
+    max: 3.85 #~220 deg/s
+  z:
+    p: 2.8
+    i: 0.0
+    d: 0.0
+    min: -1.05
+    max: 1.05 #~60 deg/s
+
 rates:
   x:
     p: 0.05

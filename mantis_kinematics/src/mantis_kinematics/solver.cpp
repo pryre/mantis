@@ -5,8 +5,8 @@
 #include <mantis_kinematics/solver.h>
 
 #include <mantis_description/se_tools.h>
-#include <mantis_kinematics/dynamics/calc_Dq.h>
-#include <mantis_kinematics/dynamics/calc_Cqqd.h>
+//#include <mantis_kinematics/dynamics/calc_Dq.h>
+//#include <mantis_kinematics/dynamics/calc_Cqqd.h>
 //#include <mantis_kinematics/dynamics/calc_Lqd.h>
 //#include <mantis_kinematics/dynamics/calc_Jj2.h>
 //#include <mantis_kinematics/dynamics/calc_Je.h>
@@ -123,6 +123,7 @@ int MantisSolver::num_states( void ) {
 }
 
 bool MantisSolver::calculate_mass_matrix( Eigen::MatrixXd &Dq ) {
+	/*
 	//XXX: Take care!
 	Eigen::MatrixXd Dq_old = Eigen::MatrixXd::Zero(num_states(), num_states());
 
@@ -138,7 +139,7 @@ bool MantisSolver::calculate_mass_matrix( Eigen::MatrixXd &Dq ) {
 			p_->body_inertial(0).mass, p_->body_inertial(1).mass, p_->body_inertial(2).mass,
 			r(0), r(1));
 	//XXX: Take care!
-
+	*/
 	//Prepare required matricies
 	const unsigned int nj = p_->get_dynamic_joint_num();
 	Dq = Eigen::MatrixXd::Zero(num_states(), num_states());
@@ -151,12 +152,14 @@ bool MantisSolver::calculate_mass_matrix( Eigen::MatrixXd &Dq ) {
 
 	for(int i=1;i<p_->get_body_num();i++) {
 		Eigen::Affine3d gbic;
-		//Eigen::Affine3d gt = Eigen::Affine3d::Identity();
 		Eigen::MatrixXd Abic;
 		manip_.calculate_g_body(gbic,i);
+		//Eigen::Affine3d gt = Eigen::Affine3d::Identity();
 		//gt.linear() = Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitY()).toRotationMatrix();
 		//gbic = gt*gbic;
 		Abic = adjoint(gbic.inverse());
+		//ROS_INFO_STREAM("gbic:\n" << gbic.matrix());
+		//ROS_INFO_STREAM("Abic:\n" << Abic);
 
 		Eigen::MatrixXd Jbic = Eigen::MatrixXd::Zero(6,nj);
 		Eigen::MatrixXd Jbic_calc;
@@ -175,6 +178,8 @@ bool MantisSolver::calculate_mass_matrix( Eigen::MatrixXd &Dq ) {
 			}
 		}
 
+		//ROS_INFO_STREAM("Jbic:\n" << Jbic);
+
 		Eigen::MatrixXd Mi = full_inertial(p_->body_inertial(i));
 
 		M_A_A += Abic.transpose()*Mi*Abic;
@@ -189,13 +194,20 @@ bool MantisSolver::calculate_mass_matrix( Eigen::MatrixXd &Dq ) {
 	//ROS_INFO_STREAM("Dq_old:\n" << Dq_old);
 	//ROS_INFO_STREAM("Dq:\n" << Dq);
 
+	//Eigen::VectorXd uat = Eigen::VectorXd::Zero(8);
+	//uat[7] = 1.0;
+	//ROS_INFO_STREAM("tau_to:\n" << Dq_old*uat);
+	//ROS_INFO_STREAM("tau_t:\n" << Dq*uat);
 	//Dq = Dq_old;
+
+	return true;
 }
 
 bool MantisSolver::calculate_coriolis_matrix( Eigen::MatrixXd &Cqqd ) {
 	ROS_WARN_ONCE("MantisSolver::calculate_coriolis_matrix() not implemented correctly");
+	Cqqd = Eigen::MatrixXd::Zero(num_states(), num_states());
 
-	Eigen::MatrixXd C = Eigen::MatrixXd::Zero(num_states(), num_states());
+	/*
 	//Need to copy this data to access it directly
 	Eigen::VectorXd r = s_->r();
 	Eigen::VectorXd rd = s_->rd();
@@ -204,13 +216,14 @@ bool MantisSolver::calculate_coriolis_matrix( Eigen::MatrixXd &Cqqd ) {
 	double l0 = manip_.joint(0).d();
 	double l1 = manip_.joint(1).r();
 
-	calc_Cqqd(C,
+	calc_Cqqd(Cqqd,
 			  p_->body_inertial(1).Ixx, p_->body_inertial(1).Iyy,
 			  p_->body_inertial(2).Ixx, p_->body_inertial(2).Iyy,
 			  bv(0), bv(1), bv(2), bw(0), bw(1), bw(2),
 			  l0, l1, p_->body_inertial(1).com, p_->body_inertial(2).com,
 			  p_->body_inertial(1).mass, p_->body_inertial(2).mass,
 			  r(0), rd(0), r(1), rd(1));
+	*/
 
 	return true;
 }
@@ -218,7 +231,7 @@ bool MantisSolver::calculate_coriolis_matrix( Eigen::MatrixXd &Cqqd ) {
 //XXX: TODO: Not implemented
 bool MantisSolver::calculate_loss_matrix( Eigen::MatrixXd &Lqd ) {
 	ROS_WARN_ONCE("MantisSolver::calculate_loss_matrix() not implemented correctly");
-	Eigen::MatrixXd L = Eigen::MatrixXd::Zero(num_states(), num_states());
+	Lqd = Eigen::MatrixXd::Zero(num_states(), num_states());
 
 	return true;
 }
@@ -237,8 +250,8 @@ bool MantisSolver::solve_inverse_dynamics( Eigen::VectorXd &tau, const Eigen::Ve
 			Eigen::MatrixXd C;
 			Eigen::MatrixXd L;
 
-			if( calculate_mass_matrix(D) ) {// && calculate_coriolis_matrix(C) && calculate_loss_matrix(L) ) {
-				tau = D*ua;// + (C + L)*qd;
+			if( calculate_mass_matrix(D) && calculate_coriolis_matrix(C) && calculate_loss_matrix(L) ) {
+				tau = D*ua + (C + L)*qd;
 
 				success = true;
 			} else {
