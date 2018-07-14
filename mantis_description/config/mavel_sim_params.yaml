@@ -4,6 +4,14 @@
 control_rate: 50.0
 control_frame: "map"
 
+# Path-following options
+contrail:
+  fallback_to_pose: true
+  autoswitch_tracking: true
+  waypoint_hold_duration: 2.0
+  waypoint_radius: 0.1
+  waypoint_yaw_accuracy: 0.1
+
 throttle:
   min: 0.0
   mid: 0.47
