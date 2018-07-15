@@ -3,7 +3,7 @@
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
 
-#include <contrail/path_extract.h>
+#include <contrail/ContrailManager.h>
 #include <pid_controller_lib/pidController.h>
 #include <mantis_description/param_client.h>
 #include <mantis_state/state_client.h>
@@ -58,7 +58,7 @@ class ControllerID {
 		Eigen::Vector3d a_sp_;
 		bool status_high_level_;
 
-		PathExtract ref_path_;
+		ContrailManager ref_path_;
 		pidController pos_pid_x_;
 		pidController pos_pid_y_;
 		pidController pos_pid_z_;

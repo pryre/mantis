@@ -1,7 +1,6 @@
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
 
-#include <contrail/path_extract.h>
 #include <mantis_description/se_tools.h>
 #include <pid_controller_lib/pidController.h>
 #include <mantis_controller_aug/ControlParamsConfig.h>
@@ -27,7 +26,7 @@ ControllerAug::ControllerAug() :
 	p_(&nh_),
 	s_(&nh_),
 	solver_(&p_, &s_),
-	ref_path_(&nhp_),
+	ref_path_(nhp_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_safety_rate_(20.0),
@@ -83,7 +82,7 @@ ControllerAug::ControllerAug() :
 			if( s_.ok() )
 				ROS_INFO_ONCE("Augmented dynamics got input: state");
 
-			if( ref_path_.has_valid_path() || ref_path_.has_valid_fallback() )
+			if( ref_path_.has_reference(ros::Time::now()) )
 				ROS_INFO_ONCE("Augmented dynamics got input: path");
 
 			mavros_msgs::OverrideRCIn msg_rc_out;
@@ -123,13 +122,13 @@ void ControllerAug::callback_cfg_control_settings(mantis_controller_aug::Control
 
 void ControllerAug::callback_ready_check(const ros::TimerEvent& e) {
 	//If we still have all the inputs satisfied
-	if( ( s_.ok() ) && ( ref_path_.has_valid_path() || ref_path_.has_valid_fallback() ) ) {
+	if( s_.ok() && ref_path_.has_reference(e.current_real) ) {
 		ready_for_flight_ = true;
 	} else {
 		if(ready_for_flight_) {
 			std::string error_msg = "Input error:\n";
 
-			if( !( ref_path_.has_valid_path() || ref_path_.has_valid_fallback() ) )
+			if( !ref_path_.has_reference(e.current_real) )
 				error_msg += "no valid path\n";
 
 			if( !s_.ok() )
@@ -146,14 +145,29 @@ void ControllerAug::callback_ready_check(const ros::TimerEvent& e) {
 void ControllerAug::callback_high_level(const ros::TimerEvent& e) {
 	double dt = (e.current_real - e.last_real).toSec();
 
-	//Goal States
+//Handle the trajectory extraction
+	mavros_msgs::PositionTarget traj;
+	bool goal_ok = false;
+
+	//XXX: get_reference() needs the current location of the desired tracking frame
+	if( param_track_end_ ) {
+		Eigen::Affine3d gbet;
+		solver_.calculate_gbe( gbet );
+		goal_ok = ref_path_.get_reference(traj, e.current_real, s_.g()*gbet);
+	} else {
+		goal_ok = ref_path_.get_reference(traj, e.current_real, s_.g());
+	}
+
 	Eigen::Affine3d ge_sp = Eigen::Affine3d::Identity();
 	Eigen::Vector3d gev_sp = Eigen::Vector3d::Zero();
 
-	bool goal_ok = ref_path_.get_ref_state(ge_sp, gev_sp, e.current_real);
-
 	//If we still have all the inputs satisfied
 	if( ready_for_flight_ && goal_ok ) {
+		//Fill in the current goals
+		ge_sp.translation() = MDTools::point_from_msg(traj.position);
+		ge_sp.linear() = Eigen::AngleAxisd(traj.yaw, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+		gev_sp = MDTools::vector_from_msg(traj.velocity);
+
 		if( param_track_end_ ) {
 			//This hole thing could be done dynamically for any joint
 			//Compute transform for all joints in the chain to get base to end effector
@@ -171,7 +185,7 @@ void ControllerAug::callback_high_level(const ros::TimerEvent& e) {
 					Eigen::VectorXd vbe;
 					if( solver_.calculate_vbe( vbe ) ) {
 						//Manipulator velocity in the world frame
-						Eigen::Matrix3d br_sp = extract_yaw_component(g_sp_.linear());
+						Eigen::Matrix3d br_sp = MDTools::extract_yaw_matrix(g_sp_.linear());
 						Eigen::Vector3d Ve = br_sp*vbe.segment(0,3);
 						//Subtract from setpoint to compensate base movements
 						gv_sp_ = gev_sp - Ve;
@@ -375,7 +389,7 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 
 Eigen::Affine3d ControllerAug::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe) {
 	//Use this yaw only rotation to set the direction of the base (and thus end effector)
-	Eigen::Matrix3d br_sp = extract_yaw_component(ge_sp.linear());
+	Eigen::Matrix3d br_sp = MDTools::extract_yaw_matrix(ge_sp.linear());
 
 	//Construct the true end effector
 	Eigen::Affine3d sp = Eigen::Affine3d::Identity();
@@ -469,7 +483,7 @@ Eigen::Vector3d ControllerAug::calc_ang_error(const Eigen::Matrix3d &R_sp, const
 int16_t ControllerAug::map_pwm(double val) {
 	//Constrain from 0 -> 1
 	//double c = (val > 1.0) ? 1.0 : (val < 0.0) ? 0.0 : val;
-	double c = double_clamp(val, 0.0, 1.0);
+	double c = MDTools::double_clamp(val, 0.0, 1.0);
 
 	//Scale c to the pwm values
 	return int16_t((p_.pwm_max() - p_.pwm_min())*c) + p_.pwm_min();

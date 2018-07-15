@@ -8,6 +8,8 @@
 
 #include <mantis_msgs/BodyInertial.h>
 
+#include <math.h>
+
 //! The Mantis Description ToolsnNamespace
 namespace MDTools {
 	//Math Helpers
@@ -46,11 +48,11 @@ namespace MDTools {
 		return I;
 	}
 
-	double double_clamp(const double v, const double min, const double max) {
+	inline double double_clamp(const double v, const double min, const double max) {
 		return (v < min) ? min : (v > max) ? max : v;
 	}
 
-	void matrix_clamp(Eigen::MatrixXd &m, const double min, const double max) {
+	inline void matrix_clamp(Eigen::MatrixXd &m, const double min, const double max) {
 		for(int i=0; i<m.rows(); i++) {
 			for(int j=0; j<m.cols(); j++) {
 				m(i,j) = double_clamp(m(i,j), min, max);
@@ -58,8 +60,7 @@ namespace MDTools {
 		}
 	}
 
-	//Matrix Calculation Helpers
-	Eigen::Matrix3d extract_yaw_component(const Eigen::Matrix3d &r) {
+	inline Eigen::Matrix3d extract_yaw_matrix(const Eigen::Matrix3d& r) {
 		Eigen::Vector3d sp_x = Eigen::Vector3d::UnitX();
 		Eigen::Vector3d sp_y = Eigen::Vector3d::UnitY();
 
@@ -89,6 +90,12 @@ namespace MDTools {
 			  Eigen::Vector3d::UnitZ();
 
 		return ry;
+	}
+
+	inline double extract_yaw( const Eigen::Quaterniond &q ) {
+		double siny = +2.0 * (q.w() * q.z() + q.x() * q.y());
+		double cosy = +1.0 - 2.0 * (q.y() * q.y() + q.z() * q.z());
+		return std::atan2(siny, cosy);
 	}
 
 	//Conversion Helpers

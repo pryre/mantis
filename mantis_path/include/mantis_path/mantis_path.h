@@ -3,7 +3,7 @@
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
 
-#include <contrail/path_extract.h>
+#include <contrail/ContrailManager.h>
 #include <mantis_path/ControlParamsConfig.h>
 #include <mantis_description/param_client.h>
 #include <mantis_state/state_client.h>
@@ -24,7 +24,7 @@ class MantisPath {
 		ros::NodeHandle nhp_;
 		ros::Timer timer_path_;
 
-		ros::Publisher pub_traj_;
+		//ros::Publisher pub_traj_;
 		ros::Publisher pub_tri_;
 		ros::Publisher pub_pose_base_;
 		ros::Publisher pub_pose_track_;
@@ -32,7 +32,7 @@ class MantisPath {
 		std::string param_frame_id_;
 		std::string param_model_id_;
 		int param_tracked_frame_;
-		bool param_use_manipulator_jacobian_;
+		double param_manipulator_jacobian_a_;
 		bool param_send_reference_feedback_;
 		double param_path_rate_;
 		dynamic_reconfigure::Server<mantis_path::ControlParamsConfig> dyncfg_control_settings_;
@@ -40,7 +40,9 @@ class MantisPath {
 		MantisParamClient p_;
 		MantisStateClient s_;
 		MantisSolver solver_;
-		PathExtract ref_path_;
+		ContrailManager ref_path_;
+
+		Eigen::Matrix<double,6,1> vbe_last_;
 
 	public:
 		MantisPath( void );
@@ -57,9 +59,6 @@ class MantisPath {
 		//geometry_msgs::Point point_from_eig(const Eigen::Vector3d &p);
 		//geometry_msgs::Quaternion quaternion_from_eig(const Eigen::Quaterniond &q);
 		//geometry_msgs::Pose pose_from_eig(const Eigen::Affine3d &g);
-
-		Eigen::Matrix3d extract_yaw_matrix(const Eigen::Matrix3d& r);
-		double extract_yaw_component(const Eigen::Matrix3d& r);
 
 		bool calc_goal_ge_sp(Eigen::Affine3d &g_sp, Eigen::Vector3d &v_sp, const ros::Time tc);
 		Eigen::Affine3d calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe);

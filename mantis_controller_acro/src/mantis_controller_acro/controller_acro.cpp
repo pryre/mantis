@@ -150,8 +150,8 @@ void ControllerAcro::callback_mixer(const ros::TimerEvent& event) {
 
 	if(!( goal_att_.type_mask & goal_att_.IGNORE_ATTITUDE)) {
 		msg_att_out.orientation = goal_att_.orientation;
-		Eigen::Quaterniond q_s = quaternion_from_msg(goal_att_.orientation);
-		Eigen::Quaterniond q_c = quaternion_from_msg(model_imu_.orientation);
+		Eigen::Quaterniond q_s = MDTools::quaternion_from_msg(goal_att_.orientation);
+		Eigen::Quaterniond q_c = MDTools::quaternion_from_msg(model_imu_.orientation);
 
 		Eigen::Vector3d e_R = calc_ang_error(q_s.toRotationMatrix(), q_c.toRotationMatrix());
 

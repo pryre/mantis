@@ -78,11 +78,11 @@ const bool& MantisStateClient::flight_ready( void ) {
 void MantisStateClient::callback_state(const mantis_msgs::State::ConstPtr &msg_in) {
 	timestamp_ = msg_in->header.stamp;
 
-	g_ = affine_from_msg(msg_in->pose);
-	bv_ = vector_from_msg(msg_in->twist.linear);
-	bw_ = vector_from_msg(msg_in->twist.angular);
-	ba_ = vector_from_msg(msg_in->accel.linear);
-	bwa_ = vector_from_msg(msg_in->accel.angular);
+	g_ = MDTools::affine_from_msg(msg_in->pose);
+	bv_ = MDTools::vector_from_msg(msg_in->twist.linear);
+	bw_ = MDTools::vector_from_msg(msg_in->twist.angular);
+	ba_ = MDTools::vector_from_msg(msg_in->accel.linear);
+	bwa_ = MDTools::vector_from_msg(msg_in->accel.angular);
 
 	int num_manip_states = msg_in->r.size();
 	if(r_.size() != num_manip_states) {

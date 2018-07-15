@@ -148,7 +148,7 @@ bool MantisSolver::calculate_mass_matrix( Eigen::MatrixXd &Dq ) {
 	Eigen::MatrixXd M_J_A = Eigen::MatrixXd::Zero(nj,6);
 	Eigen::MatrixXd M_J_J = Eigen::MatrixXd::Zero(nj,nj);
 
-	M_A_A = full_inertial(p_->body_inertial(0));
+	M_A_A = MDTools::full_inertial(p_->body_inertial(0));
 
 	for(int i=1;i<p_->get_body_num();i++) {
 		Eigen::Affine3d gbic;
@@ -157,7 +157,7 @@ bool MantisSolver::calculate_mass_matrix( Eigen::MatrixXd &Dq ) {
 		//Eigen::Affine3d gt = Eigen::Affine3d::Identity();
 		//gt.linear() = Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitY()).toRotationMatrix();
 		//gbic = gt*gbic;
-		Abic = adjoint(gbic.inverse());
+		Abic = MDTools::adjoint(gbic.inverse());
 		//ROS_INFO_STREAM("gbic:\n" << gbic.matrix());
 		//ROS_INFO_STREAM("Abic:\n" << Abic);
 
@@ -180,7 +180,7 @@ bool MantisSolver::calculate_mass_matrix( Eigen::MatrixXd &Dq ) {
 
 		//ROS_INFO_STREAM("Jbic:\n" << Jbic);
 
-		Eigen::MatrixXd Mi = full_inertial(p_->body_inertial(i));
+		Eigen::MatrixXd Mi = MDTools::full_inertial(p_->body_inertial(i));
 
 		M_A_A += Abic.transpose()*Mi*Abic;
 		M_A_J += Abic.transpose()*Mi*Jbic;

@@ -78,11 +78,11 @@ void MantisStateServer::callback_estimator(const ros::TimerEvent& e) {
 			state.header.frame_id = "map";
 			state.child_frame_id = "mantis_uav";
 
-			state.pose = pose_from_eig(g_);
-			state.twist.linear = vector_from_eig(bv_);
-			state.twist.angular = vector_from_eig(bw_);
-			state.accel.linear = vector_from_eig(ba_);
-			state.accel.angular = vector_from_eig(bwa_);
+			state.pose = MDTools::pose_from_eig(g_);
+			state.twist.linear = MDTools::vector_from_eig(bv_);
+			state.twist.angular = MDTools::vector_from_eig(bw_);
+			state.accel.linear = MDTools::vector_from_eig(ba_);
+			state.accel.angular = MDTools::vector_from_eig(bwa_);
 
 			//Some safety in case out joint configuration changes
 			//This should make things wait until r_ is updated by the joiint callback
@@ -156,15 +156,15 @@ void MantisStateServer::callback_state_odom(const nav_msgs::Odometry::ConstPtr& 
 	msg_odom_tr_ = msg_in->header.stamp;
 
 	//Update pose
-	Eigen::Affine3d g = affine_from_msg(msg_in->pose.pose);
+	Eigen::Affine3d g = MDTools::affine_from_msg(msg_in->pose.pose);
 	update_g( g );
 
 	//Update body velocities
-	Eigen::Vector3d bv = vector_from_msg(msg_in->twist.twist.linear);
+	Eigen::Vector3d bv = MDTools::vector_from_msg(msg_in->twist.twist.linear);
 	update_bv( bv );
 
 	if( param_use_odom_avel_ ) {
-		Eigen::Vector3d bw = vector_from_msg(msg_in->twist.twist.angular);
+		Eigen::Vector3d bw = MDTools::vector_from_msg(msg_in->twist.twist.angular);
 		update_bw( bw, dt );
 	}
 }
@@ -185,10 +185,10 @@ void MantisStateServer::callback_state_imu(const sensor_msgs::Imu::ConstPtr& msg
 	double dt = (msg_in->header.stamp - msg_imu_tr_).toSec();
 	msg_imu_tr_ = msg_in->header.stamp;
 
-	Eigen::Vector3d ba = vector_from_msg(msg_in->linear_acceleration);
+	Eigen::Vector3d ba = MDTools::vector_from_msg(msg_in->linear_acceleration);
 	update_ba( ba );
 
-	Eigen::Vector3d bw = vector_from_msg(msg_in->angular_velocity);
+	Eigen::Vector3d bw = MDTools::vector_from_msg(msg_in->angular_velocity);
 	update_bw( bw, dt );
 }
 

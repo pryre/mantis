@@ -88,7 +88,7 @@ ForwardKinematics::ForwardKinematics() :
 				if(j.jt() != DHParameters::JointType::Static) {
 					tf.header.frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
 					tf.child_frame_id = p_.body_name(i);
-					tf.transform.translation = vector_from_eig(-(j.transform().linear().transpose()*j.transform().translation()));
+					tf.transform.translation = MDTools::vector_from_eig(-(j.transform().linear().transpose()*j.transform().translation()));
 					tfsbr_.sendTransform(tf);
 				}
 			}
@@ -106,48 +106,48 @@ ForwardKinematics::ForwardKinematics() :
 
 			if(p_.airframe_type() == "quad_p4") {
 				Eigen::AngleAxisd rot(3.0*M_PI/2.0, Eigen::Vector3d::UnitZ());
-				tf_props[0].transform.translation = vector_from_eig(rot*arm);
+				tf_props[0].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = M_PI/2.0;
-				tf_props[1].transform.translation = vector_from_eig(rot*arm);
+				tf_props[1].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = 0.0;
-				tf_props[2].transform.translation = vector_from_eig(rot*arm);
+				tf_props[2].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = M_PI;
-				tf_props[3].transform.translation = vector_from_eig(rot*arm);
+				tf_props[3].transform.translation = MDTools::vector_from_eig(rot*arm);
 			} else if(p_.airframe_type() == "quad_x4") {
 				Eigen::AngleAxisd rot(7.0*M_PI/4.0, Eigen::Vector3d::UnitZ());
-				tf_props[0].transform.translation = vector_from_eig(rot*arm);
+				tf_props[0].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = 3.0*M_PI/4.0;
-				tf_props[1].transform.translation = vector_from_eig(rot*arm);
+				tf_props[1].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = M_PI/4.0;
-				tf_props[2].transform.translation = vector_from_eig(rot*arm);
+				tf_props[2].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = 5.0*M_PI/4.0;
-				tf_props[3].transform.translation = vector_from_eig(rot*arm);
+				tf_props[3].transform.translation = MDTools::vector_from_eig(rot*arm);
 			} else if(p_.airframe_type() == "hex_p6") {
 				Eigen::AngleAxisd rot(0.0, Eigen::Vector3d::UnitZ());
-				tf_props[0].transform.translation = vector_from_eig(rot*arm);
+				tf_props[0].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = M_PI;
-				tf_props[1].transform.translation = vector_from_eig(rot*arm);
+				tf_props[1].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = 2.0*M_PI/3.0;
-				tf_props[2].transform.translation = vector_from_eig(rot*arm);
+				tf_props[2].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = 5.0*M_PI/3.0;
-				tf_props[3].transform.translation = vector_from_eig(rot*arm);
+				tf_props[3].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = 1.0*M_PI/3.0;
-				tf_props[4].transform.translation = vector_from_eig(rot*arm);
+				tf_props[4].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = 4.0*M_PI/3.0;
-				tf_props[5].transform.translation = vector_from_eig(rot*arm);
+				tf_props[5].transform.translation = MDTools::vector_from_eig(rot*arm);
 			} else if(p_.airframe_type() == "hex_x6") {
 				Eigen::AngleAxisd rot(9.0*M_PI/6.0, Eigen::Vector3d::UnitZ());
-				tf_props[0].transform.translation = vector_from_eig(rot*arm);
+				tf_props[0].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = 3.0*M_PI/6.0;
-				tf_props[1].transform.translation = vector_from_eig(rot*arm);
+				tf_props[1].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = 1.0*M_PI/6.0;
-				tf_props[2].transform.translation = vector_from_eig(rot*arm);
+				tf_props[2].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = 7.0*M_PI/6.0;
-				tf_props[3].transform.translation = vector_from_eig(rot*arm);
+				tf_props[3].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = 11.0*M_PI/6.0;
-				tf_props[4].transform.translation = vector_from_eig(rot*arm);
+				tf_props[4].transform.translation = MDTools::vector_from_eig(rot*arm);
 				rot.angle() = 5.0*M_PI/6.0;
-				tf_props[5].transform.translation = vector_from_eig(rot*arm);
+				tf_props[5].transform.translation = MDTools::vector_from_eig(rot*arm);
 			}
 
 			timer_prop_viz_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ForwardKinematics::callback_props, this );
@@ -173,7 +173,7 @@ void ForwardKinematics::callback_timer(const ros::TimerEvent& e) {
 	t.header.stamp = e.current_real;
 	t.child_frame_id = param_model_id_;
 
-	geometry_msgs::Pose p = pose_from_eig(s_.g());
+	geometry_msgs::Pose p = MDTools::pose_from_eig(s_.g());
 	t.transform.translation.x = p.position.x;
 	t.transform.translation.y = p.position.y;
 	t.transform.translation.z = p.position.z;
@@ -204,7 +204,7 @@ void ForwardKinematics::callback_timer(const ros::TimerEvent& e) {
 
 		msg_end_out_.header.stamp = e.current_real;
 		msg_end_out_.header.frame_id = param_frame_id_;
-		msg_end_out_.pose = pose_from_eig(s_.g()*gbe);
+		msg_end_out_.pose = MDTools::pose_from_eig(s_.g()*gbe);
 
 		pub_end_.publish(msg_end_out_);
 	}
@@ -218,10 +218,10 @@ void ForwardKinematics::callback_props( const ros::TimerEvent& e ) {
 
 		for(int i=0; i<p_.motor_num(); i++) {
 			tf_props[i].header.stamp = e.current_real;
-			Eigen::Quaterniond q = quaternion_from_msg(tf_props[i].transform.rotation);
+			Eigen::Quaterniond q = MDTools::quaternion_from_msg(tf_props[i].transform.rotation);
 			//Correct q for motor directions
 			Eigen::Quaterniond mr = (mdir[i]<0) ? r : r.inverse();
-			tf_props[i].transform.rotation = quaternion_from_eig(mr*q);
+			tf_props[i].transform.rotation = MDTools::quaternion_from_eig(mr*q);
 
 			tfbr_.sendTransform(tf_props[i]);
 		}
