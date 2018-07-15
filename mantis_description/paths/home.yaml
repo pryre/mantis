@@ -1,8 +1,6 @@
-start:
-  position: [0.0, 0.0, 1.0]
-  alpha: 0.0
-
-path:
-  s0:
-    present: true
-    hold_time: 5.0
+waypoints:
+  wp0:
+    x: 0.0
+    y: 0.0
+    z: 1.0
+    yaw: 0.0
