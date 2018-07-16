@@ -18,7 +18,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(FILES
 	BodyInertial.msg
-	Params.msg
+	Parameters.msg
+	ParametersUpdate.msg
 	State.msg
 	JointTrajectoryGoal.msg
 )
