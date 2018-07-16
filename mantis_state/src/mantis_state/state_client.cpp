@@ -4,9 +4,11 @@
 #include <mantis_msgs/State.h>
 #include <mantis_description/se_tools.h>
 #include <mantis_state/state_client.h>
+#include <mantis_description/param_client.h>
 
-MantisStateClient::MantisStateClient( ros::NodeHandle *nh ) :
+MantisStateClient::MantisStateClient( const ros::NodeHandle& nh, MantisParamClient& p ) :
 	nh_(nh),
+	p_(p),
 	timestamp_(0),
 	voltage_(0.0),
 	flight_ready_(false) {
@@ -17,18 +19,40 @@ MantisStateClient::MantisStateClient( ros::NodeHandle *nh ) :
 	bw_ = Eigen::Vector3d::Zero();
 	bwa_ = Eigen::Vector3d::Zero();
 
-	sub_state_ = nh_->subscribe<mantis_msgs::State>( "state", 1, &MantisStateClient::callback_state, this );
+	sub_state_ = nh_.subscribe<mantis_msgs::State>( "state", 1, &MantisStateClient::callback_state, this );
 }
 
 MantisStateClient::~MantisStateClient() {
 }
 
 bool MantisStateClient::ok( void ) {
-	return ( timestamp_ != ros::Time(0) );
+	bool ok = true;
+
+	if( timestamp_ == ros::Time(0) )
+		ok = false;
+
+	if( configuration_stamp_ != p_.time_configuration_change() )
+		ok = false;
+
+	return ok;
 }
 
 const ros::Time& MantisStateClient::time_updated( void ) {
 	return timestamp_;
+}
+
+const ros::Time& MantisStateClient::state_configuration_stamp( void ) {
+	return configuration_stamp_;
+}
+
+
+bool MantisStateClient::wait_for_state( void ) {
+	while( ros::ok() && ( !ok() ) ) {
+			ros::spinOnce();
+			ros::Rate(10).sleep();
+	}
+
+	return ok();
 }
 
 const Eigen::Affine3d& MantisStateClient::g( void ) {
@@ -77,6 +101,7 @@ const bool& MantisStateClient::flight_ready( void ) {
 
 void MantisStateClient::callback_state(const mantis_msgs::State::ConstPtr &msg_in) {
 	timestamp_ = msg_in->header.stamp;
+	configuration_stamp_ = msg_in->configuration_stamp;
 
 	g_ = MDTools::affine_from_msg(msg_in->pose);
 	bv_ = MDTools::vector_from_msg(msg_in->twist.linear);

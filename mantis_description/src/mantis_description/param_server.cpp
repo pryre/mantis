@@ -2,7 +2,7 @@
 
 #include <dh_parameters/JointDescription.h>
 #include <mantis_msgs/BodyInertial.h>
-#include <mantis_msgs/Params.h>
+#include <mantis_msgs/Parameters.h>
 
 #include <mantis_description/param_server.h>
 
@@ -27,7 +27,7 @@ MantisParamServer::MantisParamServer( void ) :
 	}
 
 	if(ready) {
-		pub_params_ = nh_.advertise<mantis_msgs::Params>("params", 1, true);
+		pub_params_ = nh_.advertise<mantis_msgs::Parameters>("params", 1, true);
 		srv_reload_ = nh_.advertiseService("reload_params", &MantisParamServer::reload, this);
 
 		update();
@@ -50,8 +50,8 @@ void MantisParamServer::update( void ) {
 	pub_params_.publish(get_params());
 }
 
-mantis_msgs::Params MantisParamServer::get_params( void ) {
-	mantis_msgs::Params p;
+mantis_msgs::Parameters MantisParamServer::get_params( void ) {
+	mantis_msgs::Parameters p;
 
 	p.header.stamp = load_time_;
 	p.header.frame_id = "mantis_uav";
@@ -145,6 +145,7 @@ void MantisParamServer::load( void ) {
 		}
 	}
 
+	//Output to terminal some information about the loaded paramters
 	ROS_INFO("motor:");
 	ROS_INFO("  len: %0.4f", la_);
 	ROS_INFO("  kv: %0.4f", motor_kv_);

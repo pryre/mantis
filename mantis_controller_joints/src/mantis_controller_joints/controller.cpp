@@ -8,21 +8,21 @@
 
 #include <string>
 
-Controller::Controller( ros::NodeHandle *nhp, std::string joint_name, double traj_timeout ) :
-	nhp_(nhp),
+Controller::Controller( const ros::NodeHandle& nh, std::string joint_name, double traj_timeout ) :
+	nh_(ros::NodeHandle(nh, joint_name)),
 	have_reference_(false),
 	output_(0.0),
 	ref_pos_(0.0),
 	ref_vel_(0.0),
 	ref_update_t_(0),
 	ref_timeout_(traj_timeout),
-	pid_(nhp_, joint_name ) {
+	pid_(nh_) {
 
 	name_ = joint_name;
 
-	pub_output_ = nhp->advertise<std_msgs::Float64>( name_ + "/command", 10);
-	sub_reference_pos_ = nhp->subscribe<std_msgs::Float64>( name_ + "/reference/pos", 10, &Controller::callback_reference_pos, this);
-	sub_reference_traj_ = nhp->subscribe<mantis_msgs::JointTrajectoryGoal>( name_ + "/reference/traj", 10, &Controller::callback_reference_traj, this);
+	pub_output_ = nh_.advertise<std_msgs::Float64>( "command", 10);
+	sub_reference_pos_ = nh_.subscribe<std_msgs::Float64>( "reference/pos", 10, &Controller::callback_reference_pos, this);
+	sub_reference_traj_ = nh_.subscribe<mantis_msgs::JointTrajectoryGoal>( "reference/traj", 10, &Controller::callback_reference_traj, this);
 }
 
 Controller::~Controller() {

@@ -26,9 +26,9 @@
 ForwardKinematics::ForwardKinematics() :
 	nh_(),
 	nhp_("~"),
-	p_(&nh_),
-	s_(&nh_),
-	solver_(&p_, &s_),
+	p_(nh_),
+	s_(nh_, p_),
+	solver_(p_, s_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_rate_(30.0),
@@ -46,116 +46,104 @@ ForwardKinematics::ForwardKinematics() :
 	nhp_.param("armed_prop_velocity", prop_rate_, prop_rate_);
 	nhp_.param("end_effector_pose", param_do_end_effector_pose_, param_do_end_effector_pose_);
 
-	if( p_.wait_for_params() ) {
-		bool ready = false;
+	if( p_.wait_for_params() && s_.wait_for_state() ) {
 
-		while(ros::ok() && (!ready)) {
-			ready = s_.ok();
+		//Configure publishers and subscribers
+		pub_end_ = nh_.advertise<geometry_msgs::PoseStamped>("end_effector", 10);
+		pub_viz_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization", 10, true);
 
-			ros::spinOnce();
-			ros::Rate(param_rate_).sleep();
+		ROS_INFO("Configuring static mounts...");
+		do_reset();
+
+		timer_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ForwardKinematics::callback_timer, this );
+
+		//Send static transforms for rviz model
+		//TODO: Make more dynamic with params
+		geometry_msgs::TransformStamped tf;
+		tf.header.stamp = ros::Time::now();
+		tf.transform.rotation.w = 1.0;
+
+		//World Frame
+		tf.header.frame_id = "world";
+		tf.child_frame_id = "map";
+		tfsbr_.sendTransform(tf);
+
+		//Base Link
+		tf.header.frame_id = param_model_id_;
+		tf.child_frame_id = p_.body_name(0);
+		tfsbr_.sendTransform(tf);
+
+		//Additional bodies
+		for(int i=0; i<p_.get_joint_num(); i++) {
+			DHParameters j(p_.joint(i));
+			if(j.jt() != DHParameters::JointType::Static) {
+				tf.header.frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
+				tf.child_frame_id = p_.body_name(i);
+				tf.transform.translation = MDTools::vector_from_eig(-(j.transform().linear().transpose()*j.transform().translation()));
+				tfsbr_.sendTransform(tf);
+			}
 		}
 
-		if(ready) {
-			//Configure publishers and subscribers
-			pub_end_ = nh_.advertise<geometry_msgs::PoseStamped>("end_effector", 10);
-			pub_viz_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization", 10, true);
+		//Propeller links
+		tf_props.resize(p_.motor_num());
+		Eigen::Vector3d arm = Eigen::Vector3d(p_.base_arm_length(), 0.0, 0.046);
 
-			ROS_INFO("Configuring static mounts...");
-			do_reset();
-
-			timer_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ForwardKinematics::callback_timer, this );
-
-			//Send static transforms for rviz model
-			//TODO: Make more dynamic with params
-			geometry_msgs::TransformStamped tf;
-			tf.header.stamp = ros::Time::now();
-			tf.transform.rotation.w = 1.0;
-
-			//World Frame
-			tf.header.frame_id = "world";
-			tf.child_frame_id = "map";
-			tfsbr_.sendTransform(tf);
-
-			//Base Link
-			tf.header.frame_id = param_model_id_;
-			tf.child_frame_id = p_.body_name(0);
-			tfsbr_.sendTransform(tf);
-
-			//Additional bodies
-			for(int i=0; i<p_.get_joint_num(); i++) {
-				DHParameters j(p_.joint(i));
-				if(j.jt() != DHParameters::JointType::Static) {
-					tf.header.frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
-					tf.child_frame_id = p_.body_name(i);
-					tf.transform.translation = MDTools::vector_from_eig(-(j.transform().linear().transpose()*j.transform().translation()));
-					tfsbr_.sendTransform(tf);
-				}
-			}
-
-			//Propeller links
-			tf_props.resize(p_.motor_num());
-			Eigen::Vector3d arm = Eigen::Vector3d(p_.base_arm_length(), 0.0, 0.046);
-
-			//Prepare common values
-			for(int i=0; i<p_.motor_num(); i++) {
-				tf_props[i].header.frame_id = param_model_id_;
-				tf_props[i].child_frame_id = "link_rotor_" + std::to_string(i+1);
-				tf_props[i].transform.rotation.w = 1.0;
-			}
-
-			if(p_.airframe_type() == "quad_p4") {
-				Eigen::AngleAxisd rot(3.0*M_PI/2.0, Eigen::Vector3d::UnitZ());
-				tf_props[0].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = M_PI/2.0;
-				tf_props[1].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = 0.0;
-				tf_props[2].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = M_PI;
-				tf_props[3].transform.translation = MDTools::vector_from_eig(rot*arm);
-			} else if(p_.airframe_type() == "quad_x4") {
-				Eigen::AngleAxisd rot(7.0*M_PI/4.0, Eigen::Vector3d::UnitZ());
-				tf_props[0].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = 3.0*M_PI/4.0;
-				tf_props[1].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = M_PI/4.0;
-				tf_props[2].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = 5.0*M_PI/4.0;
-				tf_props[3].transform.translation = MDTools::vector_from_eig(rot*arm);
-			} else if(p_.airframe_type() == "hex_p6") {
-				Eigen::AngleAxisd rot(0.0, Eigen::Vector3d::UnitZ());
-				tf_props[0].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = M_PI;
-				tf_props[1].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = 2.0*M_PI/3.0;
-				tf_props[2].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = 5.0*M_PI/3.0;
-				tf_props[3].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = 1.0*M_PI/3.0;
-				tf_props[4].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = 4.0*M_PI/3.0;
-				tf_props[5].transform.translation = MDTools::vector_from_eig(rot*arm);
-			} else if(p_.airframe_type() == "hex_x6") {
-				Eigen::AngleAxisd rot(9.0*M_PI/6.0, Eigen::Vector3d::UnitZ());
-				tf_props[0].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = 3.0*M_PI/6.0;
-				tf_props[1].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = 1.0*M_PI/6.0;
-				tf_props[2].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = 7.0*M_PI/6.0;
-				tf_props[3].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = 11.0*M_PI/6.0;
-				tf_props[4].transform.translation = MDTools::vector_from_eig(rot*arm);
-				rot.angle() = 5.0*M_PI/6.0;
-				tf_props[5].transform.translation = MDTools::vector_from_eig(rot*arm);
-			}
-
-			timer_prop_viz_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ForwardKinematics::callback_props, this );
-
-			ROS_INFO("Forward kinematics running!");
-		} else {
-			ros::shutdown();
+		//Prepare common values
+		for(int i=0; i<p_.motor_num(); i++) {
+			tf_props[i].header.frame_id = param_model_id_;
+			tf_props[i].child_frame_id = "link_rotor_" + std::to_string(i+1);
+			tf_props[i].transform.rotation.w = 1.0;
 		}
+
+		if(p_.airframe_type() == "quad_p4") {
+			Eigen::AngleAxisd rot(3.0*M_PI/2.0, Eigen::Vector3d::UnitZ());
+			tf_props[0].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = M_PI/2.0;
+			tf_props[1].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = 0.0;
+			tf_props[2].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = M_PI;
+			tf_props[3].transform.translation = MDTools::vector_from_eig(rot*arm);
+		} else if(p_.airframe_type() == "quad_x4") {
+			Eigen::AngleAxisd rot(7.0*M_PI/4.0, Eigen::Vector3d::UnitZ());
+			tf_props[0].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = 3.0*M_PI/4.0;
+			tf_props[1].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = M_PI/4.0;
+			tf_props[2].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = 5.0*M_PI/4.0;
+			tf_props[3].transform.translation = MDTools::vector_from_eig(rot*arm);
+		} else if(p_.airframe_type() == "hex_p6") {
+			Eigen::AngleAxisd rot(0.0, Eigen::Vector3d::UnitZ());
+			tf_props[0].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = M_PI;
+			tf_props[1].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = 2.0*M_PI/3.0;
+			tf_props[2].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = 5.0*M_PI/3.0;
+			tf_props[3].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = 1.0*M_PI/3.0;
+			tf_props[4].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = 4.0*M_PI/3.0;
+			tf_props[5].transform.translation = MDTools::vector_from_eig(rot*arm);
+		} else if(p_.airframe_type() == "hex_x6") {
+			Eigen::AngleAxisd rot(9.0*M_PI/6.0, Eigen::Vector3d::UnitZ());
+			tf_props[0].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = 3.0*M_PI/6.0;
+			tf_props[1].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = 1.0*M_PI/6.0;
+			tf_props[2].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = 7.0*M_PI/6.0;
+			tf_props[3].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = 11.0*M_PI/6.0;
+			tf_props[4].transform.translation = MDTools::vector_from_eig(rot*arm);
+			rot.angle() = 5.0*M_PI/6.0;
+			tf_props[5].transform.translation = MDTools::vector_from_eig(rot*arm);
+		}
+
+		timer_prop_viz_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ForwardKinematics::callback_props, this );
+
+		ROS_INFO("Forward kinematics running!");
 	} else {
 		ros::shutdown();
 	}

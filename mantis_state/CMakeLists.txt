@@ -19,7 +19,7 @@ find_package(Eigen3 REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}_state_client
+  LIBRARIES ${PROJECT_NAME}_client
   CATKIN_DEPENDS
 #  DEPENDS system_lib
 )
@@ -39,19 +39,19 @@ include_directories(
 
 ## Declare a C++ library
 
-add_library(${PROJECT_NAME}_state_server
+add_library(${PROJECT_NAME}_server
   src/${PROJECT_NAME}/state_server.cpp
 )
 
-add_library(${PROJECT_NAME}_state_client
+add_library(${PROJECT_NAME}_client
   src/${PROJECT_NAME}/state_client.cpp
 )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(${PROJECT_NAME}_state_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(${PROJECT_NAME}_state_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -70,16 +70,16 @@ add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 
 ## Specify libraries to link a library or executable target against
 
-target_link_libraries(${PROJECT_NAME}_state_server
+target_link_libraries(${PROJECT_NAME}_server
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(${PROJECT_NAME}_state_client
+target_link_libraries(${PROJECT_NAME}_client
   ${catkin_LIBRARIES}
 )
 
 target_link_libraries(${PROJECT_NAME}_node
-  ${PROJECT_NAME}_state_server
+  ${PROJECT_NAME}_server
   ${catkin_LIBRARIES}
 )
 

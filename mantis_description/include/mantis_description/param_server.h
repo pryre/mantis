@@ -3,7 +3,7 @@
 #include <ros/ros.h>
 #include <dh_parameters/JointDescription.h>
 #include <mantis_msgs/BodyInertial.h>
-#include <mantis_msgs/Params.h>
+#include <mantis_msgs/Parameters.h>
 #include <std_srvs/Empty.h>
 
 #include <string>
@@ -41,7 +41,7 @@ class MantisParamServer {
 		~MantisParamServer( void );
 
 		void update( void );
-		mantis_msgs::Params get_params( void );
+		mantis_msgs::Parameters get_params( void );
 
 		bool ok( void );
 

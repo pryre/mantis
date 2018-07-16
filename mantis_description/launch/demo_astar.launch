@@ -14,12 +14,13 @@
 	<node pkg="contrail" type="load_waypoints" name="load_waypoints" clear_params="true"
 	ns="mantis_uav" output="screen">
 		<param name="frame_id" value="map" />
+		<remap from="waypoints" to="astar_planner/waypoints" />
+
 		<rosparam command="load" file="$(find mantis_description)/paths/$(arg wp_name).yaml"/>
 	</node>
 
 	<node pkg="mantis_description" type="demo_astar" name="astar_planner" clear_params="true"
 	ns="mantis_uav" output="screen">
-		<remap from="astar_planner/waypoints" to="waypoints" />
 		<remap from="astar_planner/path" to="mantis_path/reference/contrail/path" />
 	</node>
 </launch>

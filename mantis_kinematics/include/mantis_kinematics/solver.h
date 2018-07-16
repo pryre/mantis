@@ -12,8 +12,8 @@
 
 class MantisSolver {
 	private:
-		MantisParamClient *p_;
-		MantisStateClient *s_;
+		MantisParamClient& p_;
+		MantisStateClient& s_;
 
 		ros::Time param_load_time_;
 		ros::Time state_load_time_;
@@ -21,7 +21,7 @@ class MantisSolver {
 		SerialManipulator manip_;
 
 	public:
-		MantisSolver( MantisParamClient *p, MantisStateClient *s );
+		MantisSolver( MantisParamClient& p, MantisStateClient& s );
 
 		~MantisSolver( void );
 

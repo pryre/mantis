@@ -24,7 +24,7 @@ Spawner::Spawner( const std::vector<std::string> &c_names ) :
 		controllers_.resize( c_names.size() );
 
 		for(int i = 0; i < c_names.size(); i++) {
-			controllers_[i] = new Controller( &nhp_, c_names[i], traj_timeout);
+			controllers_[i] = new Controller( nhp_, c_names[i], traj_timeout);
 		}
 
 		ROS_INFO_STREAM("Spawned " << controllers_.size() << " joint controllers");

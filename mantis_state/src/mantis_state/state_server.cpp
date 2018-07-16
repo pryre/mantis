@@ -16,7 +16,7 @@
 MantisStateServer::MantisStateServer( void ) :
 	nh_(),
 	nhp_("~"),
-	p_(&nh_),
+	p_(nh_),
 	param_use_odom_avel_(false),
 	param_rate_(0.0),
 	time_last_est_(0) {
@@ -66,7 +66,8 @@ void MantisStateServer::callback_estimator(const ros::TimerEvent& e) {
 		( msg_battery_tr_ != ros::Time(0) ) &&
 		( msg_joints_tr_ != ros::Time(0) ) &&
 		( msg_imu_tr_ != ros::Time(0) ) &&
-		( msg_mav_state_tr_ != ros::Time(0) ) ) {
+		( msg_mav_state_tr_ != ros::Time(0) ) &&
+		( p_.get_dynamic_joint_num() == r_.size() ) ) {
 
 		//If we can get a dt
 		if( time_last_est_ > ros::Time(0) ) {
@@ -77,6 +78,7 @@ void MantisStateServer::callback_estimator(const ros::TimerEvent& e) {
 			state.header.stamp = e.current_real;
 			state.header.frame_id = "map";
 			state.child_frame_id = "mantis_uav";
+			state.configuration_stamp = p_.time_configuration_change();
 
 			state.pose = MDTools::pose_from_eig(g_);
 			state.twist.linear = MDTools::vector_from_eig(bv_);
@@ -86,17 +88,16 @@ void MantisStateServer::callback_estimator(const ros::TimerEvent& e) {
 
 			//Some safety in case out joint configuration changes
 			//This should make things wait until r_ is updated by the joiint callback
-			if(p_.get_dynamic_joint_num() == r_.size()) {
-				state.r.resize(p_.get_dynamic_joint_num());
-				state.rd.resize(p_.get_dynamic_joint_num());
-				state.rdd.resize(p_.get_dynamic_joint_num());
+			state.r.resize(p_.get_dynamic_joint_num());
+			state.rd.resize(p_.get_dynamic_joint_num());
+			state.rdd.resize(p_.get_dynamic_joint_num());
 
-				for(int i=0; i<p_.get_dynamic_joint_num(); i++) {
-					state.r[i] = r_[i];
-					state.rd[i] = rd_[i];
-					state.rdd[i] = rdd_[i];
-				}
+			for(int i=0; i<p_.get_dynamic_joint_num(); i++) {
+				state.r[i] = r_[i];
+				state.rd[i] = rd_[i];
+				state.rdd[i] = rdd_[i];
 			}
+
 
 			state.battery_voltage = voltage_;
 			state.flight_ready = mav_ready_;

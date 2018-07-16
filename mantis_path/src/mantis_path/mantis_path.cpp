@@ -19,9 +19,9 @@
 MantisPath::MantisPath() :
 	nh_(),
 	nhp_("~"),
-	p_(&nh_),
-	s_(&nh_),
-	solver_(&p_, &s_),
+	p_(nh_),
+	s_(nh_, p_),
+	solver_(p_, s_),
 	ref_path_(nhp_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
@@ -36,17 +36,7 @@ MantisPath::MantisPath() :
 
 	vbe_last_ = Eigen::Matrix<double,6,1>::Zero();
 
-	bool success = false;
-
-	while(ros::ok() && (!success) ) {
-		if(p_.ok() && s_.ok())
-			success = true;
-
-		ros::spinOnce();
-		ros::Rate(5).sleep();
-	}
-
-	if(success) {
+	if( p_.wait_for_params() && s_.wait_for_state() ) {
 		//pub_traj_ = nhp_.advertise<nav_msgs::Odometry>("output/traj", 10);
 		pub_tri_ = nhp_.advertise<mavros_msgs::PositionTarget>("output/triplet", 10);
 		pub_pose_base_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/base", 10);

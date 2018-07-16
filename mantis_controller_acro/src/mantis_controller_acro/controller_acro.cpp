@@ -17,17 +17,17 @@
 ControllerAcro::ControllerAcro() :
 	nh_(),
 	nhp_( "~" ),
-	p_(&nh_),
+	p_(nh_),
 	frame_id_("map"),
 	model_name_("mantis_uav"),
 	pwm_update_rate_(250.0),
 	force_comp_timeout_(0.1),
-	controller_ang_x_( &nhp_, "ang/x"),
-	controller_ang_y_( &nhp_, "ang/y"),
-	controller_ang_z_( &nhp_, "ang/z"),
-	controller_rates_x_( &nhp_, "rates/x"),
-	controller_rates_y_( &nhp_, "rates/y"),
-	controller_rates_z_( &nhp_, "rates/z") {
+	controller_ang_x_( ros::NodeHandle(nhp_, "ang/x")),
+	controller_ang_y_( ros::NodeHandle(nhp_, "ang/y")),
+	controller_ang_z_( ros::NodeHandle(nhp_, "ang/z")),
+	controller_rates_x_( ros::NodeHandle(nhp_, "rates/x")),
+	controller_rates_y_( ros::NodeHandle(nhp_, "rates/y")),
+	controller_rates_z_( ros::NodeHandle(nhp_, "rates/z")) {
 
 	sub_attitude_target_ = nh_.subscribe<mavros_msgs::AttitudeTarget>("command/attitude", 1, &ControllerAcro::callback_attitude, this);
 	sub_imu_ = nh_.subscribe<sensor_msgs::Imu>("state/imu_data", 10, &ControllerAcro::callback_imu, this);

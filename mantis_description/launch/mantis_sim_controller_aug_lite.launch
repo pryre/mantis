@@ -7,6 +7,12 @@
 	</group>
 
 	<!-- HIGH LEVEL CONTROL -->
+	<node pkg="contrail" type="converter_waypoints_path" name="wp_converter" clear_params="true"
+	ns="mantis_uav" output="screen">
+		<remap from="wp_converter/waypoints" to="waypoints" />
+		<remap from="wp_converter/path" to="mantis_path/reference/contrail/path" />
+	</node>
+
 	<node pkg="mantis_path" type="mantis_path_node" name="mantis_path"
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />

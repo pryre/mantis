@@ -11,7 +11,7 @@
 
 class Controller {
 	private:
-		ros::NodeHandle *nhp_;
+		ros::NodeHandle nh_;
 		ros::Publisher pub_output_;
 		ros::Subscriber sub_reference_pos_;
 		ros::Subscriber sub_reference_traj_;
@@ -32,7 +32,7 @@ class Controller {
 		ros::Duration ref_timeout_;
 
 	public:
-		Controller( ros::NodeHandle *nhp, std::string joint_name, double traj_timeout );
+		Controller( const ros::NodeHandle& nh, std::string joint_name, double traj_timeout );
 
 		~Controller( void );
 

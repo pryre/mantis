@@ -8,15 +8,19 @@
 #include <geometry_msgs/Quaternion.h>
 #include <geometry_msgs/Pose.h>
 
+#include <mantis_description/param_client.h>
+
 #include <eigen3/Eigen/Dense>
 
 class MantisStateClient {
 	private:
-		ros::NodeHandle *nh_;
+		ros::NodeHandle nh_;
+		MantisParamClient& p_;
 
 		ros::Subscriber sub_state_;
 
 		ros::Time timestamp_;
+		ros::Time configuration_stamp_;
 
 		Eigen::Affine3d g_;
 		Eigen::Vector3d bv_;
@@ -32,11 +36,14 @@ class MantisStateClient {
 		bool flight_ready_;
 
 	public:
-		MantisStateClient( ros::NodeHandle *nh );
+		MantisStateClient( const ros::NodeHandle& nh, MantisParamClient& p );
 
 		~MantisStateClient( void );
 
 		const ros::Time& time_updated( void );
+		const ros::Time& state_configuration_stamp( void );
+
+		bool wait_for_state( void );
 
 		const Eigen::Affine3d& g( void );
 		const Eigen::Vector3d& bv( void );

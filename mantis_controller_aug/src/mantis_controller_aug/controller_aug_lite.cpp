@@ -17,9 +17,9 @@
 ControllerAugLite::ControllerAugLite() :
 	nh_(),
 	nhp_("~"),
-	p_(&nh_),
-	s_(&nh_),
-	solver_(&p_, &s_),
+	p_(nh_),
+	s_(nh_, p_),
+	solver_(p_, s_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_est_rate_(50.0),
@@ -37,7 +37,7 @@ ControllerAugLite::ControllerAugLite() :
 	uaug_f_ = Eigen::Vector3d::Zero();
 
 	//Wait here for parameters to be loaded
-	if( p_.wait_for_params() ) {
+	if( p_.wait_for_params() && s_.wait_for_state() ) {
 		pub_np_force_ = nhp_.advertise<mavros_msgs::ActuatorControl>("output/normalized_payload_torque", 10);
 		pub_wrench_ = nhp_.advertise<geometry_msgs::WrenchStamped>("feedback/wrench_compensation", 10);
 
@@ -48,13 +48,10 @@ ControllerAugLite::ControllerAugLite() :
 		ROS_INFO("    - state");
 
 		//Lock the controller until all the inputs are satisfied
-		while( ros::ok() && ( ( !s_.ok() ) || ( msg_attitude_target_tr_ == ros::Time(0) ) ) ) {
+		while( ros::ok() && ( msg_attitude_target_tr_ == ros::Time(0) ) ) {
 
 			if( msg_attitude_target_tr_ != ros::Time(0) )
 				ROS_INFO_ONCE("Augmented dynamics got input: attitude target");
-
-			if( s_.ok() )
-				ROS_INFO_ONCE("Augmented dynamics got input: state");
 
 			ros::spinOnce();
 			ros::Rate(param_est_rate_).sleep();

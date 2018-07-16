@@ -6,8 +6,14 @@
 		<node pkg="rosservice" type="rosservice" name="arm_system" args="call --wait /mantis_uav/arm/motors '{arm: $(arg arm)}'"/>
 	</group>
 
+	<node pkg="contrail" type="converter_waypoints_path" name="wp_converter" clear_params="true"
+	ns="mantis_uav" output="screen">
+		<remap from="wp_converter/waypoints" to="waypoints" />
+		<remap from="wp_converter/path" to="controller_aug/reference/contrail/path" />
+	</node>
+
 	<!-- LOW LEVEL CONTROL -->
-	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_controller_aug_param.yaml"/>
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_controller_aug_params.yaml"/>
 
 	<node pkg="mantis_controller_aug" type="mantis_controller_aug_node" name="controller_aug"
 	ns="/mantis_uav" clear_params="true" output="screen">

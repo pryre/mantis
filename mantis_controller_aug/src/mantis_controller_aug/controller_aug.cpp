@@ -23,9 +23,9 @@
 ControllerAug::ControllerAug() :
 	nh_(),
 	nhp_("~"),
-	p_(&nh_),
-	s_(&nh_),
-	solver_(&p_, &s_),
+	p_(nh_),
+	s_(nh_, p_),
+	solver_(p_, s_),
 	ref_path_(nhp_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
@@ -33,18 +33,18 @@ ControllerAug::ControllerAug() :
 	param_high_level_rate_(20.0),
 	param_low_level_rate_(200.0),
 	dyncfg_control_settings_(ros::NodeHandle(nhp_, "control_settings")),
-	pos_pid_x_(&nhp_, "control/pos/x"),
-	pos_pid_y_(&nhp_, "control/pos/y"),
-	pos_pid_z_(&nhp_, "control/pos/z"),
-	vel_pid_x_(&nhp_, "control/vel/x"),
-	vel_pid_y_(&nhp_, "control/vel/y"),
-	vel_pid_z_(&nhp_, "control/vel/z"),
-	ang_pid_x_(&nhp_, "control/ang/x"),
-	ang_pid_y_(&nhp_, "control/ang/y"),
-	ang_pid_z_(&nhp_, "control/ang/z"),
-	rate_pid_x_(&nhp_, "control/rate/x"),
-	rate_pid_y_(&nhp_, "control/rate/y"),
-	rate_pid_z_(&nhp_, "control/rate/z"),
+	pos_pid_x_(ros::NodeHandle(nhp_, "control/pos/x")),
+	pos_pid_y_(ros::NodeHandle(nhp_, "control/pos/y")),
+	pos_pid_z_(ros::NodeHandle(nhp_, "control/pos/z")),
+	vel_pid_x_(ros::NodeHandle(nhp_, "control/vel/x")),
+	vel_pid_y_(ros::NodeHandle(nhp_, "control/vel/y")),
+	vel_pid_z_(ros::NodeHandle(nhp_, "control/vel/z")),
+	ang_pid_x_(ros::NodeHandle(nhp_, "control/ang/x")),
+	ang_pid_y_(ros::NodeHandle(nhp_, "control/ang/y")),
+	ang_pid_z_(ros::NodeHandle(nhp_, "control/ang/z")),
+	rate_pid_x_(ros::NodeHandle(nhp_, "control/rate/x")),
+	rate_pid_y_(ros::NodeHandle(nhp_, "control/rate/y")),
+	rate_pid_z_(ros::NodeHandle(nhp_, "control/rate/z")),
 	ready_for_flight_(false) {
 
 	bool success = true;
@@ -63,7 +63,7 @@ ControllerAug::ControllerAug() :
 	status_high_level_ = false;
 	uaug_f_ = Eigen::Vector3d::Zero();
 
-	if(p_.wait_for_params()) {
+	if( p_.wait_for_params() && s_.wait_for_state() ) {
 		pub_rc_ = nhp_.advertise<mavros_msgs::OverrideRCIn>("output/rc", 10);
 
 		pub_pose_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/base/pose", 10);
@@ -79,9 +79,6 @@ ControllerAug::ControllerAug() :
 
 		//Lock the controller until all the inputs are satisfied
 		while( ros::ok() && (!ready_for_flight_) ) {
-			if( s_.ok() )
-				ROS_INFO_ONCE("Augmented dynamics got input: state");
-
 			if( ref_path_.has_reference(ros::Time::now()) )
 				ROS_INFO_ONCE("Augmented dynamics got input: path");
 

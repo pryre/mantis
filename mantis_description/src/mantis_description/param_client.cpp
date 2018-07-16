@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 
-#include <mantis_msgs/Params.h>
+#include <mantis_msgs/Parameters.h>
 #include <mantis_msgs/BodyInertial.h>
 #include <dh_parameters/JointDescription.h>
 
@@ -11,11 +11,11 @@
 
 #include <string>
 
-MantisParamClient::MantisParamClient(ros::NodeHandle *nh) :
+MantisParamClient::MantisParamClient(const ros::NodeHandle& nh) :
 	nh_(nh),
 	num_dynamic_joints_(0) {
 
-	sub_params_ = nh_->subscribe<mantis_msgs::Params>( "params", 1, &MantisParamClient::callback_params, this );
+	sub_params_ = nh_.subscribe<mantis_msgs::Parameters>( "params", 1, &MantisParamClient::callback_params, this );
 }
 
 MantisParamClient::~MantisParamClient() {
@@ -34,51 +34,78 @@ bool MantisParamClient::wait_for_params( void ) {
 	return ok();
 }
 
-void MantisParamClient::callback_params(const mantis_msgs::Params::ConstPtr &msg_in) {
-	params_ = *msg_in;
+void MantisParamClient::callback_params(const mantis_msgs::Parameters::ConstPtr &msg_in) {
+	bool configuration_change = false;
+	bool parametric_change = false;
 
-	num_dynamic_joints_ = 0;
-	for(int i=0; i<params_.joints.size(); i++) {
-		if(params_.joints[i].type != "static")
-			num_dynamic_joints_++;
-	}
+	//XXX: DO THIS PROPERLY
+	configuration_change = true;
+	parametric_change = true;
+	//XXX: DO THIS PROPERLY
 
-	if(params_.airframe_type == "quad_x4") {
-		motor_num_ = MDTools::mixer_generate_quad_x4(mixer_);
-	} else if(params_.airframe_type == "quad_+4") {
-		motor_num_ = MDTools::mixer_generate_quad_p4(mixer_);
-	} else if(params_.airframe_type == "hex_x6") {
-		motor_num_ = MDTools::mixer_generate_hex_x6(mixer_);
-	} else if(params_.airframe_type == "hex_p6") {
-		motor_num_ = MDTools::mixer_generate_hex_p6(mixer_);
-	} else if(params_.airframe_type == "octo_x8") {
-		motor_num_ = MDTools::mixer_generate_octo_x8(mixer_);
-	} else if(params_.airframe_type == "octo_+8") {
-		motor_num_= MDTools::mixer_generate_octo_p8(mixer_);
-	} else {
-		mixer_ = Eigen::MatrixXd();
-		ROS_ERROR_THROTTLE(2.0, "Unsupported mixer: %s", params_.airframe_type.c_str());
+	if(configuration_change)
+		configuration_stamp_ = msg_in->header.stamp;
+
+	if(parametric_change)
+		parametric_stamp_ = msg_in->header.stamp;
+
+	//Update the data all in one go if there was a change, just because lazy
+	if(configuration_change || parametric_change)
+		p_ = *msg_in;
+
+	//Handle generated variables if changed
+	if(configuration_change) {
+		num_dynamic_joints_ = 0;
+		for(int i=0; i<p_.joints.size(); i++) {
+			if(p_.joints[i].type != "static")
+				num_dynamic_joints_++;
+		}
+
+		if(p_.airframe_type == "quad_x4") {
+			motor_num_ = MDTools::mixer_generate_quad_x4(mixer_);
+		} else if(p_.airframe_type == "quad_+4") {
+			motor_num_ = MDTools::mixer_generate_quad_p4(mixer_);
+		} else if(p_.airframe_type == "hex_x6") {
+			motor_num_ = MDTools::mixer_generate_hex_x6(mixer_);
+		} else if(p_.airframe_type == "hex_p6") {
+			motor_num_ = MDTools::mixer_generate_hex_p6(mixer_);
+		} else if(p_.airframe_type == "octo_x8") {
+			motor_num_ = MDTools::mixer_generate_octo_x8(mixer_);
+		} else if(p_.airframe_type == "octo_+8") {
+			motor_num_= MDTools::mixer_generate_octo_p8(mixer_);
+		} else {
+			mixer_ = Eigen::MatrixXd();
+			ROS_ERROR_THROTTLE(2.0, "Unsupported mixer: %s", p_.airframe_type.c_str());
+		}
 	}
 }
 
 const ros::Time& MantisParamClient::time_updated( void ) {
-	return params_.header.stamp;
+	return p_.header.stamp;
+}
+
+const ros::Time& MantisParamClient::time_configuration_change( void ) {
+	return configuration_stamp_;
+}
+
+const ros::Time& MantisParamClient::time_parametric_change( void ) {
+	return parametric_stamp_;
 }
 
 const std::string& MantisParamClient::airframe_type( void ) {
-	return params_.airframe_type;
+	return p_.airframe_type;
 }
 
 const int16_t& MantisParamClient::pwm_min( void ) {
-	return params_.pwm_min;
+	return p_.pwm_min;
 }
 
 const int16_t& MantisParamClient::pwm_max( void ) {
-	return params_.pwm_max;
+	return p_.pwm_max;
 }
 
 const double& MantisParamClient::base_arm_length( void ) {
-	return params_.base_arm_length;
+	return p_.base_arm_length;
 }
 
 const int32_t& MantisParamClient::motor_num( void ) {
@@ -86,45 +113,45 @@ const int32_t& MantisParamClient::motor_num( void ) {
 }
 
 const double& MantisParamClient::motor_kv( void ) {
-	return params_.motor_kv;
+	return p_.motor_kv;
 }
 
 const double& MantisParamClient::rpm_thrust_m( void ) {
-	return params_.rpm_thrust_m;
+	return p_.rpm_thrust_m;
 }
 
 const double& MantisParamClient::rpm_thrust_c( void ) {
-	return params_.rpm_thrust_c;
+	return p_.rpm_thrust_c;
 }
 
 const double& MantisParamClient::motor_drag_max( void ) {
-	return params_.motor_drag_max;
+	return p_.motor_drag_max;
 }
 
 int MantisParamClient::get_body_num( void ) {
-	return params_.bodies.size();
+	return p_.bodies.size();
 }
 
 double MantisParamClient::get_total_mass( void ) {
 	double m = 0.0;
 
-	for(int i=0; i<params_.bodies.size(); i++) {
-		m += params_.bodies[i].mass;
+	for(int i=0; i<p_.bodies.size(); i++) {
+		m += p_.bodies[i].mass;
 	}
 
 	return m;
 }
 
 const mantis_msgs::BodyInertial& MantisParamClient::body_inertial( const unsigned int i ) {
-	return params_.bodies[i];
+	return p_.bodies[i];
 }
 
 const std::string& MantisParamClient::body_name( const unsigned int i ) {
-	return params_.body_names[i];
+	return p_.body_names[i];
 }
 
 int MantisParamClient::get_joint_num( void ) {
-	return params_.joints.size();
+	return p_.joints.size();
 }
 
 int MantisParamClient::get_dynamic_joint_num( void ) {
@@ -132,7 +159,7 @@ int MantisParamClient::get_dynamic_joint_num( void ) {
 }
 
 const dh_parameters::JointDescription& MantisParamClient::joint( const unsigned int i ) {
-	return params_.joints[i];
+	return p_.joints[i];
 }
 
 const Eigen::MatrixXd& MantisParamClient::get_mixer( void ) {

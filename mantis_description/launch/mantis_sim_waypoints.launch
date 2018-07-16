@@ -1,17 +1,11 @@
 <?xml version='1.0'?>
 <launch>
-	<arg name="wp_name" default=""/>
+	<arg name="wp_name" default="home"/>
 
 	<node pkg="contrail" type="load_waypoints" name="load_waypoints" clear_params="true"
 	ns="mantis_uav" output="screen">
 		<param name="frame_id" value="map" />
 
 		<rosparam command="load" file="$(find mantis_description)/paths/$(arg wp_name).yaml"/>
-	</node>
-
-	<node pkg="contrail" type="converter_waypoints_path" name="wp_converter" clear_params="true"
-	ns="mantis_uav" output="screen">
-		<remap from="wp_converter/waypoints" to="/waypoints" />
-		<remap from="wp_converter/path" to="mantis_path/reference/contrail/path" />
 	</node>
 </launch>
