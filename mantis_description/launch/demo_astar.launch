@@ -1,0 +1,25 @@
+<?xml version='1.0'?>
+<launch>
+	<arg name="wp_name" default="square"/>
+
+	<node pkg="breadcrumb" type="breadcrumb_node" name="breadcrumb" clear_params="true"
+	ns="mantis_uav" output="screen">
+		<param name="search_heuristic" value="1" type="int" />
+		<param name="allow_diagonals" value="true" type="bool" />
+		<param name="obstacle_threshold" value="50" type="int" />
+
+		<remap from="grid" to="/grid/real" />
+	</node>
+
+	<node pkg="contrail" type="load_waypoints" name="load_waypoints" clear_params="true"
+	ns="mantis_uav" output="screen">
+		<param name="frame_id" value="map" />
+		<rosparam command="load" file="$(find mantis_description)/paths/$(arg wp_name).yaml"/>
+	</node>
+
+	<node pkg="mantis_description" type="demo_astar" name="astar_planner" clear_params="true"
+	ns="mantis_uav" output="screen">
+		<remap from="astar_planner/waypoints" to="waypoints" />
+		<remap from="astar_planner/path" to="mantis_path/reference/contrail/path" />
+	</node>
+</launch>

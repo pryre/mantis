@@ -1,0 +1,108 @@
+#!/usr/bin/env python2
+
+from math import *
+
+import rospy
+from nav_msgs.msg import Path
+from geometry_msgs.msg import Point
+from geometry_msgs.msg import Quaternion
+from geometry_msgs.msg import PoseStamped
+from contrail_msgs.msg import WaypointList
+from breadcrumb.srv import RequestPath
+from breadcrumb.srv import RequestPathRequest
+
+global pub_path
+global sub_wayp
+global srvc_bc
+
+def e_to_q(roll,pitch,yaw):
+	cy = cos(yaw * 0.5);
+	sy = sin(yaw * 0.5);
+	cr = cos(roll * 0.5);
+	sr = sin(roll * 0.5);
+	cp = cos(pitch * 0.5);
+	sp = sin(pitch * 0.5);
+
+	q = Quaternion()
+	q.w = cy * cr * cp + sy * sr * sp;
+	q.x = cy * sr * cp - sy * cr * sp;
+	q.y = cy * cr * sp + sy * sr * cp;
+	q.z = sy * cr * cp - cy * sr * sp;
+
+	return q
+
+def callback_wp(msg_in):
+	global pub_path
+
+	# Make sure it is a valid waypoint message
+	if (msg_in.header.stamp > rospy.Time(0)) and (len(msg_in.waypoints) > 1):
+		msg_out = Path()
+		msg_out.header = msg_in.header
+
+		rospy.loginfo("Converting %i waypoints to path" % (len(msg_in.waypoints)))
+
+		for i in range(len(msg_in.waypoints) - 1):
+			req = RequestPathRequest()
+			req.start = msg_in.waypoints[i].position
+			req.end = msg_in.waypoints[i+1].position
+			res = srvc_bc(req);
+
+			if len(res.path.poses) > 0:
+				#Insert the start pose for this segment
+				q = e_to_q(0.0,0.0,msg_in.waypoints[i].yaw)
+
+				ps = PoseStamped()
+				ps.header = res.path.header
+				ps.pose.position.x = msg_in.waypoints[i].position.x
+				ps.pose.position.y = msg_in.waypoints[i].position.y
+				ps.pose.position.z = msg_in.waypoints[i].position.z
+				ps.pose.orientation = q
+				msg_out.poses.append(ps)
+
+				for sp in res.path.poses:
+					p = PoseStamped()
+					p.header = res.path.header
+					p.pose.position = sp.position
+					p.pose.orientation = q
+					msg_out.poses.append(p)
+
+			else:
+				rospy.logerr("No path received, abandoning")
+				return;
+
+		#Insert the last pose for the path
+		k = len(msg_in.waypoints) - 1
+		pe = PoseStamped()
+		pe.header = msg_in.header
+		pe.pose.position.x = msg_in.waypoints[k].position.x
+		pe.pose.position.y = msg_in.waypoints[k].position.y
+		pe.pose.position.z = msg_in.waypoints[k].position.z
+		pe.pose.orientation = e_to_q(0.0,0.0,msg_in.waypoints[k].yaw)
+		msg_out.poses.append(pe)
+
+		pub_path.publish(msg_out)
+	else:
+		rospy.logerr("No path received is to short or is missing a header")
+
+def demo_astar():
+	global pub_path
+	global sub_wayp
+	global srvc_bc
+
+	rospy.init_node('demo_astar', anonymous=True)
+	rospy.loginfo("Waiting for breadcrumb to come online")
+	rospy.wait_for_service('breadcrumb/request_path')
+
+	sub_wayp = rospy.Subscriber('~waypoints', WaypointList, callback_wp)
+	pub_path = rospy.Publisher('~path', Path, queue_size=10, latch=True)
+	srvc_bc = rospy.ServiceProxy('breadcrumb/request_path', RequestPath)
+
+	rospy.loginfo("A-Star waypoint planner running")
+
+	rospy.spin()
+
+if __name__ == '__main__':
+	try:
+		demo_astar()
+	except rospy.ROSInterruptException:
+		pass
