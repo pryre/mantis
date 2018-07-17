@@ -1,3 +1,6 @@
+# Name of the body
+string name
+
 # Centre of Mass in body-frame X axis
 float64 com
 

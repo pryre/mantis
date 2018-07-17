@@ -66,7 +66,6 @@ mantis_msgs::Parameters MantisParamServer::get_params( void ) {
 	p.motor_drag_max = motor_drag_max_;
 
 	p.bodies = bodies_;
-	p.body_names = body_names_;
 	p.joints = joints_;
 
 	return p;
@@ -96,15 +95,13 @@ void MantisParamServer::load( void ) {
 
 	//Prepare vectors
 	bodies_.clear();
-	body_names_.clear();
 	joints_.clear();
 
 	//Body definitions
 	nh_.param("body/num", body_num_, body_num_);
 	for(int i=0; i<body_num_; i++) {
 		mantis_msgs::BodyInertial bi;
-		std::string name;
-		if( nh_.getParam( "body/b" + std::to_string(i) + "/name", name) &&
+		if( nh_.getParam( "body/b" + std::to_string(i) + "/name", bi.name) &&
 			nh_.getParam( "body/b" + std::to_string(i) + "/mass/m", bi.mass) ) {
 
 			nh_.getParam( "body/b" + std::to_string(i) + "/mass/Ixx", bi.Ixx);
@@ -115,7 +112,6 @@ void MantisParamServer::load( void ) {
 			nh_.getParam( "body/b" + std::to_string(i) + "/mass/Izz", bi.Izz);
 			nh_.getParam( "body/b" + std::to_string(i) + "/mass/com", bi.com);
 
-			body_names_.push_back(name);
 			bodies_.push_back(bi);
 		} else {
 			//Could not find any more valid links defined, give up

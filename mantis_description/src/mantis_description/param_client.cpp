@@ -35,16 +35,66 @@ bool MantisParamClient::wait_for_params( void ) {
 }
 
 void MantisParamClient::callback_params(const mantis_msgs::Parameters::ConstPtr &msg_in) {
+	//At each step, configuration change is checked to see if we can skip ahead.
+	//If there is a configuration change, then a parameter change is set as well later
 	bool configuration_change = false;
 	bool parametric_change = false;
 
-	//XXX: DO THIS PROPERLY
-	configuration_change = true;
-	parametric_change = true;
-	//XXX: DO THIS PROPERLY
+	//Check for simple configuration changes
+	if( (msg_in->airframe_type != p_.airframe_type) ||
+		(msg_in->bodies.size() != p_.bodies.size() ) ||
+		(msg_in->joints.size() != p_.joints.size() ) ) {
 
-	if(configuration_change)
+		configuration_change = true;
+	}
+
+	//Check for simple parametric changes
+	if(!configuration_change) {
+		if( (msg_in->pwm_min != p_.pwm_min) ||
+			(msg_in->pwm_max != p_.pwm_max) ||
+			(msg_in->base_arm_length != p_.base_arm_length) ||
+			(msg_in->motor_kv != p_.motor_kv) ||
+			(msg_in->rpm_thrust_m != p_.rpm_thrust_m) ||
+			(msg_in->rpm_thrust_c != p_.rpm_thrust_c) ||
+			(msg_in->motor_drag_max != p_.motor_drag_max) ) {
+
+			parametric_change = true;
+		}
+	}
+
+	//If nothing obvious, do a deep scan of each of the joints and bodies for changes
+	//It is already ensured that the vector sizes are equal
+	if(!configuration_change) {
+		for(int i=0; i<msg_in->bodies.size(); i++) {
+			if(msg_in->bodies[i].name != p_.bodies[i].name) {
+				configuration_change = true;
+				break;
+			}
+
+			//Names already must be the same, but some of the other params may have changed
+			if( !compare_bodies(msg_in->bodies[i], p_.bodies[i]) )
+				parametric_change = true;
+		}
+	}
+
+	if(!configuration_change) {
+		for(int i=0; i<msg_in->joints.size(); i++) {
+			if( (msg_in->joints[i].name != p_.joints[i].name) ||
+				(msg_in->joints[i].type != p_.joints[i].type) ) {
+				configuration_change = true;
+				break;
+			}
+
+			//Names already must be the same, but some of the other params may have changed
+			if( !compare_joints(msg_in->joints[i], p_.joints[i]) )
+				parametric_change = true;
+		}
+	}
+
+	if(configuration_change) {
 		configuration_stamp_ = msg_in->header.stamp;
+		parametric_change = true;	//Can't hurt to assume that paramters have most likely changed here as well
+	}
 
 	if(parametric_change)
 		parametric_stamp_ = msg_in->header.stamp;
@@ -146,10 +196,6 @@ const mantis_msgs::BodyInertial& MantisParamClient::body_inertial( const unsigne
 	return p_.bodies[i];
 }
 
-const std::string& MantisParamClient::body_name( const unsigned int i ) {
-	return p_.body_names[i];
-}
-
 int MantisParamClient::get_joint_num( void ) {
 	return p_.joints.size();
 }
@@ -164,4 +210,27 @@ const dh_parameters::JointDescription& MantisParamClient::joint( const unsigned 
 
 const Eigen::MatrixXd& MantisParamClient::get_mixer( void ) {
 	return mixer_;
+}
+
+const bool MantisParamClient::compare_bodies( const mantis_msgs::BodyInertial& b1, const mantis_msgs::BodyInertial& b2 ) {
+	return ( (b1.name == b2.name) &&
+			 (b1.com == b2.com) &&
+			 (b1.mass == b2.mass) &&
+			 (b1.Ixx == b2.Ixx) &&
+			 (b1.Ixy == b2.Ixy) &&
+			 (b1.Ixz == b2.Ixz) &&
+			 (b1.Iyy == b2.Iyy) &&
+			 (b1.Iyz == b2.Iyz) &&
+			 (b1.Izz == b2.Izz) );
+}
+
+const bool MantisParamClient::compare_joints( const dh_parameters::JointDescription& j1, const dh_parameters::JointDescription& j2 ) {
+	return ( (j1.name == j2.name) &&
+			 (j1.type == j2.type) &&
+			 (j1.d == j2.d) &&
+			 (j1.t == j2.t) &&
+			 (j1.r == j2.r) &&
+			 (j1.a == j2.a) &&
+			 (j1.q == j2.q) &&
+			 (j1.beta == j2.beta) );
 }

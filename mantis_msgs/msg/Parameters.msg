@@ -12,7 +12,6 @@ float64 motor_drag_max
 
 # Body information
 mantis_msgs/BodyInertial[] bodies
-string[] body_names
 
 # Joint information
 dh_parameters/JointDescription[] joints

@@ -75,7 +75,6 @@ class MantisParamClient {
 		int get_body_num( void );
 		double get_total_mass( void );
 		const mantis_msgs::BodyInertial& body_inertial( const unsigned int i );
-		const std::string& body_name( const unsigned int i );
 
 		int get_joint_num( void );
 		int get_dynamic_joint_num( void );
@@ -87,4 +86,7 @@ class MantisParamClient {
 
 	private:
 		void callback_params(const mantis_msgs::Parameters::ConstPtr &msg_in);
+		const bool compare_bodies( const mantis_msgs::BodyInertial& b1, const mantis_msgs::BodyInertial& b2 );
+		const bool compare_joints( const dh_parameters::JointDescription& j1, const dh_parameters::JointDescription& j2 );
+
 };

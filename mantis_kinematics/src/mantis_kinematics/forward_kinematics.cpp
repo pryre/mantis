@@ -70,7 +70,7 @@ ForwardKinematics::ForwardKinematics() :
 
 		//Base Link
 		tf.header.frame_id = param_model_id_;
-		tf.child_frame_id = p_.body_name(0);
+		tf.child_frame_id = p_.body_inertial(0).name;
 		tfsbr_.sendTransform(tf);
 
 		//Additional bodies
@@ -78,7 +78,7 @@ ForwardKinematics::ForwardKinematics() :
 			DHParameters j(p_.joint(i));
 			if(j.jt() != DHParameters::JointType::Static) {
 				tf.header.frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
-				tf.child_frame_id = p_.body_name(i);
+				tf.child_frame_id = p_.body_inertial(i).name;
 				tf.transform.translation = MDTools::vector_from_eig(-(j.transform().linear().transpose()*j.transform().translation()));
 				tfsbr_.sendTransform(tf);
 			}

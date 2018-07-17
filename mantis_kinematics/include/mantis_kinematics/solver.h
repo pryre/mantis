@@ -15,7 +15,7 @@ class MantisSolver {
 		MantisParamClient& p_;
 		MantisStateClient& s_;
 
-		ros::Time param_load_time_;
+		ros::Time param_load_time_;	//XXX: Could use the config/param stamps, but everything needs to be updated regardless
 		ros::Time state_load_time_;
 
 		SerialManipulator manip_;
