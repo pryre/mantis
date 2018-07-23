@@ -29,7 +29,7 @@ ControllerAug::ControllerAug() :
 	ref_path_(nhp_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
-	param_safety_rate_(20.0),
+	flight_was_ready_(false),
 	param_high_level_rate_(20.0),
 	param_low_level_rate_(200.0),
 	dyncfg_control_settings_(ros::NodeHandle(nhp_, "control_settings")),
@@ -44,8 +44,7 @@ ControllerAug::ControllerAug() :
 	ang_pid_z_(ros::NodeHandle(nhp_, "control/ang/z")),
 	rate_pid_x_(ros::NodeHandle(nhp_, "control/rate/x")),
 	rate_pid_y_(ros::NodeHandle(nhp_, "control/rate/y")),
-	rate_pid_z_(ros::NodeHandle(nhp_, "control/rate/z")),
-	ready_for_flight_(false) {
+	rate_pid_z_(ros::NodeHandle(nhp_, "control/rate/z")) {
 
 	bool success = true;
 
@@ -75,12 +74,13 @@ ControllerAug::ControllerAug() :
 		ROS_INFO("    - state");
 		ROS_INFO("    - path");
 
-		timer_ready_check_ = nhp_.createTimer(ros::Duration(1.0/param_safety_rate_), &ControllerAug::callback_ready_check, this );
-
 		//Lock the controller until all the inputs are satisfied
-		while( ros::ok() && (!ready_for_flight_) ) {
-			if( ref_path_.has_reference(ros::Time::now()) )
+		while( ros::ok() && ready_check( ros::Time::now() ) ) {
+			if( ref_path_.has_reference( ros::Time::now() ) )
 				ROS_INFO_ONCE("Augmented dynamics got input: path");
+
+			if( s_.ok() )
+				ROS_INFO_ONCE("Augmented dynamics got input: state");
 
 			mavros_msgs::OverrideRCIn msg_rc_out;
 			for(int i=0; i<p_.motor_num(); i++) {
@@ -95,8 +95,8 @@ ControllerAug::ControllerAug() :
 		ROS_INFO_ONCE("Augmented dynamics got all inputs!");
 
 		//Start the control loops
-		timer_high_level_ = nhp_.createTimer(ros::Duration(1.0/param_high_level_rate_), &ControllerAug::callback_low_level, this );
-		timer_low_level_ = nhp_.createTimer(ros::Duration(1.0/param_low_level_rate_), &ControllerAug::callback_high_level, this );
+		timer_high_level_ = nhp_.createTimer(ros::Duration(1.0/param_high_level_rate_), &ControllerAug::callback_high_level, this );
+		timer_low_level_ = nhp_.createTimer(ros::Duration(1.0/param_low_level_rate_), &ControllerAug::callback_low_level, this );
 
 		ROS_INFO("Augmented dynamics controller started!");
 	} else {
@@ -117,15 +117,17 @@ void ControllerAug::callback_cfg_control_settings(mantis_controller_aug::Control
 	param_reference_feedback_ = config.reference_feedback;
 }
 
-void ControllerAug::callback_ready_check(const ros::TimerEvent& e) {
+bool ControllerAug::ready_check( const ros::Time& tc ) {
+	bool ready = false;
+
 	//If we still have all the inputs satisfied
-	if( s_.ok() && ref_path_.has_reference(e.current_real) ) {
-		ready_for_flight_ = true;
+	if( s_.ok() && ref_path_.has_reference(tc) ) {
+		ready = true;
 	} else {
-		if(ready_for_flight_) {
+		if(flight_was_ready_) {
 			std::string error_msg = "Input error:\n";
 
-			if( !ref_path_.has_reference(e.current_real) )
+			if( !ref_path_.has_reference(tc) )
 				error_msg += "no valid path\n";
 
 			if( !s_.ok() )
@@ -134,32 +136,40 @@ void ControllerAug::callback_ready_check(const ros::TimerEvent& e) {
 			ROS_ERROR("%s", error_msg.c_str());
 		}
 
-		ready_for_flight_ = false;
 		status_high_level_ = false;
 	}
+
+	flight_was_ready_ = ready;
+
+	return ready;
 }
 
 void ControllerAug::callback_high_level(const ros::TimerEvent& e) {
 	double dt = (e.current_real - e.last_real).toSec();
+	bool flight_ready = ready_check(e.current_real);
 
-//Handle the trajectory extraction
+	//Handle the trajectory extraction
 	mavros_msgs::PositionTarget traj;
 	bool goal_ok = false;
-
-	//XXX: get_reference() needs the current location of the desired tracking frame
-	if( param_track_end_ ) {
-		Eigen::Affine3d gbet;
-		solver_.calculate_gbe( gbet );
-		goal_ok = ref_path_.get_reference(traj, e.current_real, s_.g()*gbet);
-	} else {
-		goal_ok = ref_path_.get_reference(traj, e.current_real, s_.g());
-	}
 
 	Eigen::Affine3d ge_sp = Eigen::Affine3d::Identity();
 	Eigen::Vector3d gev_sp = Eigen::Vector3d::Zero();
 
+	//XXX: get_reference() needs the current location of the desired tracking frame
+
+	if( flight_ready ) {
+		if( param_track_end_ ) {
+			Eigen::Affine3d gbet;
+			solver_.calculate_gbe( gbet );
+			goal_ok = ref_path_.get_reference(traj, e.current_real, s_.g()*gbet);
+		} else {
+			goal_ok = ref_path_.get_reference(traj, e.current_real, s_.g());
+		}
+	}
+
 	//If we still have all the inputs satisfied
-	if( ready_for_flight_ && goal_ok ) {
+	if( flight_ready && goal_ok ) {
+		ROS_INFO("    Control");
 		//Fill in the current goals
 		ge_sp.translation() = MDTools::point_from_msg(traj.position);
 		ge_sp.linear() = Eigen::AngleAxisd(traj.yaw, Eigen::Vector3d::UnitZ()).toRotationMatrix();
@@ -238,7 +248,7 @@ void ControllerAug::callback_high_level(const ros::TimerEvent& e) {
 			ROS_WARN_THROTTLE(2.0, "Path error, soft failsafe");
 		}
 
-		if(!ready_for_flight_) {
+		if(!flight_ready) {
 			ROS_WARN_THROTTLE(2.0, "State error, soft failsafe");
 		}
 
@@ -263,8 +273,9 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 	std::vector<uint16_t> pwm_out(p_.motor_num());	//Allocate space for the number of motors
 
 	double dt = (e.current_real - e.last_real).toSec();
+	bool flight_ready = ready_check(e.current_real);
 
-	if( ready_for_flight_ && status_high_level_ ) {
+	if( flight_ready && status_high_level_ ) {
 		//Calculate the corresponding rotation to reach desired acceleration
 		//We generate at it base on now yaw, then rotate it to reach the desired orientation
 		Eigen::Vector3d an = a_sp_.normalized();
@@ -366,7 +377,7 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 		if(param_reference_feedback_)
 			message_output_feedback(e.current_real, g_sp_, a_sp_, gr_sp, w_goal, tau);
 	} else {
-		uaug_f_ = Eigen::VectorXd::Zero(4);
+		uaug_f_ = Eigen::Vector3d::Zero();
 
 		ang_pid_x_.reset();
 		ang_pid_y_.reset();
@@ -382,6 +393,8 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 	}
 
 	message_output_control(e.current_real, pwm_out);
+
+	ROS_INFO("    complete");
 }
 
 Eigen::Affine3d ControllerAug::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe) {

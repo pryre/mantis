@@ -27,7 +27,6 @@ class ControllerID {
 		ros::NodeHandle nhp_;
 		ros::Timer timer_high_level_;
 		ros::Timer timer_low_level_;
-		ros::Timer timer_ready_check_;
 
 		ros::Publisher pub_rc_;
 		ros::Publisher pub_accel_linear_;
@@ -47,7 +46,7 @@ class ControllerID {
 		double param_low_level_rate_;
 		dynamic_reconfigure::Server<mantis_controller_id::ControlParamsConfig> dyncfg_control_settings_;
 
-		bool ready_for_flight_;
+		bool was_flight_ready_;
 
 		MantisParamClient p_;
 		MantisStateClient s_;
@@ -94,7 +93,7 @@ class ControllerID {
 									 const Eigen::Vector3d &g_bw,	//Base body rates
 									 const Eigen::VectorXd &ua);	//Base accelerations
 
-		void callback_ready_check(const ros::TimerEvent& e);
+		bool ready_check(const ros::Time& tc);
 		void callback_high_level(const ros::TimerEvent& e);
 		void callback_low_level(const ros::TimerEvent& e);
 		//void callback_goal_path(const nav_msgs::Path::ConstPtr& msg_in);

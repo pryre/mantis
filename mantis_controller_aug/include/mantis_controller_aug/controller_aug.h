@@ -42,8 +42,6 @@ class ControllerAug {
 		double param_low_level_rate_;
 		dynamic_reconfigure::Server<mantis_controller_aug::ControlParamsConfig> dyncfg_control_settings_;
 
-		bool ready_for_flight_;
-
 		MantisParamClient p_;
 		MantisStateClient s_;
 		MantisSolver solver_;
@@ -52,6 +50,7 @@ class ControllerAug {
 		Eigen::Vector3d gv_sp_;
 		Eigen::Vector3d a_sp_;
 		bool status_high_level_;
+		bool flight_was_ready_;
 
 		ContrailManager ref_path_;
 		pidController pos_pid_x_;
@@ -102,9 +101,9 @@ class ControllerAug {
 									 const Eigen::Vector3d &g_bw,	//Base body rates
 									 const Eigen::VectorXd &ua);	//Base accelerations
 
-		void callback_ready_check(const ros::TimerEvent& e);
-		void callback_high_level(const ros::TimerEvent& e);
-		void callback_low_level(const ros::TimerEvent& e);
+		bool ready_check( const ros::Time& tc );
+		void callback_high_level( const ros::TimerEvent& e );
+		void callback_low_level( const ros::TimerEvent& e );
 		//void callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in);
 		//void callback_state_imu(const sensor_msgs::Imu::ConstPtr& msg_in);
 		//void callback_state_mav(const mavros_msgs::State::ConstPtr& msg_in);
