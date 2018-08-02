@@ -1,0 +1,356 @@
+{
+  "keys": {},
+  "groups": {
+    "pluginmanager": {
+      "keys": {
+        "running-plugins": {
+          "type": "repr",
+          "repr": "{u'rqt_robin_gcs/Robin GCS': [1], u'rqt_reconfigure/Param': [1], u'rqt_mavros_gui/MAVROS GUI': [1], u'rqt_generic_hud/Generic HUD': [1, 2]}"
+        }
+      },
+      "groups": {
+        "plugin__rqt_generic_hud__Generic HUD__2": {
+          "keys": {},
+          "groups": {
+            "plugin": {
+              "keys": {
+                "val_min": {
+                  "type": "repr",
+                  "repr": "0.0"
+                },
+                "topic_content": {
+                  "type": "repr",
+                  "repr": "u'progress'"
+                },
+                "topic_name": {
+                  "type": "repr",
+                  "repr": "u'/mantis_uav/mantis_path/feedback/contrail/discrete_progress'"
+                },
+                "topic_type": {
+                  "type": "repr",
+                  "repr": "u'contrail_msgs/PathProgress'"
+                },
+                "val_max": {
+                  "type": "repr",
+                  "repr": "1.0"
+                }
+              },
+              "groups": {}
+            },
+            "dock_widget__GenericHUD": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u'Path Progress'"
+                }
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__rqt_generic_hud__Generic HUD__1": {
+          "keys": {},
+          "groups": {
+            "plugin": {
+              "keys": {
+                "val_min": {
+                  "type": "repr",
+                  "repr": "0.0"
+                },
+                "topic_content": {
+                  "type": "repr",
+                  "repr": "u'percentage'"
+                },
+                "topic_name": {
+                  "type": "repr",
+                  "repr": "u'/mantis_uav/state/battery'"
+                },
+                "topic_type": {
+                  "type": "repr",
+                  "repr": "u'sensor_msgs/BatteryState'"
+                },
+                "val_max": {
+                  "type": "repr",
+                  "repr": "1.0"
+                }
+              },
+              "groups": {}
+            },
+            "dock_widget__GenericHUD": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u'Battery'"
+                }
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__rqt_image_view__ImageView__2": {
+          "keys": {},
+          "groups": {
+            "plugin": {
+              "keys": {
+                "max_range": {
+                  "type": "repr",
+                  "repr": "u'10'"
+                },
+                "mouse_pub_topic": {
+                  "type": "repr",
+                  "repr": "u'/processor/image_output_mouse_left'"
+                },
+                "num_gridlines": {
+                  "type": "repr",
+                  "repr": "u'0'"
+                },
+                "toolbar_hidden": {
+                  "type": "repr",
+                  "repr": "u'false'"
+                },
+                "zoom1": {
+                  "type": "repr",
+                  "repr": "u'false'"
+                },
+                "dynamic_range": {
+                  "type": "repr",
+                  "repr": "u'false'"
+                },
+                "topic": {
+                  "type": "repr",
+                  "repr": "u'/processor/image_output'"
+                },
+                "publish_click_location": {
+                  "type": "repr",
+                  "repr": "u'false'"
+                }
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__rqt_reconfigure__Param__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget___plugincontainer_top_widget": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u'Dynamic Reconfigure'"
+                }
+              },
+              "groups": {}
+            },
+            "plugin": {
+              "keys": {
+                "splitter": {
+                  "type": "repr(QByteArray.hex)",
+                  "repr(QByteArray.hex)": "QtCore.QByteArray('000000ff0000000100000002000000c6000001cc01ffffffff010000000100')",
+                  "pretty-print": "               "
+                },
+                "_splitter": {
+                  "type": "repr(QByteArray.hex)",
+                  "repr(QByteArray.hex)": "QtCore.QByteArray('000000ff00000001000000020000012c000000640100000009010000000200')",
+                  "pretty-print": "       , d     "
+                }
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__rqt_image_view__ImageView__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget__ImageViewWidget": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "u'true'"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u'Image View'"
+                }
+              },
+              "groups": {}
+            },
+            "plugin": {
+              "keys": {
+                "max_range": {
+                  "type": "repr",
+                  "repr": "10.0"
+                },
+                "mouse_pub_topic": {
+                  "type": "repr",
+                  "repr": "u'/processor/image_output_mouse_left'"
+                },
+                "num_gridlines": {
+                  "type": "repr",
+                  "repr": "0"
+                },
+                "toolbar_hidden": {
+                  "type": "repr",
+                  "repr": "False"
+                },
+                "zoom1": {
+                  "type": "repr",
+                  "repr": "False"
+                },
+                "dynamic_range": {
+                  "type": "repr",
+                  "repr": "False"
+                },
+                "topic": {
+                  "type": "repr",
+                  "repr": "u'/processor/image_output'"
+                },
+                "publish_click_location": {
+                  "type": "repr",
+                  "repr": "False"
+                }
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__MultiplotPlugin__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget__MultiplotWidget": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "u'true'"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u'Multiplot - [file:///home/pryre/catkin_ws/src/qutas_lab_450/config/rqt_multiplot_tuning_pitch.xml]*'"
+                }
+              },
+              "groups": {}
+            },
+            "plugin": {
+              "keys": {},
+              "groups": {
+                "history": {
+                  "keys": {
+                    "max_length": {
+                      "type": "repr",
+                      "repr": "u'10'"
+                    },
+                    "config_0": {
+                      "type": "repr",
+                      "repr": "u'file:///home/pryre/catkin_ws/src/qutas_lab_450/config/rqt_multiplot_tuning_pitch.xml'"
+                    }
+                  },
+                  "groups": {}
+                }
+              }
+            }
+          }
+        },
+        "plugin__rqt_mavros_gui__MAVROS GUI__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget__MAVROSGUIUi": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u'Multicopter Tuner'"
+                }
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__rqt_robin_gcs__Robin GCS__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget__RobinGCSUi": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u'Robin GCS'"
+                }
+              },
+              "groups": {}
+            }
+          }
+        }
+      }
+    },
+    "mainwindow": {
+      "keys": {
+        "geometry": {
+          "type": "repr(QByteArray.hex)",
+          "repr(QByteArray.hex)": "QtCore.QByteArray('01d9d0cb0002000000000183000000e30000073b0000033c00000184000000fd0000073a0000033b00000000000000000780')",
+          "pretty-print": "         ; <     : ;     "
+        },
+        "state": {
+          "type": "repr(QByteArray.hex)",
+          "repr(QByteArray.hex)": "QtCore.QByteArray('000000ff00000000fd0000000100000002000005b700000210fc0100000007fb0000006c007200710074005f007200650063006f006e006600690067007500720065005f005f0050006100720061006d005f005f0031005f005f005f0070006c007500670069006e0063006f006e007400610069006e00650072005f0074006f0070005f0077006900640067006500740100000000000002c6000000f100fffffffb00000054007200710074005f006d006100760072006f0073005f006700750069005f005f004d004100560052004f00530020004700550049005f005f0031005f005f004d004100560052004f00530047005500490055006901000002cc000001040000010400fffffffb0000004e007200710074005f0072006f00620069006e005f006700630073005f005f0052006f00620069006e0020004700430053005f005f0031005f005f0052006f00620069006e0047004300530055006901000003d6000001040000010400fffffffc000004e0000000d7000000d700fffffffc0200000002fb00000056007200710074005f00670065006e0065007200690063005f006800750064005f005f00470065006e00650072006900630020004800550044005f005f0031005f005f00470065006e0065007200690063004800550044010000001900000105000000f100fffffffb00000056007200710074005f00670065006e0065007200690063005f006800750064005f005f00470065006e00650072006900630020004800550044005f005f0032005f005f00470065006e0065007200690063004800550044010000012400000105000000f100fffffffb0000005a007200710074005f0069006d006100670065005f0076006900650077005f005f0049006d0061006700650056006900650077005f005f0031005f005f0049006d00610067006500560069006500770057006900640067006500740100000214000002bc0000000000000000fb0000005a007200710074005f0069006d006100670065005f0076006900650077005f005f0049006d0061006700650056006900650077005f005f0032005f005f0049006d0061006700650056006900650077005700690064006700650074010000029c000002340000000000000000fb00000046004d0075006c007400690070006c006f00740050006c007500670069006e005f005f0031005f005f004d0075006c007400690070006c006f007400570069006400670065007401000003310000036c0000000000000000000005b70000000000000004000000040000000800000008fc00000001000000030000000100000036004d0069006e0069006d0069007a006500640044006f0063006b00570069006400670065007400730054006f006f006c0062006100720000000000ffffffff0000000000000000')",
+          "pretty-print": "                 lrqt_reconfigure__Param__1___plugincontainer_top_widget          Trqt_mavros_gui__MAVROS GUI__1__MAVROSGUIUi          Nrqt_robin_gcs__Robin GCS__1__RobinGCSUi                                                                                                                         $                                                                                                                 4                                           1 l                                                            "
+        }
+      },
+      "groups": {
+        "toolbar_areas": {
+          "keys": {
+            "MinimizedDockWidgetsToolbar": {
+              "type": "repr",
+              "repr": "8"
+            }
+          },
+          "groups": {}
+        }
+      }
+    }
+  }
+}
