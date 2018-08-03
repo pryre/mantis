@@ -21,6 +21,7 @@ add_message_files(FILES
 	Parameters.msg
 	State.msg
 	JointTrajectoryGoal.msg
+	JointTrajectoryList.msg
 )
 
 ## Generate added messages and services
