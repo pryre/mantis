@@ -1,0 +1,7 @@
+<?xml version='1.0'?>
+<launch>
+	<node pkg="mantis_joints" type="mantis_joints_node" name="joint_planner" clear_params="true"
+	ns="mantis_uav" output="screen">
+		<rosparam command="load" file="$(find mantis_joints)/launch/initial_joints.yaml"/>
+	</node>
+</launch>
