@@ -46,7 +46,7 @@ ForwardKinematics::ForwardKinematics() :
 	nhp_.param("armed_prop_velocity", prop_rate_, prop_rate_);
 	nhp_.param("end_effector_pose", param_do_end_effector_pose_, param_do_end_effector_pose_);
 
-	if( p_.wait_for_params() && s_.wait_for_state() ) {
+	if( s_.wait_for_state() ) {
 
 		//Configure publishers and subscribers
 		pub_end_ = nh_.advertise<geometry_msgs::PoseStamped>("end_effector", 10);

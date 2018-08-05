@@ -16,7 +16,7 @@
 		<param name="frame_id" value="map" />
 		<remap from="waypoints" to="astar_planner/waypoints" />
 
-		<rosparam command="load" file="$(find mantis_description)/paths/$(arg wp_name).yaml"/>
+		<rosparam command="load" file="$(find mantis_description)/waypoints/$(arg wp_name).yaml"/>
 	</node>
 
 	<node pkg="mantis_description" type="demo_astar" name="astar_planner" clear_params="true"

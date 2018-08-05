@@ -3,5 +3,8 @@
 	<node pkg="mantis_joints" type="mantis_joints_node" name="joint_planner" clear_params="true"
 	ns="mantis_uav" output="screen">
 		<rosparam command="load" file="$(find mantis_joints)/launch/initial_joints.yaml"/>
+
+		<remap from="~command/joint0" to="/mantis_uav/joint_position_controller/joint_shoulder/reference/traj"/>
+		<remap from="~command/joint1" to="/mantis_uav/joint_position_controller/joint_elbow/reference/traj"/>
 	</node>
 </launch>

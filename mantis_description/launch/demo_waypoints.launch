@@ -1,11 +1,20 @@
 <?xml version='1.0'?>
 <launch>
-	<arg name="wp_name" default="home"/>
+	<arg name="wp_name" default="square"/>
+	<arg name="jl_name" default="discrete"/>
 
 	<node pkg="contrail" type="load_waypoints" name="load_waypoints" clear_params="true"
 	ns="mantis_uav" output="screen">
 		<param name="frame_id" value="map" />
 
-		<rosparam command="load" file="$(find mantis_description)/paths/$(arg wp_name).yaml"/>
+		<rosparam command="load" file="$(find mantis_description)/waypoints/$(arg wp_name).yaml"/>
+	</node>
+
+	<node pkg="mantis_joints" type="load_joint_list" name="load_joint_list" clear_params="true"
+	ns="mantis_uav" output="screen">
+		<param name="frame_id" value="mantis_uav" />
+
+		<remap from="joint_setpoints" to="joint_planner/reference/joint_setpoints" />
+		<rosparam command="load" file="$(find mantis_description)/joint_movements/$(arg jl_name).yaml"/>
 	</node>
 </launch>

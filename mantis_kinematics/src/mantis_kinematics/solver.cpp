@@ -19,8 +19,7 @@ MantisSolver::MantisSolver( MantisParamClient& p, MantisStateClient &s ) :
 	s_(s),
 	param_load_time_(0),
 	state_load_time_(0) {
-
-	check_description();
+	//check_description();
 }
 
 MantisSolver::~MantisSolver() {

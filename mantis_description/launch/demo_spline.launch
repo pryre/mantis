@@ -1,6 +1,7 @@
 <?xml version='1.0'?>
 <launch>
-	<arg name="s_name" default=""/>
+	<arg name="s_name" default="bends"/>
+	<arg name="jl_name" default="swing"/>
 
 	<node pkg="contrail" type="load_spline" name="load_spline" clear_params="true"
 	ns="mantis_uav" output="screen">
@@ -8,5 +9,13 @@
 
 		<rosparam command="load" file="$(find mantis_description)/splines/$(arg s_name).yaml"/>
 		<remap from="spline" to="mantis_path/reference/contrail/spline"/>
+	</node>
+
+	<node pkg="mantis_joints" type="load_joint_list" name="load_joint_list" clear_params="true"
+	ns="mantis_uav" output="screen">
+		<param name="frame_id" value="mantis_uav" />
+
+		<remap from="joint_setpoints" to="joint_planner/reference/joint_setpoints" />
+		<rosparam command="load" file="$(find mantis_description)/joint_movements/$(arg jl_name).yaml"/>
 	</node>
 </launch>

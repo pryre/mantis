@@ -39,9 +39,7 @@
 	</group>
 
 	<!-- Gazebo -->
-	<!--
 	<include file="$(find mantis_gazebo)/launch/mantis_sim_gazebo.launch">
 		<arg name="model" value="$(arg model)" />
 	</include>
-	-->
 </launch>
