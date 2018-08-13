@@ -35,12 +35,12 @@
 	</node>
 
 	<!-- HIGH LEVEL CONTROL -->
-	<node pkg="mantis_joints" type="mantis_joints_node" name="joint_planner" clear_params="true"
+	<node pkg="mantis_router_joints" type="mantis_router_joints_node" name="router_joints" clear_params="true"
 	ns="mantis_uav" output="screen">
-		<rosparam command="load" file="$(find mantis_joints)/launch/initial_joints.yaml"/>
+		<rosparam command="load" file="$(find mantis_router_joints)/launch/initial_joints.yaml"/>
 
-		<remap from="~reference/discrete_progress" to="mantis_path/feedback/contrail/discrete_progress"/>
-		<remap from="~reference/spline" to="mantis_path/reference/contrail/spline"/>
+		<remap from="~reference/discrete_progress" to="controller_aug/feedback/contrail/discrete_progress"/>
+		<remap from="~reference/spline" to="controller_aug/reference/contrail/spline"/>
 		<remap from="~command/joint0" to="joint_position_controller/joint_shoulder/reference/traj"/>
 		<remap from="~command/joint1" to="joint_position_controller/joint_elbow/reference/traj"/>
 	</node>

@@ -10,10 +10,10 @@
 	<node pkg="contrail" type="converter_waypoints_path" name="wp_converter" clear_params="true"
 	ns="mantis_uav" output="screen">
 		<remap from="~waypoints" to="waypoints" />
-		<remap from="~path" to="mantis_path/reference/contrail/path" />
+		<remap from="~path" to="router_base/reference/contrail/path" />
 	</node>
 
-	<node pkg="mantis_path" type="mantis_path_node" name="mantis_path"
+	<node pkg="mantis_router_base" type="mantis_router_base_node" name="router_base"
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />
 		<param name="model_id" value="mantis_uav" />
@@ -23,17 +23,17 @@
 		<param name="control_settings/accurate_end_tracking" value="true" />
 		<param name="control_settings/reference_feedback" value="true" />
 
-		<remap from="~reference/path" to="path"/>
+		<!--remap from="~reference/path" to="path"/-->
 		<remap from="~output/triplet" to="mavel/reference/triplet"/>
-		<!--remap from="mantis_path/output/traj" to="mavel/reference/traj"/-->
+		<!--remap from="~output/traj" to="mavel/reference/traj"/-->
 	</node>
 
-	<node pkg="mantis_joints" type="mantis_joints_node" name="joint_planner" clear_params="true"
+	<node pkg="mantis_router_joints" type="mantis_router_joints_node" name="router_joints" clear_params="true"
 	ns="mantis_uav" output="screen">
-		<rosparam command="load" file="$(find mantis_joints)/launch/initial_joints.yaml"/>
+		<rosparam command="load" file="$(find mantis_router_joints)/launch/initial_joints.yaml"/>
 
-		<remap from="~reference/discrete_progress" to="mantis_path/feedback/contrail/discrete_progress"/>
-		<remap from="~reference/spline" to="mantis_path/reference/contrail/spline"/>
+		<remap from="~reference/discrete_progress" to="router_base/feedback/contrail/discrete_progress"/>
+		<remap from="~reference/spline" to="router_base/reference/contrail/spline"/>
 		<remap from="~command/joint0" to="joint_position_controller/joint_shoulder/reference/traj"/>
 		<remap from="~command/joint1" to="joint_position_controller/joint_elbow/reference/traj"/>
 	</node>

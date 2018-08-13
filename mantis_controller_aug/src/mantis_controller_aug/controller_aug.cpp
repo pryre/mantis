@@ -169,7 +169,6 @@ void ControllerAug::callback_high_level(const ros::TimerEvent& e) {
 
 	//If we still have all the inputs satisfied
 	if( flight_ready && goal_ok ) {
-		ROS_INFO("    Control");
 		//Fill in the current goals
 		ge_sp.translation() = MDTools::point_from_msg(traj.position);
 		ge_sp.linear() = Eigen::AngleAxisd(traj.yaw, Eigen::Vector3d::UnitZ()).toRotationMatrix();
@@ -393,8 +392,6 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 	}
 
 	message_output_control(e.current_real, pwm_out);
-
-	ROS_INFO("    complete");
 }
 
 Eigen::Affine3d ControllerAug::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe) {

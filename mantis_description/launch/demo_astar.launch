@@ -21,6 +21,6 @@
 
 	<node pkg="mantis_description" type="demo_astar" name="astar_planner" clear_params="true"
 	ns="mantis_uav" output="screen">
-		<remap from="astar_planner/path" to="mantis_path/reference/contrail/path" />
+		<remap from="astar_planner/path" to="router_base/reference/contrail/path" />
 	</node>
 </launch>

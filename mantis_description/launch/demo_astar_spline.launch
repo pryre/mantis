@@ -27,7 +27,7 @@
 	ns="mantis_uav" output="screen">
 		<param name="speed" value="0.2" />
 
-		<remap from="covert_path/path" to="astar_planner/path" />
-		<remap from="covert_path/spline" to="mantis_path/reference/contrail/spline" />
+		<remap from="~path" to="astar_planner/path" />
+		<remap from="~spline" to="router_base/reference/contrail/spline" />
 	</node>
 </launch>
