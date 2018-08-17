@@ -205,13 +205,13 @@ void ForwardKinematics::callback_props( const ros::TimerEvent& e ) {
 		Eigen::VectorXd mdir = p_.get_mixer()*Eigen::Vector4d(0.0,0.0,0.0,1.0);
 
 		for(int i=0; i<p_.motor_num(); i++) {
-			tf_props[i].header.stamp = e.current_real;
+			//tf_props[i].header.stamp = e.current_real;
 			Eigen::Quaterniond q = MDTools::quaternion_from_msg(tf_props[i].transform.rotation);
 			//Correct q for motor directions
 			Eigen::Quaterniond mr = (mdir[i]<0) ? r : r.inverse();
 			tf_props[i].transform.rotation = MDTools::quaternion_from_eig(mr*q);
 
-			tfbr_.sendTransform(tf_props[i]);
+			//tfbr_.sendTransform(tf_props[i]);
 		}
 	}
 
