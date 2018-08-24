@@ -7,7 +7,7 @@
 #include <mantis_description/param_client.h>
 
 #include <contrail_msgs/CubicSpline.h>
-#include <contrail_msgs/PathProgress.h>
+#include <contrail_msgs/DiscreteProgress.h>
 #include <mantis_msgs/JointTrajectoryList.h>
 
 #include <mantis_router_joints/tinysplinecpp.h>
@@ -64,7 +64,7 @@ class MantisRouterJoints {
 		bool get_cubic_spline_reference( double &pos_ref, double &vel_ref, const unsigned int index, const ros::Time& tc );
 
 		void callback_cfg_joint_goals(mantis_router_joints::JointGoalsConfig &config, uint32_t level);
-		void callback_discrete_progress( const contrail_msgs::PathProgress::ConstPtr& msg_in );
+		void callback_discrete_progress( const contrail_msgs::DiscreteProgress::ConstPtr& msg_in );
 		void callback_cubic_spline( const contrail_msgs::CubicSpline::ConstPtr& msg_in );
 		void callback_joint_list( const mantis_msgs::JointTrajectoryList::ConstPtr& msg_in );
 

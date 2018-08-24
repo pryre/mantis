@@ -6,7 +6,7 @@
 
 #include <mantis_msgs/JointTrajectoryGoal.h>
 #include <contrail_msgs/CubicSpline.h>
-#include <contrail_msgs/PathProgress.h>
+#include <contrail_msgs/DiscreteProgress.h>
 
 MantisRouterJoints::MantisRouterJoints() :
 	nh_(),
@@ -28,7 +28,7 @@ MantisRouterJoints::MantisRouterJoints() :
 	dyncfg_joint_goals_.setCallback(boost::bind(&MantisRouterJoints::callback_cfg_joint_goals, this, _1, _2));
 
 	if( p_.wait_for_params() ) {
-		sub_discrete_progress_ = nhp_.subscribe<contrail_msgs::PathProgress>( "reference/discrete_progress", 10, &MantisRouterJoints::callback_discrete_progress, this );
+		sub_discrete_progress_ = nhp_.subscribe<contrail_msgs::DiscreteProgress>( "reference/discrete_progress", 10, &MantisRouterJoints::callback_discrete_progress, this );
 		sub_cubic_spline_ = nhp_.subscribe<contrail_msgs::CubicSpline>( "reference/spline", 10, &MantisRouterJoints::callback_cubic_spline, this );
 		sub_joint_list_ = nhp_.subscribe<mantis_msgs::JointTrajectoryList>( "reference/joint_setpoints", 10, &MantisRouterJoints::callback_joint_list, this );
 
@@ -181,7 +181,7 @@ bool MantisRouterJoints::get_cubic_spline_reference( double &pos_ref, double &ve
 	return success;
 }
 
-void MantisRouterJoints::callback_discrete_progress( const contrail_msgs::PathProgress::ConstPtr& msg_in ) {
+void MantisRouterJoints::callback_discrete_progress( const contrail_msgs::DiscreteProgress::ConstPtr& msg_in ) {
 	current_discrete_point_ = msg_in->current;
 	ROS_INFO("[JointPlanner] Setting joint configuration to %i", current_discrete_point_);
 
