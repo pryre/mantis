@@ -1,12 +1,12 @@
 spline:
-  duration: 30.0
+  duration: 60.0
   k0:
-    x: -1.0
+    x: 0.0
     y: 0.0
-    z: 1.5
+    z: 1.0
     yaw: 0.0
   k1:
-    x: 0.0
+    x: 0.5
     y: 0.0
     z: 1.5
     yaw: 0.0

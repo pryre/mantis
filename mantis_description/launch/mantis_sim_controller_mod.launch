@@ -54,7 +54,7 @@
 		<rosparam command="load" file="$(find mantis_controller_acro)/launch/acro_params.yaml"/>
 	</node>
 
-	<node pkg="mantis_controller_aug" type="mantis_controller_aug_lite_node" name="controller_aug"
+	<node pkg="mantis_controller_mod" type="mantis_controller_mod_node" name="controller_mod"
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />
 		<param name="model_id" value="mantis_uav" />

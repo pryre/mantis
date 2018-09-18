@@ -2,8 +2,8 @@
 #include <dynamic_reconfigure/server.h>
 
 #include <mantis_description/se_tools.h>
-#include <mantis_controller_aug/controller_aug_lite.h>
-#include <mantis_controller_aug/ControlParamsLiteConfig.h>
+#include <mantis_controller_mod/controller_mod.h>
+#include <mantis_controller_mod/ControlParamsConfig.h>
 
 #include <mavros_msgs/AttitudeTarget.h>
 #include <geometry_msgs/WrenchStamped.h>
@@ -14,7 +14,7 @@
 
 #define CONST_GRAV 9.80665
 
-ControllerAugLite::ControllerAugLite() :
+ControllerMod::ControllerMod() :
 	nh_(),
 	nhp_("~"),
 	p_(nh_),
@@ -32,7 +32,7 @@ ControllerAugLite::ControllerAugLite() :
 	nhp_.param("model_id", param_model_id_, param_model_id_);
 	nhp_.param("estimator_rate", param_est_rate_, param_est_rate_);
 
-	dyncfg_control_settings_.setCallback(boost::bind(&ControllerAugLite::callback_cfg_control_settings, this, _1, _2));
+	dyncfg_control_settings_.setCallback(boost::bind(&ControllerMod::callback_cfg_control_settings, this, _1, _2));
 
 	uaug_f_ = Eigen::Vector3d::Zero();
 
@@ -41,7 +41,7 @@ ControllerAugLite::ControllerAugLite() :
 		pub_np_force_ = nhp_.advertise<mavros_msgs::ActuatorControl>("output/normalized_payload_torque", 10);
 		pub_wrench_ = nhp_.advertise<geometry_msgs::WrenchStamped>("feedback/wrench_compensation", 10);
 
-		sub_state_attitude_target_ = nhp_.subscribe<mavros_msgs::AttitudeTarget>( "command/attitude", 10, &ControllerAugLite::callback_state_attitude_target, this );
+		sub_state_attitude_target_ = nhp_.subscribe<mavros_msgs::AttitudeTarget>( "command/attitude", 10, &ControllerMod::callback_state_attitude_target, this );
 
 		ROS_INFO("Augmented dynamics controller loaded. Waiting for inputs:");
 		ROS_INFO("    - attitude target");
@@ -60,7 +60,7 @@ ControllerAugLite::ControllerAugLite() :
 		ROS_INFO_ONCE("Augmented dynamics got all inputs!");
 
 		//Start the control loops
-		timer_est_ = nhp_.createTimer(ros::Duration(1.0/param_est_rate_), &ControllerAugLite::callback_est, this );
+		timer_est_ = nhp_.createTimer(ros::Duration(1.0/param_est_rate_), &ControllerMod::callback_est, this );
 
 		ROS_INFO("Augmented dynamics estimator started!");
 	} else {
@@ -69,17 +69,17 @@ ControllerAugLite::ControllerAugLite() :
 	}
 }
 
-ControllerAugLite::~ControllerAugLite() {
+ControllerMod::~ControllerMod() {
 }
 
-void ControllerAugLite::callback_cfg_control_settings(mantis_controller_aug::ControlParamsLiteConfig &config, uint32_t level) {
+void ControllerMod::callback_cfg_control_settings(mantis_controller_mod::ControlParamsConfig &config, uint32_t level) {
 	param_force_compensation_ = config.force_compensation;
 	param_force_comp_alpha_ = config.force_comp_filter_a;
 	param_coriolis_compensation_ = config.coriolis_compensation;
 	param_reference_feedback_ = config.reference_feedback;
 }
 
-void ControllerAugLite::callback_est(const ros::TimerEvent& e) {
+void ControllerMod::callback_est(const ros::TimerEvent& e) {
 	double dt = (e.current_real - e.last_real).toSec();
 
 	bool solved = false;
@@ -160,7 +160,7 @@ void ControllerAugLite::callback_est(const ros::TimerEvent& e) {
 	pub_np_force_.publish(msg_np_force_out);
 }
 
-void ControllerAugLite::callback_state_attitude_target(const mavros_msgs::AttitudeTarget::ConstPtr& msg_in) {
+void ControllerMod::callback_state_attitude_target(const mavros_msgs::AttitudeTarget::ConstPtr& msg_in) {
 	msg_attitude_target_tr_ = msg_in->header.stamp;
 
 	cmd_throttle_ = msg_in->thrust;

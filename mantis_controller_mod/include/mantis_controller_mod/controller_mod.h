@@ -6,7 +6,7 @@
 #include <mantis_params/param_client.h>
 #include <mantis_state/state_client.h>
 #include <mantis_kinematics/solver.h>
-#include <mantis_controller_aug/ControlParamsLiteConfig.h>
+#include <mantis_controller_mod/ControlParamsConfig.h>
 
 #include <mavros_msgs/AttitudeTarget.h>
 #include <mavros_msgs/ActuatorControl.h>
@@ -15,7 +15,7 @@
 #include <eigen3/Eigen/StdVector>
 #include <string>
 
-class ControllerAugLite {
+class ControllerMod {
 	private:
 		ros::NodeHandle nh_;
 		ros::NodeHandle nhp_;
@@ -34,7 +34,7 @@ class ControllerAugLite {
 		bool param_coriolis_compensation_;
 		bool param_reference_feedback_;
 		double param_est_rate_;
-		dynamic_reconfigure::Server<mantis_controller_aug::ControlParamsLiteConfig> dyncfg_control_settings_;
+		dynamic_reconfigure::Server<mantis_controller_mod::ControlParamsConfig> dyncfg_control_settings_;
 
 		MantisParamClient p_;
 		MantisStateClient s_;
@@ -44,11 +44,11 @@ class ControllerAugLite {
 		Eigen::Vector3d uaug_f_;
 
 	public:
-		ControllerAugLite( void );
+		ControllerMod( void );
 
-		~ControllerAugLite( void );
+		~ControllerMod( void );
 
-		void callback_cfg_control_settings(mantis_controller_aug::ControlParamsLiteConfig &config, uint32_t level);
+		void callback_cfg_control_settings(mantis_controller_mod::ControlParamsConfig &config, uint32_t level);
 
 		void callback_est(const ros::TimerEvent& e);
 		void callback_state_attitude_target(const mavros_msgs::AttitudeTarget::ConstPtr& msg_in);

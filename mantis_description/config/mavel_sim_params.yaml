@@ -1,4 +1,4 @@
-# Common configuration for the mavel velocity controller
+# Common configuration for the mavel position controller
 
 # Control
 control_rate: 50.0
@@ -7,14 +7,14 @@ control_frame: "map"
 # Path-following options
 contrail:
   fallback_to_pose: true
-  autoswitch_tracking: true
-  waypoint_hold_duration: 2.0
-  waypoint_radius: 0.1
+  waypoint_hold_duration: 1.0
+  waypoint_radius: 0.2
   waypoint_yaw_accuracy: 0.1
+  spline_res_per_sec: 5
 
 throttle:
   min: 0.0
-  mid: 0.47
+  mid: 0.45
   max: 0.9
 
 # Maximum roll/pitch in radians
@@ -23,19 +23,13 @@ tilt_max: 0.39
 # Emergency Landing Velocity (must be negative!)
 failsafe_land_vel: -0.2
 
-allow_timeout_position: true
-
 # Data Stream
 min_rate:
   state:
-    mav_state: 0.2
-    odometry: 15.0
+    state: 0.2
+    odometry: 10.0
   reference:
     triplet: 10.0
-    trajectory: 10.0
-    position: 5.0
-    velocity: 10.0
-    acceleration: 30.0
 
 # PID Controllers
 control:
@@ -43,37 +37,37 @@ control:
     x:
       p: 1.25
       i: 0.0
-      d: 0.1
+      d: 0.0
       min: -2.0
       max: 2.0
     y:
       p: 1.25
       i: 0.0
-      d: 0.1
+      d: 0.0
       min: -2.0
       max: 2.0
     z:
-      p: 1.0
+      p: 0.5
       i: 0.0
       d: 0.0
       min: -1.0
-      max: 2.0
+      max: 1.0
   vel:
     x:
       p: 0.09
-      i: 0.00
-      d: 0.01
+      i: 0.0 #0.005
+      d: 0.002
       min: -0.2
       max: 0.2
     y:
       p: 0.09
-      i: 0.00
-      d: 0.01
+      i: 0.0 #0.005
+      d: 0.002
       min: -0.2
       max: 0.2
     z:
-      p: 0.2
+      p: 0.05
       i: 0.02
       d: 0.0
       min: -0.5
-      max: 0.5
+      max: 0.3

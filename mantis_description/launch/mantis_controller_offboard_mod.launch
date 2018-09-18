@@ -1,0 +1,70 @@
+<?xml version='1.0'?>
+<launch>
+	<arg name="arm" default="false"/>
+
+	<group if="$(arg arm)">
+		<node pkg="mavros" type="mavsafety" name="arm_system" args="arm"/>
+	</group>
+
+	<!-- HIGH LEVEL CONTROL -->
+	<node pkg="mantis_path" type="mantis_path_node" name="mantis_path"
+	ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="frame_id" value="map" />
+		<param name="model_id" value="mantis_uav" />
+		<param name="path_rate" value="50.0" />
+
+		<param name="control_settings/track_end" value="false" />
+		<param name="control_settings/accurate_end_tracking" value="true" />
+
+		<remap from="mantis_path/reference/path" to="path"/>
+		<remap from="mantis_path/output/traj" to="mavel/reference/traj"/>
+	</node>
+
+	<node pkg="mavel" type="mavel_node" name="mavel" clear_params="true" output="screen" ns="mantis_uav">
+		<!-- Controller Parameters /-->
+		<rosparam command="load" file="$(find mantis_description)/config/mavel_params.yaml"/>
+
+		<remap from="~command/attitude" to="/mavros/setpoint_raw/attitude"/>
+		<remap from="~state/odometry" to="/mantis_uav/state/odom"/>
+		<remap from="~state/mav_state" to="/mavros/state"/>
+	</node>
+
+	<!-- LOW LEVEL CONTROL -->
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_controller_aug_params.yaml"/>
+
+	<node pkg="mantis_controller_mod" type="mantis_controller_mod_node" name="controller_mod"
+	ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="frame_id" value="map" />
+		<param name="model_id" value="mantis_uav" />
+		<param name="est_rate" value="200.0" />
+
+		<param name="control_settings/force_compensation" value="false" />
+		<param name="control_settings/force_comp_filter_a" value="true" />
+		<param name="control_settings/coriolis_compensation" value="true" />
+		<param name="control_settings/reference_feedback" value="true" />
+
+		<remap from="~output/normalized_payload_torque" to="/mavros/actuator_control" />
+	</node>
+
+	<!-- HELPER NODES -->
+	<!-- TF to Odom conversion -->
+	<node pkg="mavel" type="pose_odom_node" name="pose_odom" clear_params="true" output="screen">
+		<param name="frame_world" value="map" type="str"/>
+		<param name="frame_mav" value="mantis" type="str"/>
+
+		<param name="topic_odom" value="/mantis_uav/state/odom" type="str"/>
+		<param name="topic_pose" value="/vicon/mantis/mantis" type="str"/>
+
+		<param name="velocity_interval" value="0.25" type="double"/>
+		<param name="velocity_filtering" value="0.4" type="double"/>
+	</node>
+
+	<!-- Joint position control -->
+	<!--
+	<node name="robot_joint_config" pkg="mantis_controller_joints" type="mantis_controller_joints_config_node" respawn="false"
+	ns="/mantis_uav" output="screen">
+		<param name="frame_id" value="mantis_uav" />
+		<param name="hover_height" value="1.0" />
+	</node>
+	-->
+</launch>

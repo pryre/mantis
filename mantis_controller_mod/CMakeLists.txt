@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(mantis_controller_aug)
+project(mantis_controller_mod)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
 add_definitions(-std=c++11)
@@ -9,20 +9,14 @@ add_definitions(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  dh_parameters
-  pid_controller_lib
   mantis_description
   mantis_params
   mantis_state
   mantis_kinematics
-  std_msgs
-  nav_msgs
-  sensor_msgs
   geometry_msgs
   mavros_msgs
   message_generation
   dynamic_reconfigure
-  contrail
 )
 
 ## System dependencies are found with CMake's conventions
@@ -134,7 +128,7 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME}
-  src/${PROJECT_NAME}/controller_aug.cpp
+  src/${PROJECT_NAME}/controller_mod.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -147,7 +141,7 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node src/mantis_controller_aug_node.cpp)
+add_executable(${PROJECT_NAME}_node src/mantis_controller_mod_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
