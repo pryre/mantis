@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:include filename="$(find mantis_description)/urdf/visual_servo.xacro" />
+
 	<xacro:macro name="arm_link" params="suffix">
 		<link name="link_${suffix}">
 			<inertial name='inertial_${suffix}'>>
