@@ -44,6 +44,7 @@
   <build_depend>roscpp</build_depend>
   <build_depend>pid_controller_lib</build_depend>
   <build_depend>mantis_description</build_depend>
+  <build_depend>mantis_params</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>mavros_msgs</build_depend>
   <build_depend>eigen</build_depend>
@@ -51,6 +52,7 @@
   <run_depend>roscpp</run_depend>
   <run_depend>pid_controller_lib</run_depend>
   <run_depend>mantis_description</run_depend>
+  <run_depend>mantis_params</run_depend>
   <run_depend>sensor_msgs</run_depend>
   <run_depend>mavros_msgs</run_depend>
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(mantis_state)
+project(mantis_params)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
 add_definitions(-std=c++11)
@@ -9,19 +9,13 @@ find_package(catkin REQUIRED COMPONENTS
   dh_parameters
   mantis_msgs
   mantis_description
-  mantis_params
-  nav_msgs
-  sensor_msgs
-  geometry_msgs
-  mavros_msgs
+  std_srvs
 )
-
-find_package(Eigen3 REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}_client
-  CATKIN_DEPENDS
+  CATKIN_DEPENDS dh_parameters mantis_msgs mantis_description
   DEPENDS EIGEN3
 )
 
@@ -39,13 +33,12 @@ include_directories(
 )
 
 ## Declare a C++ library
-
 add_library(${PROJECT_NAME}_server
-  src/${PROJECT_NAME}/state_server.cpp
+  src/${PROJECT_NAME}/param_server.cpp
 )
 
 add_library(${PROJECT_NAME}_client
-  src/${PROJECT_NAME}/state_client.cpp
+  src/${PROJECT_NAME}/param_client.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -57,7 +50,7 @@ add_dependencies(${PROJECT_NAME}_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ca
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp)
+add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_server_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -70,7 +63,6 @@ add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp)
 add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-
 target_link_libraries(${PROJECT_NAME}_server
   ${catkin_LIBRARIES}
 )
@@ -83,43 +75,3 @@ target_link_libraries(${PROJECT_NAME}_node
   ${PROJECT_NAME}_server
   ${catkin_LIBRARIES}
 )
-
-#############
-## Install ##
-#############
-
-#install(
-#  DIRECTORY
-#    config/
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
-#)
-#
-#install(
-#  DIRECTORY
-#    launch/
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-#)
-#
-#install(
-#  DIRECTORY
-#    meshes/
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/meshes
-#)
-#
-#install(
-#  DIRECTORY
-#    manoeuvres/
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/manoeuvres
-#)
-#
-#install(
-#  DIRECTORY
-#    scripts/
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/scripts
-#)
-#
-#install(
-#  DIRECTORY
-#    urdf/
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/urdf
-#)

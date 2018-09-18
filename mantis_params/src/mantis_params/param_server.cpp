@@ -4,7 +4,7 @@
 #include <mantis_msgs/BodyInertial.h>
 #include <mantis_msgs/Parameters.h>
 
-#include <mantis_description/param_server.h>
+#include <mantis_params/param_server.h>
 
 MantisParamServer::MantisParamServer( void ) :
 	nh_(),

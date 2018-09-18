@@ -6,16 +6,17 @@ add_definitions(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  dh_parameters
+  geometry_msgs
   mantis_msgs
-  std_srvs
 )
+
+find_package(Eigen3 REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}_param_client
-  CATKIN_DEPENDS dh_parameters mantis_msgs
-#  DEPENDS system_lib
+  LIBRARIES ${PROJECT_NAME}_se_tools ${PROJECT_NAME}_mixer_map
+  #CATKIN_DEPENDS
+  DEPENDS EIGEN3
 )
 
 ###########
@@ -28,49 +29,29 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}_param_server
-  src/${PROJECT_NAME}/param_server.cpp
+add_library(${PROJECT_NAME}_se_tools
+  src/${PROJECT_NAME}/se_tools.cpp
 )
 
-add_library(${PROJECT_NAME}_param_client
-  src/${PROJECT_NAME}/param_client.cpp
+add_library(${PROJECT_NAME}_mixer_map
+  src/${PROJECT_NAME}/mixer_maps.cpp
 )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(${PROJECT_NAME}_param_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(${PROJECT_NAME}_param_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Declare a C++ executable
-## With catkin_make all packages are built within a single CMake context
-## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_param_node src/${PROJECT_NAME}_param_node.cpp)
-
-## Rename C++ executable without prefix
-## The above recommended prefix causes long target names, the following renames the
-## target back to the shorter version for ease of user use
-## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
-# set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
-
-## Add cmake target dependencies of the executable
-## same as for the library above
-add_dependencies(${PROJECT_NAME}_param_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_se_tools ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_mixer_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}_param_server
+target_link_libraries(${PROJECT_NAME}_se_tools
   ${catkin_LIBRARIES}
 )
-
-target_link_libraries(${PROJECT_NAME}_param_client
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(${PROJECT_NAME}_param_node
-  ${PROJECT_NAME}_param_server
+target_link_libraries(${PROJECT_NAME}_mixer_map
   ${catkin_LIBRARIES}
 )
 
@@ -80,7 +61,7 @@ target_link_libraries(${PROJECT_NAME}_param_node
 
 install(
   DIRECTORY
-    config/
+    include/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
 )
 

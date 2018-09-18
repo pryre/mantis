@@ -12,7 +12,7 @@
 #include <sensor_msgs/BatteryState.h>
 #include <mavros_msgs/State.h>
 
-#include <mantis_description/param_client.h>
+#include <mantis_params/param_client.h>
 
 #include <eigen3/Eigen/Dense>
 

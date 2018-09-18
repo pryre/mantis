@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   visualization_msgs
   mantis_description
+  mantis_params
   mantis_state
 )
 

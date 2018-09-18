@@ -23,7 +23,7 @@
 
   <run_depend>roscpp</run_depend>
   <run_depend>mantis_msgs</run_depend>
-  <run_depend>mantis_description</run_depend>
+  <run_depend>mantis_params</run_depend>
   <run_depend>dh_parameters</run_depend>
   <run_depend>nav_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>

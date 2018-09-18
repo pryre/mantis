@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ros/ros.h>
-#include <mantis_description/param_client.h>
+#include <mantis_params/param_client.h>
 #include <mantis_state/state_client.h>
 
 #include <dh_parameters/serial_manipulator.h>

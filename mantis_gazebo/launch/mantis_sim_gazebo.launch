@@ -2,8 +2,11 @@
 <launch>
 	<arg name="model" default=""/>
 
-	<!-- GAZEBO SETUP -->
+	<!-- Add in resource path environment variables -->
+	<env name="GAZEBO_RESOURCE_PATH" value="$(find mantis_gazebo)/resources:$GAZEBO_RESOURCE_PATH"/>
+	<env name="GAZEBO_MODEL_PATH" value="$(find mantis_gazebo)/models:$GAZEBO_MODEL_PATH"/>
 
+	<!-- GAZEBO SETUP -->
 	<arg name="paused" default="false"/>
 	<arg name="use_sim_time" default="true"/>
 	<arg name="extra_gazebo_args" default=""/>
@@ -31,7 +34,8 @@
 	<arg unless="$(arg debug)" name="script_type" value="gzserver"/>
 	<arg     if="$(arg debug)" name="script_type" value="debug"/>
 
-	<!-- start gazebo server-->
+
+	<!-- start gazebo server -->
 	<group if="$(arg use_clock_frequency)">
 		<param name="gazebo/pub_clock_frequency" value="$(arg pub_clock_frequency)" />
 	</group>

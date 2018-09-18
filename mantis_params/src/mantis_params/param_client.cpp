@@ -4,7 +4,7 @@
 #include <mantis_msgs/BodyInertial.h>
 #include <dh_parameters/JointDescription.h>
 
-#include <mantis_description/param_client.h>
+#include <mantis_params/param_client.h>
 #include <mantis_description/mixer_maps.h>
 
 #include <eigen3/Eigen/Dense>

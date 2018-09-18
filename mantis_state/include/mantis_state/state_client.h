@@ -8,7 +8,7 @@
 #include <geometry_msgs/Quaternion.h>
 #include <geometry_msgs/Pose.h>
 
-#include <mantis_description/param_client.h>
+#include <mantis_params/param_client.h>
 
 #include <eigen3/Eigen/Dense>
 

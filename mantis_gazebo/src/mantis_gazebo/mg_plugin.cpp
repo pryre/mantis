@@ -12,8 +12,6 @@
 
 #include <nav_msgs/Odometry.h>
 #include <gazebo_msgs/ModelStates.h>
-#include <mantis_description/param_client.h>
-#include <mantis_description/se_tools.h>
 #include <dh_parameters/dh_parameters.h>
 #include <geometry_msgs/TransformStamped.h>
 

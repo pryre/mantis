@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   contrail_msgs
   mantis_msgs
-  mantis_description
+  mantis_params
   dynamic_reconfigure
 )
 

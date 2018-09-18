@@ -10,10 +10,6 @@
 #include <string>
 #include <vector>
 
-enum class MantisMixers {
-
-};
-
 class MantisParamClient {
 	private:
 		ros::NodeHandle nh_;

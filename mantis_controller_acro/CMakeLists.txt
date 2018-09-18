@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   pid_controller_lib
   mantis_description
+  mantis_params
   sensor_msgs
   mavros_msgs
 )

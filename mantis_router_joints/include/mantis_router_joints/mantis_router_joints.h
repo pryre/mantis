@@ -4,7 +4,7 @@
 #include <dynamic_reconfigure/server.h>
 
 #include <mantis_router_joints/JointGoalsConfig.h>
-#include <mantis_description/param_client.h>
+#include <mantis_params/param_client.h>
 
 #include <contrail_msgs/CubicSpline.h>
 #include <contrail_msgs/DiscreteProgress.h>

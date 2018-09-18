@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   dh_parameters
   pid_controller_lib
   mantis_description
+  mantis_params
   mantis_state
   mantis_kinematics
   std_msgs

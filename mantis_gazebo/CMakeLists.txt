@@ -22,7 +22,6 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   gazebo_msgs
   hector_gazebo_plugins
-  mantis_description
   message_generation
 )
 

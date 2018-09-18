@@ -6,7 +6,7 @@
 
 	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_params.yaml"/>
 
-	<node pkg="mantis_description" type="mantis_description_param_node" name="mantis_params"
+	<node pkg="mantis_params" type="mantis_params_node" name="mantis_params"
 	ns="/mantis_uav" clear_params="true" output="screen"/>
 
 	<node pkg="mantis_state" type="mantis_state_node" name="mantis_state"

@@ -7,7 +7,7 @@
 #include <nav_msgs/Odometry.h>
 
 #include <mantis_state/state_client.h>
-#include <mantis_description/param_client.h>
+#include <mantis_params/param_client.h>
 #include <mantis_kinematics/solver.h>
 
 #include <tf2_ros/transform_listener.h>

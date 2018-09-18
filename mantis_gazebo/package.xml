@@ -45,7 +45,6 @@
   <build_depend>roscpp</build_depend>
   <build_depend>pid_controller_lib</build_depend>
   <build_depend>dh_parameters</build_depend>
-  <build_depend>mantis_description</build_depend>
   <build_depend>gazebo_ros</build_depend>
   <build_depend>gazebo_ros_control</build_depend>
   <build_depend>controller_manager</build_depend>
@@ -64,7 +63,6 @@
   <run_depend>roscpp</run_depend>
   <run_depend>pid_controller_lib</run_depend>
   <run_depend>dh_parameters</run_depend>
-  <run_depend>mantis_description</run_depend>
   <run_depend>gazebo_ros</run_depend>
   <run_depend>gazebo_ros_control</run_depend>
   <run_depend>controller_manager</run_depend>

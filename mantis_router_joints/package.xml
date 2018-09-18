@@ -44,13 +44,13 @@
   <build_depend>roscpp</build_depend>
   <build_depend>contrail_msgs</build_depend>
   <build_depend>mantis_msgs</build_depend>
-  <build_depend>mantis_description</build_depend>
+  <build_depend>mantis_params</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>contrail_msgs</run_depend>
   <run_depend>mantis_msgs</run_depend>
-  <run_depend>mantis_description</run_depend>
+  <run_depend>mantis_params</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->

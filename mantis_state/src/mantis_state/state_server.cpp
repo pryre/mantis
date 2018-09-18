@@ -4,7 +4,7 @@
 #include <dh_parameters/JointDescription.h>
 #include <mantis_msgs/State.h>
 #include <mantis_description/se_tools.h>
-#include <mantis_description/param_client.h>
+#include <mantis_params/param_client.h>
 #include <mantis_state/state_server.h>
 
 #include <nav_msgs/Odometry.h>

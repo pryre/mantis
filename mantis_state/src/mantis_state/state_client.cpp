@@ -4,7 +4,7 @@
 #include <mantis_msgs/State.h>
 #include <mantis_description/se_tools.h>
 #include <mantis_state/state_client.h>
-#include <mantis_description/param_client.h>
+#include <mantis_params/param_client.h>
 
 MantisStateClient::MantisStateClient( const ros::NodeHandle& nh, MantisParamClient& p ) :
 	nh_(nh),
