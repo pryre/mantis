@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<robot>
+	<gazebo>
+		<plugin name="mantis_gazebo_plugin" filename="libmantis_gazebo_plugin.so"/>
+	</gazebo>
+
+	<gazebo>
+		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+			<robotNamespace>/mantis_uav</robotNamespace>
+			<robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+		</plugin>
+	</gazebo>
+
+	<gazebo>
+		<plugin name="imu_plugin" filename="libhector_gazebo_ros_imu.so">
+			<alwaysOn>true</alwaysOn>
+			<frameName>world</frameName>
+			<bodyName>base_link</bodyName>
+			<topicName>mantis_uav/state/imu_data</topicName>
+			<serviceName>mantis_uav/imu_service</serviceName>
+			<gaussianNoise>0.0</gaussianNoise>
+			<updateRate>500.0</updateRate>
+		</plugin>
+	</gazebo>
+</robot>

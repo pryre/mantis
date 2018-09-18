@@ -3,7 +3,6 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
 	<xacro:include filename="$(find mantis_description)/urdf/frame_battery.xacro" />
-	<xacro:include filename="$(find mantis_description)/urdf/frame_servo.xacro" />
 	<xacro:include filename="$(find mantis_description)/urdf/frame_arm_red.xacro" />
 	<xacro:include filename="$(find mantis_description)/urdf/frame_arm_white.xacro" />
 	<xacro:include filename="$(find mantis_description)/urdf/frame_motor.xacro" />
@@ -11,7 +10,7 @@
 
 	<xacro:include filename="$(find mantis_description)/urdf/motor_joint.xacro" />
 
-	<xacro:macro name="base_quad" params="arm_length base_radius mass ixx iyy izz ixy ixz iyz">
+	<xacro:macro name="base_quad_wire" params="arm_length base_radius mass ixx iyy izz ixy ixz iyz">
 		<!-- Base Link -->
 		<link name="base_link">
 			<inertial>
@@ -40,8 +39,6 @@
 			</visual>
 
 			<xacro:frame_battery suffix="battery_primary" size="0.052 0.146 0.034" xyz="0.0 0.0 0.032" rpy="0.0 0.0 0.0" />
-
-			<xacro:frame_servo suffix="servo_shoulder" size="0.0285 0.034 0.0465" xyz="0.01425 0.019 -0.015" rpy="${-pi/2} 0 ${pi}" />
 
 			<xacro:frame_arm_red suffix="arm_1" length="${arm_length}" radius="0.015" xyz="0.1061 -0.1061 0" rpy="${pi/2} 0 ${pi/4}" />
 			<xacro:frame_arm_white suffix="arm_2" length="${arm_length}" radius="0.015" xyz="-0.1061 0.1061 0" rpy="${pi/2} 0 ${pi/4}" />

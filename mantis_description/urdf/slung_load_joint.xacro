@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:macro name="slung_load_joint" params="suffix parent child xyz rpy">
+
+		<joint name="joint_${suffix}_roll" type="continuous">
+			<parent link="${parent}"/>
+			<child link="link_${suffix}_int"/>
+			<origin xyz="${xyz}" rpy="${rpy}"/>
+			<axis xyz="0 0 1"/>
+			<dynamics damping="0.0" friction="0.0"/>
+		</joint>
+
+		<link name="link_${suffix}_int">
+			<inertial>
+				<mass value="0.005" />
+				<inertia ixx="8e-4" ixy="0" ixz="0" iyy="8e-4" iyz="0" izz="8e-4" />
+			</inertial>
+
+			<collision name="collision_${suffix}_int">
+				<origin xyz="${xyz}" rpy="${rpy}"/>
+				<geometry>
+					<sphere radius="0.02"/>
+				</geometry>
+			</collision>
+
+			<visual name="visual_${suffix}_int">
+				<origin xyz="${xyz}" rpy="${rpy}"/>
+				<geometry>
+					<sphere radius="0.02"/>
+				</geometry>
+
+				<material name="dark_grey">
+					<color rgba="0.1 0.1 0.1 1.0"/>
+				</material>
+			</visual>
+		</link>
+
+		<joint name="joint_${suffix}_pitch" type="continuous">
+			<parent link="link_${suffix}_int"/>
+			<child link="${child}"/>
+			<origin xyz="${xyz}" rpy="${rpy}"/>
+			<axis xyz="0 0 1"/>
+			<dynamics damping="0.0" friction="0.0"/>
+		</joint>
+	</xacro:macro>
+</robot>

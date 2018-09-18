@@ -1,6 +1,7 @@
 <?xml version='1.0'?>
 <launch>
 	<arg name="model" default=""/>
+	<arg name="model_name" default="" />
 
 	<!-- Add in resource path environment variables -->
 	<env name="GAZEBO_RESOURCE_PATH" value="$(find mantis_gazebo)/resources:$GAZEBO_RESOURCE_PATH"/>
@@ -52,35 +53,5 @@
 
 	<param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
 
-	<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -model mantis_uav -param robot_description -z 1.0"/>
-
-	<!-- INFO SETUP -->
-
-	<!--node name="model_state_odom" pkg="mantis_gazebo" type="model_state_odom_node" output="screen" ns="/mantis_uav" /-->
-	<!--
-	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
-		<remap from="/joint_states" to="/mantis_uav/robot_states" />
-	</node>
-
-	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
-		<remap from="/joint_states" to="/mantis_uav/joint_states" />
-	</node>
-	-->
-
-	<!-- CONTROLLER SETUP -->
-
-	<rosparam file="$(find mantis_gazebo)/launch/mantis_sim_joint_control.yaml" command="load"/>
-
-	<node name="controller_spawner" pkg="controller_manager" type="controller_manager" respawn="false"
-	output="screen" ns="/mantis_uav" args="spawn shoulder_velocity_controller elbow_velocity_controller joint_state_controller"/>
-
-	<node name="joint_position_controller" pkg="mantis_controller_joints" type="mantis_controller_joints_node" respawn="false"
-	output="screen" ns="/mantis_uav" args="joint_shoulder joint_elbow">
-		<param name="update_rate" value="25.0" />
-
-		<remap from="state/joints" to="joint_states" />
-
-		<remap from="joint_position_controller/joint_shoulder/command" to="shoulder_velocity_controller/command"/>
-		<remap from="joint_position_controller/joint_elbow/command" to="elbow_velocity_controller/command"/>
-	</node>
+	<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -model $(arg model_name) -param robot_description -z 1.0"/>
 </launch>

@@ -11,7 +11,7 @@
 
 	<xacro:include filename="$(find mantis_description)/urdf/motor_joint.xacro" />
 
-	<xacro:macro name="base_hex" params="arm_length base_radius mass ixx iyy izz ixy ixz iyz">
+	<xacro:macro name="base_hex_single_servo" params="arm_length base_radius mass ixx iyy izz ixy ixz iyz">
 		<!-- Base Link -->
 		<link name="base_link">
 			<inertial>
