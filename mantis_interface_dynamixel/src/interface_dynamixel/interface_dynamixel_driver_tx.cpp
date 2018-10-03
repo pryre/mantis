@@ -32,7 +32,7 @@ bool InterfaceDynamixel::writeDynamixelRegister(uint8_t id, uint16_t addr, uint8
 	return false;
 }
 
-void InterfaceDynamixel::doSyncWrite(dynamixel_control_items_t item_id) {
+void InterfaceDynamixel::doSyncWrite(dynamixel_control_items_t item_id, std::vector<double>* ref) {
 	bool do_write = false;
 
 	// Initialize GroupSyncWrite instance
@@ -43,7 +43,7 @@ void InterfaceDynamixel::doSyncWrite(dynamixel_control_items_t item_id) {
 		for(int i=0; i<dxl_.size(); i++) {
 			// Allocate goal position value into byte array
 			uint8_t param_goal_current[2];
-			uint16_t goal_current = convert_torque_value(joint_setpoints_.effort[i], i);
+			uint16_t goal_current = convert_torque_value(ref->at(i), i);
 
 			param_goal_current[0] = DXL_LOBYTE(goal_current);
 			param_goal_current[1] = DXL_HIBYTE(goal_current);
@@ -58,7 +58,51 @@ void InterfaceDynamixel::doSyncWrite(dynamixel_control_items_t item_id) {
 		}
 
 		do_write = true;
+	} else if(item_id == DCI_GOAL_VELOCITY) {
+		for(int i=0; i<dxl_.size(); i++) {
+			// Allocate goal position value into byte array
+			uint8_t param_goal_velocity[4];
+			int32_t goal_velocity = convert_velocity_value(ref->at(i), i);
+
+			param_goal_velocity[0] = DXL_LOBYTE(DXL_LOWORD(goal_velocity));
+			param_goal_velocity[1] = DXL_HIBYTE(DXL_LOWORD(goal_velocity));
+			param_goal_velocity[2] = DXL_LOBYTE(DXL_HIWORD(goal_velocity));
+			param_goal_velocity[3] = DXL_HIBYTE(DXL_HIWORD(goal_velocity));
+
+			// Add Dynamixel goal position value to the Syncwrite parameter storage
+			uint8_t dxl_addparam_result = groupSyncWrite.addParam(get_id(i), param_goal_velocity);
+
+			if(!dxl_addparam_result) {
+				ROS_ERROR("[ID: %u] groupSyncRead addparam failed", get_id(i));
+				//success = false;
+			}
+		}
+
+		do_write = true;
 	}
+	else if(item_id == DCI_GOAL_POSITION) {
+		for(int i=0; i<dxl_.size(); i++) {
+			// Allocate goal position value into byte array
+			uint8_t param_goal_position[4];
+			int32_t goal_position = convert_radian_value(ref->at(i), i);
+
+			param_goal_position[0] = DXL_LOBYTE(DXL_LOWORD(goal_position));
+			param_goal_position[1] = DXL_HIBYTE(DXL_LOWORD(goal_position));
+			param_goal_position[2] = DXL_LOBYTE(DXL_HIWORD(goal_position));
+			param_goal_position[3] = DXL_HIBYTE(DXL_HIWORD(goal_position));
+
+			// Add Dynamixel goal position value to the Syncwrite parameter storage
+			uint8_t dxl_addparam_result = groupSyncWrite.addParam(get_id(i), param_goal_position);
+
+			if(!dxl_addparam_result) {
+				ROS_ERROR("[ID: %u] groupSyncRead addparam failed", get_id(i));
+				//success = false;
+			}
+		}
+
+		do_write = true;
+	}
+
 	/*
 	if(addr_name == "goal_velocity") {
 		for(int i=0; i<dynamixel_.size(); i++) {
@@ -83,28 +127,6 @@ void InterfaceDynamixel::doSyncWrite(dynamixel_control_items_t item_id) {
 		do_write = true;
 	}
 	*/
-	if(item_id == DCI_GOAL_POSITION) {
-		for(int i=0; i<dxl_.size(); i++) {
-			// Allocate goal position value into byte array
-			uint8_t param_goal_position[4];
-			int32_t goal_position = convert_radian_value(joint_setpoints_.position[i], i);
-
-			param_goal_position[0] = DXL_LOBYTE(DXL_LOWORD(goal_position));
-			param_goal_position[1] = DXL_HIBYTE(DXL_LOWORD(goal_position));
-			param_goal_position[2] = DXL_LOBYTE(DXL_HIWORD(goal_position));
-			param_goal_position[3] = DXL_HIBYTE(DXL_HIWORD(goal_position));
-
-			// Add Dynamixel goal position value to the Syncwrite parameter storage
-			uint8_t dxl_addparam_result = groupSyncWrite.addParam(get_id(i), param_goal_position);
-
-			if(!dxl_addparam_result) {
-				ROS_ERROR("[ID: %u] groupSyncRead addparam failed", get_id(i));
-				//success = false;
-			}
-		}
-
-		do_write = true;
-	}
 
 	if(do_write) {
 		// Syncwrite goal position

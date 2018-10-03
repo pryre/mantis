@@ -128,12 +128,15 @@ include_directories(
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_library(interface_dynamixel
+add_library(${PROJECT_NAME}_joints
+			src/interface_dynamixel/interface_joint.cpp)
+
+add_library(${PROJECT_NAME}_manager
 			src/interface_dynamixel/interface_dynamixel.cpp
 			src/interface_dynamixel/interface_dynamixel_driver_conversions.cpp
 			src/interface_dynamixel/interface_dynamixel_driver_tx.cpp
 			src/interface_dynamixel/interface_dynamixel_driver_rx.cpp)
-add_dependencies(interface_dynamixel ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_manager ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -141,9 +144,16 @@ add_dependencies(interface_dynamixel ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catki
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 ## Specify libraries to link a library or executable target against
-add_executable(interface_node src/interface_node.cpp)
-add_dependencies(interface_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(interface_node interface_dynamixel ${catkin_LIBRARIES})
+add_executable(${PROJECT_NAME}_manager_node src/interface_node.cpp)
+add_dependencies(${PROJECT_NAME}_manager_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(${PROJECT_NAME}_manager
+	${PROJECT_NAME}_joints
+	${catkin_LIBRARIES})
+
+target_link_libraries(${PROJECT_NAME}_manager_node
+	${PROJECT_NAME}_manager
+	${catkin_LIBRARIES})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

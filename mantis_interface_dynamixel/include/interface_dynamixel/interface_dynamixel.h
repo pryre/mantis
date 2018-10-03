@@ -6,12 +6,13 @@
 #include <dynamixel_sdk/dynamixel_sdk.h>
 
 #include <mantis_interface_dynamixel/EnableTorque.h>
+#include <interface_dynamixel/interface_joint.h>
 #include <std_srvs/SetBool.h>
 #include <sensor_msgs/JointState.h>
 
 #include <string>
 #include <math.h>
-
+#include <vector>
 
 enum dynamixel_mode_t {
 	MOTOR_MODE_TORQUE = 0,
@@ -44,13 +45,15 @@ class InterfaceDynamixel {
 		ros::ServiceServer srv_enable_torque_specific_;
 		ros::ServiceServer srv_enable_torque_all_;
 
+		std::vector<InterfaceJoint*> joint_interfaces_;
+		InterfaceJoint::CurrentReference motor_ref_last_;
 		sensor_msgs::JointState joint_states_;
-		sensor_msgs::JointState joint_setpoints_;
-		uint8_t motor_output_mode_;
+		//sensor_msgs::JointState joint_setpoints_;
+		//uint8_t motor_output_mode_;
 
 		//Parameters
-		std::string topic_input_setpoints_;
-		std::string topic_output_states_;
+		//std::string topic_input_setpoints_;
+		//std::string topic_output_states_;
 		double param_update_rate_;
 		std::string param_port_name_;
 		int param_port_buad_;
@@ -83,7 +86,7 @@ class InterfaceDynamixel {
 	private:
 		//ROS
 		void callback_timer(const ros::TimerEvent& e);
-		void callback_setpoints(const sensor_msgs::JointState::ConstPtr& msg_in);
+		//void callback_setpoints(const sensor_msgs::JointState::ConstPtr& msg_in);
 		bool enable_torque_specific(mantis_interface_dynamixel::EnableTorque::Request& req, mantis_interface_dynamixel::EnableTorque::Response& res);
 		bool enable_torque_all(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res);
 
@@ -109,7 +112,7 @@ class InterfaceDynamixel {
 		void initSyncRead();
 		bool doSyncRead(std::vector<std::vector<std::int32_t>> *states);
 		//void doSyncWrite(std::string addr_name);
-		void doSyncWrite(dynamixel_control_items_t item_id);
+		void doSyncWrite(dynamixel_control_items_t item_id, std::vector<double>* ref);
 
 		//bool bulk_read_states(std::vector<std::string> *states, std::vector<std::vector<int32_t>> *result);
 

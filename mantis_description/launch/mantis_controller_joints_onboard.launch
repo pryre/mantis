@@ -1,0 +1,44 @@
+<?xml version='1.0'?>
+<launch>
+	<!-- PARAM FOR BENCH TEST -->
+	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_params_quad.yaml"/>
+	<node pkg="mantis_params" type="mantis_params_node" name="mantis_params"
+	ns="/mantis_uav" clear_params="true" output="screen"/>
+	<!-- PARAM FOR BENCH TEST -->
+
+	<!-- PATH PLANNING -->
+	<node pkg="mantis_router_joints" type="mantis_router_joints_node" name="router_joints" clear_params="true"
+	ns="mantis_uav" output="screen">
+		<rosparam command="load" file="$(find mantis_router_joints)/launch/initial_joints.yaml"/>
+
+		<remap from="~reference/discrete_progress" to="router_base/feedback/contrail/discrete_progress"/>
+		<remap from="~reference/spline" to="router_base/reference/contrail/spline"/>
+		<remap from="~command/joint0" to="joint_position_controller/joint_shoulder/reference/traj"/>
+		<remap from="~command/joint1" to="joint_position_controller/joint_elbow/reference/traj"/>
+	</node>
+
+	<!-- HIGH LEVEL CONTROL -->
+	<node name="joint_position_controller" pkg="mantis_controller_joints" type="mantis_controller_joints_node" respawn="false"
+	output="screen" ns="/mantis_uav" args="joint_shoulder joint_elbow">
+		<param name="update_rate" value="25.0" />
+
+		<remap from="state/joints" to="joint_states" />
+		<remap from="~joint_shoulder/command" to="dynamixel_interface/joint_shoulder/reference/velocity"/>
+		<remap from="~joint_elbow/command" to="dynamixel_interface/joint_elbow/reference/velocity"/>
+	</node>
+
+	<!-- LOW LEVEL CONTROL -->
+	<node pkg="mantis_interface_dynamixel" type="mantis_interface_dynamixel_manager_node" name="dynamixel_interface"
+		ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="port_name" value="/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A10668JA-if00-port0" type="str" />
+		<param name="port_baud" value="3000000" type="int" />
+		<param name="protocol" value="2.0" type="double" />
+
+		<param name="frame_id" value="mantis" type="str" />
+		<param name="update_rate" value="25.0" type="double" />
+
+		<remap from="~joint_states" to="joint_states" />
+
+		<rosparam command="load" file="$(find mantis_description)/config/mantis_dynamixel_interface.yaml"/>
+	</node>
+</launch>

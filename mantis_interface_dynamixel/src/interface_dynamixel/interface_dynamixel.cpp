@@ -28,13 +28,14 @@ static const std::string dynamixel_control_items_names[DCI_NUM_ITEMS] {
 InterfaceDynamixel::InterfaceDynamixel() :
 	nh_("~"),
 	nhp_("~"),
-	motor_output_mode_(MOTOR_MODE_INVALID),
+	//motor_output_mode_(MOTOR_MODE_INVALID),
 	param_update_rate_(50.0),
 	param_port_name_("/dev/ttyUSB0"),
 	param_port_buad_(57600),
 	param_port_version_(0.0),
 	param_num_motors_(0),
-	param_frame_id_("robot") {
+	param_frame_id_("robot"),
+	motor_ref_last_(InterfaceJoint::CurrentReference::Unset) {
 
 
 	//ROS Setup
@@ -45,7 +46,7 @@ InterfaceDynamixel::InterfaceDynamixel() :
 	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
 	nhp_.param("update_rate", param_update_rate_, param_update_rate_);
 
-	sub_setpoints_ = nh_.subscribe<sensor_msgs::JointState>( "joint_setpoints", 10, &InterfaceDynamixel::callback_setpoints, this );
+	//sub_setpoints_ = nh_.subscribe<sensor_msgs::JointState>( "joint_setpoints", 10, &InterfaceDynamixel::callback_setpoints, this );
 	pub_states_ = nh_.advertise<sensor_msgs::JointState>( "joint_states", 10);
 
 
@@ -118,10 +119,17 @@ uint8_t InterfaceDynamixel::get_id( int motor_number ) {
 void InterfaceDynamixel::shutdown_node( void ) {
 	ROS_ERROR("Shutting down dynamixel interface");
 
+	//Safe shutdown of motors
 	for(int i=0; i<dxl_.size(); i++)
 		set_torque_enable(i, false);
 
 	portHandler_->closePort();
+
+	//Clear the created joint interfaces
+	for(int i=0; i<joint_interfaces_.size(); i++) {
+		delete joint_interfaces_[i];
+	}
+
 	ros::shutdown();
 }
 
@@ -184,6 +192,8 @@ void InterfaceDynamixel::init_motor(std::string motor_model, uint8_t motor_id, d
 bool InterfaceDynamixel::add_motors() {
 	bool success = true;
 
+	joint_interfaces_.resize( param_num_motors_ );
+
 	for(int i=0; i<param_num_motors_; i++) {
 		std::string motor_name;
 		std::string motor_model;
@@ -201,7 +211,7 @@ bool InterfaceDynamixel::add_motors() {
 		if(i==0){
 			for(int j=0; j<DCI_NUM_ITEMS; j++) {
 				dynamixel_control_items_.push_back(*dxl_[0].getControlItem(dynamixel_control_items_names[j].c_str()));
-				ROS_INFO("Loaded ControlTableItem \"%s\": %i; %i", dynamixel_control_items_names[j].c_str(), dynamixel_control_items_[j].address, dynamixel_control_items_[j].data_length);
+				ROS_DEBUG("Loaded ControlTableItem \"%s\": %i; %i", dynamixel_control_items_names[j].c_str(), dynamixel_control_items_[j].address, dynamixel_control_items_[j].data_length);
 			}
 		}
 		//XXX: This is a pretty bad hack for this
@@ -213,11 +223,19 @@ bool InterfaceDynamixel::add_motors() {
 		if( readMotorState(DCI_TORQUE_ENABLE, i, &tmp_val) ) {
 			set_torque_enable(i, false);	//Make sure motor is not turned on
 			ROS_INFO("Motor %i successfully added", i);
+
+			//Add in a new joint interface
+			double ref_timeout;
+			nh_.getParam("motors/motor_" + std::to_string(i) + "/ref_timeout", ref_timeout);
+			joint_interfaces_[i] = new InterfaceJoint( nhp_, motor_name, ref_timeout);
 		} else {
 			ROS_ERROR("Motor %i could not be read!", i);
 			success = false;
 		}
 	}
+
+	ROS_ASSERT_MSG( dxl_.size() == joint_interfaces_.size(), "Motor and interface number does not match (%i!=%i)", (int)dxl_.size(), (int)joint_interfaces_.size() );
+	ROS_ASSERT_MSG( dxl_.size() == joint_interfaces_.size(), "Motor and name number does not match (%i!=%i)", (int)dxl_.size(), (int)dxl_names_.size() );
 
 	return success;
 }
@@ -280,33 +298,86 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 		pub_states_.publish(joint_states);
 	}
 
-	if(motor_output_mode_ != MOTOR_MODE_INVALID) {
-		switch(motor_output_mode_) {
-			case MOTOR_MODE_TORQUE: {
-				doSyncWrite(DCI_GOAL_CURRENT);
-				//writeMotorState("goal_current", i, convert_torque_value(joint_setpoints_.effort[i], i));
+	InterfaceJoint::CurrentReference motor_ref_type = InterfaceJoint::CurrentReference::Unset;
+	bool motor_ref_consistent = true;
+	std::vector<double> motor_refs;
 
-				break;
-			}
-			case MOTOR_MODE_VELOCITY: {
-				doSyncWrite(DCI_GOAL_VELOCITY);
-				//writeMotorState("goal_velocity", i, convert_velocity_value(joint_setpoints_.velocity[i], i));
+	for(int i=0; i<joint_interfaces_.size(); i++) {
+		if( i == 0 )
+			motor_ref_type = joint_interfaces_[i]->get_reference_type();
 
-				break;
-			}
-			case MOTOR_MODE_POSITION: {
-				doSyncWrite(DCI_GOAL_POSITION);
-				//writeMotorState("goal_position", i, convert_radian_value(joint_setpoints_.position[i], i));
+		if( ( motor_ref_type == InterfaceJoint::CurrentReference::Unset ) ||
+			( motor_ref_type != joint_interfaces_[i]->get_reference_type() ) ) {
 
+			motor_ref_consistent = false;
+			break;
+		}
+	}
+
+	if(motor_ref_consistent) {
+		motor_refs.resize(dxl_.size());
+
+		for(int i=0; i<dxl_.size(); i++) {
+			if( !joint_interfaces_[i]->get_reference( motor_refs[i] ) ) {
+				motor_ref_consistent = false;
 				break;
-			}
-			default: {
-				ROS_ERROR("Mode write error: unknown mode!");
 			}
 		}
 	}
+
+	if(motor_ref_consistent) {
+		bool motor_ref_changed = false;
+
+		if(motor_ref_last_ != motor_ref_type) {
+			motor_ref_last_ = motor_ref_type;
+			motor_ref_changed = true;
+		}
+
+		//Use the lowest level mode that has been sent
+		if(motor_ref_type == InterfaceJoint::CurrentReference::Effort) {
+			if(motor_ref_changed) {
+				ROS_INFO("Effort control setpoint accepted");
+				for(int i=0; i<dxl_.size(); i++) {
+					set_torque_enable(i, false);
+					writeMotorState(DCI_OPERATING_MODE, i, MOTOR_MODE_TORQUE);
+				}
+			}
+
+			doSyncWrite(DCI_GOAL_CURRENT, &motor_refs);
+		} else if( motor_ref_type == InterfaceJoint::CurrentReference::Velocity ) {
+			if(motor_ref_changed) {
+				ROS_INFO("Velocity control setpoint accepted");
+				for(int i=0; i<dxl_.size(); i++) {
+					set_torque_enable(i, false);
+					writeMotorState(DCI_OPERATING_MODE, i, MOTOR_MODE_VELOCITY);
+
+					ROS_WARN("--- HACK TO SET MOVEMENT PROFILE ---");
+					writeMotorState(DCI_PROFILE_ACCELERATION, i, 50);
+				}
+			}
+
+			doSyncWrite(DCI_GOAL_VELOCITY, &motor_refs);
+		} else if( motor_ref_type == InterfaceJoint::CurrentReference::Position ) {
+			if(motor_ref_changed) {
+				ROS_INFO("Position control setpoint accepted");
+				for(int i=0; i<dxl_.size(); i++) {
+					set_torque_enable(i, false);
+					writeMotorState(DCI_OPERATING_MODE, i, MOTOR_MODE_POSITION);
+
+					ROS_WARN("--- HACK TO SET MOVEMENT PROFILE ---");
+					writeMotorState(DCI_PROFILE_ACCELERATION, i, 50);
+					writeMotorState(DCI_PROFILE_VELOCITY, i, 50);
+				}
+			}
+
+			doSyncWrite(DCI_GOAL_POSITION, &motor_refs);
+		}
+	} else {
+		ROS_INFO_THROTTLE(2.0, "Waiting for motor command references to be set and consistent");
+	}
 }
 
+/*
 void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::ConstPtr& msg_in) {
 	//TODO: expect a stream?
 
@@ -383,4 +454,4 @@ void InterfaceDynamixel::callback_setpoints(const sensor_msgs::JointState::Const
 		ROS_WARN_THROTTLE(1.0, "Ignoring setpoint: %s", failure_reason.c_str());
 	}
 }
-
+*/
