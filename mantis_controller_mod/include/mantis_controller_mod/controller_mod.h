@@ -41,7 +41,7 @@ class ControllerMod {
 		MantisSolver solver_;
 
 		double cmd_throttle_;
-		Eigen::Vector3d uaug_f_;
+		Eigen::Vector4d uaug_f_;
 
 	public:
 		ControllerMod( void );

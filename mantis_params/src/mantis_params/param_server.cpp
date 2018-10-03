@@ -10,9 +10,10 @@ MantisParamServer::MantisParamServer( void ) :
 	nh_(),
 	pwm_min_(1000),
 	pwm_max_(2000),
-	motor_kv_(0.0),
-	rpm_thrust_m_(0.0),
-	rpm_thrust_c_(0.0),
+	//motor_kv_(0.0),
+	//rpm_thrust_m_(0.0),
+	//rpm_thrust_c_(0.0),
+	motor_thrust_max_(0.0),
 	motor_drag_max_(0.0),
 	la_(0.0),
 	body_num_(1) {
@@ -60,9 +61,10 @@ mantis_msgs::Parameters MantisParamServer::get_params( void ) {
 	p.pwm_min = pwm_min_;
 	p.pwm_max = pwm_max_;
 	p.base_arm_length = la_;
-	p.motor_kv = motor_kv_;
-	p.rpm_thrust_m = rpm_thrust_m_;
-	p.rpm_thrust_c = rpm_thrust_c_;
+	//p.motor_kv = motor_kv_;
+	//p.rpm_thrust_m = rpm_thrust_m_;
+	//p.rpm_thrust_c = rpm_thrust_c_;
+	p.motor_thrust_max = motor_thrust_max_;
 	p.motor_drag_max = motor_drag_max_;
 
 	p.bodies = bodies_;
@@ -83,9 +85,10 @@ void MantisParamServer::load( void ) {
 	ROS_INFO("--== Loading ControllerAug Parameters ==--");
 
 	nh_.param("motor/arm_len", la_, la_);
-	nh_.param("motor/kv", motor_kv_, motor_kv_);
-	nh_.param("motor/rpm_thrust_curve/m", rpm_thrust_m_, rpm_thrust_m_);
-	nh_.param("motor/rpm_thrust_curve/c", rpm_thrust_c_, rpm_thrust_c_);
+	//nh_.param("motor/kv", motor_kv_, motor_kv_);
+	//nh_.param("motor/rpm_thrust_curve/m", rpm_thrust_m_, rpm_thrust_m_);
+	//nh_.param("motor/rpm_thrust_curve/c", rpm_thrust_c_, rpm_thrust_c_);
+	nh_.param("motor/thrust_max", motor_thrust_max_, motor_thrust_max_);
 	nh_.param("motor/drag_max", motor_drag_max_, motor_drag_max_);
 
 	nh_.param("airframe", airframe_type_, airframe_type_);
@@ -144,8 +147,9 @@ void MantisParamServer::load( void ) {
 	//Output to terminal some information about the loaded paramters
 	ROS_INFO("motor:");
 	ROS_INFO("  len: %0.4f", la_);
-	ROS_INFO("  kv: %0.4f", motor_kv_);
-	ROS_INFO("  T = %0.4fxRPM + %0.4f", rpm_thrust_m_, rpm_thrust_c_);
+	//ROS_INFO("  kv: %0.4f", motor_kv_);
+	//ROS_INFO("  T = %0.4fxRPM + %0.4f", rpm_thrust_m_, rpm_thrust_c_);
+	ROS_INFO("  Tmax = %0.4f", motor_thrust_max_);
 	ROS_INFO("  Dmax = %0.4f", motor_drag_max_);
 
 	ROS_INFO("airframe_type: %s", airframe_type_.c_str());

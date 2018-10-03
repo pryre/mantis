@@ -51,6 +51,16 @@
 
 	<!-- MODEL SETUP -->
 
+	<node name="fake_battery" pkg="mantis_gazebo" type="fake_battery" respawn="false"
+	ns="$(arg model_name)" output="screen">
+		<remap from="~battery" to="state/battery"/>
+	</node>
+
+	<node name="hil_sensor" pkg="robin_gazebo" type="hil_sensor_node" respawn="false"
+	ns="$(arg model_name)" output="screen">
+		<remap from="hil/imu_data" to="/mavros/hil/imu_ned"/>
+	</node>
+
 	<param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
 
 	<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -model $(arg model_name) -param robot_description -z 1.0"/>

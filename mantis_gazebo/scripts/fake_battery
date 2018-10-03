@@ -1,0 +1,52 @@
+#!/usr/bin/env python2
+
+import sys
+from math import *
+
+import rospy
+from sensor_msgs.msg import BatteryState
+
+global pub_battery
+global battery_out
+global timer
+
+def timer_callback(e):
+	global pub_battery
+	global timer
+
+	if e.current_real > rospy.Time(0):
+		battery_out.header.stamp = e.current_real
+		pub_battery.publish(battery_out)
+
+def waypoint_pub():
+	global timer
+	global pub_battery
+	global battery_out
+	rospy.init_node('fake_battery', anonymous=False)
+	pub_battery = rospy.Publisher('~battery', BatteryState, queue_size=10)
+
+	battery_out = BatteryState()
+	battery_out.header.frame_id = "mantis_uav"
+	battery_out.current = float('nan')
+	battery_out.charge = float('nan')
+	battery_out.capacity = float('nan')
+	battery_out.design_capacity = float('nan')
+	battery_out.percentage = 1.0
+	battery_out.power_supply_status = battery_out.POWER_SUPPLY_STATUS_DISCHARGING
+	battery_out.power_supply_health = battery_out.POWER_SUPPLY_HEALTH_GOOD
+	battery_out.power_supply_technology = battery_out.POWER_SUPPLY_TECHNOLOGY_LIPO
+	battery_out.voltage = 12.6
+	battery_out.cell_voltage = [4.2,4.2,4.2]
+	battery_out.location = "PLUG0";
+	battery_out.serial_number = "00000001"
+
+	rospy.loginfo("Sending battery data...")
+	timer = rospy.Timer(rospy.Duration(1.0/5.0), timer_callback)
+
+	rospy.spin()
+
+if __name__ == '__main__':
+	try:
+		waypoint_pub()
+	except rospy.ROSInterruptException:
+		pass

@@ -8,6 +8,14 @@
 
 	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_params_quad.yaml"/>
 
+	<!-- Robin Gazebo plugin specific parameters-->
+	<group ns="/mantis_uav">
+		<param name="prop_layout" value="quad_x4"/>
+		<param name="base_arm_length" value="0.225"/>
+	</group>
+	<remap from="/$(arg model_name)/command/motor_pwm" to="/mavros/rc/out" />
+	<remap from="/$(arg model_name)/state/pose" to="/mavros/mocap/pose"/>
+
 	<node pkg="mantis_params" type="mantis_params_node" name="mantis_params"
 	ns="/mantis_uav" clear_params="true" output="screen"/>
 
@@ -17,6 +25,7 @@
 		<param name="use_odom_angular_velocity" value="false" />
 
 		<remap from="state/joints" to="joint_states" />
+		<remap from="state/mav_state" to="/mavros/state" />
 	</node>
 
 	<!-- visualization -->

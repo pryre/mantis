@@ -1,5 +1,11 @@
 <?xml version='1.0'?>
 <launch>
+	<arg name="arm" default="false"/>
+
+	<group if="$(arg arm)">
+		<node pkg="rosservice" type="rosservice" name="arm_system" args="call --wait /mantis_uav/arm/motors '{arm: $(arg arm)}'"/>
+	</group>
+
 	<!-- PATH PLANNING -->
 	<node pkg="contrail" type="converter_waypoints_path" name="wp_converter" clear_params="true"
 	ns="mantis_uav" output="screen">
@@ -37,12 +43,17 @@
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<rosparam command="load" file="$(find mantis_description)/config/mavel_sim_params.yaml"/>
 
-		<remap from="~command/attitude" to="/mavros/setpoint_raw/attitude"/>
+		<remap from="~command/attitude" to="command/attitude"/>
 		<remap from="~state/odometry" to="state/odom"/>
-		<remap from="~state/mav_state" to="/mavros/state"/>
+		<remap from="~state/mav_state" to="state/mav_state"/>
 	</node>
 
 	<!-- LOW LEVEL CONTROL -->
+	<node name="controller_acro" pkg="mantis_controller_acro" type="mantis_controller_acro_node"
+	output="screen" ns="/mantis_uav">
+		<rosparam command="load" file="$(find mantis_controller_acro)/launch/acro_params.yaml"/>
+	</node>
+
 	<node pkg="mantis_controller_mod" type="mantis_controller_mod_node" name="controller_mod"
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />
@@ -54,7 +65,7 @@
 		<param name="control_settings/coriolis_compensation" value="true" />
 		<param name="control_settings/reference_feedback" value="true" />
 
-		<remap from="~command/attitude" to="/mavros/setpoint_raw/attitude" />
-		<remap from="~output/normalized_payload_torque" to="/mavros/actuator_control" />
+		<remap from="~command/attitude" to="command/attitude" />
+		<remap from="~output/normalized_payload_torque" to="command/force_compensation" />
 	</node>
 </launch>

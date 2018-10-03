@@ -18,7 +18,6 @@
 	<gazebo>
 		<plugin name="mantis_gazebo_safety" filename="libmantis_gazebo_safety.so"/>
 	</gazebo>
- -->
 
 	<gazebo>
 		<plugin name="mantis_ball_grasp" filename="libmantis_gazebo_ball_grasp.so"/>
@@ -26,6 +25,10 @@
 
 	<gazebo>
 		<plugin name="mantis_gazebo_plugin" filename="libmantis_gazebo_plugin.so"/>
+	</gazebo>
+ -->
+	<gazebo>
+		<plugin name="robin_gazebo_plugin" filename="librobin_gazebo_plugin.so"/>
 	</gazebo>
 
 	<gazebo>

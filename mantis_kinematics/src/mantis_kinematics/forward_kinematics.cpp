@@ -84,6 +84,7 @@ ForwardKinematics::ForwardKinematics() :
 			}
 		}
 
+		/*
 		//Propeller links
 		tf_props.resize(p_.motor_num());
 		Eigen::Vector3d arm = Eigen::Vector3d(p_.base_arm_length(), 0.0, 0.046);
@@ -142,7 +143,7 @@ ForwardKinematics::ForwardKinematics() :
 		}
 
 		timer_prop_viz_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ForwardKinematics::callback_props, this );
-
+		*/
 		ROS_INFO("Forward kinematics running!");
 	} else {
 		ros::shutdown();

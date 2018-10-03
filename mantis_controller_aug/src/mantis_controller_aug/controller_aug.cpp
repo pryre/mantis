@@ -306,9 +306,10 @@ void ControllerAug::callback_low_level(const ros::TimerEvent& e) {
 		Eigen::Vector3d abz_accel = az_scale*body_z;
 
 		//Calculate the desired amount of thrust to meet the accel vector
-		double rpm_max = p_.motor_kv() * s_.voltage();	//Get the theoretical maximum rpm at the current battery voltage
-		double thrust_single = p_.rpm_thrust_m() * rpm_max + p_.rpm_thrust_c();	//Use the RPM to calculate maximum thrust
-		double kT = 1.0 / (p_.motor_num() * thrust_single);
+		//double rpm_max = p_.motor_kv() * s_.voltage();	//Get the theoretical maximum rpm at the current battery voltage
+		//double thrust_single = p_.rpm_thrust_m() * rpm_max + p_.rpm_thrust_c();	//Use the RPM to calculate maximum thrust
+		//double kT = 1.0 / (p_.motor_num() * thrust_single);
+		double kT = 1.0 / (p_.motor_num() * p_.motor_thrust_max());
 
 		//Build the normalized thrust and rotational accel input vector
 		// F_Treq = mass * accel_req

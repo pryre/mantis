@@ -13,6 +13,7 @@
 #include <iostream>
 
 #define CONST_GRAV 9.80665
+#define CONST_ACTC_ADD 1
 
 ControllerMod::ControllerMod() :
 	nh_(),
@@ -33,8 +34,6 @@ ControllerMod::ControllerMod() :
 	nhp_.param("estimator_rate", param_est_rate_, param_est_rate_);
 
 	dyncfg_control_settings_.setCallback(boost::bind(&ControllerMod::callback_cfg_control_settings, this, _1, _2));
-
-	uaug_f_ = Eigen::Vector3d::Zero();
 
 	//Wait here for parameters to be loaded
 	if( p_.wait_for_params() && s_.wait_for_state() ) {
@@ -86,7 +85,7 @@ void ControllerMod::callback_est(const ros::TimerEvent& e) {
 
 	//==-- Calculate forces induced by the arm
 	Eigen::VectorXd tau = Eigen::VectorXd::Zero(solver_.num_states());
-	Eigen::Vector3d uaug_out = Eigen::Vector3d::Zero();
+	Eigen::VectorXd uaug_out;
 
 	if(param_force_compensation_) {
 		double kT = 0.0;
@@ -109,12 +108,20 @@ void ControllerMod::callback_est(const ros::TimerEvent& e) {
 			solved = solver_.solve_inverse_dynamics(tau, ua);
 
 			if(solved) {
+				/*
 				//Normalize and add in the augmentation force calcs
 				Eigen::VectorXd uaug(3);
 				uaug(0) = tau(3)*ktx;//roll accel compensation
 				uaug(1) = tau(4)*kty;//pitch accel compensation
 				uaug(2) = tau(5)*ktz;//yaw accel compensation
+				*/
+				Eigen::Vector4d cforces;
+				cforces << 0.0, tau(3)*ktx, tau(4)*kty, tau(5)*ktz;
+				Eigen::VectorXd uaug = p_.get_mixer()*cforces;
 
+				if( uaug_f_.size() != uaug.size() ) {
+					uaug_f_ = Eigen::VectorXd::Zero( uaug.size() );
+				}
 				//Low level filter to help reduce issues caused by low level oscilations in the other controllers
 				uaug_f_ = param_force_comp_alpha_*uaug + (1.0-param_force_comp_alpha_)*uaug_f_;
 
@@ -149,12 +156,13 @@ void ControllerMod::callback_est(const ros::TimerEvent& e) {
 	msg_np_force_out.header.frame_id = param_model_id_;
 
 	//Set the message to be a force input only message in the body frame
-	msg_np_force_out.group_mix = msg_np_force_out.PX4_MIX_PAYLOAD;
+	msg_np_force_out.group_mix = CONST_ACTC_ADD;
 
 	//Put in the force input
-	msg_np_force_out.controls[0] = uaug_out(0);
-	msg_np_force_out.controls[1] = uaug_out(1);
-	msg_np_force_out.controls[2] = uaug_out(2);
+	if(solved) {
+		for(int i=0; i<uaug_out.size(); i++)
+			msg_np_force_out.controls[i] = uaug_out(i);
+	}
 
 	//Publish!
 	pub_np_force_.publish(msg_np_force_out);

@@ -63,9 +63,10 @@ class MantisParamClient {
 
 		const double& base_arm_length( void );
 		const int32_t& motor_num( void );
-		const double& motor_kv( void );
-		const double& rpm_thrust_m( void );
-		const double& rpm_thrust_c( void );
+		//const double& motor_kv( void );
+		//const double& rpm_thrust_m( void );
+		//const double& rpm_thrust_c( void );
+		const double& motor_thrust_max( void );
 		const double& motor_drag_max( void );
 
 		int get_body_num( void );

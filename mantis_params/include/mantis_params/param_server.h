@@ -24,10 +24,10 @@ class MantisParamServer {
 
 		double la_;
 		//int motor_num_;
-		//double motor_thrust_max;
-		double motor_kv_;
-		double rpm_thrust_m_;
-		double rpm_thrust_c_;
+		//double motor_kv_;
+		//double rpm_thrust_m_;
+		//double rpm_thrust_c_;
+		double motor_thrust_max_;
 		double motor_drag_max_;
 
 		int body_num_;

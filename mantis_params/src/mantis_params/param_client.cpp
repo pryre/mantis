@@ -53,9 +53,10 @@ void MantisParamClient::callback_params(const mantis_msgs::Parameters::ConstPtr 
 		if( (msg_in->pwm_min != p_.pwm_min) ||
 			(msg_in->pwm_max != p_.pwm_max) ||
 			(msg_in->base_arm_length != p_.base_arm_length) ||
-			(msg_in->motor_kv != p_.motor_kv) ||
-			(msg_in->rpm_thrust_m != p_.rpm_thrust_m) ||
-			(msg_in->rpm_thrust_c != p_.rpm_thrust_c) ||
+			//(msg_in->motor_kv != p_.motor_kv) ||
+			//(msg_in->rpm_thrust_m != p_.rpm_thrust_m) ||
+			//(msg_in->rpm_thrust_c != p_.rpm_thrust_c) ||
+			(msg_in->motor_thrust_max != p_.motor_thrust_max) ||
 			(msg_in->motor_drag_max != p_.motor_drag_max) ) {
 
 			parametric_change = true;
@@ -161,7 +162,7 @@ const double& MantisParamClient::base_arm_length( void ) {
 const int32_t& MantisParamClient::motor_num( void ) {
 	return motor_num_;
 }
-
+/*
 const double& MantisParamClient::motor_kv( void ) {
 	return p_.motor_kv;
 }
@@ -172,6 +173,11 @@ const double& MantisParamClient::rpm_thrust_m( void ) {
 
 const double& MantisParamClient::rpm_thrust_c( void ) {
 	return p_.rpm_thrust_c;
+}
+*/
+
+const double& MantisParamClient::motor_thrust_max( void ) {
+	return p_.motor_thrust_max;
 }
 
 const double& MantisParamClient::motor_drag_max( void ) {
