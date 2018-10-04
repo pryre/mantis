@@ -373,7 +373,7 @@ void InterfaceDynamixel::callback_timer(const ros::TimerEvent& e) {
 			doSyncWrite(DCI_GOAL_POSITION, &motor_refs);
 		}
 	} else {
-		ROS_INFO_THROTTLE(2.0, "Waiting for motor command references to be set and consistent");
+		ROS_WARN_THROTTLE(10.0, "Waiting for motor command references to be set and consistent");
 	}
 }
 

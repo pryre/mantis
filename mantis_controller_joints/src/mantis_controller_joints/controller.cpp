@@ -8,6 +8,8 @@
 
 #include <string>
 
+namespace MantisControllerJoints {
+
 Controller::Controller( const ros::NodeHandle& nh, std::string joint_name, double traj_timeout ) :
 	nh_(ros::NodeHandle(nh, joint_name)),
 	have_reference_(false),
@@ -94,4 +96,6 @@ double Controller::output( void ) {
 
 std::string Controller::name( void ) {
 	return name_;
+}
+
 }

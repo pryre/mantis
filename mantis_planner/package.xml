@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>mantis_router_joints</name>
+  <name>mantis_planner</name>
   <version>0.0.0</version>
-  <description>The mantis_router_joints package</description>
+  <description>The mantis_planner package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -42,19 +42,12 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>roscpp</build_depend>
-  <build_depend>actionlib_msgs</build_depend>
-  <build_depend>mantis_msgs</build_depend>
-  <build_depend>mantis_params</build_depend>
-  <build_depend>tinyspline_ros</build_depend>
-  <build_depend>actionlib</build_depend>
-  <build_depend>message_generation</build_depend>
+  <build_depend>mantis_router_base</build_depend>
+  <build_depend>mantis_router_joints</build_depend>
 
   <run_depend>roscpp</run_depend>
-  <run_depend>actionlib_msgs</run_depend>
-  <run_depend>mantis_msgs</run_depend>
-  <run_depend>mantis_params</run_depend>
-  <run_depend>tinyspline_ros</run_depend>
-  <run_depend>actionlib</run_depend>
+  <build_depend>mantis_router_base</build_depend>
+  <build_depend>mantis_router_joints</build_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

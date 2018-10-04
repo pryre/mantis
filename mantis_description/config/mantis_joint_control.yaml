@@ -12,17 +12,29 @@
 #        max: 360
 #    motor_slave:
 #        id: 7
+#
+#elbow_controller:
+#    controller:
+#        package: dynamixel_controllers
+#        module: joint_torque_controller
+#        type: JointTorqueController
+#    joint_name: elbow_joint
+#    joint_speed: 0.7
+#    motor:
+#        id: 1
+#        init: 0
+#        min: -512
+#        max: 512
 
-elbow_controller:
-    controller:
-        package: dynamixel_controllers
-        module: joint_torque_controller
-        type: JointTorqueController
-    joint_name: elbow_joint
-    joint_speed: 0.7
-    motor:
-        id: 1
-        init: 0
-        min: -512
-        max: 512
-
+joint_shoulder:
+  p: 1.25
+  i: 0.0
+  d: 0.0
+  min: -0.5
+  max: 0.5
+joint_elbow:
+  p: 1.25
+  i: 0.0
+  d: 0.0
+  min: -0.5
+  max: 0.5

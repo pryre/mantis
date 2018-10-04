@@ -12,11 +12,11 @@ double InterfaceDynamixel::convert_value_torque(int value, int motor_number) {
 
 
 int InterfaceDynamixel::convert_velocity_value(double velocity, int motor_number) {
-	return (int)(velocity * 2 * dxl_[motor_number].getVelocityToValueRatio());
+	return (int)(velocity * dxl_[motor_number].getVelocityToValueRatio());
 }
 
 double InterfaceDynamixel::convert_value_velocity(int value, int motor_number) {
-	return ( (double)value / 2.0 ) / dxl_[motor_number].getVelocityToValueRatio();
+	return ( (double)value ) / dxl_[motor_number].getVelocityToValueRatio();
 }
 
 int InterfaceDynamixel::convert_radian_value(double radian, int motor_number) {

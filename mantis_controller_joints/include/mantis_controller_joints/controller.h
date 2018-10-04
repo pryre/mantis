@@ -9,6 +9,8 @@
 
 #include <string>
 
+namespace MantisControllerJoints {
+
 class Controller {
 	private:
 		ros::NodeHandle nh_;
@@ -48,3 +50,5 @@ class Controller {
 		double ref_vel( void );
 		std::string name( void );
 };
+
+}

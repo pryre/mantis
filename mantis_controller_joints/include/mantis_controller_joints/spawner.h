@@ -2,31 +2,39 @@
 
 #include <ros/ros.h>
 
+#include <mantis_params/param_client.h>
+#include <mantis_state/state_client.h>
+
 #include <mantis_controller_joints/controller.h>
 
-#include <sensor_msgs/JointState.h>
 #include <vector>
+
+namespace MantisControllerJoints {
 
 class Spawner {
 	private:
 		ros::NodeHandle nh_;
 		ros::NodeHandle nhp_;
 		ros::Timer timer_;
-		ros::Subscriber sub_state_;
-		ros::Publisher pub_goal_;
 
-		std::vector<Controller*> controllers_;
+		MantisParamClient p_;
+		MantisStateClient s_;
 
+		ros::Time spawn_stamp_;
+		double traj_timeout_;
 		double param_update_rate_;
 
-		sensor_msgs::JointState joint_states_;
-		bool got_states_;
+		std::vector<MantisControllerJoints::Controller*> controllers_;
 
 	public:
-		Spawner( const std::vector<std::string> &c_names );
+		Spawner( void );
 
 		~Spawner( void );
 
+		void configure_controllers( void );
+		void remove_controllers( void );
+
 		void callback_timer(const ros::TimerEvent& e);
-		void callback_state(const sensor_msgs::JointState::ConstPtr& msg_in);
 };
+
+}

@@ -4,14 +4,9 @@
 #include <string>
 
 int main(int argc, char** argv) {
-	ros::init(argc, argv, "controller_joints");
+	ros::init(argc, argv, "mantis_controller_joints");
 
-	std::vector<std::string> c_names;
-
-	for(int i=0; i<(argc - 1); i++)
-		c_names.push_back(std::string(argv[i+1]));
-
-	Spawner sp(c_names);
+	MantisControllerJoints::Spawner sp;
 
 	ros::spin();
 

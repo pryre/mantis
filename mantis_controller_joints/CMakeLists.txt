@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   mantis_msgs
+  mantis_params
+  mantis_state
   dynamic_reconfigure
 )
 
