@@ -17,19 +17,13 @@
 		<param name="control_settings/accurate_end_tracking" value="true" />
 		<param name="control_settings/reference_feedback" value="true" />
 
-		<!--remap from="~reference/path" to="path"/-->
 		<remap from="~output/triplet" to="mavel/reference/triplet"/>
-		<!--remap from="~output/traj" to="mavel/reference/traj"/-->
 	</node>
 
 	<node pkg="mantis_router_joints" type="mantis_router_joints_node" name="router_joints" clear_params="true"
 	ns="mantis_uav" output="screen">
-		<rosparam command="load" file="$(find mantis_router_joints)/launch/initial_joints.yaml"/>
-
-		<remap from="~reference/discrete_progress" to="router_base/feedback/contrail/discrete_progress"/>
-		<remap from="~reference/spline" to="router_base/reference/contrail/spline"/>
-		<remap from="~command/joint0" to="joint_position_controller/joint_shoulder/reference/traj"/>
-		<remap from="~command/joint1" to="joint_position_controller/joint_elbow/reference/traj"/>
+		<remap from="~joint_shoulder/command" to="joint_position_controller/joint_shoulder/reference/traj"/>
+		<remap from="~joint_elbow/command" to="joint_position_controller/joint_elbow/reference/traj"/>
 	</node>
 
 	<!-- HIGH LEVEL CONTROL -->
@@ -40,6 +34,15 @@
 		<remap from="~command/attitude" to="/mavros/setpoint_raw/attitude"/>
 		<remap from="~state/odometry" to="state/odom"/>
 		<remap from="~state/mav_state" to="/mavros/state"/>
+	</node>
+
+	<node name="joint_position_controller" pkg="mantis_controller_joints" type="mantis_controller_joints_node"
+	ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="update_rate" value="25.0" />
+		<rosparam command="load" file="$(find mantis_description)/config/mantis_joint_control.yaml"/>
+
+		<remap from="~joint_shoulder/command" to="shoulder_velocity_controller/command"/>
+		<remap from="~joint_elbow/command" to="elbow_velocity_controller/command"/>
 	</node>
 
 	<!-- LOW LEVEL CONTROL -->

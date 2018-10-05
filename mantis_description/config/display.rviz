@@ -10,7 +10,7 @@ Panels:
         - /Pose1
         - /RobotModel1
       Splitter Ratio: 0.363453805
-    Tree Height: 790
+    Tree Height: 438
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -289,10 +289,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.864798784
+      Pitch: 0.719798923
       Target Frame: mantis_uav
       Value: ThirdPersonFollower (rviz)
-      Yaw: 4.74501562
+      Yaw: 5.02501678
     Saved: ~
 Window Geometry:
   Displays:
@@ -312,5 +312,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 958
-  X: 951
+  X: 949
   Y: 0
