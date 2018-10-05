@@ -46,6 +46,17 @@ void Joint::set_action_goal( void ) {
 
 		spline_ = tinyspline::Utils::interpolateCubic(&goal.positions, 1);
 
+		//Smooth out control points to give a nicer fit
+		std::vector<tinyspline::real> ctrlp = spline_.controlPoints();
+		ROS_ASSERT_MSG( ctrlp.size() >= 4, "Number of control points is <4 (%i)", (int)ctrlp.size());
+		ctrlp.at(1) = ctrlp.front();
+		ctrlp.at(ctrlp.size() - 2) = ctrlp.back();
+		spline_.setControlPoints(ctrlp);
+		for(int i=0; i<ctrlp.size(); i++) {
+			ROS_INFO("%s(i): %0.4f", name_.c_str(), ctrlp[i]);
+		}
+		splined_ = spline_.derive();
+
 		spline_pos_start_ = goal.positions.front();
 		spline_pos_end_ = goal.positions.back();
 
@@ -62,10 +73,12 @@ void Joint::get_spline_reference(double& pos, double& vel, const double u) const
 	// x values need to be scaled down in extraction as well.
 	ROS_ASSERT_MSG((u >= 0.0) && (u <= 1.0), "Invalid time point given for spline interpolation (0.0 <= t <= 1.0)");
 
-	std::vector<tinyspline::real> v = spline_(u).result();
+	std::vector<tinyspline::real> vp = spline_(u).result();
+	std::vector<tinyspline::real> vv = splined_(u).result();
 
-	pos = v[0];
-
+	pos = vp[0];
+	vel = vv[0];
+	/*
 	//XXX: Manually derrive over a short period as proper derivative can't be calculated using this library
 	double dt = 0.02;
 	//Shorten time to ensure that 0.0<=u<=1.0 is preserved
@@ -78,6 +91,7 @@ void Joint::get_spline_reference(double& pos, double& vel, const double u) const
 	std::vector<tinyspline::real> vdh = spline_(uh).result();
 
 	vel = (vdh[0] - vdl[0]) / (2*dt);
+	*/
 }
 
 void Joint::update( ros::Time tc ) {

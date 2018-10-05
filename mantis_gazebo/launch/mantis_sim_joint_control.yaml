@@ -8,22 +8,8 @@ mantis_uav:
   shoulder_velocity_controller:
     type: effort_controllers/JointVelocityController
     joint: joint_shoulder
-    pid: {p: 0.25, i: 0.2, d: 0.0, i_clamp_min: -1.0, i_clamp_max: 1.0}
+    pid: {p: 0.35, i: 1.8, d: 0.0, i_clamp_min: -1.0, i_clamp_max: 1.0}
   elbow_velocity_controller:
     type: effort_controllers/JointVelocityController
     joint: joint_elbow
-    pid: {p: 0.25, i: 0.2, d: 0.0, i_clamp_min: -1.0, i_clamp_max: 1.0}
-
-  joint_position_controller:
-    joint_shoulder:
-      p: 2.5
-      i: 0.0
-      d: 0.0
-      min: -1.6
-      max: 1.6
-    joint_elbow:
-      p: 2.5
-      i: 0.0
-      d: 0.0
-      min: -1.6
-      max: 1.6
+    pid: {p: 0.35, i: 1.8, d: 0.0, i_clamp_min: -1.0, i_clamp_max: 1.0}

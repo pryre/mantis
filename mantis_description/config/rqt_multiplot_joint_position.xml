@@ -35,11 +35,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mantis_uav/state/joints</topic>
-                                    <type>sensor_msgs/JointState</type>
+                                    <topic>/mantis_uav/state</topic>
+                                    <type>mantis_msgs/State</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>position/1</field>
+                                    <field>r/1</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -48,8 +48,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mantis_uav/state/joints</topic>
-                                    <type>sensor_msgs/JointState</type>
+                                    <topic>/mantis_uav/state</topic>
+                                    <type>mantis_msgs/State</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -125,6 +125,57 @@
                             <subscriber_queue_size>100</subscriber_queue_size>
                             <title>Reference</title>
                         </curve_1>
+                        <curve_2>
+                            <axes>
+                                <x_axis>
+                                    <field></field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/mantis_uav/joint_position_controller/joint_elbow/reference/traj</topic>
+                                    <type>mantis_msgs/JointTrajectoryGoal</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>velocity</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/mantis_uav/joint_position_controller/joint_elbow/reference/traj</topic>
+                                    <type>mantis_msgs/JointTrajectoryGoal</type>
+                                </y_axis>
+                            </axes>
+                            <color>
+                                <custom_color>#00aa00</custom_color>
+                                <type>1</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>30</time_frame_length>
+                                <type>3</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>1</pen_style>
+                                <pen_width>1</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>0</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>Reference Vel</title>
+                        </curve_2>
                     </curves>
                     <legend>
                         <visible>true</visible>
@@ -213,11 +264,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mantis_uav/state/joints</topic>
-                                    <type>sensor_msgs/JointState</type>
+                                    <topic>/mantis_uav/state</topic>
+                                    <type>mantis_msgs/State</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>position/0</field>
+                                    <field>r/0</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -226,8 +277,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mantis_uav/state/joints</topic>
-                                    <type>sensor_msgs/JointState</type>
+                                    <topic>/mantis_uav/state</topic>
+                                    <type>mantis_msgs/State</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -252,6 +303,57 @@
                             <subscriber_queue_size>100</subscriber_queue_size>
                             <title>State</title>
                         </curve_1>
+                        <curve_2>
+                            <axes>
+                                <x_axis>
+                                    <field></field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/mantis_uav/joint_position_controller/joint_shoulder/reference/traj</topic>
+                                    <type>mantis_msgs/JointTrajectoryGoal</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>velocity</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/mantis_uav/joint_position_controller/joint_shoulder/reference/traj</topic>
+                                    <type>mantis_msgs/JointTrajectoryGoal</type>
+                                </y_axis>
+                            </axes>
+                            <color>
+                                <custom_color>#00aa00</custom_color>
+                                <type>1</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>30</time_frame_length>
+                                <type>3</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>1</pen_style>
+                                <pen_width>1</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>0</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>Reference Vel</title>
+                        </curve_2>
                     </curves>
                     <legend>
                         <visible>true</visible>

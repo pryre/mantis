@@ -28,6 +28,7 @@ class Joint {
 		double spline_pos_start_;
 		double spline_pos_end_;
 		tinyspline::BSpline spline_;
+		tinyspline::BSpline splined_;
 
 		mantis_msgs::JointTrajectoryGoal output_;
 
