@@ -17,7 +17,7 @@ if __name__ == '__main__':
 	goal = JointMovementGoal()
 	goal.start = rospy.Time.now() + rospy.Duration.from_sec(2)
 	goal.duration = rospy.Duration.from_sec(10)
-	goal.positions = [0.0, 1.0]
+	goal.positions = [0.0, 1.0, -1.0, 0.0]
 
 	client_elbow.send_goal(goal)
 	client_shoulder.send_goal(goal)
@@ -27,13 +27,13 @@ if __name__ == '__main__':
 	result_elbow = client_elbow.get_result()
 	result_shoulder = client_shoulder.get_result()
 
-	goal = JointMovementGoal()
-	goal.start = rospy.Time.now() + rospy.Duration.from_sec(1)
-	goal.duration = rospy.Duration.from_sec(5)
-	goal.positions = [1.0, 0.0]
+	#goal = JointMovementGoal()
+	#goal.start = rospy.Time.now() + rospy.Duration.from_sec(1)
+	#goal.duration = rospy.Duration.from_sec(5)
+	#goal.positions = [result_elbow.position_final, 0.0]
 
-	client_elbow.send_goal(goal)
-	client_shoulder.send_goal(goal)
+	#client_elbow.send_goal(goal)
+	#client_shoulder.send_goal(goal)
 
-	client_elbow.wait_for_result()
-	client_shoulder.wait_for_result()
+	#client_elbow.wait_for_result()
+	#client_shoulder.wait_for_result()

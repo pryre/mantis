@@ -14,6 +14,7 @@ Joint::Joint( const ros::NodeHandle& nh, std::string joint_name ) :
 	spline_start_(0),
 	spline_duration_(0),
 	spline_in_progress_(false),
+	use_dirty_derivative_(false),
 	as_(nh, joint_name, false) {
     //as_(nh, joint_name, boost::bind(&Joint::action_goal_cb, this, _1), false) {
 
@@ -55,7 +56,14 @@ void Joint::set_action_goal( void ) {
 		for(int i=0; i<ctrlp.size(); i++) {
 			ROS_INFO("%s(i): %0.4f", name_.c_str(), ctrlp[i]);
 		}
-		splined_ = spline_.derive();
+
+		try {
+			splined_ = spline_.derive();
+			use_dirty_derivative_ = false;
+		}
+		catch(std::runtime_error) {
+			use_dirty_derivative_ = true;
+		}
 
 		spline_pos_start_ = goal.positions.front();
 		spline_pos_end_ = goal.positions.back();
@@ -74,24 +82,25 @@ void Joint::get_spline_reference(double& pos, double& vel, const double u) const
 	ROS_ASSERT_MSG((u >= 0.0) && (u <= 1.0), "Invalid time point given for spline interpolation (0.0 <= t <= 1.0)");
 
 	std::vector<tinyspline::real> vp = spline_(u).result();
-	std::vector<tinyspline::real> vv = splined_(u).result();
-
 	pos = vp[0];
-	vel = vv[0];
-	/*
-	//XXX: Manually derrive over a short period as proper derivative can't be calculated using this library
-	double dt = 0.02;
-	//Shorten time to ensure that 0.0<=u<=1.0 is preserved
-	double ul = u - dt;
-	double uh = u + dt;
-	ul = (ul >= 0.0) ? ul : 0.0;
-	uh = (uh <= 1.0) ? uh : 1.0;
 
-	std::vector<tinyspline::real> vdl = spline_(ul).result();
-	std::vector<tinyspline::real> vdh = spline_(uh).result();
+	if(!use_dirty_derivative_) {
+		std::vector<tinyspline::real> vv = splined_(u).result();
+		vel = vv[0];
+	} else {
+		//XXX: Manually derrive over a short period as proper derivative can't be calculated using this library
+		double dt = 0.02;
+		//Shorten time to ensure that 0.0<=u<=1.0 is preserved
+		double ul = u - dt;
+		double uh = u + dt;
+		ul = (ul >= 0.0) ? ul : 0.0;
+		uh = (uh <= 1.0) ? uh : 1.0;
 
-	vel = (vdh[0] - vdl[0]) / (2*dt);
-	*/
+		std::vector<tinyspline::real> vdl = spline_(ul).result();
+		std::vector<tinyspline::real> vdh = spline_(uh).result();
+
+		vel = (vdh[0] - vdl[0]) / (2*dt);
+	}
 }
 
 void Joint::update( ros::Time tc ) {

@@ -49,7 +49,7 @@
 
 	<!-- Controller Setup -->
 	<rosparam file="$(find mantis_gazebo)/launch/mantis_sim_joint_control.yaml" command="load"/>
-
+	<!-- XXX: Comment out this remapping to use sim to assist with arm bench test -->
 	<remap from="/mantis_uav/joint_states" to="/mantis_uav/state/joints" />
 
 	<node name="controller_spawner" pkg="controller_manager" type="controller_manager" respawn="false"
