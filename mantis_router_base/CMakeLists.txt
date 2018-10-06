@@ -15,8 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   mantis_state
   dynamic_reconfigure
   mantis_kinematics
-  tinyspline_ros
-  actionlib
+  contrail
 )
 
 ## System dependencies are found with CMake's conventions
@@ -66,18 +65,18 @@ find_package(Eigen3 REQUIRED)
 # )
 
 ## Generate actions in the 'action' folder
-add_action_files(
-  FILES
-  BaseMovement.action
-)
+#add_action_files(
+#  FILES
+#  BaseMovement.action
+#)
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  geometry_msgs
-  actionlib_msgs
-)
+#generate_messages(
+#  DEPENDENCIES
+#  std_msgs
+#  geometry_msgs
+#  actionlib_msgs
+#)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##

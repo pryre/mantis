@@ -4,7 +4,6 @@
 #include <mantis_description/se_tools.h>
 #include <mantis_router_base/mantis_router_base.h>
 #include <mantis_router_base/ControlParamsConfig.h>
-#include <mantis_router_base/BaseMovementAction.h>
 
 #include <mavros_msgs/PositionTarget.h>
 #include <nav_msgs/Odometry.h>
@@ -21,14 +20,10 @@ MantisRouterBase::MantisRouterBase() :
 	p_(nh_),
 	s_(nh_, p_),
 	solver_(p_, s_),
+	contrail_(nhp_),
 	param_frame_id_("map"),
 	param_model_id_("mantis_uav"),
 	param_path_rate_(50.0),
-	spline_start_(0),
-	spline_duration_(0),
-	spline_in_progress_(false),
-	use_dirty_derivative_(false),
-	as_(nhp_, "action", false),
 	dyncfg_control_settings_(ros::NodeHandle(nhp_, "control_settings")) {
 
 	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
@@ -44,9 +39,7 @@ MantisRouterBase::MantisRouterBase() :
 		pub_pose_base_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/base", 10);
 		pub_pose_track_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/track", 10);
 
-		timer_path_ = nhp_.createTimer(ros::Duration(1.0/param_path_rate_), &MantisRouterBase::callback_path, this );
-
-		as_.start();
+		timer_ = nhp_.createTimer(ros::Duration(1.0/param_path_rate_), &MantisRouterBase::callback_timer, this );
 
 		ROS_INFO_ONCE("Augmented path control loaded!");
 	} else {
@@ -92,215 +85,11 @@ Eigen::Vector3d MantisRouterBase::calc_goal_base_velocity(const Eigen::Vector3d 
 	return gev_sp - Ve;
 }
 
-void MantisRouterBase::set_action_goal( void ) {
-	mantis_router_base::BaseMovementGoal goal = *(as_.acceptNewGoal());
-
-	if( (goal.duration > ros::Duration(0) ) &&
-		(goal.positions.size() >= 2) &&
-		(goal.yaws.size() >= 2) ) {
-
-		spline_in_progress_ = true;
-
-		spline_start_ = ( goal.start == ros::Time(0) ) ? ros::Time::now() : goal.start;
-		spline_duration_ = goal.duration;
-
-		std::vector<double>positions_x;
-		std::vector<double>positions_y;
-		std::vector<double>positions_z;
-
-		for(int i=0; i<goal.positions.size(); i++) {
-			positions_x.push_back(goal.positions[i].x);
-			positions_y.push_back(goal.positions[i].y);
-			positions_z.push_back(goal.positions[i].z);
-		}
-		ROS_INFO("INTERP START");
-		spline_x_ = tinyspline::Utils::interpolateCubic(&positions_x, 1);
-		spline_y_ = tinyspline::Utils::interpolateCubic(&positions_y, 1);
-		spline_z_ = tinyspline::Utils::interpolateCubic(&positions_z, 1);
-		spline_r_ = tinyspline::Utils::interpolateCubic(&goal.yaws, 1);
-		ROS_INFO("INTERP END");
-
-		//Smooth out control points to give a nicer fit
-		std::vector<tinyspline::real> ctrlp_x = spline_x_.controlPoints();
-		std::vector<tinyspline::real> ctrlp_y = spline_y_.controlPoints();
-		std::vector<tinyspline::real> ctrlp_z = spline_z_.controlPoints();
-		std::vector<tinyspline::real> ctrlp_r = spline_r_.controlPoints();
-		ROS_ASSERT_MSG( ctrlp_x.size() >= 4, "Number of pos_x control points is <4 (%i)", (int)ctrlp_x.size());
-		ROS_ASSERT_MSG( ctrlp_y.size() >= 4, "Number of pos_y control points is <4 (%i)", (int)ctrlp_y.size());
-		ROS_ASSERT_MSG( ctrlp_z.size() >= 4, "Number of pos_z control points is <4 (%i)", (int)ctrlp_z.size());
-		ROS_ASSERT_MSG( ctrlp_r.size() >= 4, "Number of yaw control points is <4 (%i)", (int)ctrlp_r.size());
-
-		ctrlp_x.at(1) = ctrlp_x.front();
-		ctrlp_x.at(ctrlp_x.size() - 2) = ctrlp_x.back();
-		spline_x_.setControlPoints(ctrlp_x);
-		ctrlp_y.at(1) = ctrlp_y.front();
-		ctrlp_y.at(ctrlp_y.size() - 2) = ctrlp_y.back();
-		spline_y_.setControlPoints(ctrlp_y);
-		ctrlp_z.at(1) = ctrlp_z.front();
-		ctrlp_z.at(ctrlp_z.size() - 2) = ctrlp_z.back();
-		spline_z_.setControlPoints(ctrlp_z);
-		ctrlp_r.at(1) = ctrlp_r.front();
-		ctrlp_r.at(ctrlp_r.size() - 2) = ctrlp_r.back();
-		spline_r_.setControlPoints(ctrlp_r);
-
-		try {
-			spline_xd_ = spline_x_.derive();
-			spline_yd_ = spline_y_.derive();
-			spline_zd_ = spline_z_.derive();
-			spline_rd_ = spline_r_.derive();
-
-			use_dirty_derivative_ = false;
-		}
-		catch(std::runtime_error) {
-			use_dirty_derivative_ = true;
-		}
-
-		spline_pos_start_ = MDTools::vector_from_msg(goal.positions.front());
-		spline_pos_end_ = MDTools::vector_from_msg(goal.positions.back());
-		spline_rot_start_ = goal.yaws.front();
-		spline_rot_end_ = goal.yaws.back();
-
-		ROS_INFO( "Router Base: creating position spline connecting %i points", (int)goal.positions.size() );
-		ROS_INFO( "Router Base: creating rotation spline connecting %i points", (int)goal.yaws.size() );
-	} else {
-		spline_in_progress_ = false;
-		as_.setAborted();
-
-		ROS_ERROR( "Router Base: at least 2 positions/yaws must be specified (%i/%i), and duration must be >0 (%0.4f)", (int)goal.positions.size(), (int)goal.yaws.size(), goal.duration.toSec() );
-	}
-}
-
-void MantisRouterBase::get_spline_reference(tinyspline::BSpline& spline,
-											tinyspline::BSpline& splined,
-											double& pos,
-											double& vel,
-											const double u) {
-	// x values need to be scaled down in extraction as well.
-	ROS_ASSERT_MSG((u >= 0.0) && (u <= 1.0), "Invalid time point given for spline interpolation (0.0 <= t <= 1.0)");
-
-	std::vector<tinyspline::real> vp = spline(u).result();
-	pos = vp[0];
-
-	if(!use_dirty_derivative_) {
-		std::vector<tinyspline::real> vv = splined(u).result();
-		vel = vv[0];
-	} else {
-		//XXX: Manually derrive over a short period as proper derivative can't be calculated using this library
-		double dt = 0.02;
-		//Shorten time to ensure that 0.0<=u<=1.0 is preserved
-		double ul = u - dt;
-		double uh = u + dt;
-		ul = (ul >= 0.0) ? ul : 0.0;
-		uh = (uh <= 1.0) ? uh : 1.0;
-
-		std::vector<tinyspline::real> vdl = spline(ul).result();
-		std::vector<tinyspline::real> vdh = spline(uh).result();
-
-		vel = (vdh[0] - vdl[0]) / (2*dt);
-	}
-}
-
-bool MantisRouterBase::get_reference(Eigen::Vector3d &pos,
-									 Eigen::Vector3d &vel,
-									 double &rpos,
-									 double &rrate,
-									 const ros::Time tc) {
-	bool success = false;
-
-	//If a valid input has been received
-	if( spline_start_ > ros::Time(0) ) {
-		//If in progress, calculate the lastest reference
-		if( spline_in_progress_ ) {
-			if( tc < spline_start_ ) {
-				//Have no begun, stay at start position
-				pos = spline_pos_start_;
-				rpos = spline_rot_start_;
-				vel = Eigen::Vector3d::Zero();
-				rrate = 0.0;
-
-				mantis_router_base::BaseMovementFeedback feedback;
-				feedback.progress = -1.0;
-				feedback.position = MDTools::vector_from_eig(pos);
-				feedback.velocity = MDTools::vector_from_eig(vel);
-				feedback.yaw = rpos;
-				feedback.yawrate = rrate;
-
-				as_.publishFeedback(feedback);
-			} else if( tc <= (spline_start_ + spline_duration_) ) {
-				double t_norm = normalize((tc - spline_start_).toSec(), 0.0, spline_duration_.toSec());
-				double npx = 0.0;
-				double npy = 0.0;
-				double npz = 0.0;
-				double npr = 0.0;
-				double nvx = 0.0;
-				double nvy = 0.0;
-				double nvz = 0.0;
-				double nvr = 0.0;
-
-				get_spline_reference(spline_x_, spline_xd_, npx, nvx, t_norm);
-				get_spline_reference(spline_y_, spline_yd_, npy, nvy, t_norm);
-				get_spline_reference(spline_z_, spline_zd_, npz, nvz, t_norm);
-				get_spline_reference(spline_r_, spline_rd_, npr, nvr, t_norm);
-
-				pos = Eigen::Vector3d(npx,npy,npz);
-				vel = Eigen::Vector3d(nvx,nvy,nvz) / spline_duration_.toSec();
-				rpos = npr;
-				rrate = nvr / spline_duration_.toSec();
-
-				mantis_router_base::BaseMovementFeedback feedback;
-				feedback.progress = t_norm;
-				feedback.position = MDTools::vector_from_eig(pos);
-				feedback.velocity = MDTools::vector_from_eig(vel);
-				feedback.yaw = rpos;
-				feedback.yawrate = rrate;
-
-				as_.publishFeedback(feedback);
-			} else {
-				//We just finished, so send a result
-				pos = spline_pos_end_;
-				rpos = spline_rot_end_;
-				vel = Eigen::Vector3d::Zero();
-				rrate = 0.0;
-
-				mantis_router_base::BaseMovementResult result;
-				result.position_final = MDTools::vector_from_eig(pos);
-				result.yaw_final = rpos;
-				as_.setSucceeded(result);
-
-				spline_in_progress_ = false;
-				ROS_INFO( "Router Base: action finished" );
-			}
-		} else {
-			pos = spline_pos_end_;
-			rpos = spline_rot_end_;
-			vel = Eigen::Vector3d::Zero();
-			rrate = 0.0;
-		}
-
-		success = true;
-	}
-
-	return success;
-}
-
-void MantisRouterBase::callback_path(const ros::TimerEvent& e) {
+void MantisRouterBase::callback_timer(const ros::TimerEvent& e) {
 	double dt = (e.current_real - e.last_real).toSec();
 	bool success = false;
 
-	//Check for a new goal
-	if( as_.isNewGoalAvailable() ) {
-		set_action_goal();
-	}
-
-	// Check that preempt has not been requested by the client
-	if( as_.isPreemptRequested() ) {
-		ROS_INFO("Router Base: Preempted");
-		as_.setPreempted();
-		spline_in_progress_ = false;
-	}
-
-	if( ( p_.ok() ) && ( s_.ok() ) &&
-		( spline_start_ > ros::Time(0) ) ) {
+	if( ( p_.ok() ) && ( s_.ok() ) && ( contrail_.has_reference(e.current_real) ) ) {
 
 		Eigen::Affine3d g_sp = Eigen::Affine3d::Identity();
 		Eigen::Vector3d gv_sp = Eigen::Vector3d::Zero();
@@ -329,7 +118,7 @@ void MantisRouterBase::callback_path(const ros::TimerEvent& e) {
 		double ref_rvel;
 
 		//Make certain we have a valid reference
-		if(ksolver_success && get_reference(ref_pos, ref_vel, ref_rpos, ref_rvel, e.current_real) ) {
+		if(ksolver_success && contrail_.get_reference(ref_pos, ref_vel, ref_rpos, ref_rvel, e.current_real ) ) {
 			//Fill in the current goals
 			ge_sp.translation() = ref_pos;
 			ge_sp.linear() = Eigen::AngleAxisd(ref_rpos, Eigen::Vector3d::UnitZ()).toRotationMatrix();
@@ -378,6 +167,8 @@ void MantisRouterBase::callback_path(const ros::TimerEvent& e) {
 			Eigen::Vector3d gv_sp_b = g_sp.linear()*gv_sp;
 
 			success = true;
+
+			contrail_.check_end_reached(s_.g());
 
 			mavros_msgs::PositionTarget msg_tri_out;
 			msg_tri_out.header.stamp = e.current_real;

@@ -3,11 +3,12 @@
 	<arg name="wp_name" default="square"/>
 	<arg name="jl_name" default="discrete"/>
 
-	<node pkg="contrail" type="load_waypoints" name="load_waypoints" clear_params="true"
-	ns="mantis_uav" output="screen">
-		<param name="frame_id" value="map" />
+	<node pkg="contrail" type="waypoint_dispatcher" name="waypoint_dispatcher" clear_params="true" output="screen">
+		<param name="action_topic" value="/mantis_uav/router_base/contrail" />
+		<param name="nominal_velocity" value="0.2" />
+		<param name="nominal_rate" value="0.2" />
 
-		<rosparam command="load" file="$(find mantis_description)/waypoints/$(arg wp_name).yaml"/>
+		<rosparam command="load" file="$(find contrail)/waypoints/$(arg wp_name).yaml"/>
 	</node>
 
 	<node pkg="mantis_router_joints" type="load_joint_list" name="load_joint_list" clear_params="true"
