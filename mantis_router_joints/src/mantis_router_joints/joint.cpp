@@ -1,7 +1,5 @@
 #include <ros/ros.h>
 
-#include <actionlib/server/simple_action_server.h>
-
 #include <mantis_router_joints/joint.h>
 #include <mantis_router_joints/JointMovementAction.h>
 
@@ -20,12 +18,7 @@ Joint::Joint( const ros::NodeHandle& nh, std::string joint_name ) :
 
 	name_ = joint_name;
 
-	output_.header.frame_id = name_;
-	output_.header.stamp = ros::Time(0);
-	output_.position = 0;
-	output_.velocity = 0;
-
-	pub_output_ = nh_.advertise<mantis_msgs::JointTrajectoryGoal>( "command", 10);
+	pub_traj_ = nh_.advertise<mantis_msgs::JointTrajectoryGoal>( "command", 10);
 
 	as_.start();
 }
@@ -33,7 +26,6 @@ Joint::Joint( const ros::NodeHandle& nh, std::string joint_name ) :
 Joint::~Joint() {
 }
 
-//void Joint::action_goal_cb( const mantis_router_joints::JointMovementGoalConstPtr &goal ) {
 void Joint::set_action_goal( void ) {
 	mantis_router_joints::JointMovementGoal goal = *(as_.acceptNewGoal());
 
@@ -53,9 +45,6 @@ void Joint::set_action_goal( void ) {
 		ctrlp.at(1) = ctrlp.front();
 		ctrlp.at(ctrlp.size() - 2) = ctrlp.back();
 		spline_.setControlPoints(ctrlp);
-		for(int i=0; i<ctrlp.size(); i++) {
-			ROS_INFO("%s(i): %0.4f", name_.c_str(), ctrlp[i]);
-		}
 
 		try {
 			splined_ = spline_.derive();
@@ -118,17 +107,21 @@ void Joint::update( ros::Time tc ) {
 
 	//Don't output unless some reference has been set
 	if( spline_start_ > ros::Time(0) ) {
+		mantis_msgs::JointTrajectoryGoal msg_out;
+		msg_out.header.frame_id = name_;
+		msg_out.header.stamp = tc;
+
 		//If in progress, calculate the lastest reference
 		if( spline_in_progress_ ) {
 			if( tc < spline_start_ ) {
 				//Have no begun, stay at start position
-				output_.position = spline_pos_start_;
-				output_.velocity = 0;
+				msg_out.position = spline_pos_start_;
+				msg_out.velocity = 0;
 
 				mantis_router_joints::JointMovementFeedback feedback;
 				feedback.progress = -1.0;
-				feedback.position = output_.position;
-				feedback.velocity = output_.velocity;
+				feedback.position = msg_out.position;
+				feedback.velocity = msg_out.velocity;
 
 				as_.publishFeedback(feedback);
 			} else if( tc <= (spline_start_ + spline_duration_) ) {
@@ -138,31 +131,33 @@ void Joint::update( ros::Time tc ) {
 
 				get_spline_reference(npos, nvel, t_norm);
 
-				output_.position = npos;
-				output_.velocity = nvel / spline_duration_.toSec();
+				msg_out.position = npos;
+				msg_out.velocity = nvel / spline_duration_.toSec();
 
 				mantis_router_joints::JointMovementFeedback feedback;
 				feedback.progress = t_norm;
-				feedback.position = output_.position;
-				feedback.velocity = output_.velocity;
+				feedback.position = msg_out.position;
+				feedback.velocity = msg_out.velocity;
 
 				as_.publishFeedback(feedback);
 			} else {
 				//We just finished, so send a result
-				output_.position = spline_pos_end_;
-				output_.velocity = 0;
+				msg_out.position = spline_pos_end_;
+				msg_out.velocity = 0;
 
 				mantis_router_joints::JointMovementResult result;
-				result.position_final = output_.position;
+				result.position_final = msg_out.position;
 				as_.setSucceeded(result);
 
 				spline_in_progress_ = false;
 				ROS_INFO( "Router %s: action finished", name_.c_str() );
 			}
+		} else {
+			msg_out.position = spline_pos_end_;
+			msg_out.velocity = 0;
 		}
 
-		output_.header.stamp = tc;
-		pub_output_.publish(output_);
+		pub_traj_.publish(msg_out);
 	}
 }
 

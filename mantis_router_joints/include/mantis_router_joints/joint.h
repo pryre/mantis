@@ -18,7 +18,7 @@ namespace MantisRouterJoints {
 class Joint {
 	private:
 		ros::NodeHandle nh_;
-		ros::Publisher pub_output_;
+		ros::Publisher pub_traj_;
 
 		std::string name_;
 
@@ -30,8 +30,6 @@ class Joint {
 		tinyspline::BSpline spline_;
 		tinyspline::BSpline splined_;
 		bool use_dirty_derivative_;
-
-		mantis_msgs::JointTrajectoryGoal output_;
 
 		actionlib::SimpleActionServer<mantis_router_joints::JointMovementAction> as_;
 

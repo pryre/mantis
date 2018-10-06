@@ -9,15 +9,14 @@ add_definitions(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  std_msgs
   geometry_msgs
   mantis_description
   mantis_params
   mantis_state
-  message_generation
   dynamic_reconfigure
   mantis_kinematics
-  contrail
+  tinyspline_ros
+  actionlib
 )
 
 ## System dependencies are found with CMake's conventions
@@ -67,18 +66,18 @@ find_package(Eigen3 REQUIRED)
 # )
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files(
+  FILES
+  BaseMovement.action
+)
 
 ## Generate added messages and services with any dependencies listed here
-#generate_messages(
-#  DEPENDENCIES
-#  std_msgs
-#  geometry_msgs
-#)
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+  actionlib_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##

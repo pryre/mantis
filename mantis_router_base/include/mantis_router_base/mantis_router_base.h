@@ -3,19 +3,22 @@
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
 
-#include <contrail/ContrailManager.h>
+#include <tinyspline_ros/tinysplinecpp.h>
+
 #include <mantis_router_base/ControlParamsConfig.h>
+#include <actionlib/server/simple_action_server.h>
+#include <mantis_router_base/BaseMovementAction.h>
+
 #include <mantis_params/param_client.h>
 #include <mantis_state/state_client.h>
 #include <mantis_kinematics/solver.h>
 
-#include <nav_msgs/Odometry.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/Point.h>
-#include <geometry_msgs/Quaternion.h>
+//#include <geometry_msgs/Pose.h>
+//#include <geometry_msgs/Point.h>
+//#include <geometry_msgs/Quaternion.h>
 
 #include <eigen3/Eigen/Dense>
-#include <eigen3/Eigen/StdVector>
+//#include <eigen3/Eigen/StdVector>
 #include <string>
 
 class MantisRouterBase {
@@ -40,7 +43,25 @@ class MantisRouterBase {
 		MantisParamClient p_;
 		MantisStateClient s_;
 		MantisSolver solver_;
-		ContrailManager ref_path_;
+
+		ros::Time spline_start_;
+		ros::Duration spline_duration_;
+		bool spline_in_progress_;
+		Eigen::Vector3d spline_pos_start_;
+		Eigen::Vector3d spline_pos_end_;
+		double spline_rot_start_;
+		double spline_rot_end_;
+		tinyspline::BSpline spline_x_;
+		tinyspline::BSpline spline_xd_;
+		tinyspline::BSpline spline_y_;
+		tinyspline::BSpline spline_yd_;
+		tinyspline::BSpline spline_z_;
+		tinyspline::BSpline spline_zd_;
+		tinyspline::BSpline spline_r_;
+		tinyspline::BSpline spline_rd_;
+		bool use_dirty_derivative_;
+
+		actionlib::SimpleActionServer<mantis_router_base::BaseMovementAction> as_;
 
 		Eigen::Matrix<double,6,1> vbe_last_;
 
@@ -65,4 +86,13 @@ class MantisRouterBase {
 		Eigen::Vector3d calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::VectorXd &vbe);
 
 		void callback_path(const ros::TimerEvent& e);
+
+		void set_action_goal();
+
+		bool get_reference(Eigen::Vector3d &pos, Eigen::Vector3d &vel, double &rpos, double &rrate, const ros::Time tc);
+		void get_spline_reference(tinyspline::BSpline& spline, tinyspline::BSpline& splined, double& pos, double& vel, const double u);
+
+		inline double normalize(double x, const double min, const double max) const {
+			return (x - min) / (max - min);
+		}
 };

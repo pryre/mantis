@@ -4,26 +4,46 @@ import roslib
 roslib.load_manifest('mantis_planner')
 import rospy
 import actionlib
+import math
 
+from geometry_msgs.msg import Vector3
+
+from mantis_router_base.msg import BaseMovementAction, BaseMovementGoal
 from mantis_router_joints.msg import JointMovementAction, JointMovementGoal
 
 if __name__ == '__main__':
 	rospy.init_node('action_dispatcher', anonymous=True)
+	client_base = actionlib.SimpleActionClient('/mantis_uav/router_base/action', BaseMovementAction)
 	client_elbow = actionlib.SimpleActionClient('/mantis_uav/router_joints/joint_elbow', JointMovementAction)
 	client_shoulder = actionlib.SimpleActionClient('/mantis_uav/router_joints/joint_shoulder', JointMovementAction)
+
+	client_base.wait_for_server()
 	client_elbow.wait_for_server()
 	client_shoulder.wait_for_server()
 
-	goal = JointMovementGoal()
-	goal.start = rospy.Time.now() + rospy.Duration.from_sec(2)
-	goal.duration = rospy.Duration.from_sec(10)
-	goal.positions = [0.0, 1.0, -1.0, 0.0]
+	goal_base = BaseMovementGoal()
+	goal_base.duration = rospy.Duration.from_sec(20)
+	goal_base.positions = [Vector3(0.0,0.0,1.0),
+						   Vector3(1.0,0.0,1.0),
+						   Vector3(0.0,0.0,1.0)]
+	goal_base.yaws = [0.0, math.pi/2, 0.0]
 
-	client_elbow.send_goal(goal)
-	client_shoulder.send_goal(goal)
+	goal_arm = JointMovementGoal()
+	goal_arm.duration = rospy.Duration.from_sec(20)
+	goal_arm.positions = [0.0, 1.0, -1.0, 0.0]
 
+	goal_base.start = rospy.Time.now() + rospy.Duration.from_sec(2)
+	goal_arm.start = rospy.Time.now() + rospy.Duration.from_sec(2)
+
+	client_base.send_goal(goal_base)
+	client_elbow.send_goal(goal_arm)
+	client_shoulder.send_goal(goal_arm)
+
+	client_base.wait_for_result()
 	client_elbow.wait_for_result()
 	client_shoulder.wait_for_result()
+
+	result_base = client_base.get_result()
 	result_elbow = client_elbow.get_result()
 	result_shoulder = client_shoulder.get_result()
 
