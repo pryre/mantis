@@ -1,0 +1,16 @@
+<?xml version='1.0'?>
+<launch>
+	<arg name="move" default="step_swing"/>
+
+	<node pkg="mantis_planner" type="discrete_dispatcher" name="discrete_dispatcher"
+	ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="action_topic_contrail" value="router_base/contrail" />
+		<param name="action_topic_joint_prefix" value="router_joints/" />
+
+		<param name="nominal_velocity" value="0.2" />
+		<param name="nominal_rate" value="0.2" />
+		<param name="nominal_joint_rate" value="0.2" />
+
+		<rosparam command="load" file="$(find mantis_planner)/manoeuvres/$(arg move).yaml"/>
+	</node>
+</launch>

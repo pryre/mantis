@@ -1,0 +1,107 @@
+#!/usr/bin/env python2
+
+import sys
+from math import *
+
+import roslib
+roslib.load_manifest('contrail')
+import rospy
+import actionlib
+
+import mantis_planner.movement_loader as ml
+from contrail.msg import TrajectoryAction, TrajectoryGoal
+from mantis_router_joints.msg import JointMovementAction, JointMovementGoal
+
+global pub_wpl
+global timer
+
+def timer_callback(e):
+	global pub_wpl
+	global timer
+
+	if e.current_real > rospy.Time(0):
+		success, movements, joint_names = ml.load_movements()
+
+		if success and (len(movements) >= 2):
+			rospy.loginfo("Loaded %i movements for the base and %i joints" % (len(movements), len(joint_names)))
+			action_topic_contrail = rospy.get_param("~action_topic_contrail", 'contrail')
+			action_topic_joints = rospy.get_param("~action_topic_joint_prefix", "router_joints/")
+
+			nom_lvel = rospy.get_param("~nominal_velocity", 0.5)
+			nom_rvel = rospy.get_param("~nominal_rate", 0.5)
+			nom_jvel = rospy.get_param("~nominal_joint_rate", 0.5)
+
+			rospy.loginfo(movements)
+
+			client_base = actionlib.SimpleActionClient(action_topic_contrail, TrajectoryAction)
+			rospy.loginfo("Waiting for base action client")
+			client_base.wait_for_server()
+			action_client_joints = []
+			for j in range(len(joint_names)):
+				action_client_joints.append(actionlib.SimpleActionClient(action_topic_joints + joint_names[j], JointMovementAction))
+				rospy.loginfo("Waiting for %s action client" % (action_topic_joints + joint_names[j]))
+				action_client_joints[j].wait_for_server()
+
+			for i in range(len(movements) - 1):
+				goal_base = TrajectoryGoal()
+				goal_base.positions = [movements[i].base.position, movements[i+1].base.position]
+				goal_base.yaws = [movements[i].base.yaw, movements[i+1].base.yaw]
+
+				dx = movements[i+1].base.position.x - movements[i].base.position.x
+				dy = movements[i+1].base.position.y - movements[i].base.position.y
+				dz = movements[i+1].base.position.z - movements[i].base.position.z
+
+				lt = sqrt((dx*dx)+(dy*dy)+(dz*dz)) / nom_lvel
+				rt = (movements[i+1].base.yaw - movements[i].base.yaw ) / nom_rvel
+
+				jt = 0
+				for j in range(len(joint_names)):
+					jt = max([jt, (movements[i+1].joint_positions[j] - movements[i].joint_positions[j] ) / nom_jvel])
+
+				move_time = max([lt,rt,jt])
+				goal_base.duration = rospy.Duration.from_sec(move_time)
+
+				goal_joints = []
+				for j in range(len(joint_names)):
+					goal_joints.append(JointMovementGoal())
+					goal_joints[j].positions = [movements[i].joint_positions[j], movements[i+1].joint_positions[j]]
+					goal_joints[j].duration = rospy.Duration.from_sec(move_time)
+
+				time_start = rospy.Time.now()
+				goal_base.start = time_start + rospy.Duration.from_sec(2)
+				for j in range(len(joint_names)):
+					goal_joints[j].start = time_start + rospy.Duration.from_sec(2)
+
+				client_base.send_goal(goal_base)
+				for j in range(len(joint_names)):
+					action_client_joints[j].send_goal(goal_joints[j])
+
+				client_base.wait_for_result()
+				for j in range(len(joint_names)):
+					action_client_joints[j].wait_for_result()
+
+			timer.shutdown()
+			rospy.signal_shutdown("Discrete movement plan complete!")
+		else:
+			if (len(wps) < 2):
+				rospy.logerr("Not enough waypoints were been loaded (%i)" % len(wps))
+				rospy.signal_shutdown("Error: no waypoints")
+			else:
+				rospy.logerr("Unable to locate waypoint parameters")
+				rospy.signal_shutdown("Error: no waypoints")
+
+def waypoint_pub():
+	global timer
+	global pub_wpl
+	rospy.init_node('discrete_dispatcher', anonymous=True)
+
+	rospy.loginfo("Loading discrete plan dispatcher...")
+	timer = rospy.Timer(rospy.Duration(1.0/50.0), timer_callback)
+
+	rospy.spin()
+
+if __name__ == '__main__':
+	try:
+		waypoint_pub()
+	except rospy.ROSInterruptException:
+		pass
