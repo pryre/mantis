@@ -161,6 +161,7 @@ void MantisRouterBase::callback_timer(const ros::TimerEvent& e) {
 				//Just track the robot base
 				g_sp = ge_sp;
 				gv_sp = gev_sp;
+				gbe = Eigen::Affine3d::Identity();
 				vbe_last_ = Eigen::Matrix<double,6,1>::Zero();
 			}
 
@@ -168,7 +169,7 @@ void MantisRouterBase::callback_timer(const ros::TimerEvent& e) {
 
 			success = true;
 
-			contrail_.check_end_reached(s_.g());
+			contrail_.check_end_reached(s_.g()*gbe);
 
 			mavros_msgs::PositionTarget msg_tri_out;
 			msg_tri_out.header.stamp = e.current_real;
