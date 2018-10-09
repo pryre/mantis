@@ -1,0 +1,20 @@
+<library path="src">
+  <class name="Mantis Commander" type="rqt_mantis_commander.commander.MantisCommander" base_class_type="rqt_gui_py::Plugin">
+    <description>
+      A Python-based GUI to issue goto-type commands to the Mantis UAV
+    </description>
+    <qtgui>
+      <!-- optional grouping...
+      <group>
+        <label>Group</label>
+      </group>
+      <group>
+        <label>Subgroup</label>
+      </group>
+      -->
+      <label>Mantis Commander</label>
+      <icon type="theme">system-help</icon>
+      <statustip>Commander panel for easily issuing goto-type commands</statustip>
+    </qtgui>
+  </class>
+</library>

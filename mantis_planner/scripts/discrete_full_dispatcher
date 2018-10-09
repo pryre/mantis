@@ -67,7 +67,6 @@ def timer_callback(e):
 				goal_base.duration = rospy.Duration.from_sec(move_time)
 				rospy.loginfo("\ttime: %0.4f" % (move_time))
 
-
 				goal_joints = []
 				for j in range(len(joint_names)):
 					goal_joints.append(JointMovementGoal())
