@@ -47,7 +47,7 @@ def load_movements():
 			for j in range(num_joints):
 				movements[i].joint_positions.append(rospy.get_param( "~movements/m%i/j%i" % (i,j) ) )
 
-			rospy.loginfo(movements[i])
+			#rospy.loginfo(movements[i])
 
 			i += 1
 

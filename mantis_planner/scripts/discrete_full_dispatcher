@@ -31,8 +31,6 @@ def timer_callback(e):
 			nom_rvel = rospy.get_param("~nominal_rate", 0.5)
 			nom_jvel = rospy.get_param("~nominal_joint_rate", 0.5)
 
-			rospy.loginfo(movements)
-
 			client_base = actionlib.SimpleActionClient(action_topic_contrail, TrajectoryAction)
 			rospy.loginfo("Waiting for base action client")
 			client_base.wait_for_server()
@@ -43,9 +41,15 @@ def timer_callback(e):
 				action_client_joints[j].wait_for_server()
 
 			for i in range(len(movements) - 1):
+				rospy.loginfo("manoeuvre %i:" % i)
+
 				goal_base = TrajectoryGoal()
 				goal_base.positions = [movements[i].base.position, movements[i+1].base.position]
 				goal_base.yaws = [movements[i].base.yaw, movements[i+1].base.yaw]
+
+				rospy.loginfo("\tbase: [%0.4f,%0.4f,%0.4f;%0.4f] -> [%0.4f,%0.4f,%0.4f;%0.4f]" %
+							   (movements[i].base.position.x, movements[i].base.position.y, movements[i].base.position.z, movements[i].base.yaw,
+							    movements[i+1].base.position.x, movements[i+1].base.position.y, movements[i+1].base.position.z, movements[i+1].base.yaw))
 
 				dx = movements[i+1].base.position.x - movements[i].base.position.x
 				dy = movements[i+1].base.position.y - movements[i].base.position.y
@@ -56,10 +60,13 @@ def timer_callback(e):
 
 				jt = 0
 				for j in range(len(joint_names)):
-					jt = max([jt, (movements[i+1].joint_positions[j] - movements[i].joint_positions[j] ) / nom_jvel])
+					rospy.loginfo("\tj%i: %0.4f -> %0.4f" % (j,movements[i].joint_positions[j], movements[i+1].joint_positions[j]))
+					jt = max([jt, abs(movements[i+1].joint_positions[j] - movements[i].joint_positions[j] ) / nom_jvel])
 
 				move_time = max([lt,rt,jt])
 				goal_base.duration = rospy.Duration.from_sec(move_time)
+				rospy.loginfo("\ttime: %0.4f" % (move_time))
+
 
 				goal_joints = []
 				for j in range(len(joint_names)):
@@ -84,11 +91,11 @@ def timer_callback(e):
 			rospy.signal_shutdown("Discrete movement plan complete!")
 		else:
 			if (len(wps) < 2):
-				rospy.logerr("Not enough waypoints were been loaded (%i)" % len(wps))
-				rospy.signal_shutdown("Error: no waypoints")
+				rospy.logerr("Not enough movements were been loaded (%i)" % len(wps))
+				rospy.signal_shutdown("Error: <2 movements")
 			else:
-				rospy.logerr("Unable to locate waypoint parameters")
-				rospy.signal_shutdown("Error: no waypoints")
+				rospy.logerr("Unable to locate movement parameters")
+				rospy.signal_shutdown("Error: no movements")
 
 def waypoint_pub():
 	global timer
