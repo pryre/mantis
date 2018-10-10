@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>260</width>
-    <height>320</height>
+    <height>410</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,7 +19,7 @@
   <property name="minimumSize">
    <size>
     <width>260</width>
-    <height>320</height>
+    <height>410</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -86,7 +86,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>160</y>
+     <y>150</y>
      <width>241</width>
      <height>30</height>
     </rect>
@@ -111,7 +111,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>260</y>
+     <y>350</y>
      <width>241</width>
      <height>50</height>
     </rect>
@@ -221,9 +221,9 @@
   <widget class="QLineEdit" name="textbox_goto_pos_y">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>220</y>
-     <width>41</width>
+     <x>90</x>
+     <y>210</y>
+     <width>40</width>
      <height>30</height>
     </rect>
    </property>
@@ -237,9 +237,9 @@
   <widget class="QLineEdit" name="textbox_goto_pos_x">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>220</y>
-     <width>41</width>
+     <x>40</x>
+     <y>210</y>
+     <width>40</width>
      <height>30</height>
     </rect>
    </property>
@@ -253,9 +253,9 @@
   <widget class="QLineEdit" name="textbox_goto_pos_z">
    <property name="geometry">
     <rect>
-     <x>130</x>
-     <y>220</y>
-     <width>41</width>
+     <x>140</x>
+     <y>210</y>
+     <width>40</width>
      <height>30</height>
     </rect>
    </property>
@@ -269,9 +269,9 @@
   <widget class="QLineEdit" name="textbox_goto_yaw">
    <property name="geometry">
     <rect>
-     <x>180</x>
-     <y>220</y>
-     <width>41</width>
+     <x>190</x>
+     <y>210</y>
+     <width>40</width>
      <height>30</height>
     </rect>
    </property>
@@ -285,9 +285,9 @@
   <widget class="QLabel" name="label_command_2">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>190</y>
-     <width>41</width>
+     <x>40</x>
+     <y>180</y>
+     <width>40</width>
      <height>30</height>
     </rect>
    </property>
@@ -307,9 +307,9 @@
   <widget class="QLabel" name="label_command_3">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>190</y>
-     <width>41</width>
+     <x>90</x>
+     <y>180</y>
+     <width>40</width>
      <height>30</height>
     </rect>
    </property>
@@ -329,9 +329,9 @@
   <widget class="QLabel" name="label_command_4">
    <property name="geometry">
     <rect>
-     <x>130</x>
-     <y>190</y>
-     <width>41</width>
+     <x>140</x>
+     <y>180</y>
+     <width>40</width>
      <height>30</height>
     </rect>
    </property>
@@ -351,9 +351,9 @@
   <widget class="QLabel" name="label_command_5">
    <property name="geometry">
     <rect>
-     <x>180</x>
-     <y>190</y>
-     <width>41</width>
+     <x>190</x>
+     <y>180</y>
+     <width>40</width>
      <height>30</height>
     </rect>
    </property>
@@ -368,6 +368,114 @@
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="combo_joints">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>270</y>
+     <width>140</width>
+     <height>30</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="textbox_goto_joint">
+   <property name="geometry">
+    <rect>
+     <x>190</x>
+     <y>270</y>
+     <width>40</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>0.0</string>
+   </property>
+   <property name="placeholderText">
+    <string>/mavros</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_command_6">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>240</y>
+     <width>141</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Joint Name</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_command_7">
+   <property name="geometry">
+    <rect>
+     <x>190</x>
+     <y>240</y>
+     <width>40</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Rad</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_command_8">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>310</y>
+     <width>91</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Duration:</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="textbox_goto_duration">
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>310</y>
+     <width>101</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>10.0</string>
+   </property>
+   <property name="placeholderText">
+    <string>/mavros</string>
    </property>
   </widget>
  </widget>
