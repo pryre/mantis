@@ -7,8 +7,8 @@
 		<param name="model_id" value="mantis_uav" />
 		<param name="path_rate" value="50.0" />
 
-		<param name="control_settings/track_end" value="false" />
-		<param name="control_settings/accurate_end_tracking" value="true" />
+		<param name="control_settings/tracked_frame" value="0" />
+		<param name="control_settings/manipulator_jacobian_alpha" value="0.2" />
 		<param name="control_settings/reference_feedback" value="true" />
 
 		<remap from="~output/triplet" to="mavel/reference/triplet"/>

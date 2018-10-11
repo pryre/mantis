@@ -117,12 +117,12 @@ def timer_callback(e):
 						timer.shutdown()
 						rospy.signal_shutdown("Continuous movement plan complete!")
 			else:
-				if (len(wps) < 2):
-					rospy.logerr("Not enough movement points were been loaded (%i)" % len(wps))
-					rospy.signal_shutdown("Error: <2 movement points")
-				else:
+				if not success:
 					rospy.logerr("Unable to locate movement parameters")
 					rospy.signal_shutdown("Error: no movements")
+				else:
+					rospy.logerr("Not enough movement points were been loaded (%i)" % len(movements))
+					rospy.signal_shutdown("Error: <2 movement points")
 		else:
 			rospy.logerr("Unable to locate duration parameter")
 			rospy.signal_shutdown("Error: no duration")

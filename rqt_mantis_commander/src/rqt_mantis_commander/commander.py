@@ -10,6 +10,8 @@ from python_qt_binding.QtWidgets import QWidget
 from mantis_msgs.msg import State, Parameters
 from geometry_msgs.msg import Pose, Vector3, Quaternion
 
+from std_srvs.srv import SetBool
+
 import actionlib
 from contrail.msg import TrajectoryAction, TrajectoryGoal
 from mantis_router_joints.msg import JointMovementAction, JointMovementGoal
@@ -52,8 +54,10 @@ class MantisCommander(Plugin):
 		# Add widget to the user interface
 		context.add_widget(self._widget)
 
-		self._widget.button_send_command.clicked.connect(self.button_send_command_pressed)
 		self._widget.button_update_namespaces.clicked.connect(self.button_update_namespaces_pressed)
+		self._widget.button_arm.clicked.connect(self.button_arm_pressed)
+		self._widget.button_disarm.clicked.connect(self.button_disarm_pressed)
+		self._widget.button_send_command.clicked.connect(self.button_send_command_pressed)
 		self._widget.combo_joints.currentIndexChanged.connect(self.combo_joints_pressed)
 		self._widget.textbox_goto_joint.textChanged.connect(self.goto_joint_changed)
 
@@ -198,4 +202,20 @@ class MantisCommander(Plugin):
 
 		self.client_base = actionlib.SimpleActionClient(self.ns + '/' + self.contrail_prefix, TrajectoryAction)
 
+	def button_arm_pressed(self):
+		rospy.logdebug("Button arm pressed!")
 
+		try:
+			arm_jc = rospy.ServiceProxy('/mantis_uav/dynamixel_interface/enable_torque_all', SetBool)
+			res = arm_jc(True)
+		except rospy.ServiceException, e:
+			print "Service call failed: %s"%e
+		
+	def button_disarm_pressed(self):
+		rospy.logdebug("Button disarm pressed!")
+
+		try:
+			arm_jc = rospy.ServiceProxy('/mantis_uav/dynamixel_interface/enable_torque_all', SetBool)
+			res = arm_jc(False)
+		except rospy.ServiceException, e:
+			print "Service call failed: %s"%e
