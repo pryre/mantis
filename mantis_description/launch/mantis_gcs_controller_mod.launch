@@ -31,6 +31,18 @@
 		<remap from="~state/odometry" to="state/odom"/>
 		<remap from="~state/mav_state" to="/mavros/state"/>
 	</node>
+	
+	<!-- Odom Sync Node -->
+	<node pkg="odom_sync" type="odom_sync_node" name="odom_sync" 
+	ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="source_namespace" value="/vicon/mantis" />
+		<remap from="odom" to="state/odom"/>
+	</node>
+
+	<!-- Pose Reference -->
+	<node pkg="topic_tools" type="drop" name="mocap_drop" 
+	ns="/mantis_uav" clear_params="true" output="screen"
+	args="/vicon/mantis/pose 9 10 /mavros/mocap/pose"/>
 
 	<!-- XXX: Handled onboard
 	<node name="joint_position_controller" pkg="mantis_controller_joints" type="mantis_controller_joints_node"
