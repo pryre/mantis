@@ -16,6 +16,8 @@
 		<param name="use_odom_angular_velocity" value="false" />
 
 		<remap from="state/mav_state" to="/mavros/state" />
+		<remap from="state/imu_data" to="/mavros/imu/data" />
+		<remap from="state/battery" to="/mavros/battery" />
 	</node>
 
 	<!-- visualization -->
