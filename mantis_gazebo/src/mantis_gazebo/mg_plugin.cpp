@@ -166,8 +166,8 @@ class MantisGazeboPlugin : public ModelPlugin
 					double pwm = int32_constrain( pwm_raw, param_pwm_min_, param_pwm_max_);
 
 					double norm_ref = ( pwm - param_pwm_min_ ) / ( param_pwm_max_ - param_pwm_min_ );
-					//double cmd_vel = norm_ref * param_motor_vel_max_;
-					double cmd_vel = std::sqrt(norm_ref * param_motor_vel_max_ * param_motor_vel_max_);
+					double cmd_vel = norm_ref * param_motor_vel_max_;
+					//double cmd_vel = std::sqrt(norm_ref * param_motor_vel_max_ * param_motor_vel_max_);
 
 					msg_motor_velocity_.data[i] =  (cmd_vel < param_motor_vel_armed_) ? param_motor_vel_armed_ : cmd_vel;
 				} else {
