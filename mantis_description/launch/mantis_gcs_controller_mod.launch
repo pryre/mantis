@@ -60,7 +60,7 @@
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />
 		<param name="model_id" value="mantis_uav" />
-		<param name="est_rate" value="50.0" />
+		<param name="est_rate" value="25.0" />
 
 		<param name="control_settings/force_compensation" value="true" />
 		<param name="control_settings/force_comp_filter_a" value="1.0" />

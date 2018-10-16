@@ -1,3 +1,4 @@
+<?xml version='1.0'?>
 <launch>
 	<!-- vim: set ft=xml noet : -->
 	<!-- example launch script for PX4 based FCU's -->
@@ -18,8 +19,8 @@
 		<arg name="config_yaml" value="$(find mavros)/launch/px4_config.yaml" />
 		-->
 
-		<arg name="pluginlists_yaml" value="$(find mantis_description)/launch/naze32_pluginlists.yaml" />
-		<arg name="config_yaml" value="$(find mantis_description)/launch/naze32_config.yaml" />
+		<arg name="pluginlists_yaml" value="$(find mantis_description)/config/robin_pluginlists.yaml" />
+		<arg name="config_yaml" value="$(find mantis_description)/config/robin_config.yaml" />
 
 		<arg name="fcu_url" value="$(arg fcu_url)" />
 		<arg name="gcs_url" value="$(arg gcs_url)" />
