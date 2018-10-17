@@ -2,13 +2,11 @@
 <launch>
 	<arg name="move" default=""/>
 
-	<node pkg="mantis_planner" type="continuous_full_dispatcher" name="continuous_full_dispatcher"
+	<node pkg="mantis_planner" type="dispatcher_full" name="dispatcher_full"
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="action_topic_contrail" value="router_base/contrail" />
 		<param name="action_topic_joint_prefix" value="router_joints/" />
 
-		<param name="duration" value="60.0" />
-
-		<rosparam command="load" file="$(find mantis_planner)/manoeuvres/continuous_full/$(arg move).yaml"/>
+		<rosparam command="load" file="$(find mantis_planner)/manoeuvres/$(arg move).yaml"/>
 	</node>
 </launch>

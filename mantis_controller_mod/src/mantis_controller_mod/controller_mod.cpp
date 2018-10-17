@@ -103,7 +103,7 @@ void ControllerMod::callback_est(const ros::TimerEvent& e) {
 			//ua(1) = 0.0;
 			ua(2) = 9.80665;//accel_z;
 			//ua.segment(3,3) << Eigen::Vector3d::Zero();
-			//ua.segment(6,p_.manip_num) << rdd;
+			//ua.segment(6,p_.get_dynamic_joint_num()) << s_.rdd();
 
 			solved = solver_.solve_inverse_dynamics(tau, ua);
 

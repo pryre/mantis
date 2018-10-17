@@ -1,0 +1,56 @@
+movements:
+  mode: "discrete"
+  nominal_velocity: 0.1
+  nominal_rate: 0.2
+  nominal_joint_rate: 0.2
+  joint_names:
+    j0: "joint_shoulder"
+    j1: "joint_elbow"
+  m0:
+    base:
+      x: 0.0
+      y: 0.0
+      z: 1.0
+      yaw: 0.0
+    j0: 1.57
+    j1: 1.57
+  m1:
+    base:
+      x: 0.0
+      y: 0.0
+      z: 1.0
+      yaw: 0.0
+    j0: 0.0
+    j1: 0.0
+  m2:
+    base:
+      x: 0.0
+      y: 0.0
+      z: 1.0
+      yaw: 0.0
+    j0: 0.0
+    j1: 1.57
+  m3:
+    base:
+      x: 0.0
+      y: 0.0
+      z: 1.0
+      yaw: 0.0
+    j0: 1.57
+    j1: 1.57
+  m4:
+    base:
+      x: 0.0
+      y: 0.0
+      z: 1.0
+      yaw: 0.0
+    j0: 0.0
+    j1: 0.0
+  m5:
+    base:
+      x: 0.0
+      y: 0.0
+      z: 1.0
+      yaw: 0.0
+    j0: 1.57
+    j1: 1.57

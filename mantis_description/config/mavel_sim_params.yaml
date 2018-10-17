@@ -14,7 +14,7 @@ contrail:
 
 throttle:
   min: 0.0
-  mid: 0.45
+  mid: 0.20
   max: 0.9
 
 # Maximum roll/pitch in radians
@@ -55,19 +55,19 @@ control:
   vel:
     x:
       p: 0.09
-      i: 0.0
-      d: 0.01
+      i: 0.01
+      d: 0.001
       min: -0.2
       max: 0.2
     y:
       p: 0.09
-      i: 0.0
-      d: 0.01
+      i: 0.01
+      d: 0.001
       min: -0.2
       max: 0.2
     z:
-      p: 0.1
-      i: 0.02
+      p: 0.4
+      i: 0.1
       d: 0.0
       min: -0.5
       max: 0.3

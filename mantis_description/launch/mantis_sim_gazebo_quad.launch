@@ -3,8 +3,8 @@
 	<arg name="model" default="$(find mantis_description)/urdf/mantis_quad.xacro"/>
 	<arg name="model_name" default="mantis_uav"/>
 	<arg name="frame_id" default="map"/>
-	<arg name="rviz" default="false"/>
-	<arg name="rqt" default="false"/>
+	<arg name="rviz" default="true"/>
+	<arg name="rqt" default="true"/>
 
 	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_params_quad.yaml"/>
 
