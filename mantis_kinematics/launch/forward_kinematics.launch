@@ -10,7 +10,7 @@
 		<param name="frame_id" value="$(arg frame_id)" />
 		<param name="model_id" value="$(arg model_name)" />
 
-		<param name="do_viz" value="false" />
+		<param name="prop_viz" value="false" />
 		<param name="end_effector_pose" value="true" />
 	</node>
 

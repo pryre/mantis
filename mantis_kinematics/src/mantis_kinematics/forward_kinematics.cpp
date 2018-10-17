@@ -33,8 +33,7 @@ ForwardKinematics::ForwardKinematics() :
 	param_model_id_("mantis_uav"),
 	param_rate_(30.0),
 	param_do_end_effector_pose_(true),
-	param_do_viz_(true),
-	param_done_viz_(false),
+	param_do_prop_viz_(false),
 	prop_rate_(0.8),
 	tfBuffer_(ros::Duration(20.0)) {
 
@@ -42,7 +41,7 @@ ForwardKinematics::ForwardKinematics() :
 	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
 	nhp_.param("model_id", param_model_id_, param_model_id_);
 	nhp_.param("update_rate", param_rate_, param_rate_);
-	nhp_.param("do_viz", param_do_viz_, param_do_viz_);
+	nhp_.param("prop_viz", param_do_prop_viz_, param_do_prop_viz_);
 	nhp_.param("armed_prop_velocity", prop_rate_, prop_rate_);
 	nhp_.param("end_effector_pose", param_do_end_effector_pose_, param_do_end_effector_pose_);
 
@@ -84,7 +83,6 @@ ForwardKinematics::ForwardKinematics() :
 			}
 		}
 
-		/*
 		//Propeller links
 		tf_props.resize(p_.motor_num());
 		Eigen::Vector3d arm = Eigen::Vector3d(p_.base_arm_length(), 0.0, 0.046);
@@ -142,8 +140,6 @@ ForwardKinematics::ForwardKinematics() :
 			tf_props[5].transform.translation = MDTools::vector_from_eig(rot*arm);
 		}
 
-		timer_prop_viz_ = nhp_.createTimer(ros::Duration(1.0/param_rate_), &ForwardKinematics::callback_props, this );
-		*/
 		ROS_INFO("Forward kinematics running!");
 	} else {
 		ros::shutdown();
@@ -186,6 +182,26 @@ void ForwardKinematics::callback_timer(const ros::TimerEvent& e) {
 		}
 	}
 
+	if(param_do_prop_viz_) {
+		if(s_.flight_ready()) {
+			Eigen::Quaterniond r(Eigen::AngleAxisd(prop_rate_, Eigen::Vector3d::UnitZ()));
+			Eigen::VectorXd mdir = p_.get_mixer()*Eigen::Vector4d(0.0,0.0,0.0,1.0);
+
+			for(int i=0; i<p_.motor_num(); i++) {
+				//tf_props[i].header.stamp = e.current_real;
+				Eigen::Quaterniond q = MDTools::quaternion_from_msg(tf_props[i].transform.rotation);
+				//Correct q for motor directions
+				Eigen::Quaterniond mr = (mdir[i]<0) ? r : r.inverse();
+				tf_props[i].transform.rotation = MDTools::quaternion_from_eig(mr*q);
+			}
+		}
+
+		for(int i=0; i<p_.motor_num(); i++) {
+			tf_props[i].header.stamp = e.current_real;
+			tfbr_.sendTransform(tf_props[i]);
+		}
+	}
+
 	if(param_do_end_effector_pose_) {
 		geometry_msgs::PoseStamped msg_end_out_;
 		Eigen::Affine3d gbe;
@@ -197,29 +213,10 @@ void ForwardKinematics::callback_timer(const ros::TimerEvent& e) {
 
 		pub_end_.publish(msg_end_out_);
 	}
-
 }
 
 void ForwardKinematics::callback_props( const ros::TimerEvent& e ) {
-	if(s_.flight_ready()) {
-		Eigen::Quaterniond r(Eigen::AngleAxisd(prop_rate_, Eigen::Vector3d::UnitZ()));
-		Eigen::VectorXd mdir = p_.get_mixer()*Eigen::Vector4d(0.0,0.0,0.0,1.0);
 
-		for(int i=0; i<p_.motor_num(); i++) {
-			//tf_props[i].header.stamp = e.current_real;
-			Eigen::Quaterniond q = MDTools::quaternion_from_msg(tf_props[i].transform.rotation);
-			//Correct q for motor directions
-			Eigen::Quaterniond mr = (mdir[i]<0) ? r : r.inverse();
-			tf_props[i].transform.rotation = MDTools::quaternion_from_eig(mr*q);
-
-			//tfbr_.sendTransform(tf_props[i]);
-		}
-	}
-
-	for(int i=0; i<p_.motor_num(); i++) {
-		tf_props[i].header.stamp = e.current_real;
-		tfbr_.sendTransform(tf_props[i]);
-	}
 }
 /*
 void ForwardKinematics::callback_state_odom(const nav_msgs::Odometry::ConstPtr& msg_in) {
@@ -295,71 +292,4 @@ void ForwardKinematics::check_update_time() {
 	} else {
 		time_last_update_ = ros::Time::now();
 	}
-}
-
-
-void ForwardKinematics::do_viz( const std::vector<std::string> *arm_names ) {
-	/*
-	visualization_msgs::MarkerArray markers;
-	ros::Time stamp = ros::Time::now();
-
-	visualization_msgs::Marker m;
-	m.header.stamp = stamp;
-	m.ns = param_model_name_;
-	m.action = m.ADD;
-	m.color.a = 1.0;
-	m.lifetime = ros::Duration(0);
-	m.frame_locked = true;
-
-	//Body
-	//TODO: params
-	double frame_h = 0.05;
-	double frame_w = 0.55;
-
-	m.header.frame_id = param_model_name_;
-	m.id = 0;
-	m.type = m.CYLINDER;
-	m.pose.position.x = 0.0;
-	m.pose.position.y = 0.0;
-	m.pose.position.z = frame_h/2;
-	m.pose.orientation.w = 1.0;
-	m.pose.orientation.x = 0.0;
-	m.pose.orientation.y = 0.0;
-	m.pose.orientation.z = 0.0;
-	m.scale.x = frame_w;
-	m.scale.y = frame_w;
-	m.scale.z = frame_h;
-	m.color.r = 0.8;
-	m.color.g = 0.8;
-	m.color.b = 0.8;
-
-	markers.markers.push_back(m);
-
-	//Arms
-	for(int i=0; i<arm_names->size(); i++) {
-		double arm_w = 0.05;
-
-		m.header.frame_id = (*arm_names)[i];
-		m.id++;
-		m.type = m.CYLINDER;
-		m.pose.position.x = param_arm_len_/2;
-		m.pose.position.y = 0.0;
-		m.pose.position.z = 0.0;
-		m.pose.orientation.w = 0.7071;
-		m.pose.orientation.x = 0.0;
-		m.pose.orientation.y = 0.7071;
-		m.pose.orientation.z = 0.0;
-		m.scale.x = arm_w;
-		m.scale.y = arm_w;
-		m.scale.z = param_arm_len_;
-		m.color.r = 0.8;
-		m.color.g = 0.8;
-		m.color.b = 0.8;
-
-		markers.markers.push_back(m);
-	}
-
-	pub_viz_.publish(markers);
-	*/
-	param_done_viz_ = true;
 }

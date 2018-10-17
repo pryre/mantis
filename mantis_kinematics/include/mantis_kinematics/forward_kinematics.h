@@ -36,8 +36,7 @@ class ForwardKinematics {
 		std::string param_model_id_;
 		double param_rate_;
 		bool param_do_end_effector_pose_;
-		bool param_do_viz_;
-		bool param_done_viz_;
+		bool param_do_prop_viz_;
 
 		MantisParamClient p_;
 		MantisStateClient s_;
@@ -60,5 +59,4 @@ class ForwardKinematics {
 
 		void callback_timer(const ros::TimerEvent& e);
 		void callback_props(const ros::TimerEvent& e);
-		void do_viz( const std::vector<std::string> *arm_names );
 };
