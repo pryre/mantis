@@ -10,6 +10,7 @@ import actionlib
 
 import tf2_ros
 from std_msgs.msg import Time
+from std_srvs.srv import Empty, EmptyRequest
 from geometry_msgs.msg import TransformStamped, Quaternion, Vector3
 
 from mantis_planner.msg import ManoeuvreAction, ManoeuvreGoal
@@ -18,13 +19,16 @@ from mantis_msgs.msg import Movement
 import dynamic_reconfigure.client
 
 global client_move
-global done_move
+global sub_target
+global srv_param_reload
 
 global tfBuffer
 global tfln
 
 global tracking_config
 global tracking_client
+
+baton_mass = 0.05
 
 def quaternion_to_rpy(q):
 	if not isinstance(q, Quaternion):
@@ -50,7 +54,8 @@ def quaternion_to_rpy(q):
 
 def callback_target(msg_in):
 	global client_move
-	global done_move
+	global sub_target
+	global srv_param_reload
 
 	global tfBuffer
 	global tfln
@@ -60,103 +65,132 @@ def callback_target(msg_in):
 
 	# Make sure the message is valid
 	if (msg_in.data > rospy.Time(0)) and (tracking_config is not None):
-		if not done_move:
-			rospy.loginfo("Target goal identified, generating retrieval manoeuvre")
+		sub_target.unregister()
 
-			# Get current position and goals
-			tf_t = tfBuffer.lookup_transform("map", "blue_baton", msg_in.data, rospy.Duration(0.5))
-			tf_b = tfBuffer.lookup_transform("map", "mantis_uav", msg_in.data, rospy.Duration(0.5))
-			tf_e = tfBuffer.lookup_transform("map", "mantis_uav/end_effector", msg_in.data, rospy.Duration(0.5))
+		rospy.loginfo("Target goal identified, generating retrieval manoeuvre")
 
-			move = ManoeuvreGoal()
+		# Get current position and goals
+		tf_t = tfBuffer.lookup_transform("map", "blue_baton", msg_in.data, rospy.Duration(0.5))
+		tf_b = tfBuffer.lookup_transform("map", "mantis_uav", msg_in.data, rospy.Duration(0.5))
 
-			move.mode = ManoeuvreGoal.MODE_DISCRETE
-			move.nominal_velocity = 0.1
-			move.nominal_rate = 0.2
-			move.nominal_joint_rate = 0.2
+		move = ManoeuvreGoal()
 
-			move.joint_names = ["joint_shoulder", "joint_elbow"]
+		move.mode = ManoeuvreGoal.MODE_DISCRETE
+		move.nominal_velocity = 0.1
+		move.nominal_rate = 0.2
+		move.nominal_joint_rate = 0.2
 
-			# Starting position is current end effector position, half stow
-			move.movements.append(Movement())
-			move.movements[-1].base.position = tf_e.transform.translation
-			_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_b.transform.rotation)
-			move.movements[-1].joints.append(0.78)
-			move.movements[-1].joints.append(1.57)
+		move.joint_names = ["joint_shoulder", "joint_elbow"]
 
-			# Target position is current target pose, unstow
-			move.movements.append(Movement())
-			move.movements[-1].base.position = tf_t.transform.translation
-			_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_t.transform.rotation)
-			move.movements[-1].joints.append(0.78)
-			move.movements[-1].joints.append(0.78)
+		# Starting position is current end effector position, half stow
+		rospy.loginfo("Changing to retrieval configuration")
+		move.movements.append(Movement())
+		move.movements[-1].base.position = tf_b.transform.translation
+		_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_b.transform.rotation)
+		move.movements[-1].joints.append(0.78)
+		move.movements[-1].joints.append(1.57)
 
-			rospy.loginfo("Switching to end effector tracking mode")
+		# Target position is current target pose, unstow
+		move.movements.append(Movement())
+		move.movements[-1].base.position = tf_b.transform.translation
+		_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_b.transform.rotation)
+		move.movements[-1].joints.append(0.78)
+		move.movements[-1].joints.append(0.78)
 
-			tracked_frame = tracking_config.tracked_frame
-			tracking_config.tracked_frame = -1
-			tracking_client.update_configuration(tracking_config)
+		client_move.send_goal(move)
+		client_move.wait_for_result()
 
-			# Send off the collection movement
-			rospy.loginfo("Moving to retrieval point")
+		#rospy.loginfo("Switching to end effector tracking mode")
+		#tracked_frame = tracking_config.tracked_frame
+		#tracking_config.tracked_frame = -1
+		#tracking_client.update_configuration(tracking_config)
 
-			client_move.send_goal(move)
-			client_move.wait_for_result()
+		# Send off the collection movement
+		rospy.loginfo("Moving to retrieval point")
+		del move.movements[0]
 
-			# XXX: Graps happens here!
-			rospy.loginfo("Performing retrieval")
-			move.movements = []
+		stamp = rospy.Time.now()
+		tf_b = tfBuffer.lookup_transform("map", "mantis_uav", stamp, rospy.Duration(0.5))
+		tf_e = tfBuffer.lookup_transform("map", "mantis_uav/end_effector", stamp, rospy.Duration(0.5))
 
-			move.movements.append(Movement())
-			move.movements[-1].base.position = tf_t.transform.translation
-			_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_t.transform.rotation)
-			move.movements[-1].joints.append(0.78)
-			move.movements[-1].joints.append(0.78)
+		de_x = tf_e.transform.translation.x - tf_b.transform.translation.x
+		de_y = tf_e.transform.translation.y - tf_b.transform.translation.y
+		de_z = tf_e.transform.translation.z - tf_b.transform.translation.z
 
-			# Target position is current target pose, unstow
-			move.movements.append(Movement())
-			move.movements[-1].base.position.x = tf_t.transform.translation.x
-			move.movements[-1].base.position.y = tf_t.transform.translation.y
-			move.movements[-1].base.position.z = tf_t.transform.translation.z + 0.2
-			_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_t.transform.rotation)
-			move.movements[-1].joints.append(0.78)
-			move.movements[-1].joints.append(0.78)
+		# Target position is current target pose, plus the end effector offset, and unstowed
+		# Move upwards first
+		move.movements.append(Movement())
+		move.movements[-1].base.position.x = tf_b.transform.translation.x
+		move.movements[-1].base.position.y = tf_b.transform.translation.y
+		move.movements[-1].base.position.z = tf_t.transform.translation.z - de_z
+		_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_t.transform.rotation)
+		move.movements[-1].joints.append(0.78)
+		move.movements[-1].joints.append(0.78)
 
-			client_move.send_goal(move)
-			client_move.wait_for_result()
+		move.movements.append(Movement())
+		move.movements[-1].base.position.x = tf_t.transform.translation.x - de_x
+		move.movements[-1].base.position.y = tf_t.transform.translation.y - de_y
+		move.movements[-1].base.position.z = tf_t.transform.translation.z - de_z
+		_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_t.transform.rotation)
+		move.movements[-1].joints.append(0.78)
+		move.movements[-1].joints.append(0.78)
 
-			# Return to the starting position
-			rospy.loginfo("Returning to diversion point")
-			move.movements = []
+		client_move.send_goal(move)
+		client_move.wait_for_result()
 
-			move.movements.append(Movement())
-			move.movements[-1].base.position.x = tf_t.transform.translation.x
-			move.movements[-1].base.position.y = tf_t.transform.translation.y
-			move.movements[-1].base.position.z = tf_t.transform.translation.z + 0.2
-			_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_t.transform.rotation)
-			move.movements[-1].joints.append(0.78)
-			move.movements[-1].joints.append(0.78)
-
-			# Target position is current target pose, unstow
-			move.movements.append(Movement())
-			move.movements[-1].base.position = tf_e.transform.translation
-			_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_b.transform.rotation)
-			move.movements[-1].joints.append(0.78)
-			move.movements[-1].joints.append(1.57)
-
-			client_move.send_goal(move)
-			client_move.wait_for_result()
-
-			rospy.sleep(rospy.Duration(2))
-
-			# Switch back to same tracking as started with
-			rospy.loginfo("Switching to previous tracking mode")
-			tracking_config.tracked_frame = tracked_frame
-			tracking_client.update_configuration(tracking_config)
-
-			done_move = True
+		# XXX: Graps happens here!
+		if rospy.has_param("body/b2/mass/m"):
+			rospy.set_param("body/b2/mass/m", rospy.get_param("body/b2/mass/m") + baton_mass)
+			req = EmptyRequest()
+			res = srv_param_reload(req)
 		else:
-			rospy.logwarn("Target already planned for retrieval, ignoring")
+			rospy.logwarn("Failed to update mass properties!")
+		# XXX: Graps happens here!
+
+		rospy.loginfo("Performing retrieval")
+		del move.movements[0]
+		del move.movements[0]
+
+		# Target position is current target pose, unstow
+		move.movements.append(Movement())
+		move.movements[-1].base.position.x = tf_t.transform.translation.x - de_x
+		move.movements[-1].base.position.y = tf_t.transform.translation.y - de_y
+		move.movements[-1].base.position.z = tf_t.transform.translation.z - de_z + 0.2
+		_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_t.transform.rotation)
+		move.movements[-1].joints.append(0.78)
+		move.movements[-1].joints.append(0.78)
+
+		client_move.send_goal(move)
+		client_move.wait_for_result()
+
+		# Return to the starting position
+		rospy.loginfo("Returning to diversion point")
+		del move.movements[0]
+
+		move.movements.append(Movement())
+		move.movements[-1].base.position.x = tf_b.transform.translation.x
+		move.movements[-1].base.position.y = tf_b.transform.translation.y
+		move.movements[-1].base.position.z = tf_t.transform.translation.z - de_z + 0.2
+		_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_t.transform.rotation)
+		move.movements[-1].joints.append(0.78)
+		move.movements[-1].joints.append(0.78)
+
+		# Target position is current target pose, unstow
+		move.movements.append(Movement())
+		move.movements[-1].base.position = tf_b.transform.translation
+		_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_b.transform.rotation)
+		move.movements[-1].joints.append(0.78)
+		move.movements[-1].joints.append(1.57)
+
+		client_move.send_goal(move)
+		client_move.wait_for_result()
+
+		rospy.sleep(rospy.Duration(2))
+
+		# Switch back to same tracking as started with
+		#rospy.loginfo("Switching to previous tracking mode")
+		#tracking_config.tracked_frame = tracked_frame
+		#tracking_client.update_configuration(tracking_config)
 	else:
 		rospy.logerr("Target retrieve not ready, ignoring target")
 
@@ -167,7 +201,8 @@ def callback_config(config):
 
 def main():
 	global client_move
-	global done_move
+	global sub_target
+	global srv_param_reload
 
 	global tfBuffer
 	global tfln
@@ -182,7 +217,7 @@ def main():
 
 	rospy.loginfo("Loading target retrieve...")
 
-	sub = rospy.Subscriber("target_found", Time, callback_target)
+	sub_target = rospy.Subscriber("target_found", Time, callback_target)
 
 	client_move = actionlib.SimpleActionClient('manoeuvre', ManoeuvreAction)
 	client_move.wait_for_server()
@@ -192,6 +227,10 @@ def main():
 
 	# Need this to switch out to end effector control and back to the previous settings
 	tracking_client = dynamic_reconfigure.client.Client("router_base/control_settings", timeout=30, config_callback=callback_config)
+
+	# Need this to update the weight estimates of the end link
+	rospy.wait_for_service('reload_params')
+	srv_param_reload = rospy.ServiceProxy('reload_params', Empty)
 
 	rospy.loginfo("Target retrieve ready!")
 
