@@ -1,0 +1,15 @@
+<?xml version='1.0'?>
+<launch>
+	<arg name="camera_name" default="frame_camera" />
+
+	<!-- Launch camera node
+	<node pkg="cv_camera" type="cv_camera_node" name="$(arg camera_name)" required="true" clear_params="true" output="$(arg log_output)"/>
+	-->
+
+	<node pkg="mantis_target_detector_baton" type="mantis_target_detector_baton_node" name="baton_detector"
+	ns="/mantis_uav" required="true" clear_params="true" output="screen">
+		<param name="camera_namespace" value="/$(arg camera_name)" />
+
+		<rosparam command="load" file="$(find mantis_target_detector_baton)/launch/blue_baton_config.yaml" />
+	</node>
+</launch>

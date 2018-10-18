@@ -4,20 +4,21 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 
-#include <geometry_msgs/PoseStamped.h>
+#include <std_msgs/Time.h>
 #include <geometry_msgs/TransformStamped.h>
-#include <visualization_msgs/Marker.h>
 
 #include <tf2_ros/transform_broadcaster.h>
 
 #include <opencv2/calib3d.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include <string>
 #include <iostream>
 
-class BallDetector {
+class BatonDetector {
 	private:
 		ros::NodeHandle nh_;
+		ros::NodeHandle nhp_;
 		image_transport::ImageTransport it_;
 
 		ros::Subscriber sub_camera_info_;
@@ -25,7 +26,6 @@ class BallDetector {
 		image_transport::Publisher pub_debug_image_;
 		image_transport::Publisher pub_overlay_image_;
 		ros::Publisher pub_detect_;
-		ros::Publisher pub_marker_;
 
 		tf2_ros::TransformBroadcaster tfbr_;
 
@@ -35,14 +35,12 @@ class BallDetector {
 		cv::Mat camera_matrix_;
 		cv::Mat dist_coeffs_;
 
-		cv::Vec3f detected_ball_filtered_;
+		cv::Vec3f detected_baton_filtered_;
 		std::vector<cv::Point3d> model_points_;
 
-		bool param_show_marker_;
-		visualization_msgs::Marker ball_marker_;
-
-		std::string param_ball_name_;
-		double param_ball_diameter_;
+		std::string param_baton_name_;
+		double param_baton_length_;
+		double param_baton_radius_;
 		double param_hsv_min_hue_;
 		double param_hsv_min_sat_;
 		double param_hsv_min_val_;
@@ -64,19 +62,16 @@ class BallDetector {
 		double param_low_pass_pos_a_;
 		double param_low_pass_size_a_;
 
-		std::string topic_input_camera_info_;
-		std::string topic_input_image_;
-		std::string topic_output_debug_image_;
-		std::string topic_output_overlay_image_;
-		std::string topic_output_detect_;
-		std::string topic_output_marker_;
+		std::string param_camera_namespace_;
 
 	public:
-		BallDetector() :
-			nh_( ros::this_node::getName() ),
-			it_(nh_),
-			param_ball_name_( "ball" ),
-			param_ball_diameter_( 1.0 ),
+		BatonDetector() :
+			nh_(),
+			nhp_("~"),
+			it_(nhp_),
+			param_baton_name_( "baton" ),
+			param_baton_length_( 0.12 ),
+			param_baton_radius_(0.01),
 			param_hough_accum_( 2 ),
 			param_hough_min_dist_( 4 ),
 			param_hough_param1_( 100 ),
@@ -90,121 +85,49 @@ class BallDetector {
 			param_low_pass_pos_a_( 0.2 ),
 			param_low_pass_size_a_( 0.2 ),
 			param_camera_rectified_( false ),
-			param_show_marker_( false ),
 			got_camera_info_( false ),
-			topic_input_camera_info_( "input_camera_info" ),
-			topic_input_image_( "input_image" ),
-			topic_output_debug_image_( "debug_image" ),
-			topic_output_overlay_image_( "overlay_image" ),
-			topic_output_detect_( "target_pose" ),
-			topic_output_marker_( "target_marker" ) {
+			param_camera_namespace_( "camera" ) {
 
 			//Get parameters, or if not defined, use the defaults
-			nh_.param( "topic_input_camera_info", topic_input_camera_info_, topic_input_camera_info_ );
-			nh_.param( "topic_input_image", topic_input_image_, topic_input_image_ );
-			nh_.param( "topic_output_debug_image", topic_output_debug_image_, topic_output_debug_image_ );
-			nh_.param( "topic_output_overlay_image", topic_output_overlay_image_, topic_output_overlay_image_ );
-			nh_.param( "topic_output_detect", topic_output_detect_, topic_output_detect_ );	//We use this topic to send our detection results
-			nh_.param( "topic_output_marker", topic_output_marker_, topic_output_marker_ );
+			nhp_.param( "camera_namespace", param_camera_namespace_, param_camera_namespace_ );
 
-			// Subscrive to input video feed and publish output video feed
-			sub_camera_info_ = nh_.subscribe<sensor_msgs::CameraInfo> ( topic_input_camera_info_, 100, &BallDetector::camera_info_cb, this );
-			pub_debug_image_ = it_.advertise(topic_output_debug_image_, 100);
-			pub_overlay_image_ = it_.advertise(topic_output_overlay_image_, 100);
-			pub_detect_ = nh_.advertise<geometry_msgs::PoseStamped>( topic_output_detect_, 100 );
+			// Subscribe to input video feed and publish output video feed
+			sub_camera_info_ = nh_.subscribe<sensor_msgs::CameraInfo> ( param_camera_namespace_ + "/camera_info", 100, &BatonDetector::camera_info_cb, this );
+			pub_debug_image_ = it_.advertise( "debug_image", 10);
+			pub_overlay_image_ = it_.advertise( "overlay_image", 10);
+			pub_detect_ = nh_.advertise<std_msgs::Time>( "target_found", 10 );
 
-			nh_.param( "ball_description/name", param_ball_name_, param_ball_name_ );
-			nh_.param( "ball_description/diameter", param_ball_diameter_, param_ball_diameter_ );
-			nh_.param( "ball_description/hsv_min/hue", param_hsv_min_hue_, param_hsv_min_hue_ );
-			nh_.param( "ball_description/hsv_min/sat", param_hsv_min_sat_, param_hsv_min_sat_ );
-			nh_.param( "ball_description/hsv_min/val", param_hsv_min_val_, param_hsv_min_val_ );
-			nh_.param( "ball_description/hsv_max/hue", param_hsv_max_hue_, param_hsv_max_hue_ );
-			nh_.param( "ball_description/hsv_max/sat", param_hsv_max_sat_, param_hsv_max_sat_ );
-			nh_.param( "ball_description/hsv_max/val", param_hsv_max_val_, param_hsv_max_val_ );
+			nhp_.param( "baton_description/name", param_baton_name_, param_baton_name_ );
+			nhp_.param( "baton_description/length", param_baton_length_, param_baton_length_ );
+			nhp_.param( "baton_description/radius", param_baton_radius_, param_baton_radius_ );
+			nhp_.param( "baton_description/hsv_min/hue", param_hsv_min_hue_, param_hsv_min_hue_ );
+			nhp_.param( "baton_description/hsv_min/sat", param_hsv_min_sat_, param_hsv_min_sat_ );
+			nhp_.param( "baton_description/hsv_min/val", param_hsv_min_val_, param_hsv_min_val_ );
+			nhp_.param( "baton_description/hsv_max/hue", param_hsv_max_hue_, param_hsv_max_hue_ );
+			nhp_.param( "baton_description/hsv_max/sat", param_hsv_max_sat_, param_hsv_max_sat_ );
+			nhp_.param( "baton_description/hsv_max/val", param_hsv_max_val_, param_hsv_max_val_ );
 
-			nh_.param( "hough_detector/accum_scale", param_hough_accum_, param_hough_accum_);
-			nh_.param( "hough_detector/min_dist_scale", param_hough_min_dist_, param_hough_min_dist_ );
-			nh_.param( "hough_detector/param1", param_hough_param1_, param_hough_param1_ );
-			nh_.param( "hough_detector/param2", param_hough_param2_, param_hough_param2_ );
-			nh_.param( "hough_detector/min_radius", param_hough_min_rad_, param_hough_min_rad_ );
-			nh_.param( "hough_detector/max_radius", param_hough_max_rad_, param_hough_max_rad_ );
+			nhp_.param( "hough_detector/accum_scale", param_hough_accum_, param_hough_accum_);
+			nhp_.param( "hough_detector/min_dist_scale", param_hough_min_dist_, param_hough_min_dist_ );
+			nhp_.param( "hough_detector/param1", param_hough_param1_, param_hough_param1_ );
+			nhp_.param( "hough_detector/param2", param_hough_param2_, param_hough_param2_ );
+			nhp_.param( "hough_detector/min_radius", param_hough_min_rad_, param_hough_min_rad_ );
+			nhp_.param( "hough_detector/max_radius", param_hough_max_rad_, param_hough_max_rad_ );
 
-			nh_.param( "filters/openning/size", param_morph_open_size_, param_morph_open_size_ );
-			nh_.param( "filters/closing/size", param_morph_close_size_, param_morph_close_size_ );
-			nh_.param( "filters/blur/size", param_blur_size_, param_blur_size_ );
-			nh_.param( "filters/blur/distribution", param_blur_dist_, param_blur_dist_ );
-			nh_.param( "filters/pose_low_pass/position_alpha", param_low_pass_pos_a_, param_low_pass_pos_a_ );
-			nh_.param( "filters/pose_low_pass/size_alpha", param_low_pass_size_a_, param_low_pass_size_a_ );
+			nhp_.param( "filters/openning/size", param_morph_open_size_, param_morph_open_size_ );
+			nhp_.param( "filters/closing/size", param_morph_close_size_, param_morph_close_size_ );
+			nhp_.param( "filters/blur/size", param_blur_size_, param_blur_size_ );
+			nhp_.param( "filters/blur/distribution", param_blur_dist_, param_blur_dist_ );
+			nhp_.param( "filters/pose_low_pass/position_alpha", param_low_pass_pos_a_, param_low_pass_pos_a_ );
+			nhp_.param( "filters/pose_low_pass/size_alpha", param_low_pass_size_a_, param_low_pass_size_a_ );
 
-			double ball_rad = param_ball_diameter_ / 2.0;
 			model_points_.push_back( cv::Point3d( 0.0, 0.0, 0.0 ) );	//Center
-			model_points_.push_back( cv::Point3d(-ball_rad, ball_rad, 0.0 ) );	//Top Left
-			model_points_.push_back( cv::Point3d( ball_rad, ball_rad, 0.0 ) );	//Top Right
-			model_points_.push_back( cv::Point3d(-ball_rad,-ball_rad, 0.0 ) );	//Bottom Left
-			model_points_.push_back( cv::Point3d( ball_rad,-ball_rad, 0.0 ) );	//Bottom Right
+			model_points_.push_back( cv::Point3d( 0.0, param_baton_radius_, param_baton_length_ / 2 ) );	//Top Left
+			model_points_.push_back( cv::Point3d( 0.0, -param_baton_radius_, param_baton_length_ / 2 ) );	//Top Right
+			model_points_.push_back( cv::Point3d( 0.0, param_baton_radius_, -param_baton_length_ / 2 ) );	//Bottom Left
+			model_points_.push_back( cv::Point3d( 0.0, -param_baton_radius_, -param_baton_length_ / 2 ) );	//Bottom Right
 
 			nh_.param( "camera_is_rectified", param_camera_rectified_, param_camera_rectified_ );
-
-			nh_.param( "show_marker", param_show_marker_, param_show_marker_ );
-
-			//TODO: Move this to another node
-			if( param_show_marker_ ) {
-				pub_marker_ = nh_.advertise<visualization_msgs::Marker>( topic_output_marker_, 1, true );
-
-				double mid_hue = ( param_hsv_max_hue_ + (param_hsv_min_hue_ > param_hsv_max_hue_ ? param_hsv_min_hue_ + 360.0 : param_hsv_min_hue_ ) ) / 2.0;
-				double mid_sat = ( param_hsv_max_sat_ + param_hsv_min_sat_ ) / 2.0;
-				double mid_val = ( param_hsv_max_val_ + param_hsv_min_val_ ) / 2.0;
-
-				ball_marker_.header.frame_id = param_ball_name_;
-				ball_marker_.header.stamp = ros::Time::now();
-
-				ball_marker_.ns = param_ball_name_;
-				ball_marker_.id = 0;
-				ball_marker_.type = visualization_msgs::Marker::SPHERE;
-				ball_marker_.action = visualization_msgs::Marker::ADD;
-				ball_marker_.lifetime = ros::Duration();
-				ball_marker_.frame_locked = true;
-
-				ball_marker_.pose.position.x = 0;
-				ball_marker_.pose.position.y = 0;
-				ball_marker_.pose.position.z = 0;
-				ball_marker_.pose.orientation.x = 0.0;
-				ball_marker_.pose.orientation.y = 0.0;
-				ball_marker_.pose.orientation.z = 0.0;
-				ball_marker_.pose.orientation.w = 1.0;
-
-				ball_marker_.scale.x = param_ball_diameter_;
-				ball_marker_.scale.y = param_ball_diameter_;
-				ball_marker_.scale.z = param_ball_diameter_;
-
-				//Convert the average HSV detection to a RGBA value for ROS
-				//CV::HSV:
-				//	H: 0->180
-				//	S: 0->255
-				//	V: 0->255
-				//CV::RGB:
-				//	R: 0->255
-				//	G: 0->255
-				//	B: 0->255
-				//ROS::RGBA:
-				//	R: 0->1.0
-				//	G: 0->1.0
-				//	B: 0->1.0
-				//	A: 0->1.0
-				cv::Scalar mid_hsv( (uint8_t)( ( mid_hue / 2 ) ),
-									(uint8_t)( mid_sat * 255.0 ),
-									(uint8_t)( mid_val * 255.0 ) );
-				cv::Mat tmp_mat( 1,1, CV_8UC3, mid_hsv );
-				cv::cvtColor( tmp_mat, tmp_mat, CV_HSV2BGR );
-				cv::Scalar mid_rgb = tmp_mat.at<cv::Vec3b>(0,0);
-
-				ball_marker_.color.r = ( (double)mid_rgb.val[2] ) / 255;
-				ball_marker_.color.g = ( (double)mid_rgb.val[1] ) / 255;
-				ball_marker_.color.b = ( (double)mid_rgb.val[0] ) / 255;
-				ball_marker_.color.a = 1.0;
-
-				pub_marker_.publish( ball_marker_ );
-			}
 
 			ROS_INFO("Waiting for camera info...");
 
@@ -215,12 +138,12 @@ class BallDetector {
 
 			ROS_INFO("Recieved camera info!");
 
-			sub_image_ = it_.subscribe(topic_input_image_, 100, &BallDetector::image_cb, this);
+			sub_image_ = it_.subscribe(param_camera_namespace_ + "/image_raw", 100, &BatonDetector::image_cb, this);
 
 			ROS_INFO("Beginning detection...");
 		}
 
-		~BallDetector() {
+		~BatonDetector() {
 			//This message won't actually send here, as the node will have already shut down
 			ROS_INFO("Shutting down...");
 		}
@@ -267,6 +190,7 @@ class BallDetector {
 			cv::Mat hsv_image;
 			cv::cvtColor(cv_ptr->image, hsv_image, cv::COLOR_BGR2HSV);
 
+			cv::Mat mask_image;
 			//Create a spectrum mask
 			if( param_hsv_min_hue_ < param_hsv_max_hue_ ) {
 				cv::inRange( hsv_image,
@@ -276,7 +200,7 @@ class BallDetector {
 							 cv::Scalar( (uint8_t)( param_hsv_max_hue_ / 2.0 ),
 										 (uint8_t)( param_hsv_max_sat_ * 255.0 ),
 										 (uint8_t)( param_hsv_max_val_ * 255.0 ) ),
-							 hsv_image);
+							 mask_image);
 			} else {
 				cv::Mat low_range;
 				cv::Mat high_range;
@@ -299,108 +223,135 @@ class BallDetector {
 										 (uint8_t)( param_hsv_max_val_ * 255.0 ) ),
 							 high_range);
 
-				cv::bitwise_or( low_range, high_range, hsv_image );
+				cv::bitwise_or( low_range, high_range, mask_image );
 			}
 
 			//Perform an Openning and Closing morphology transform to fill in and smooth out the ball
 			cv::Mat stuct_el_open = getStructuringElement( cv::MORPH_ELLIPSE, cv::Size( param_morph_open_size_, param_morph_open_size_ ) );
 			cv::Mat stuct_el_close = getStructuringElement( cv::MORPH_ELLIPSE, cv::Size( param_morph_close_size_, param_morph_close_size_ ) );
-			cv::morphologyEx( hsv_image, hsv_image, cv::MORPH_OPEN, stuct_el_open );	//Apply the specified morphology operation
-			cv::morphologyEx( hsv_image, hsv_image, cv::MORPH_CLOSE, stuct_el_close );	//Apply the specified morphology operation
+			cv::morphologyEx( mask_image, mask_image, cv::MORPH_OPEN, stuct_el_open );	//Apply the specified morphology operation
+			cv::morphologyEx( mask_image, mask_image, cv::MORPH_CLOSE, stuct_el_close );	//Apply the specified morphology operation
 
 			//Blur slightly to increase chances of detection
-			cv::GaussianBlur(hsv_image, hsv_image, cv::Size(param_blur_size_, param_blur_size_), param_blur_dist_);
+			cv::GaussianBlur(mask_image, mask_image, cv::Size(param_blur_size_, param_blur_size_), param_blur_dist_);
 
-			// Use the Hough transform to detect circles in the combined threshold image
-			std::vector<cv::Vec3f> found_circles;
+			std::vector<std::vector<cv::Point>> contours;
+			std::vector<cv::Vec4i> hierarchy;
+			std::vector<std::vector<cv::Point>> polys;
 
-			cv::HoughCircles(hsv_image,
-							 found_circles,
-							 CV_HOUGH_GRADIENT,
-							 param_hough_accum_,
-							 hsv_image.rows / param_hough_min_dist_,
-							 param_hough_param1_,
-							 param_hough_param2_,
-							 param_hough_min_rad_,
-							 param_hough_max_rad_);
+			// Detect edges using canny
+			int thresh = 100;
+			cv::Canny( mask_image, mask_image, thresh, thresh*2, 3 );
+			// Find contours
+			cv::findContours( mask_image, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
 
-			cv::Vec3f detected_ball_raw;
+			polys.resize(contours.size());
+			for( int i=0; i<contours.size(); i++ ) {
+				cv::approxPolyDP(cv::Mat(contours[i]), polys[i], 3, false);
+				if(polys[i].size() == 4) {
+					ROS_INFO("Square!");
+				}
+			}
 
-			if(found_circles.size() > 0) {
-				//XXX: Ideally there should ounly be one circle found, pick out the best one here
-				detected_ball_raw = found_circles.at(0);
+			bool have_estimate = false;
+			std::vector<cv::Point> detected_baton_raw;
 
-				//Filter reading
-				detected_ball_filtered_[0] = detected_ball_filtered_[0] - ( param_low_pass_pos_a_ * ( detected_ball_filtered_[0] - detected_ball_raw[0] ) ) ;
-				detected_ball_filtered_[1] = detected_ball_filtered_[1] - ( param_low_pass_pos_a_ * ( detected_ball_filtered_[1] - detected_ball_raw[1] ) ) ;
-				detected_ball_filtered_[2] = detected_ball_filtered_[2] - ( param_low_pass_size_a_ * ( detected_ball_filtered_[2] - detected_ball_raw[2] ) ) ;
+			for( int i=0; i<polys.size(); i++ ) {
+				//XXX: Ideally there should ounly be one circle found
+				//pick out the "best" one here
+				//in this case, the fisrt square/rectangle found
+				if(polys[i].size() == 4) {
 
-				//Take circle estimate, and transform it to a 2D Square
-				std::vector<cv::Point2d> image_points;
+					detected_baton_raw = polys.at(0);
 
-				//TODO: Should the be rounded?
-				double p_x = std::round( detected_ball_filtered_[0] );	//Center of circle X
-				double p_y = std::round( detected_ball_filtered_[1] );	//Center of circle Y
-				double p_d = std::round( detected_ball_filtered_[2] );	//Radius of circle
+					//Filter reading
+					/*
+					detected_ball_filtered_[0] = detected_ball_filtered_[0] - ( param_low_pass_pos_a_ * ( detected_ball_filtered_[0] - detected_ball_raw[0] ) ) ;
+					detected_ball_filtered_[1] = detected_ball_filtered_[1] - ( param_low_pass_pos_a_ * ( detected_ball_filtered_[1] - detected_ball_raw[1] ) ) ;
+					detected_ball_filtered_[2] = detected_ball_filtered_[2] - ( param_low_pass_size_a_ * ( detected_ball_filtered_[2] - detected_ball_raw[2] ) ) ;
 
-				image_points.push_back( cv::Point2d( p_x, p_y ) );	//Center
-				image_points.push_back( cv::Point2d( p_x - p_d, p_y + p_d ) );	//Top Left
-				image_points.push_back( cv::Point2d( p_x + p_d, p_y + p_d ) );	//Top Right
-				image_points.push_back( cv::Point2d( p_x - p_d, p_y - p_d ) );	//Bottom Left
-				image_points.push_back( cv::Point2d( p_x + p_d, p_y - p_d ) );	//Bottom Right
 
-				// Output rotation and translation
-				cv::Mat rvec; // Rotation in axis-angle form
-				cv::Mat tvec;
+					//TODO: Should the be rounded?
+					double p_x = std::round( detected_ball_filtered_[0] );	//Center of circle X
+					double p_y = std::round( detected_ball_filtered_[1] );	//Center of circle Y
+					double p_d = std::round( detected_ball_filtered_[2] );	//Radius of circle
+					*/
 
-				// Solve for pose
-				cv::solvePnP( model_points_,
-							  image_points,
-							  camera_matrix_,
-							  dist_coeffs_,
-							  rvec,
-							  tvec );
+					//Take circle estimate, and transform it to a 2D Square
+					std::vector<cv::Point2d> image_points;
+				/*
+					image_points.push_back( cv::Point2d( p_x, p_y ) );	//Center
+					image_points.push_back( cv::Point2d( p_x - p_d, p_y + p_d ) );	//Top Left
+					image_points.push_back( cv::Point2d( p_x + p_d, p_y + p_d ) );	//Top Right
+					image_points.push_back( cv::Point2d( p_x - p_d, p_y - p_d ) );	//Bottom Left
+					image_points.push_back( cv::Point2d( p_x + p_d, p_y - p_d ) );	//Bottom Right
 
-				//Transmit the detection message
-				geometry_msgs::PoseStamped msg_out;
+					// Output rotation and translation
+					cv::Mat rvec; // Rotation in axis-angle form
+					cv::Mat tvec;
 
-				msg_out.header.frame_id = camera_info_.header.frame_id;
-				msg_out.header.stamp = msg_in->header.stamp;
+					// Solve for pose
+					cv::solvePnP( model_points_,
+								  image_points,
+								  camera_matrix_,
+								  dist_coeffs_,
+								  rvec,
+								  tvec );
 
-				msg_out.pose.position.x = tvec.at<double>(0,0);
-				msg_out.pose.position.y = tvec.at<double>(1,0);
-				msg_out.pose.position.z = tvec.at<double>(2,0);
+					//Transmit the detection message
+					geometry_msgs::PoseStamped msg_out;
 
-				//We don't have any orientation data about the ball, so don't even bother
-				msg_out.pose.orientation.w = 1.0;
-				msg_out.pose.orientation.x = 0.0;
-				msg_out.pose.orientation.y = 0.0;
-				msg_out.pose.orientation.z = 0.0;
+					msg_out.header.frame_id = camera_info_.header.frame_id;
+					msg_out.header.stamp = msg_in->header.stamp;
 
-				geometry_msgs::TransformStamped tf_out;
-				tf_out.header = msg_out.header;
-				tf_out.child_frame_id = param_ball_name_;
-				tf_out.transform.translation.x = msg_out.pose.position.x;
-				tf_out.transform.translation.y = msg_out.pose.position.y;
-				tf_out.transform.translation.z = msg_out.pose.position.z;
-				tf_out.transform.rotation.w = msg_out.pose.orientation.w;
-				tf_out.transform.rotation.x = msg_out.pose.orientation.x;
-				tf_out.transform.rotation.y = msg_out.pose.orientation.y;
-				tf_out.transform.rotation.z = msg_out.pose.orientation.z;
+					msg_out.pose.position.x = tvec.at<double>(0,0);
+					msg_out.pose.position.y = tvec.at<double>(1,0);
+					msg_out.pose.position.z = tvec.at<double>(2,0);
 
-				pub_detect_.publish( msg_out );
-				tfbr_.sendTransform( tf_out );
+					//We don't have any orientation data about the ball, so don't even bother
+					msg_out.pose.orientation.w = 1.0;
+					msg_out.pose.orientation.x = 0.0;
+					msg_out.pose.orientation.y = 0.0;
+					msg_out.pose.orientation.z = 0.0;
+
+					geometry_msgs::TransformStamped tf_out;
+					tf_out.header = msg_out.header;
+					tf_out.child_frame_id = param_ball_name_;
+					tf_out.transform.translation.x = msg_out.pose.position.x;
+					tf_out.transform.translation.y = msg_out.pose.position.y;
+					tf_out.transform.translation.z = msg_out.pose.position.z;
+					tf_out.transform.rotation.w = msg_out.pose.orientation.w;
+					tf_out.transform.rotation.x = msg_out.pose.orientation.x;
+					tf_out.transform.rotation.y = msg_out.pose.orientation.y;
+					tf_out.transform.rotation.z = msg_out.pose.orientation.z;
+
+					pub_detect_.publish( msg_out );
+					tfbr_.sendTransform( tf_out );
+				*/
+					have_estimate = true;
+					break;
+				}
 			}
 
 			//Only compute and send the debug image if a node is subscribed
 			if( pub_debug_image_.getNumSubscribers() > 0 ) {
 				//==-- Output modified video stream
-				pub_debug_image_.publish( cv_bridge::CvImage( msg_in->header, "mono8", hsv_image ).toImageMsg() );
+				pub_debug_image_.publish( cv_bridge::CvImage( msg_in->header, "mono8", mask_image ).toImageMsg() );
 			}
 
 			//Only compute and send the overlay image if a node is subscribed
 			if( pub_overlay_image_.getNumSubscribers() > 0 ) {
-				if( found_circles.size() > 0 ) {
+				cv::RNG rng(12345);
+
+				for( int i=0; i<contours.size(); i++ ) {
+					drawContours( cv_ptr->image, polys, i, cv::Scalar(0,0,255), 2, 4, hierarchy, 0, cv::Point() );
+				}
+
+				if(have_estimate) {
+
+				}
+
+					/*
 					//Green for filtered position and size
 					for( size_t current_circle = 0; current_circle < found_circles.size(); ++current_circle ) {
 						cv::Point center( std::round( found_circles[current_circle][0] ), std::round( found_circles[current_circle][1] ) );
@@ -417,7 +368,7 @@ class BallDetector {
 					cv::Point filtered_center( std::round( detected_ball_filtered_[0] ), std::round( detected_ball_filtered_[1] ) );
 					int filtered_radius = std::round( detected_ball_filtered_[2] );
 					cv::circle( cv_ptr->image, filtered_center, filtered_radius, cv::Scalar( 0, 0, 255 ), 5 );
-				}
+					*/
 
 				//==-- Output modified video stream
 				pub_overlay_image_.publish( cv_ptr->toImageMsg() );
@@ -426,8 +377,8 @@ class BallDetector {
 };
 
 int main(int argc, char** argv) {
-	ros::init(argc, argv, "goal_detector");
-	BallDetector bd;
+	ros::init(argc, argv, "baton_detector");
+	BatonDetector bd;
 
 	ros::spin();
 

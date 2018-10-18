@@ -34,9 +34,9 @@
 				<pose>0.075 0 0.025 0 0 0</pose>
 				<horizontal_fov>${60 * pi/180.0}</horizontal_fov>
 				<image>
-					<format>R8G8B8</format>
-					<width>1020</width>
-					<height>1020</height>
+					<format>B8G8R8</format>
+					<width>640</width>
+					<height>480</height>
 				</image>
 				<clip>
 					<near>0.01</near>
