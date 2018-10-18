@@ -3,212 +3,20 @@
 import sys
 from math import *
 
-import roslib
-roslib.load_manifest('contrail')
 import rospy
-import actionlib
-from actionlib_msgs.msg import GoalStatus
 
-import mantis_planner.movement_loader as ml
-from contrail.msg import TrajectoryAction, TrajectoryGoal
-from mantis_router_joints.msg import JointMovementAction, JointMovementGoal
+import mantis_planner.movement_dispatcher as md
+from mantis_msgs.msg import Manoeuvre
 
-global timer
-global dispatch_func
-
-def configure_clients(joint_names):
-	action_topic_contrail = rospy.get_param("~action_topic_contrail", 'contrail')
-	action_topic_joints = rospy.get_param("~action_topic_joint_prefix", "router_joints/")
-
-	client_base = actionlib.SimpleActionClient(action_topic_contrail, TrajectoryAction)
-	rospy.loginfo("Waiting for base action client")
-	client_base.wait_for_server()
-
-	action_client_joints = []
-	for j in range(len(joint_names)):
-		if not rospy.is_shutdown():
-			action_client_joints.append(actionlib.SimpleActionClient(action_topic_joints + joint_names[j], JointMovementAction))
-			rospy.loginfo("Waiting for %s action client" % (action_topic_joints + joint_names[j]))
-			action_client_joints[j].wait_for_server()
-
-	return (client_base, action_client_joints)
-
-def do_dispatch_continuous(movements, joint_names):
-	if rospy.has_param("~movements/duration"):
-		movement_duration = rospy.Duration.from_sec(rospy.get_param("~movements/duration"))
-		success, movements, joint_names = ml.load_movements()
-
-		(client_base, action_client_joints) = configure_clients(joint_names)
-
-		if not rospy.is_shutdown():
-			# Prepare the spline interpolation points
-			rospy.loginfo("Continuous manoeuvre:")
-
-			goal_base = TrajectoryGoal()
-			goal_base.duration = movement_duration
-			goal_base.positions = []
-			goal_base.yaws = []
-			for i in range(len(movements)):
-				goal_base.positions.append(movements[i].base.position)
-				goal_base.yaws.append(movements[i].base.yaw)
-
-			# Do some formatted logging to console
-			datalog_names = ["Base_Px","Base_Py","Base_Pz","Base_Rz"]
-			datalog = []
-			datalog_px = []
-			datalog_py = []
-			datalog_pz = []
-
-			for i in range(len(goal_base.positions)):
-				datalog_px.append(goal_base.positions[i].x)
-				datalog_py.append(goal_base.positions[i].y)
-				datalog_pz.append(goal_base.positions[i].z)
-
-			datalog.append(datalog_px)
-			datalog.append(datalog_py)
-			datalog.append(datalog_pz)
-			datalog.append(goal_base.yaws)
-
-			goal_joints = []
-			for j in range(len(joint_names)):
-				goal_joints.append(JointMovementGoal())
-				goal_joints[j].duration = movement_duration
-
-				goal_joints[j].positions = []
-				for i in range(len(movements)):
-					goal_joints[j].positions.append(movements[i].joint_positions[j])
-
-				datalog.append(goal_joints[j].positions)
-				datalog_names.append(joint_names[j])
-
-			format_title = ""
-			format_row = ""
-			for i in range(len(datalog_names)):
-				format_title += '%' + str(len(datalog_names[i])) + 's '
-				format_row += '%' + str(len(datalog_names[i])) + '.4f '
-
-			rospy.loginfo(format_title % tuple(datalog_names))
-			for i in range(len(movements)):
-				row = []
-				for d in range(len(datalog)):
-					row.append(datalog[d][i])
-				rospy.loginfo(format_row % tuple(row))
-
-			# Prepare the starting time of the action to syncronize clients
-			time_start = rospy.Time.now()
-			goal_base.start = time_start + rospy.Duration.from_sec(2)
-			for j in range(len(joint_names)):
-				goal_joints[j].start = time_start + rospy.Duration.from_sec(2)
-
-			# Send out all of the goals in a batch
-			client_base.send_goal(goal_base)
-			for j in range(len(joint_names)):
-				action_client_joints[j].send_goal(goal_joints[j])
-
-			# Wait for a return from the clients
-			client_base.wait_for_result()
-			for j in range(len(joint_names)):
-				action_client_joints[j].wait_for_result()
-
-			# Graceful shutdown if all is successful
-			if not rospy.is_shutdown():
-				rospy.signal_shutdown("Continuous movement plan complete!")
+def callback(msg_in):
+	if msg_in.header.stamp > rospy.Time(0):
+		try:
+			if(md.movement_dispatcher(msg_in)):
+				rospy.loginfo("Movement plan complete!")
+		except (TypeError, ValueError) as e:
+			rospy.logerr(e)
 	else:
-		rospy.logerr("Unable to locate duration parameter")
-		rospy.signal_shutdown("Error: no duration")
-
-def do_dispatch_discrete(movements, joint_names):
-	(client_base, action_client_joints) = configure_clients(joint_names)
-
-	nom_lvel = rospy.get_param("~movements/nominal_velocity", 0.5)
-	nom_rvel = rospy.get_param("~movements/nominal_rate", 0.5)
-	nom_jvel = rospy.get_param("~movements/nominal_joint_rate", 0.5)
-
-	for i in range(len(movements) - 1):
-		if not rospy.is_shutdown():
-			rospy.loginfo("manoeuvre %i:" % i)
-
-			goal_base = TrajectoryGoal()
-			goal_base.positions = [movements[i].base.position, movements[i+1].base.position]
-			goal_base.yaws = [movements[i].base.yaw, movements[i+1].base.yaw]
-
-			rospy.loginfo("\tbase: [%0.4f,%0.4f,%0.4f;%0.4f] -> [%0.4f,%0.4f,%0.4f;%0.4f]" %
-						   (movements[i].base.position.x, movements[i].base.position.y, movements[i].base.position.z, movements[i].base.yaw,
-							movements[i+1].base.position.x, movements[i+1].base.position.y, movements[i+1].base.position.z, movements[i+1].base.yaw))
-
-			dx = movements[i+1].base.position.x - movements[i].base.position.x
-			dy = movements[i+1].base.position.y - movements[i].base.position.y
-			dz = movements[i+1].base.position.z - movements[i].base.position.z
-
-			lt = sqrt((dx*dx)+(dy*dy)+(dz*dz)) / nom_lvel
-			rt = 0.0
-			if movements[i+1].base.yaw > movements[i].base.yaw:
-				yawd = (movements[i+1].base.yaw - movements[i].base.yaw) % pi
-				rt = yawd / nom_rvel
-			else:
-				yawd = (movements[i].base.yaw - movements[i+1].base.yaw) % pi
-				rt = yawd / nom_rvel
-
-			jt = 0
-			for j in range(len(joint_names)):
-				rospy.loginfo("\tj%i: %0.4f -> %0.4f" % (j,movements[i].joint_positions[j], movements[i+1].joint_positions[j]))
-				jt = max([jt, abs(movements[i+1].joint_positions[j] - movements[i].joint_positions[j] ) / nom_jvel])
-
-			move_time = max([lt,rt,jt])
-			goal_base.duration = rospy.Duration.from_sec(move_time)
-			rospy.loginfo("\ttime: %0.4f" % (move_time))
-
-			goal_joints = []
-			for j in range(len(joint_names)):
-				goal_joints.append(JointMovementGoal())
-				goal_joints[j].positions = [movements[i].joint_positions[j], movements[i+1].joint_positions[j]]
-				goal_joints[j].duration = rospy.Duration.from_sec(move_time)
-
-			time_start = rospy.Time.now()
-			goal_base.start = time_start + rospy.Duration.from_sec(2)
-			for j in range(len(joint_names)):
-				goal_joints[j].start = time_start + rospy.Duration.from_sec(2)
-
-			client_base.send_goal(goal_base)
-			for j in range(len(joint_names)):
-				action_client_joints[j].send_goal(goal_joints[j])
-
-			client_base.wait_for_result()
-			success = (client_base.get_state() == GoalStatus.SUCCEEDED)
-			rospy.loginfo("Base Result: %s" % str(success))
-			for j in range(len(joint_names)):
-				if success:
-					success = success and (action_client_joints[j].wait_for_result() == GoalStatus.SUCCEEDED)
-				else:
-					# If there is a goal failure, cancel all goals for remaining joints
-					action_client_joints[j].cancel_all_goals()
-
-			if not success:
-				rospy.signal_shutdown("Discrete movement externally aborted!")
-
-	# Graceful shutdown if all is successful
-	if not rospy.is_shutdown():
-		rospy.signal_shutdown("Discrete movement plan complete!")
-
-def timer_callback(e):
-	global timer
-	global dispatch_func
-
-	if e.current_real > rospy.Time(0):
-		timer.shutdown()
-
-		success, movements, joint_names = ml.load_movements()
-
-		if success and (len(movements) >= 2):
-			rospy.loginfo("Loaded %i movements for the base and %i joints" % (len(movements), len(joint_names)))
-			dispatch_func(movements, joint_names)
-		else:
-			if (len(wps) < 2):
-				rospy.logerr("Not enough movements were been loaded (%i)" % len(wps))
-				rospy.signal_shutdown("Error: <2 movements")
-			else:
-				rospy.logerr("Unable to locate movement parameters")
-				rospy.signal_shutdown("Error: no movements")
+		rospy.logwarn("Ignoring maneoeuvre, invalid time stamp")
 
 def main():
 	global timer
@@ -216,23 +24,11 @@ def main():
 
 	rospy.init_node('dispatcher_full', anonymous=True)
 
-	rospy.loginfo("Loading plan dispatcher...")
-	mode = rospy.get_param("~movements/mode", "discrete")
+	rospy.Subscriber("manoeuvre", Manoeuvre, callback)
 
-	if mode == "discrete":
-		rospy.loginfo("Dispatcher seting up for discrete plan")
-		dispatch_func = do_dispatch_discrete
-	elif mode == "continuous":
-		rospy.loginfo("Dispatcher seting up for continuous plan")
-		dispatch_func = do_dispatch_continuous
-	else:
-		rospy.logerr("Invalid movement mode set")
-		rospy.signal_shutdown("Error: invalid mode")
+	rospy.loginfo("Loaded plan dispatcher")
 
-	if not rospy.is_shutdown():
-		timer = rospy.Timer(rospy.Duration(1.0/50.0), timer_callback)
-
-		rospy.spin()
+	rospy.spin()
 
 if __name__ == '__main__':
 	try:

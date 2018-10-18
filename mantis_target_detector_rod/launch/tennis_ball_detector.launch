@@ -1,0 +1,27 @@
+<launch>
+	<!-- example launch script for detecting a tennis ball -->
+
+	<arg name="camera_name" default="camera" />
+	<arg name="topic_output_detect" default="/target_pose" />
+	<arg name="topic_output_marker" default="/target_marker" />
+
+	<arg name="log_output" default="screen" />
+
+	<!-- Launch camera node -->
+	<node pkg="cv_camera" type="cv_camera_node" name="$(arg camera_name)" required="true" clear_params="true" output="$(arg log_output)"/>
+
+	<arg name="topic_input_camera_info" default="/$(arg camera_name)/camera_info" />
+	<arg name="topic_input_image" default="/$(arg camera_name)/image_raw" />
+
+	<!-- Launch detector node -->
+	<include file="$(find mantis_target_detector_ball)/launch/ball_detector.launch">
+		<arg name="config_yaml" value="$(find mantis_target_detector_ball)/launch/tennis_ball_config.yaml" />
+
+		<arg name="topic_input_camera_info" value="$(arg topic_input_camera_info)" />
+		<arg name="topic_input_image" value="$(arg topic_input_image)" />
+		<arg name="topic_output_detect" value="$(arg topic_output_detect)" />
+		<arg name="topic_output_marker" value="$(arg topic_output_marker)" />
+
+		<arg name="log_output" value="$(arg log_output)" />
+	</include>
+</launch>

@@ -268,11 +268,25 @@ void ForwardKinematics::configure_static_joints() {
 				geometry_msgs::TransformStamped tf = tf2::eigenToTransform(g);
 				tf.header.stamp = stamp;
 				tf.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/link_" + std::to_string(i);
+
 				tf.child_frame_id = param_model_id_ + "/link_" + std::to_string(i+1);
 
 				tfsbr_.sendTransform(tf);
 				tfBuffer_.setTransform(tf, ros::this_node::getName(), true);	//Set the internal static joints
 			}
+		}
+
+		//If we are on the last iteration, add in a static "end effector" transform
+		if( i+1 == p_.get_joint_num() ) {
+			geometry_msgs::TransformStamped tf = tf2::eigenToTransform(Eigen::Affine3d::Identity());
+			tf.header.stamp = stamp;
+			tf.header.frame_id = (i == 0) ? param_model_id_ : param_model_id_ + "/link_" + std::to_string(i+1);
+
+			tf.child_frame_id = param_model_id_ + "/end_effector";
+
+			tfsbr_.sendTransform(tf);
+			tfBuffer_.setTransform(tf, ros::this_node::getName(), true);	//Set the internal static joints
+
 		}
 	}
 }

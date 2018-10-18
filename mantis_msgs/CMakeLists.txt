@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
 	roscpp
 	rospy
 	dh_parameters
+	contrail_msgs
 	std_msgs
 	geometry_msgs
 	message_generation
@@ -22,12 +23,15 @@ add_message_files(FILES
 	State.msg
 	JointTrajectoryGoal.msg
 	JointTrajectoryList.msg
+	Movement.msg
+	Manoeuvre.msg
 )
 
 ## Generate added messages and services
 generate_messages(DEPENDENCIES
 	std_msgs
 	geometry_msgs
+	contrail_msgs
 	dh_parameters
 )
 

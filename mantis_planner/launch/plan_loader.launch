@@ -1,0 +1,9 @@
+<?xml version='1.0'?>
+<launch>
+	<arg name="move" default=""/>
+
+	<node pkg="mantis_planner" type="plan_loader" name="plan_loader"
+	ns="/mantis_uav" clear_params="true" output="screen">
+		<rosparam command="load" file="$(find mantis_planner)/manoeuvres/$(arg move).yaml"/>
+	</node>
+</launch>

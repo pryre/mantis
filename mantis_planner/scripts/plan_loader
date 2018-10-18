@@ -1,0 +1,50 @@
+#!/usr/bin/env python2
+
+import sys
+from math import *
+
+import rospy
+
+import mantis_planner.movement_loader as ml
+from mantis_msgs.msg import Manoeuvre
+
+def main():
+	rospy.init_node('plan_loader', anonymous=True)
+	pub = rospy.Publisher("manoeuvre", Manoeuvre, queue_size=1)
+
+	# Simply to ensure we have a valid timestamp later
+	rospy.sleep(rospy.Duration(0.5))
+
+	move = Manoeuvre()
+
+	mode = rospy.get_param("~movements/mode")
+	if mode == "discrete":
+		move.mode = Manoeuvre.MODE_DISCRETE
+		move.nominal_velocity = rospy.get_param("~movements/nominal_velocity")
+		move.nominal_rate = rospy.get_param("~movements/nominal_rate")
+		move.nominal_joint_rate = rospy.get_param("~movements/nominal_joint_rate")
+	elif mode == "continuous":
+		move.mode = Manoeuvre.MODE_CONTINUOUS
+		move.c_duration = rospy.Duration(rospy.get_param("~movements/duration"))
+	else:
+		rospy.logerr("Invalid plan mode: %s" % mode)
+		raise ValueError("Invalid plan mode")
+
+	success, move.movements, move.joint_names = ml.load_movements()
+
+	if success:
+		move.header.stamp = rospy.Time.now()
+		move.header.frame_id = "map"
+
+		pub.publish(move)
+
+		rospy.loginfo("Loaded plan!")
+
+	# Simply to ensure we have sent out the message
+	rospy.sleep(rospy.Duration(1.0))
+
+if __name__ == '__main__':
+	try:
+		main()
+	except rospy.ROSInterruptException:
+		pass

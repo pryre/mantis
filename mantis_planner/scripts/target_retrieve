@@ -1,0 +1,147 @@
+#!/usr/bin/env python2
+
+import sys
+from math import *
+
+import rospy
+
+import tf2_ros
+from std_msgs.msg import Time
+from geometry_msgs.msg import TransformStamped, Quaternion
+
+from mantis_msgs.msg import Manoeuvre, Movement
+import dynamic_reconfigure.client
+
+global pub_move
+global done_move
+
+global tfBuffer
+global tfln
+
+global tracking_config
+global tracking_client
+
+def quaternion_to_rpy(q):
+	if not isinstance(q, Quaternion):
+		raise TypeError('Input should be a geometry_msgs/Quaternion')
+
+	q2sqr = q.y * q.y;
+	t0 = -2.0 * (q2sqr + q.z * q.z) + 1.0
+	t1 = 2.0 * (q.x * q.y + q.w * q.z)
+	t2 = -2.0 * (q.x * q.z - q.w * q.y)
+	t3 = 2.0 * (q.y * q.z + q.w * q.x)
+	t4 = -2.0 * (q.x * q.x + q2sqr) + 1.0
+
+	if(t2 > 1.0):
+		t2 = 1.0
+	elif(t2 < -1.0):
+		t2 = -1.0
+
+	roll = atan2(t3, t4);
+	pitch = asin(t2);
+	yaw = atan2(t1, t0);
+
+	return (roll,pitch,yaw)
+
+def callback_target(msg_in):
+	global pub_move
+	global done_move
+
+	global tfBuffer
+	global tfln
+
+	global tracking_config
+	global tracking_client
+
+	# Make sure the message is valid
+	if (not done_move) and (msg_in.data > rospy.Time(0)) and (tracking_config is not None):
+		rospy.loginfo("Target goal identified, generating retrieval manoeuvre")
+
+		# Get current position and goals
+		tf_t = tfBuffer.lookup_transform("map", "target", msg_in.data, rospy.Duration(0.5))
+		tf_b = tfBuffer.lookup_transform("map", "mantis_uav", msg_in.data, rospy.Duration(0.5))
+		tf_e = tfBuffer.lookup_transform("map", "mantis_uav/end_effector", msg_in.data, rospy.Duration(0.5))
+
+		move = Manoeuvre()
+		move.header.stamp = rospy.Time.now()
+		move.header.frame_id = "map"
+
+		move.mode = Manoeuvre.MODE_DISCRETE
+		move.nominal_velocity = 0.1
+		move.nominal_rate = 0.2
+		move.nominal_joint_rate = 0.2
+
+		move.joint_names = ["joint_shoulder", "joint_elbow"]
+
+		# Starting position is current end effector position, half stow
+		move.movements.append(Movement())
+		move.movements[-1].base.position = tf_e.transform.translation
+		_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_b.transform.rotation)
+		move.movements[-1].joints.append(0.78)
+		move.movements[-1].joints.append(1.57)
+
+		# Target position is current target pose, unstow
+		move.movements.append(Movement())
+		move.movements[-1].base.position = tf_t.transform.translation
+		_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_t.transform.rotation)
+		move.movements[-1].joints.append(0.78)
+		move.movements[-1].joints.append(0.78)
+
+		# Return position is current end effector position, half stow
+		move.movements.append(Movement())
+		move.movements[-1].base.position = tf_e.transform.translation
+		_, _, move.movements[-1].base.yaw = quaternion_to_rpy(tf_b.transform.rotation)
+		move.movements[-1].joints.append(0.78)
+		move.movements[-1].joints.append(1.57)
+
+		# Switch out to end effector tracking
+		#tracked_joint = tracking_config.tracked_joint
+		tracking_config.tracked_frame = -1
+		tracking_client.update_configuration(tracking_config)
+
+		pub_move.publish(move)
+
+		# TODO: If the movement interface was an action client,
+		#		we could return back to base tracking here
+	else:
+		rospy.logerr("Target retrieve not ready, ignoring target")
+
+def callback_config(config):
+	global tracking_config
+
+	tracking_config = config
+
+def main():
+	global pub_move
+	global done_move
+
+	global tfBuffer
+	global tfln
+
+	global tracking_config
+	global tracking_client
+
+	rospy.init_node('target_retrieve', anonymous=True)
+
+	rospy.loginfo("Loading target retrieve...")
+
+	done_move = False
+	sub = rospy.Subscriber("target_found", Time, callback_target)
+	pub_move = rospy.Publisher("manoeuvre", Manoeuvre, queue_size=1)
+
+	tfBuffer = tf2_ros.Buffer()
+	tfln = tf2_ros.TransformListener(tfBuffer)
+
+	# Need this to switch out to end effector control and back to the previous settings
+	tracking_config = None
+	tracking_client = dynamic_reconfigure.client.Client("router_base/control_settings", timeout=30, config_callback=callback_config)
+
+	rospy.loginfo("Target retrieve ready!")
+
+	rospy.spin()
+
+if __name__ == '__main__':
+	try:
+		main()
+	except rospy.ROSInterruptException:
+		pass

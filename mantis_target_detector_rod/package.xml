@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>mantis_msgs</name>
+  <name>mantis_target_detector_rod</name>
   <version>0.0.0</version>
-  <description>The mantis_msgs package</description>
+  <description>The mantis_target_detector_rod package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/mantis_ik</url> -->
+  <!-- <url type="website">http://wiki.ros.org/kinetic_sample_sub_cpp</url> -->
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->
@@ -42,18 +42,29 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>roscpp</build_depend>
-  <build_depend>rospy</build_depend>
-  <build_depend>dh_parameters</build_depend>
-  <build_depend>contrail_msgs</build_depend>
-  <build_depend>std_msgs</build_depend>
+  <build_depend>mantis_params</build_depend>
+  <build_depend>mantis_state</build_depend>
   <build_depend>geometry_msgs</build_depend>
-  <build_depend>message_generation</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>tf2</build_depend>
+  <build_depend>tf2_ros</build_depend>
 
-  <run_depend>message_runtime</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>mantis_params</run_depend>
+  <run_depend>mantis_state</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>tf2</run_depend>
+  <run_depend>tf2_ros</run_depend>
 
-  <!-- <exec_depend>message_runtime</exec_depend> -->
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
+    <!-- Other tools can request additional information be placed here -->
+
   </export>
 </package>

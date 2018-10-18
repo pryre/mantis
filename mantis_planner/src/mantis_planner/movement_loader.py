@@ -1,6 +1,6 @@
 import rospy
 
-from mantis_planner.movement import BaseMovement, Movement
+from mantis_msgs.msg import Movement
 from geometry_msgs.msg import Vector3
 
 def get_joint_names():
@@ -45,7 +45,7 @@ def load_movements():
 
 			movements[i].joints = []
 			for j in range(num_joints):
-				movements[i].joint_positions.append(rospy.get_param( "~movements/m%i/j%i" % (i,j) ) )
+				movements[i].joints.append(rospy.get_param( "~movements/m%i/j%i" % (i,j) ) )
 
 			#rospy.loginfo(movements[i])
 
