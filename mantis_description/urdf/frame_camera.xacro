@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:macro name="frame_camera" params="camera_name x y z rpy">
+		<collision name='collision_camera'>
+			<origin xyz="${x} ${y} ${z}" rpy="${rpy}"/>
+			<geometry>
+				<box size="0.1 0.1 0.1"/>
+			</geometry>
+		</collision>
+
+		<visual name="visual_camera_body">
+			<origin xyz="${x} ${y} ${z}" rpy="${rpy}"/>
+			<geometry>
+				<box size="0.025 0.025 0.01"/>
+			</geometry>
+
+			<material name="grey">
+				<color rgba="0.3 0.3 0.3 1.0"/>
+			</material>
+		</visual>
+
+		<visual name="visual_camera_lens">
+			<origin xyz="${x+0.01} ${y} ${z}" rpy="${rpy}"/>
+			<geometry>
+				<cylinder radius="0.01" length="0.01"/>
+			</geometry>
+
+			<material name="dark_grey">
+				<color rgba="0.1 0.1 0.1 1.0"/>
+			</material>
+		</visual>
+	</xacro:macro>
+</robot>

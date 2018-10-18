@@ -3,6 +3,7 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
 	<xacro:include filename="$(find mantis_description)/urdf/frame_battery.xacro" />
+	<xacro:include filename="$(find mantis_description)/urdf/frame_camera.xacro" />
 	<xacro:include filename="$(find mantis_description)/urdf/frame_servo.xacro" />
 	<xacro:include filename="$(find mantis_description)/urdf/frame_arm_red.xacro" />
 	<xacro:include filename="$(find mantis_description)/urdf/frame_arm_white.xacro" />
@@ -38,6 +39,8 @@
 					<color rgba="0.2 0.2 0.2 1.0"/>
 				</material>
 			</visual>
+
+			<xacro:frame_camera camera_name="base_camera" x="0.075" y="0.0" z="0.025" rpy="0 ${pi/2} 0" />
 
 			<xacro:frame_battery suffix="battery_primary" size="0.052 0.146 0.034" xyz="0.0 0.0 0.032" rpy="0.0 0.0 0.0" />
 
