@@ -27,6 +27,7 @@ class Joint {
 		bool spline_in_progress_;
 		double spline_pos_start_;
 		double spline_pos_end_;
+		double last_position_;
 		tinyspline::BSpline spline_;
 		tinyspline::BSpline splined_;
 		bool use_dirty_derivative_;

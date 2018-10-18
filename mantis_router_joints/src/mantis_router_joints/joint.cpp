@@ -11,6 +11,9 @@ Joint::Joint( const ros::NodeHandle& nh, std::string joint_name ) :
 	nh_(ros::NodeHandle(nh, joint_name)),
 	spline_start_(0),
 	spline_duration_(0),
+	spline_pos_start_(0.0),
+	spline_pos_end_(0.0),
+	last_position_(0.0),
 	spline_in_progress_(false),
 	use_dirty_derivative_(false),
 	as_(nh, joint_name, false) {
@@ -152,8 +155,10 @@ void Joint::update( ros::Time tc ) {
 				spline_in_progress_ = false;
 				ROS_INFO( "Router %s: action finished", name_.c_str() );
 			}
+
+			last_position_ = msg_out.position;
 		} else {
-			msg_out.position = spline_pos_end_;
+			msg_out.position = last_position_;
 			msg_out.velocity = 0;
 		}
 
