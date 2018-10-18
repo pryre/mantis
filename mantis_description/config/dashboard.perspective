@@ -218,7 +218,7 @@
                 },
                 "mouse_pub_topic": {
                   "type": "repr",
-                  "repr": "u'/frame_camera/image_raw_mouse_left'"
+                  "repr": "u'/ml_detector/image_debug_mouse_left'"
                 },
                 "num_gridlines": {
                   "type": "repr",
@@ -238,7 +238,7 @@
                 },
                 "topic": {
                   "type": "repr",
-                  "repr": "u'/frame_camera/image_raw'"
+                  "repr": "u'/ml_detector/image_debug'"
                 },
                 "publish_click_location": {
                   "type": "repr",

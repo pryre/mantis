@@ -1,0 +1,38 @@
+<?xml version='1.0'?>
+<launch>
+	<node pkg="ml_detector" type="ml_detector_node" name="ml_detector" clear_params="true" output="screen">
+		<!-- Operation Parameters -->
+		<param name="send_debug" value="true" type="boolean"/>
+		<param name="send_detailed_tag_info" value="true" type="boolean"/>
+		<param name="show_rejected" value="false" type="boolean"/>
+		<param name="refine_strategy" value="true" type="boolean"/>
+
+		<!-- Marker Parameters -->
+		<param name="marker_topic" value="/mantis_uav/target_detection" type="str"/>
+
+		<!-- Image Parameters -->
+		<param name="debug_image_topic" value="image_debug" type="str"/>
+		<param name="camera_info_topic" value="/base_camera/camera_info" type="str"/>
+		<param name="input_image_topic" value="/base_camera/image_raw" type="str"/>
+		<param name="camera_is_rectified" value="false" type="boolean"/>
+
+		<!-- Detection Parameters /-->
+		<rosparam command="load" file="$(find mantis_description)/config/detect_config.yaml"/>
+		<rosparam command="load" file="$(find mantis_description)/config/board_config.yaml"/>
+	</node>
+
+	<node pkg="mantis_planner" type="target_localizer" name="target_localizer"
+	ns="mantis_uav" clear_params="true" output="screen">
+	</node>
+
+	<node pkg="mantis_planner" type="target_retrieve" name="target_retrieve"
+	ns="/mantis_uav" clear_params="true" output="screen">
+	</node>
+
+	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_marker_blue_baton"
+	args="0.16 0.0 -0.05 0 1.5708 0 blue_baton_marker blue_baton" clear_params="true" output="screen"/>
+
+	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_base_camera"
+	args="0.075 0.0 0.025 -1.5708 0 -1.5708 base_link base_camera" clear_params="true" output="screen"/>
+
+</launch>

@@ -1,0 +1,51 @@
+# Board configuration for the environment
+
+
+board_config:
+  #Possible dictionaries:
+  # DICT_4X4_50, DICT_4X4_100, DICT_4X4_250, DICT_4X4_1000
+  # DICT_5X5_50, DICT_5X5_100, DICT_5X5_250, DICT_5X5_1000
+  # DICT_6X6_50, DICT_6X6_100, DICT_6X6_250, DICT_6X6_1000
+  # DICT_7X7_50, DICT_7X7_100, DICT_7X7_250, DICT_7X7_1000
+  # DICT_ARUCO_ORIGINAL
+  dictionary: DICT_5X5_50
+
+  # Sizes should be set to some factor of the output
+  #  resolution when generating images
+  # Sizes should reflect the real life marker sizes
+  #  when detecting
+  marker_size: 0.087
+  marker_spacing: 0.017
+
+  border_bits: 1
+
+  output_height: 800
+  output_width: 800
+
+# Set board_id: -1 for these to be incrementally generated.
+# Boards should be organized by id (with -1's at tail of list)
+# Be aware of dictionary limitations as this will throw
+#  errors if you attempt to generate past the
+#  dictionary limit.
+boards:
+  board_0:
+    id: -1
+    rows: 2
+    cols: 2
+    marker_ids: []
+  board_1:
+    id: -1
+    rows: 2
+    cols: 2
+    marker_ids: []
+  board_2:
+    id: -1
+    rows: 2
+    cols: 2
+    marker_ids: []
+  board_3:
+    id: -1
+    rows: 2
+    cols: 2
+    marker_ids: []
+

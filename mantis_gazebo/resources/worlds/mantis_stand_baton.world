@@ -12,6 +12,9 @@
     <include>
       <uri>model://baton_and_stand</uri>
     </include>
+    <include>
+      <uri>model://aruco_marker</uri>
+    </include>
     <!--<include>
       <uri>model://uneven_ground</uri>
     </include>-->

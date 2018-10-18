@@ -1,0 +1,34 @@
+# Common configuration for Breadcrumb guidance system
+
+# System Settings
+# http://docs.opencv.org/3.1.0/d5/dae/tutorial_aruco_detection.html
+system:
+  adaptive_thresh_win_size_min: 3
+  adaptive_thresh_win_size_max: 23
+  adaptive_thresh_win_size_step: 10
+  adaptive_thresh_constant: 7
+
+  min_marker_perimeter_rate: 0.1 #0.05
+  max_marker_perimeter_rate: 4.0
+
+  polygonal_approx_accuracy_rate: 0.0075 #0.05
+  min_corner_distance_rate: 0.05
+  min_marker_distance_rate: 0.05
+  min_distance_to_border: 10 #3
+
+  marker_border_bits: 1
+  min_otsu_std_dev: 5.0
+  perspective_remove_pixel_per_cell: 8 #4
+  perspective_remove_ignored_margin_per_cell: 0.13
+
+  max_erroneous_bits_in_border_rate: 0
+  error_correction_rate: 0
+
+  #Corner refinement method (from: https://github.com/opencv/opencv_contrib/blob/master/modules/aruco/include/opencv2/aruco.hpp)
+  #  CORNER_REFINE_NONE: 0
+  #  CORNER_REFINE_SUBPIX: 1
+  #  CORNER_REFINE_CONTOUR: 2
+  corner_refinement_method: 1
+  corner_refinement_win_size: 5
+  corner_refinement_max_iterations: 30
+  corner_refinement_min_accuracy: 0.05 #0.1

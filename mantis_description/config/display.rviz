@@ -286,10 +286,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.439797878
+      Pitch: 0.569797754
       Target Frame: mantis_uav
       Value: ThirdPersonFollower (rviz)
-      Yaw: 5.15868235
+      Yaw: 5.26368475
     Saved: ~
 Window Geometry:
   Displays:

@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+import math
+
+import rospy
+import tf2_ros
+
+from ml_msgs.msg import MarkerDetection
+from std_msgs.msg import Time
+from geometry_msgs.msg import TransformStamped
+
+# Global Variables
+tfbr = None
+pub_found = None
+
+target_name = "blue_baton_marker"
+marker_id = 0
+
+def callback_marker(msg_in):
+	for m in msg_in.markers:
+		if (m.marker_id == marker_id) and (m.marker_confidence > 0.8):
+			t = TransformStamped()
+			t.header.stamp = msg_in.header.stamp
+			t.header.frame_id = msg_in.header.frame_id
+			t.child_frame_id = target_name
+
+			t.transform.translation = m.pose.position
+			t.transform.rotation = m.pose.orientation
+
+			tfbr.sendTransform(t)
+			pub_found.publish(msg_in.header.stamp)
+
+if __name__ == '__main__':
+	rospy.init_node('target_localizer')
+	rospy.loginfo("Loading target localizer...")
+
+	# Setup tf2 broadcaster and timestamp publisher
+	tfbr = tf2_ros.TransformBroadcaster()
+	sub_detect = rospy.Subscriber('target_detection', MarkerDetection, callback_marker)
+	pub_found = rospy.Publisher('target_found', Time, queue_size=10)
+
+	rospy.loginfo("Target localizer ready!")
+
+	try:
+		rospy.spin()
+	except ROSInterruptException:
+		pass

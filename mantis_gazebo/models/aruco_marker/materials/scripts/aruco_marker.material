@@ -1,0 +1,18 @@
+material ARUCOMarker/Image
+{
+  technique
+  {
+    pass
+    {
+      ambient 1.0 1.0 1.0 1.0
+      diffuse 1.0 1.0 1.0 1.0
+      specular 0.0 0.0 0.0 1.0 0.5
+
+      texture_unit
+      {
+        texture ../textures/board_0.png
+        filtering trilinear
+      }
+    }
+  }
+}
