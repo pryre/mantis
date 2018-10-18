@@ -8,7 +8,7 @@
 	<env name="GAZEBO_MODEL_PATH" value="$(find mantis_gazebo)/models:$GAZEBO_MODEL_PATH"/>
 
 	<!-- GAZEBO SETUP -->
-	<arg name="paused" default="false"/>
+	<arg name="paused" default="true"/>
 	<arg name="use_sim_time" default="true"/>
 	<arg name="extra_gazebo_args" default=""/>
 	<arg name="gui" default="false"/>
@@ -17,7 +17,7 @@
 	<arg name="debug" default="false"/>
 	<arg name="physics" default="ode"/>
 	<arg name="verbose" default="true"/>
-	<arg name="world_name" default="worlds/mantis_stand.world"/>
+	<arg name="world_name" default="worlds/mantis_stand_baton.world"/>
 	<arg name="respawn_gazebo" default="false"/>
 	<arg name="use_clock_frequency" default="false"/>
 	<arg name="pub_clock_frequency" default="100"/>
@@ -63,5 +63,11 @@
 
 	<param name="/$(arg model_name)/robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
 
-	<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -model $(arg model_name) -param /$(arg model_name)/robot_description -z 1.0"/>
+	<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+	args="-urdf
+		  -model $(arg model_name)
+		  -param /$(arg model_name)/robot_description
+		  -z 0.5
+		  -J joint_shoulder 1.57 joint_elbow 1.57
+          -unpause"/>
 </launch>

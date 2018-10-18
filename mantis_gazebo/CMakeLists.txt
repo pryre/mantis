@@ -149,6 +149,9 @@ include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${GAZEBO
 add_library(${PROJECT_NAME}_ball_grasp
   src/${PROJECT_NAME}/mg_ball_grasp.cpp
 )
+add_library(${PROJECT_NAME}_baton_grasp
+  src/${PROJECT_NAME}/mg_baton_grasp.cpp
+)
 
 #add_library(${PROJECT_NAME}_pwm_motor
 #  src/${PROJECT_NAME}/mg_pwm_motor.cpp
@@ -171,6 +174,7 @@ add_library(${PROJECT_NAME}_motor_model
 ## either from message generation or dynamic reconfigure
 #add_dependencies(${PROJECT_NAME}_servo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
 add_dependencies(${PROJECT_NAME}_ball_grasp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_baton_grasp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #add_dependencies(${PROJECT_NAME}_pwm_motor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
 #add_dependencies(${PROJECT_NAME}_safety ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mantis_gazebo_generate_messages_cpp)
 add_dependencies(${PROJECT_NAME}_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

@@ -19,13 +19,14 @@
 	</gazebo>
 
 	<gazebo>
-		<plugin name="mantis_ball_grasp" filename="libmantis_gazebo_ball_grasp.so"/>
-	</gazebo>
-
-	<gazebo>
 		<plugin name="mantis_gazebo_plugin" filename="libmantis_gazebo_plugin.so"/>
 	</gazebo>
 	-->
+
+	<gazebo>
+		<plugin name="mantis_baton_grasp" filename="libmantis_gazebo_baton_grasp.so"/>
+	</gazebo>
+
 	<gazebo reference="base_link">
 		<sensor type="camera" name="frame_camera_sensor">
 			<update_rate>10.0</update_rate>
