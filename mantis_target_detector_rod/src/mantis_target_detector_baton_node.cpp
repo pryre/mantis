@@ -15,7 +15,7 @@
 #include <string>
 #include <iostream>
 
-class BatonDetector {
+class BallDetector {
 	private:
 		ros::NodeHandle nh_;
 		image_transport::ImageTransport it_;
@@ -72,7 +72,7 @@ class BatonDetector {
 		std::string topic_output_marker_;
 
 	public:
-		BatonDetector() :
+		BallDetector() :
 			nh_( ros::this_node::getName() ),
 			it_(nh_),
 			param_ball_name_( "ball" ),
@@ -220,7 +220,7 @@ class BatonDetector {
 			ROS_INFO("Beginning detection...");
 		}
 
-		~BatonDetector() {
+		~BallDetector() {
 			//This message won't actually send here, as the node will have already shut down
 			ROS_INFO("Shutting down...");
 		}
@@ -427,7 +427,7 @@ class BatonDetector {
 
 int main(int argc, char** argv) {
 	ros::init(argc, argv, "goal_detector");
-	BatonDetector bd;
+	BallDetector bd;
 
 	ros::spin();
 

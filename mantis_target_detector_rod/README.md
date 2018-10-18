@@ -1,2 +1,2 @@
-# mantis_target_detector_rod
-A node to detect a ball and estimate its pose
+# mantis_target_detector_baton
+A node to detect a baton and estimate its pose

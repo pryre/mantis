@@ -44,10 +44,18 @@
   <build_depend>roscpp</build_depend>
   <build_depend>mantis_router_base</build_depend>
   <build_depend>mantis_router_joints</build_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>mantis_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
 
   <run_depend>roscpp</run_depend>
-  <build_depend>mantis_router_base</build_depend>
-  <build_depend>mantis_router_joints</build_depend>
+  <run_depend>mantis_router_base</run_depend>
+  <run_depend>mantis_router_joints</run_depend>
+  <run_depend>actionlib</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>mantis_msgs</run_depend>
+  <run_depend>message_generation</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

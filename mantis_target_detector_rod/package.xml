@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>mantis_target_detector_rod</name>
+  <name>mantis_target_detector_baton</name>
   <version>0.0.0</version>
-  <description>The mantis_target_detector_rod package</description>
+  <description>The mantis_target_detector_baton package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

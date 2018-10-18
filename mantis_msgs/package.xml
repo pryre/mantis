@@ -50,6 +50,10 @@
   <build_depend>message_generation</build_depend>
 
   <run_depend>message_runtime</run_depend>
+  <run_depend>dh_parameters</run_depend>
+  <run_depend>contrail_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
 
   <!-- <exec_depend>message_runtime</exec_depend> -->
 

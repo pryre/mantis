@@ -3,35 +3,21 @@
 import sys
 from math import *
 
+import roslib
+roslib.load_manifest('mantis_planner')
 import rospy
+import actionlib
 
-import mantis_planner.movement_dispatcher as md
+from mantis_planner.movement_dispatcher import DispatcherFull
 from mantis_msgs.msg import Manoeuvre
 
-def callback(msg_in):
-	if msg_in.header.stamp > rospy.Time(0):
-		try:
-			if(md.movement_dispatcher(msg_in)):
-				rospy.loginfo("Movement plan complete!")
-		except (TypeError, ValueError) as e:
-			rospy.logerr(e)
-	else:
-		rospy.logwarn("Ignoring maneoeuvre, invalid time stamp")
-
-def main():
-	global timer
-	global dispatch_func
-
-	rospy.init_node('dispatcher_full', anonymous=True)
-
-	rospy.Subscriber("manoeuvre", Manoeuvre, callback)
+if __name__ == '__main__':
+	rospy.init_node('dispatcher_full')
+	server = DispatcherFull()
 
 	rospy.loginfo("Loaded plan dispatcher")
 
-	rospy.spin()
-
-if __name__ == '__main__':
 	try:
-		main()
+		rospy.spin()
 	except rospy.ROSInterruptException:
 		pass

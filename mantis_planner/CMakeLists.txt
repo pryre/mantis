@@ -11,6 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   mantis_router_base
   mantis_router_joints
+  std_msgs
+  mantis_msgs
+  actionlib
 )
 
 ## System dependencies are found with CMake's conventions
@@ -60,17 +63,18 @@ catkin_python_setup()
 # )
 
 ## Generate actions in the 'action' folder
-#add_action_files(
-#  FILES
-#  JointMovement.action
-#)
+add_action_files(
+  FILES
+  Manoeuvre.action
+)
 
 ## Generate added messages and services with any dependencies listed here
-#generate_messages(
-#  DEPENDENCIES
-#  std_msgs
-#  geometry_msgs
-#)
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  mantis_msgs
+  actionlib_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -103,7 +107,7 @@ catkin_python_setup()
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES kinetic_sample_sub_cpp
-#  CATKIN_DEPENDS roscpp std_msgs
+  CATKIN_DEPENDS mantis_msgs
 #  DEPENDS system_lib
 )
 

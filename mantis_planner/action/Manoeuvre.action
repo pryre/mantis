@@ -1,0 +1,31 @@
+# Goal
+uint8 MODE_DISCRETE = 0
+uint8 MODE_CONTINUOUS = 1
+
+uint8 mode
+
+float64 nominal_velocity
+float64 nominal_rate
+float64 nominal_joint_rate
+
+duration c_duration
+
+string[] joint_names
+
+mantis_msgs/Movement[] movements
+
+---
+# Result
+#
+# position_final: the final commanded position of the movement
+mantis_msgs/Movement movement_final
+
+---
+# Feedback
+#
+# progress: current progress (%) through the movement (-1 if not started)
+# position: current instantaneous position
+# velocity: current instantaneous velocity
+float64 progress
+uint32 movement_step
+mantis_msgs/Movement[] movement_current

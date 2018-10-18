@@ -24,7 +24,7 @@ add_message_files(FILES
 	JointTrajectoryGoal.msg
 	JointTrajectoryList.msg
 	Movement.msg
-	Manoeuvre.msg
+#	Manoeuvre.msg
 )
 
 ## Generate added messages and services
@@ -39,4 +39,5 @@ generate_messages(DEPENDENCIES
 catkin_package(
 #	DEPENDS
 #	mantis_msgs_generate_messages
+  CATKIN_DEPENDS dh_parameters contrail_msgs std_msgs geometry_msgs
 )
