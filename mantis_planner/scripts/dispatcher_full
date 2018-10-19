@@ -9,7 +9,6 @@ import rospy
 import actionlib
 
 from mantis_planner.movement_dispatcher import DispatcherFull
-from mantis_msgs.msg import Manoeuvre
 
 if __name__ == '__main__':
 	rospy.init_node('dispatcher_full')

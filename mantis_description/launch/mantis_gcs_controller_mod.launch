@@ -25,7 +25,7 @@
 	<!-- HIGH LEVEL CONTROL -->
 	<node pkg="mavel" type="mavel_node" name="mavel"
 	ns="/mantis_uav" clear_params="true" output="screen">
-		<rosparam command="load" file="$(find mantis_description)/config/mavel_sim_params.yaml"/>
+		<rosparam command="load" file="$(find mantis_description)/config/mavel_params.yaml"/>
 
 		<remap from="~command/attitude" to="/mavros/setpoint_raw/attitude"/>
 		<remap from="~state/odometry" to="state/odom"/>

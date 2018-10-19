@@ -3,7 +3,7 @@
 motor:
   num: 4
   arm_len: 0.225 #m
-  thrust_max: 8.382 # N
+  thrust_max: 14.55 #3S: 8.382 # N
   #kv: 920
   #rpm_thrust_curve:
     #m: 0.000797548 #0.0008318056
@@ -21,7 +21,11 @@ body:
   b0:
     name: "base_link"
     mass:
-      m: 1.384 #1.52 # Base + props
+      # Base + props
+      # 3S(3700) m: 1.384
+      # 3S(5000) m: 1.52
+      # 4S(4000) m: 1.554
+      m: 1.554
       Ixx: 0.02961 # Maybe need to halve this
       Iyy: 0.02933 # Maybe need to halve this
       Izz: 0.05342 # Maybe need to halve this

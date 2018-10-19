@@ -1,6 +1,4 @@
 movements:
-  mode: "continuous"
-  duration: 60.0
   joint_names:
     j0: "joint_shoulder"
     j1: "joint_elbow"
@@ -8,7 +6,7 @@ movements:
     base:
       x: 1.0
       y: -1.0
-      z: 1.25
+      z: 1.0
       yaw: 0.0
     j0: 1.5708
     j1: 0.0
@@ -16,7 +14,7 @@ movements:
     base:
       x: 1.0
       y: 0.0
-      z: 1.25
+      z: 1.0
       yaw: 0.0
     j0: 1.5708
     j1: 0.0
@@ -24,63 +22,63 @@ movements:
     base:
       x: 0.7071
       y: 0.7071
-      z: 1.25
-      yaw: 0.7854
+      z: 1.0
+      yaw: 0.0
     j0: 0.7854
     j1: 0.0
   m3:
     base:
       x: 0.0
       y: 1.0
-      z: 1.25
-      yaw: 1.5708
+      z: 1.0
+      yaw: 0.0
     j0: 0.0
     j1: 0.0
   m4:
     base:
       x: -0.7071
       y: 0.7071
-      z: 1.25
-      yaw: 2.3564
+      z: 1.0
+      yaw: 0.0
     j0: -0.7854
     j1: 0.0
   m5:
     base:
       x: -1.0
       y: 0.0
-      z: 1.25
-      yaw: 3.1416
+      z: 1.0
+      yaw: 0.0
     j0: -1.5708
     j1: 0.0
   m6:
     base:
       x: -0.7071
       y: -0.7071
-      z: 1.25
-      yaw: -2.3564
+      z: 1.0
+      yaw: 0.0
     j0: -0.7854
     j1: 0.0
   m7:
     base:
       x: 0.0
       y: -1.0
-      z: 1.25
-      yaw: -1.5708
+      z: 1.0
+      yaw: 0.0
     j0: 0.0
     j1: 0.0
   m8:
     base:
       x: 0.7071
       y: -0.7071
-      z: 1.25
-      yaw: -0.7854
+      z: 1.0
+      yaw: 0.0
     j0: 0.7854
     j1: 0.0
   m9:
     base:
       x: 1.0
       y: 0.0
-      z: 1.25
+      z: 1.0
       yaw: 0.0
     j0: 1.5708
     j1: 0.0
@@ -88,7 +86,7 @@ movements:
     base:
       x: 1.0
       y: 1.0
-      z: 1.25
+      z: 1.0
       yaw: 0.0
     j0: 1.5708
     j1: 0.0

@@ -10,7 +10,7 @@ movements:
     base:
       x: 1.0
       y: 1.0
-      z: 1.0
+      z: 1.25
       yaw: 0.0
     j0: 1.57
     j1: 0.0
@@ -18,7 +18,7 @@ movements:
     base:
       x: 1.0
       y: -1.0
-      z: 1.0
+      z: 1.25
       yaw: 0.0
     j0: 1.57
     j1: 0.0

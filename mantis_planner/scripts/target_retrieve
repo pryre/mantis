@@ -28,7 +28,7 @@ global tfln
 global tracking_config
 global tracking_client
 
-baton_mass = 0.05
+baton_mass = 0.04
 
 def quaternion_to_rpy(q):
 	if not isinstance(q, Quaternion):

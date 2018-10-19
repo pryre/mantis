@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /TF1
         - /TF1/Frames1
       Splitter Ratio: 0.363453805
     Tree Height: 823
@@ -271,25 +272,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 3.86719131
+      Distance: 4.87412262
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
+        X: 0.330499768
+        Y: 0.157445192
         Z: -1
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.569797754
+      Pitch: 0.234798953
       Target Frame: mantis_uav
       Value: ThirdPersonFollower (rviz)
-      Yaw: 5.26368475
+      Yaw: 4.98549938
     Saved: ~
 Window Geometry:
   Displays:
@@ -309,5 +310,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 894
-  X: 0
-  Y: 0
+  X: 2815
+  Y: 2
