@@ -19,6 +19,7 @@ class MantisSolver {
 		ros::Time state_load_time_;
 
 		SerialManipulator manip_;
+		SerialManipulator manip_ref_;
 
 	public:
 		MantisSolver( MantisParamClient& p, MantisStateClient& s );
@@ -40,6 +41,15 @@ class MantisSolver {
 
 		bool calculate_thrust_coeffs( double &kT, double &ktx, double &kty, double &ktz);
 
+		//Reference calculations
+		bool load_ref( const Eigen::VectorXd &r,const Eigen::VectorXd &rd );
+
+		bool calculate_vbe_ref( Eigen::VectorXd &vbe );
+		bool calculate_vbx_ref( Eigen::VectorXd &vbx, const unsigned int n );
+
+		bool calculate_gbe_ref( Eigen::Affine3d &gbe );
+		bool calculate_gxy_ref( Eigen::Affine3d &g, const unsigned int x, const unsigned int y );
+
 	private:
 		bool load_parameters( void );
 		bool load_state( void );
@@ -47,4 +57,8 @@ class MantisSolver {
 		bool check_description( void );
 		bool check_parameters( void );
 		bool check_state( void );
+
+		//Generic handlers for kinematic solver tasks
+		bool calculate_vbx_int( Eigen::VectorXd &vbx, const SerialManipulator &m, const unsigned int n );
+		bool calculate_gxy_int( Eigen::Affine3d &g, const SerialManipulator &m, const unsigned int x, const unsigned int y );
 };

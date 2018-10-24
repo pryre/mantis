@@ -1,0 +1,24 @@
+# Goal
+#
+# start: time at which to start the movement (immidiately if 0)
+# duration: duration of time the movement should take to complete
+# points: points defining a movement trajectory
+#		  start and end points must be provided
+#		  additional points will be used for spline interpolatation
+time start
+duration duration
+float64[] positions
+---
+# Result
+#
+# position_final: the final commanded position of the movement
+float64 position_final
+---
+# Feedback
+#
+# progress: current progress (%) through the movement (-1 if not started)
+# position: current instantaneous position
+# velocity: current instantaneous velocity
+float64 progress
+float64 position
+float64 velocity

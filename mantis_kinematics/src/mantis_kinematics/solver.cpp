@@ -76,10 +76,17 @@ bool MantisSolver::load_parameters( void ) {
 
 	//Load in the link definitions
 	manip_.reset();
+	manip_ref_.reset();
 
 	for(int i=0; i<p_.get_joint_num(); i++) {
 		if( !manip_.add_joint( p_.joint(i) ) ) {
 			ROS_FATAL("Error loading joint %i", int(i));
+			success = false;
+			break;
+		}
+
+		if( !manip_ref_.add_joint( p_.joint(i) ) ) {
+			ROS_FATAL("Error loading ref joint %i", int(i));
 			success = false;
 			break;
 		}
@@ -88,6 +95,12 @@ bool MantisSolver::load_parameters( void ) {
 	for(int i=0; i<p_.get_body_num(); i++) {
 		if( !manip_.add_body( p_.body_inertial(i).com, i-1 ) ) {
 			ROS_FATAL("Error loading joint %i", int(i));
+			success = false;
+			break;
+		}
+
+		if( !manip_ref_.add_body( p_.body_inertial(i).com, i-1 ) ) {
+			ROS_FATAL("Error loading ref joint %i", int(i));
 			success = false;
 			break;
 		}
@@ -118,6 +131,24 @@ bool MantisSolver::load_state( void ) {
 	}
 
 	state_load_time_ = s_.time_updated();
+
+	return success;
+}
+
+bool MantisSolver::load_ref( const Eigen::VectorXd &r,const Eigen::VectorXd &rd ) {
+	bool success = false;
+
+	if( ( r.size() == rd.size() ) && ( r.size() <= manip_ref_.num_joints() ) ) {
+		int jc = 0;
+		for(int i=0; i<manip_ref_.num_joints(); i++) {
+			if(manip_ref_.joint(i).jt() != DHParameters::JointType::Static) {
+				manip_ref_.joint(i).update(r[jc], rd[jc]);
+				jc++;
+			}
+		}
+
+		success = true;
+	}
 
 	return success;
 }
@@ -155,12 +186,13 @@ bool MantisSolver::calculate_mass_matrix( Eigen::MatrixXd &Dq ) {
 		//Prepare required matricies
 		const unsigned int nj = p_.get_dynamic_joint_num();
 		Dq = Eigen::MatrixXd::Zero(num_states(), num_states());
-		Eigen::MatrixXd M_A_A = Eigen::MatrixXd::Zero(6,6);
+		//Eigen::MatrixXd M_A_A = Eigen::MatrixXd::Zero(6,6);
+		//M_A_A = MDTools::full_inertial(p_.body_inertial(0));
+		Eigen::MatrixXd M_A_A = MDTools::full_inertial(p_.body_inertial(0));
 		Eigen::MatrixXd M_A_J = Eigen::MatrixXd::Zero(6,nj);
 		Eigen::MatrixXd M_J_A = Eigen::MatrixXd::Zero(nj,6);
 		Eigen::MatrixXd M_J_J = Eigen::MatrixXd::Zero(nj,nj);
 
-		M_A_A = MDTools::full_inertial(p_.body_inertial(0));
 
 		for(int i=1;i<p_.get_body_num();i++) {
 			Eigen::Affine3d gbic;
@@ -266,57 +298,6 @@ bool MantisSolver::solve_inverse_dynamics( Eigen::VectorXd &tau, const Eigen::Ve
 	return success;
 }
 
-bool MantisSolver::calculate_vbe( Eigen::VectorXd &vbe ) {
-	return calculate_vbx(vbe, manip_.num_joints());
-}
-
-bool MantisSolver::calculate_vbx( Eigen::VectorXd &vbx, const unsigned int x ) {
-
-	bool success = false;
-
-	if( check_description() ) {
-		Eigen::MatrixXd Jbx;
-		Eigen::VectorXd qdx;
-		manip_.calculate_Jxy( Jbx, 0, x );
-		manip_.get_qdxn(qdx, 0, x);
-		vbx = Jbx*qdx;
-
-		success = true;
-	}
-
-	return success;
-}
-
-bool MantisSolver::calculate_gbe( Eigen::Affine3d &gbe ) {
-	return calculate_gxy( gbe, 0, manip_.num_joints() );;
-}
-
-bool MantisSolver::calculate_gxy( Eigen::Affine3d &g, const unsigned int x, const unsigned int y ) {
-	bool success = false;
-
-	if( check_description() ) {
-		if( ( x <= manip_.num_joints() ) && ( y <= manip_.num_joints() ) ) {
-
-			manip_.calculate_gxy(g,x,y);
-
-			success = true;
-		} else {
-			std::string reason;
-			if( x > manip_.num_joints() ) {
-				reason = "start frame > total frames";
-			} else if( y > manip_.num_joints() ) {
-				reason = "end frame > total frames";
-			} else {
-				reason = "undefined error";
-			}
-
-			ROS_ERROR_THROTTLE(2.0, "MantisSolver::calculate_gxy(): frame inputs; %s", reason.c_str());
-		}
-	}
-
-	return success;
-}
-
 bool MantisSolver::calculate_thrust_coeffs( double &kT, double &ktx, double &kty, double &ktz) {
 	bool success = false;
 
@@ -392,4 +373,82 @@ bool MantisSolver::calculate_thrust_coeffs( double &kT, double &ktx, double &kty
 	}
 
 	return success;
+}
+
+bool MantisSolver::calculate_vbx_int( Eigen::VectorXd &vbx, const SerialManipulator &m, const unsigned int x ) {
+
+	bool success = false;
+
+	if( check_description() ) {
+		Eigen::MatrixXd Jbx;
+		Eigen::VectorXd qdx;
+		m.calculate_Jxy( Jbx, 0, x );
+		m.get_qdxn(qdx, 0, x);
+		vbx = Jbx*qdx;
+
+		success = true;
+	}
+
+	return success;
+}
+
+bool MantisSolver::calculate_gxy_int( Eigen::Affine3d &g, const SerialManipulator &m, const unsigned int x, const unsigned int y ) {
+	bool success = false;
+
+	if( check_description() ) {
+		if( ( x <= m.num_joints() ) && ( y <= m.num_joints() ) ) {
+
+			m.calculate_gxy(g,x,y);
+
+			success = true;
+		} else {
+			std::string reason;
+			if( x > m.num_joints() ) {
+				reason = "start frame > total frames";
+			} else if( y > m.num_joints() ) {
+				reason = "end frame > total frames";
+			} else {
+				reason = "undefined error";
+			}
+
+			ROS_ERROR_THROTTLE(2.0, "MantisSolver::calculate_gxy(): frame inputs; %s", reason.c_str());
+		}
+	}
+
+	return success;
+}
+
+bool MantisSolver::calculate_gbe( Eigen::Affine3d &gbe ) {
+	return calculate_gxy_int( gbe, manip_, 0, manip_.num_joints() );
+}
+
+
+bool MantisSolver::calculate_vbx( Eigen::VectorXd &vbx, const unsigned int n ) {
+	return calculate_vbx( vbx, manip_, n );
+}
+
+bool MantisSolver::calculate_vbe( Eigen::VectorXd &vbe ) {
+	return calculate_vbx_int(vbe, manip_, manip_.num_joints());
+}
+
+bool MantisSolver::calculate_gxy( Eigen::Affine3d &g, const unsigned int x, const unsigned int y ) {
+	calculate_gxy( g, manip_, x, y );
+}
+}
+
+bool MantisSolver::calculate_gbe_ref( Eigen::Affine3d &gbe ) {
+	return calculate_gxy_int( gbe, manip_ref_, 0, manip_ref_.num_joints() );
+}
+
+
+bool MantisSolver::calculate_vbx_ref( Eigen::VectorXd &vbx, const unsigned int n ) {
+	return calculate_vbx( vbx, manip_ref_, n );
+}
+
+bool MantisSolver::calculate_vbe_ref( Eigen::VectorXd &vbe ) {
+	return calculate_vbx_int(vbe, manip_ref_, manip_ref_.num_joints());
+}
+
+bool MantisSolver::calculate_gxy_ref( Eigen::Affine3d &g, const unsigned int x, const unsigned int y ) {
+	calculate_gxy( g, manip_ref_, x, y );
 }
