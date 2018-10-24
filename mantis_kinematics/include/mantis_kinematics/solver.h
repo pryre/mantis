@@ -59,6 +59,6 @@ class MantisSolver {
 		bool check_state( void );
 
 		//Generic handlers for kinematic solver tasks
-		bool calculate_vbx_int( Eigen::VectorXd &vbx, const SerialManipulator &m, const unsigned int n );
-		bool calculate_gxy_int( Eigen::Affine3d &g, const SerialManipulator &m, const unsigned int x, const unsigned int y );
+		bool calculate_vbx_int( Eigen::VectorXd &vbx, SerialManipulator &m, const unsigned int n );
+		bool calculate_gxy_int( Eigen::Affine3d &g, SerialManipulator &m, const unsigned int x, const unsigned int y );
 };

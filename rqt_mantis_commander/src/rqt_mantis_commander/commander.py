@@ -14,7 +14,7 @@ from std_srvs.srv import SetBool
 
 import actionlib
 from contrail.msg import TrajectoryAction, TrajectoryGoal
-from mantis_router_joints.msg import JointMovementAction, JointMovementGoal
+from mantis_router_full.msg import JointMovementAction, JointMovementGoal
 
 class MantisCommander(Plugin):
 	def __init__(self, context):
@@ -210,7 +210,7 @@ class MantisCommander(Plugin):
 			res = arm_jc(True)
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
-		
+
 	def button_disarm_pressed(self):
 		rospy.logdebug("Button disarm pressed!")
 

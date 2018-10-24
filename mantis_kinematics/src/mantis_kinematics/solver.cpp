@@ -375,7 +375,7 @@ bool MantisSolver::calculate_thrust_coeffs( double &kT, double &ktx, double &kty
 	return success;
 }
 
-bool MantisSolver::calculate_vbx_int( Eigen::VectorXd &vbx, const SerialManipulator &m, const unsigned int x ) {
+bool MantisSolver::calculate_vbx_int( Eigen::VectorXd &vbx, SerialManipulator &m, const unsigned int x ) {
 
 	bool success = false;
 
@@ -392,7 +392,7 @@ bool MantisSolver::calculate_vbx_int( Eigen::VectorXd &vbx, const SerialManipula
 	return success;
 }
 
-bool MantisSolver::calculate_gxy_int( Eigen::Affine3d &g, const SerialManipulator &m, const unsigned int x, const unsigned int y ) {
+bool MantisSolver::calculate_gxy_int( Eigen::Affine3d &g, SerialManipulator &m, const unsigned int x, const unsigned int y ) {
 	bool success = false;
 
 	if( check_description() ) {
@@ -424,7 +424,7 @@ bool MantisSolver::calculate_gbe( Eigen::Affine3d &gbe ) {
 
 
 bool MantisSolver::calculate_vbx( Eigen::VectorXd &vbx, const unsigned int n ) {
-	return calculate_vbx( vbx, manip_, n );
+	return calculate_vbx_int( vbx, manip_, n );
 }
 
 bool MantisSolver::calculate_vbe( Eigen::VectorXd &vbe ) {
@@ -432,17 +432,15 @@ bool MantisSolver::calculate_vbe( Eigen::VectorXd &vbe ) {
 }
 
 bool MantisSolver::calculate_gxy( Eigen::Affine3d &g, const unsigned int x, const unsigned int y ) {
-	calculate_gxy( g, manip_, x, y );
-}
+	return calculate_gxy_int( g, manip_, x, y );
 }
 
 bool MantisSolver::calculate_gbe_ref( Eigen::Affine3d &gbe ) {
 	return calculate_gxy_int( gbe, manip_ref_, 0, manip_ref_.num_joints() );
 }
 
-
 bool MantisSolver::calculate_vbx_ref( Eigen::VectorXd &vbx, const unsigned int n ) {
-	return calculate_vbx( vbx, manip_ref_, n );
+	return calculate_vbx_int( vbx, manip_ref_, n );
 }
 
 bool MantisSolver::calculate_vbe_ref( Eigen::VectorXd &vbe ) {
@@ -450,5 +448,5 @@ bool MantisSolver::calculate_vbe_ref( Eigen::VectorXd &vbe ) {
 }
 
 bool MantisSolver::calculate_gxy_ref( Eigen::Affine3d &g, const unsigned int x, const unsigned int y ) {
-	calculate_gxy( g, manip_ref_, x, y );
+	return calculate_gxy_int( g, manip_ref_, x, y );
 }

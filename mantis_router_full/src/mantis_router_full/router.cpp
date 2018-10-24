@@ -130,9 +130,20 @@ void Router::callback_timer(const ros::TimerEvent& e) {
 
 	if( ( p_.ok() ) && ( s_.ok() ) && ( contrail_.has_reference(e.current_real) ) ) {
 		//For all joint routers
-		for(int i = 0; i < joint_routers_.size(); i++)
-			joint_routers_[i]->update( e.current_real );
+		ROS_ASSERT_MSG(joint_routers_.size() == p_.get_dynamic_joint_num(), "Joint router and dynamic joint param inconsistent (%i!=%i)", (int)joint_routers_.size(), (int)p_.get_dynamic_joint_num());
 
+		Eigen::VectorXd ref_r = Eigen::VectorXd::Zero( p_.get_dynamic_joint_num() );
+		Eigen::VectorXd ref_rd = Eigen::VectorXd::Zero( p_.get_dynamic_joint_num() );
+
+		for(int i = 0; i < p_.get_dynamic_joint_num(); i++) {
+			joint_routers_[i]->update( e.current_real );
+			ref_r[i] = joint_routers_[i]->get_r();
+			ref_rd[i] = joint_routers_[i]->get_rd();
+		}
+
+		solver_.load_ref(ref_r, ref_rd);
+
+		//Handle the rest of the base routing
 		Eigen::Affine3d g_sp = Eigen::Affine3d::Identity();
 		Eigen::Vector3d gv_sp = Eigen::Vector3d::Zero();
 		Eigen::Affine3d ge_sp = Eigen::Affine3d::Identity();
@@ -146,11 +157,11 @@ void Router::callback_timer(const ros::TimerEvent& e) {
 			ksolver_success = true;
 		} else if(param_tracked_frame_ == -1) {
 			//Compute transform for all joints in the chain to get base to end effector
-			track_alter_success = solver_.calculate_gbe( gbe );
+			track_alter_success = solver_.calculate_gbe_ref( gbe );
 			ksolver_success = track_alter_success;
 		} else if(param_tracked_frame_ > 0) {
 			//Compute transform for all joints in the chain to get base to specified joint
-			track_alter_success = solver_.calculate_gxy( gbe, 0, param_tracked_frame_ );
+			track_alter_success = solver_.calculate_gxy_ref( gbe, 0, param_tracked_frame_ );
 			ksolver_success = track_alter_success;
 		}
 
@@ -177,10 +188,10 @@ void Router::callback_timer(const ros::TimerEvent& e) {
 					Eigen::VectorXd vbe;
 
 					if(param_tracked_frame_ == -1)
-						calc_manip_velocity = solver_.calculate_vbe( vbe );
+						calc_manip_velocity = solver_.calculate_vbe_ref( vbe );
 
 					if(param_tracked_frame_ > 0)
-						calc_manip_velocity = solver_.calculate_vbx( vbe, param_tracked_frame_ );
+						calc_manip_velocity = solver_.calculate_vbx_ref( vbe, param_tracked_frame_ );
 
 					if( calc_manip_velocity ) {
 						vbe_last_ =((1.0 - param_manipulator_jacobian_a_) * vbe_last_) + (param_manipulator_jacobian_a_ * vbe);

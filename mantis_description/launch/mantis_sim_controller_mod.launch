@@ -1,6 +1,7 @@
 <?xml version='1.0'?>
 <launch>
 	<!-- PATH PLANNING -->
+	<!--
 	<node pkg="mantis_router_base" type="mantis_router_base_node" name="router_base"
 	ns="/mantis_uav" clear_params="true" output="screen">
 		<param name="frame_id" value="map" />
@@ -16,6 +17,21 @@
 
 	<node pkg="mantis_router_joints" type="mantis_router_joints_node" name="router_joints" clear_params="true"
 	ns="mantis_uav" output="screen">
+		<remap from="~joint_shoulder/command" to="joint_position_controller/joint_shoulder/reference/traj"/>
+		<remap from="~joint_elbow/command" to="joint_position_controller/joint_elbow/reference/traj"/>
+	</node>
+	-->
+	<node pkg="mantis_router_full" type="mantis_router_full_node" name="router"
+	ns="/mantis_uav" clear_params="true" output="screen">
+		<param name="frame_id" value="map" />
+		<param name="model_id" value="mantis_uav" />
+		<param name="update_rate" value="50.0" />
+
+		<param name="control_settings/track_end" value="false" />
+		<param name="control_settings/accurate_end_tracking" value="true" />
+		<param name="control_settings/reference_feedback" value="true" />
+
+		<remap from="~output/triplet" to="mavel/reference/triplet"/>
 		<remap from="~joint_shoulder/command" to="joint_position_controller/joint_shoulder/reference/traj"/>
 		<remap from="~joint_elbow/command" to="joint_position_controller/joint_elbow/reference/traj"/>
 	</node>
