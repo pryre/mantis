@@ -214,7 +214,7 @@ class MantisGazeboPlugin : public ModelPlugin
 
 			pub_odom_.publish(msg_odom_);
 		}
-
+		/*
 		void statesCallback(const gazebo_msgs::ModelStates::ConstPtr& msg_in) {
 			msg_odom_.header.stamp = ros::Time::now();
 
@@ -270,6 +270,7 @@ class MantisGazeboPlugin : public ModelPlugin
 				}
 			}
 		}
+	*/
 };
 
 GZ_REGISTER_MODEL_PLUGIN(MantisGazeboPlugin)

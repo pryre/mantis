@@ -1,37 +1,41 @@
 <?xml version='1.0'?>
 <launch>
-	<node pkg="ml_detector" type="ml_detector_node" name="ml_detector"
-	ns="mantis_uav" clear_params="true" output="screen">
-		<!-- System Parameters -->
-		<param name="system/publish_overlay" value="true" type="boolean"/>
-		<param name="system/send_detailed_tag_info" value="true" type="boolean"/>
-		<param name="system/show_rejected" value="false" type="boolean"/>
-		<param name="system/refine_strategy" value="true" type="boolean"/>
-		<param name="system/camera_is_rectified" value="false" type="boolean"/>
+	<arg name="model_name" default="mantis_uav"/>
 
-		<!-- Detection Parameters /-->
-		<rosparam command="load" file="$(find ml_detector)/launch/detect_config.yaml"/>
-		<rosparam command="load" file="$(find ml_detector)/launch/board_config.yaml"/>
+	<group ns="$(arg model_name)">
+		<node pkg="ml_detector" type="ml_detector_node" name="ml_detector"
+		clear_params="true" output="screen">
+			<!-- System Parameters -->
+			<param name="system/publish_overlay" value="true" type="boolean"/>
+			<param name="system/send_detailed_tag_info" value="true" type="boolean"/>
+			<param name="system/show_rejected" value="false" type="boolean"/>
+			<param name="system/refine_strategy" value="true" type="boolean"/>
+			<param name="system/camera_is_rectified" value="false" type="boolean"/>
 
-		<!-- Marker Parameters -->
-		<remap from="~detected_markers" to="target_detection"/>
+			<!-- Detection Parameters /-->
+			<rosparam command="load" file="$(find ml_detector)/launch/detect_config.yaml"/>
+			<rosparam command="load" file="$(find ml_detector)/launch/board_config.yaml"/>
 
-		<!-- Image Parameters -->
-		<remap from="~camera_info" to="base_camera/camera_info"/>
-		<remap from="~image_raw" to="base_camera/image_raw"/>
-	</node>
+			<!-- Marker Parameters -->
+			<remap from="~detected_markers" to="target_detection"/>
 
-	<node pkg="mantis_planner" type="target_localizer" name="target_localizer"
-	ns="mantis_uav" clear_params="true" output="screen">
-	</node>
+			<!-- Image Parameters -->
+			<remap from="~camera_info" to="base_camera/camera_info"/>
+			<remap from="~image_raw" to="base_camera/image_raw"/>
+		</node>
 
-	<node pkg="mantis_planner" type="target_retrieve" name="target_retrieve"
-	ns="/mantis_uav" clear_params="true" output="screen">
-	</node>
+		<node pkg="mantis_planner" type="target_localizer" name="target_localizer"
+		clear_params="true" output="screen">
+		</node>
 
-	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_marker_blue_baton"
-	args="0.16 0.0 -0.02 0 1.5708 0 blue_baton_marker blue_baton" clear_params="true" output="screen"/>
+		<node pkg="mantis_planner" type="target_retrieve" name="target_retrieve"
+		clear_params="true" output="screen">
+		</node>
 
-	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_base_camera"
-	args="0.075 0.0 0.025 0 1.5708 0 base_link base_camera" clear_params="true" output="screen"/>
+		<node pkg="tf2_ros" type="static_transform_publisher" name="tf_marker_blue_baton"
+		args="0.16 0.0 -0.05 0 1.5708 0 blue_baton_marker blue_baton" clear_params="true" output="screen"/>
+
+		<node pkg="tf2_ros" type="static_transform_publisher" name="tf_base_camera"
+		args="0.075 0.0 0.025 -1.5708 0 -1.5708 $(arg model_name)/base_link $(arg model_name)/base_camera" clear_params="true" output="screen"/>
+	</group>
 </launch>

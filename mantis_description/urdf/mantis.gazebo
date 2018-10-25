@@ -47,7 +47,6 @@
 			<plugin name="frame_camera_controller" filename="libgazebo_ros_camera.so">
 				<alwaysOn>true</alwaysOn>
 				<updateRate>0.0</updateRate>
-				<robotNamespace>/mantis_uav</robotNamespace>
 				<cameraName>base_camera</cameraName>
 				<imageTopicName>image_raw</imageTopicName>
 				<cameraInfoTopicName>camera_info</cameraInfoTopicName>
@@ -68,7 +67,6 @@
 
 	<gazebo>
 		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-			<robotNamespace>/mantis_uav</robotNamespace>
 			<robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
 		</plugin>
 	</gazebo>
@@ -78,8 +76,8 @@
 			<alwaysOn>true</alwaysOn>
 			<frameName>world</frameName>
 			<bodyName>base_link</bodyName>
-			<topicName>mantis_uav/state/imu_data</topicName>
-			<serviceName>mantis_uav/imu_service</serviceName>
+			<topicName>state/imu_data</topicName>
+			<serviceName>imu_service</serviceName>
 			<gaussianNoise>0.0</gaussianNoise>
 			<updateRate>500.0</updateRate>
 		</plugin>

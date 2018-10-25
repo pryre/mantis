@@ -71,7 +71,7 @@ def callback_target(msg_in):
 
 		# Get current position and goals
 		tf_t = tfBuffer.lookup_transform("map", "blue_baton", msg_in.data, rospy.Duration(0.5))
-		tf_b = tfBuffer.lookup_transform("map", "mantis_uav", msg_in.data, rospy.Duration(0.5))
+		tf_b = tfBuffer.lookup_transform("map", "mantis_uav/base_link", msg_in.data, rospy.Duration(0.5))
 
 		move = ManoeuvreGoal()
 
@@ -110,7 +110,7 @@ def callback_target(msg_in):
 		del move.movements[0]
 
 		stamp = rospy.Time.now()
-		tf_b = tfBuffer.lookup_transform("map", "mantis_uav", stamp, rospy.Duration(0.5))
+		tf_b = tfBuffer.lookup_transform("map", "mantis_uav/base_link", stamp, rospy.Duration(0.5))
 		tf_e = tfBuffer.lookup_transform("map", "mantis_uav/end_effector", stamp, rospy.Duration(0.5))
 
 		de_x = tf_e.transform.translation.x - tf_b.transform.translation.x

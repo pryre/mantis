@@ -30,8 +30,6 @@ class Router {
 		ros::Time spawn_stamp_;
 		double param_update_rate_;
 
-		std::string param_frame_id_;
-		std::string param_model_id_;
 		int param_tracked_frame_;
 		double param_manipulator_jacobian_a_;
 		bool param_send_reference_feedback_;

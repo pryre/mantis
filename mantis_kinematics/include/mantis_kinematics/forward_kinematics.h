@@ -32,8 +32,6 @@ class ForwardKinematics {
 		tf2_ros::TransformBroadcaster tfbr_;
 		tf2_ros::StaticTransformBroadcaster tfsbr_;
 
-		std::string param_frame_id_;
-		std::string param_model_id_;
 		double param_rate_;
 		bool param_do_end_effector_pose_;
 		bool param_do_prop_viz_;

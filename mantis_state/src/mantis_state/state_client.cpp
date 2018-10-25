@@ -11,6 +11,8 @@ MantisStateClient::MantisStateClient( const ros::NodeHandle& nh, MantisParamClie
 	p_(p),
 	timestamp_(0),
 	voltage_(0.0),
+	frame_id_("map"),
+	child_frame_id_("mantis_uav"),
 	flight_ready_(false) {
 
 	g_ = Eigen::Affine3d::Identity();
@@ -45,7 +47,6 @@ const ros::Time& MantisStateClient::state_configuration_stamp( void ) {
 	return configuration_stamp_;
 }
 
-
 bool MantisStateClient::wait_for_state( void ) {
 	while( ros::ok() && ( !ok() ) ) {
 			ros::spinOnce();
@@ -53,6 +54,15 @@ bool MantisStateClient::wait_for_state( void ) {
 	}
 
 	return ok();
+}
+
+
+const std::string& MantisStateClient::frame_id( void ) {
+	return frame_id_;
+}
+
+const std::string& MantisStateClient::model_id( void ) {
+	return child_frame_id_;
 }
 
 const Eigen::Affine3d& MantisStateClient::g( void ) {

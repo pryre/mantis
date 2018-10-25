@@ -21,16 +21,12 @@ ControllerMod::ControllerMod() :
 	p_(nh_),
 	s_(nh_, p_),
 	solver_(p_, s_),
-	param_frame_id_("map"),
-	param_model_id_("mantis_uav"),
 	param_est_rate_(50.0),
 	cmd_throttle_(0.0),
 	dyncfg_control_settings_(ros::NodeHandle(nhp_, "control_settings")) {
 
 	bool success = true;
 
-	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
-	nhp_.param("model_id", param_model_id_, param_model_id_);
 	nhp_.param("estimator_rate", param_est_rate_, param_est_rate_);
 
 	dyncfg_control_settings_.setCallback(boost::bind(&ControllerMod::callback_cfg_control_settings, this, _1, _2));
@@ -137,7 +133,7 @@ void ControllerMod::callback_est(const ros::TimerEvent& e) {
 	if(param_reference_feedback_) {
 		geometry_msgs::WrenchStamped msg_wrench_out;
 		msg_wrench_out.header.stamp = e.current_real;
-		msg_wrench_out.header.frame_id = param_model_id_;
+		msg_wrench_out.header.frame_id = s_.model_id();
 
 		if(solved) {
 			msg_wrench_out.wrench.force.x = tau(0);
@@ -153,7 +149,7 @@ void ControllerMod::callback_est(const ros::TimerEvent& e) {
 
 	mavros_msgs::ActuatorControl msg_np_force_out;
 	msg_np_force_out.header.stamp = e.current_real;
-	msg_np_force_out.header.frame_id = param_model_id_;
+	msg_np_force_out.header.frame_id = s_.model_id();
 
 	//Set the message to be a force input only message in the body frame
 	msg_np_force_out.group_mix = CONST_ACTC_ADD;

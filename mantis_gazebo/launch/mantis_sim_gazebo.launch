@@ -1,8 +1,5 @@
 <?xml version='1.0'?>
 <launch>
-	<arg name="model" default=""/>
-	<arg name="model_name" default="" />
-
 	<!-- Add in resource path environment variables -->
 	<env name="GAZEBO_RESOURCE_PATH" value="$(find mantis_gazebo)/resources:$GAZEBO_RESOURCE_PATH"/>
 	<env name="GAZEBO_MODEL_PATH" value="$(find mantis_gazebo)/models:$GAZEBO_MODEL_PATH"/>
@@ -35,39 +32,19 @@
 	<arg unless="$(arg debug)" name="script_type" value="gzserver"/>
 	<arg     if="$(arg debug)" name="script_type" value="debug"/>
 
-
 	<!-- start gazebo server -->
 	<group if="$(arg use_clock_frequency)">
 		<param name="gazebo/pub_clock_frequency" value="$(arg pub_clock_frequency)" />
 	</group>
 
 	<node name="gazebo" pkg="gazebo_ros" type="$(arg script_type)" respawn="$(arg respawn_gazebo)" output="screen"
-	args="$(arg command_arg1) $(arg command_arg2) $(arg command_arg3) -e $(arg physics) $(arg extra_gazebo_args) $(arg world_name)" />
+	args="$(arg command_arg1) $(arg command_arg2) $(arg command_arg3) -e $(arg physics) $(arg extra_gazebo_args) $(arg world_name)">
+		<remap from="tf" to="gazebo/tf"/>
+		<remap from="tf_static" to="gazebo/tf_static"/>
+	</node>
 
 	<!-- start gazebo client -->
 	<group if="$(arg gui)">
 		<node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen"/>
 	</group>
-
-	<!-- MODEL SETUP -->
-
-	<node name="fake_battery" pkg="mantis_gazebo" type="fake_battery" respawn="false"
-	ns="$(arg model_name)" output="screen">
-		<remap from="~battery" to="state/battery"/>
-	</node>
-
-	<node name="hil_sensor" pkg="robin_gazebo" type="hil_sensor_node" respawn="false"
-	ns="$(arg model_name)" output="screen">
-		<remap from="hil/imu_data" to="/mavros/hil/imu_ned"/>
-	</node>
-
-	<param name="/$(arg model_name)/robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
-
-	<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-	args="-urdf
-		  -model $(arg model_name)
-		  -param /$(arg model_name)/robot_description
-		  -z 0.5
-		  -J joint_shoulder 1.57 joint_elbow 1.57
-          -unpause"/>
 </launch>

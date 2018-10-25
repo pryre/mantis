@@ -27,8 +27,6 @@ class ControllerMod {
 
 		ros::Time msg_attitude_target_tr_;
 
-		std::string param_frame_id_;
-		std::string param_model_id_;
 		bool param_force_compensation_;
 		double param_force_comp_alpha_;
 		bool param_coriolis_compensation_;

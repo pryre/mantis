@@ -11,6 +11,7 @@
 #include <mantis_params/param_client.h>
 
 #include <eigen3/Eigen/Dense>
+#include <string>
 
 class MantisStateClient {
 	private:
@@ -21,6 +22,9 @@ class MantisStateClient {
 
 		ros::Time timestamp_;
 		ros::Time configuration_stamp_;
+
+		std::string frame_id_;
+		std::string child_frame_id_;
 
 		Eigen::Affine3d g_;
 		Eigen::Vector3d bv_;
@@ -44,6 +48,9 @@ class MantisStateClient {
 		const ros::Time& state_configuration_stamp( void );
 
 		bool wait_for_state( void );
+
+		const std::string& frame_id( void );
+		const std::string& model_id( void );
 
 		const Eigen::Affine3d& g( void );
 		const Eigen::Vector3d& bv( void );

@@ -24,13 +24,9 @@ Router::Router() :
 	s_(nh_, p_),
 	solver_(p_, s_),
 	contrail_(nhp_),
-	param_frame_id_("map"),
-	param_model_id_("mantis_uav"),
 	param_update_rate_(50.0),
 	dyncfg_control_settings_(ros::NodeHandle(nhp_, "control_settings")) {
 
-	nhp_.param("frame_id", param_frame_id_, param_frame_id_);
-	nhp_.param("model_id", param_model_id_, param_model_id_);
 	nhp_.param("update_rate", param_update_rate_, param_update_rate_);
 
 	dyncfg_control_settings_.setCallback(boost::bind(&MantisRouterFull::Router::callback_cfg_control_settings, this, _1, _2));
@@ -236,7 +232,7 @@ void Router::callback_timer(const ros::TimerEvent& e) {
 
 			mavros_msgs::PositionTarget msg_tri_out;
 			msg_tri_out.header.stamp = e.current_real;
-			msg_tri_out.header.frame_id = param_frame_id_;
+			msg_tri_out.header.frame_id = s_.frame_id();
 			msg_tri_out.coordinate_frame = msg_tri_out.FRAME_LOCAL_NED;
 			msg_tri_out.type_mask = msg_tri_out.IGNORE_AFX | msg_tri_out.IGNORE_AFY | msg_tri_out.IGNORE_AFZ | msg_tri_out.FORCE;
 			msg_tri_out.position = MDTools::point_from_eig(g_sp.translation());
@@ -251,7 +247,7 @@ void Router::callback_timer(const ros::TimerEvent& e) {
 				geometry_msgs::PoseStamped msg_base_out;
 				geometry_msgs::PoseStamped msg_track_out;
 				msg_base_out.header.stamp = e.current_real;
-				msg_base_out.header.frame_id = param_frame_id_;
+				msg_base_out.header.frame_id = s_.frame_id();
 				msg_track_out.header = msg_base_out.header;
 
 				msg_base_out.pose = MDTools::pose_from_eig(g_sp);

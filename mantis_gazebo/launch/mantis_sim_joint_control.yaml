@@ -1,15 +1,14 @@
-mantis_uav:
-  # Publish all joint states -----------------------------------
-  joint_state_controller:
-    type: joint_state_controller/JointStateController
-    publish_rate: 50
+# Publish all joint states -----------------------------------
+joint_state_controller:
+  type: joint_state_controller/JointStateController
+  publish_rate: 50
 
-  # Velocity Controllers ---------------------------------------
-  shoulder_velocity_controller:
-    type: effort_controllers/JointVelocityController
-    joint: joint_shoulder
-    pid: {p: 0.35, i: 1.8, d: 0.0, i_clamp_min: -1.0, i_clamp_max: 1.0}
-  elbow_velocity_controller:
-    type: effort_controllers/JointVelocityController
-    joint: joint_elbow
-    pid: {p: 0.35, i: 1.8, d: 0.0, i_clamp_min: -1.0, i_clamp_max: 1.0}
+# Velocity Controllers ---------------------------------------
+shoulder_velocity_controller:
+  type: effort_controllers/JointVelocityController
+  joint: joint_shoulder
+  pid: {p: 0.35, i: 1.8, d: 0.0, i_clamp_min: -1.0, i_clamp_max: 1.0}
+elbow_velocity_controller:
+  type: effort_controllers/JointVelocityController
+  joint: joint_elbow
+  pid: {p: 0.35, i: 1.8, d: 0.0, i_clamp_min: -1.0, i_clamp_max: 1.0}
