@@ -45,6 +45,8 @@ class Joint {
 		double get_r(void);
 		double get_rd(void);
 
+		bool has_reference(void);
+
 	private:
 		//void action_goal_cb( const mantis_router_joints::JointMovementGoalConstPtr &goal );
 		void set_action_goal();

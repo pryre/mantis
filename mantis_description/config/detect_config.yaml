@@ -2,7 +2,8 @@
 
 # System Settings
 # http://docs.opencv.org/3.1.0/d5/dae/tutorial_aruco_detection.html
-system:
+
+detector:
   adaptive_thresh_win_size_min: 3
   adaptive_thresh_win_size_max: 23
   adaptive_thresh_win_size_step: 10

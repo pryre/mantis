@@ -226,7 +226,7 @@ def main():
 	tfln = tf2_ros.TransformListener(tfBuffer)
 
 	# Need this to switch out to end effector control and back to the previous settings
-	tracking_client = dynamic_reconfigure.client.Client("router_base/control_settings", timeout=30, config_callback=callback_config)
+	tracking_client = dynamic_reconfigure.client.Client("router/control_settings", timeout=30, config_callback=callback_config)
 
 	# Need this to update the weight estimates of the end link
 	rospy.wait_for_service('reload_params')

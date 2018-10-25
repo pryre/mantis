@@ -32,7 +32,7 @@
 			<update_rate>10.0</update_rate>
 			<camera>
 				<pose>0.075 0 0.025 0 0 0</pose>
-				<horizontal_fov>${60 * pi/180.0}</horizontal_fov>
+				<horizontal_fov>${75 * pi/180.0}</horizontal_fov>
 				<image>
 					<format>B8G8R8</format>
 					<width>640</width>
@@ -47,6 +47,7 @@
 			<plugin name="frame_camera_controller" filename="libgazebo_ros_camera.so">
 				<alwaysOn>true</alwaysOn>
 				<updateRate>0.0</updateRate>
+				<robotNamespace>/mantis_uav</robotNamespace>
 				<cameraName>base_camera</cameraName>
 				<imageTopicName>image_raw</imageTopicName>
 				<cameraInfoTopicName>camera_info</cameraInfoTopicName>

@@ -135,10 +135,20 @@ void Router::callback_timer(const ros::TimerEvent& e) {
 		Eigen::VectorXd ref_r = Eigen::VectorXd::Zero( p_.get_dynamic_joint_num() );
 		Eigen::VectorXd ref_rd = Eigen::VectorXd::Zero( p_.get_dynamic_joint_num() );
 
+		//Update all the joint routers
 		for(int i = 0; i < p_.get_dynamic_joint_num(); i++) {
 			joint_routers_[i]->update( e.current_real );
-			ref_r[i] = joint_routers_[i]->get_r();
-			ref_rd[i] = joint_routers_[i]->get_rd();
+
+			//If possible, prefer to use the joint reference
+			//over the joint state, as this will potentially
+			//avoid any feedback oscillations in the alterations
+			if( joint_routers_[i]->has_reference() ) {
+				ref_r[i] = joint_routers_[i]->get_r();
+				ref_rd[i] = joint_routers_[i]->get_rd();
+			} else {
+				ref_r[i] = s_.r()[i];
+				ref_rd[i] = s_.rd()[i];
+			}
 		}
 
 		solver_.load_ref(ref_r, ref_rd);

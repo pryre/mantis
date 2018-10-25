@@ -1,6 +1,7 @@
 <?xml version='1.0'?>
 <launch>
-	<node pkg="ml_detector" type="ml_detector_node" name="ml_detector" clear_params="true" output="screen">
+	<node pkg="ml_detector" type="ml_detector_node" name="ml_detector"
+	ns="mantis_uav" clear_params="true" output="screen">
 		<!-- Operation Parameters -->
 		<param name="send_debug" value="true" type="boolean"/>
 		<param name="send_detailed_tag_info" value="true" type="boolean"/>
@@ -11,9 +12,9 @@
 		<param name="marker_topic" value="/mantis_uav/target_detection" type="str"/>
 
 		<!-- Image Parameters -->
-		<param name="debug_image_topic" value="image_debug" type="str"/>
-		<param name="camera_info_topic" value="/base_camera/camera_info" type="str"/>
-		<param name="input_image_topic" value="/base_camera/image" type="str"/>
+		<param name="debug_image_topic" value="image_overlay" type="str"/>
+		<param name="camera_info_topic" value="base_camera/camera_info" type="str"/>
+		<param name="input_image_topic" value="base_camera/image" type="str"/>
 		<!--param name="input_image_topic" value="/base_camera/image_raw" type="str"/-->
 		<param name="camera_is_rectified" value="false" type="boolean"/>
 

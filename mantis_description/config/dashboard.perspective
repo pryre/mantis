@@ -218,7 +218,7 @@
                 },
                 "mouse_pub_topic": {
                   "type": "repr",
-                  "repr": "u'/ml_detector/image_debug_mouse_left'"
+                  "repr": "u'/mantis_uav/ml_detector/image_overlay_mouse_left'"
                 },
                 "num_gridlines": {
                   "type": "repr",
@@ -238,7 +238,7 @@
                 },
                 "topic": {
                   "type": "repr",
-                  "repr": "u'/ml_detector/image_debug'"
+                  "repr": "u'/mantis_uav/ml_detector/image_overlay'"
                 },
                 "publish_click_location": {
                   "type": "repr",
@@ -361,11 +361,11 @@
                 },
                 "joint_prefix": {
                   "type": "repr",
-                  "repr": "u'router_joints'"
+                  "repr": "u'router'"
                 },
                 "contrail_prefix": {
                   "type": "repr",
-                  "repr": "u'router_base/contrail'"
+                  "repr": "u'router/contrail'"
                 }
               },
               "groups": {}

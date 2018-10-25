@@ -30,6 +30,10 @@ Joint::Joint( const ros::NodeHandle& nh, std::string joint_name ) :
 Joint::~Joint() {
 }
 
+bool Joint::has_reference(void) {
+	return ( spline_start_ > ros::Time(0) );
+}
+
 double Joint::get_r(void) {
 	return last_position_;
 }
@@ -118,7 +122,7 @@ void Joint::update( ros::Time tc ) {
 	}
 
 	//Don't output unless some reference has been set
-	if( spline_start_ > ros::Time(0) ) {
+	if( has_reference() ) {
 		mantis_msgs::JointTrajectoryGoal msg_out;
 		msg_out.header.frame_id = name_;
 		msg_out.header.stamp = tc;
