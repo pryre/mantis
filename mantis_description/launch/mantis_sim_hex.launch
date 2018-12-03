@@ -1,0 +1,96 @@
+<?xml version='1.0'?>
+<launch>
+	<arg name="model" default="$(find mantis_description)/urdf/mantis_hex.xacro"/>
+	<arg name="model_name" default="mantis_uav"/>
+	<arg name="frame_id" default="map"/>
+	<arg name="rviz" default="true"/>
+	<arg name="rqt" default="true"/>
+	<arg name="spawn_x" default="0.0"/>
+	<arg name="spawn_y" default="0.0"/>
+	<arg name="spawn_z" default="0.5"/>
+	<arg name="gazebo" default="true"/>
+
+	<group ns="$(arg model_name)">
+		<!--param name="tf_prefix" value="$(arg model_name)" /-->
+
+		<node pkg="topic_tools" type="relay" name="relay_pwm" args="mavros/rc/out command/motor_pwm"/>
+		<node pkg="topic_tools" type="relay" name="relay_pose" args="state/pose mavros/mocap/pose"/>
+		<node pkg="topic_tools" type="relay" name="relay_joints" args="joint_states state/joints"/>
+
+		<rosparam command="load" file="$(find mantis_description)/config/mantis_sim_params_hex.yaml"/>
+
+		<!-- Robin Gazebo plugin specific parameters-->
+		<param name="prop_layout" value="hex_x6"/>
+		<param name="base_arm_length" value="0.225"/>
+
+		<node pkg="mantis_params" type="mantis_params_node" name="mantis_params"
+		clear_params="true" output="screen"/>
+
+		<node pkg="mantis_state" type="mantis_state_node" name="mantis_state"
+		clear_params="true" output="screen">
+			<param name="update_rate" value="100.0" />
+			<param name="use_odom_angular_velocity" value="false" />
+
+			<remap from="state/mav_state" to="mavros/state" />
+		</node>
+
+		<!-- visualization -->
+		<node pkg="mantis_kinematics" type="mantis_kinematics_forward_node" name="mantis_fk"
+		clear_params="true" output="screen">
+			<param name="update_rate" value="30.0" />
+
+			<param name="armed_prop_velocity" value="0.6" />
+			<param name="prop_viz" value="true" />
+			<param name="end_effector_pose" value="true" />
+		</node>
+
+		<group if="$(arg rviz)">
+			<node name="rviz" pkg="rviz" args="-d $(find mantis_description)/config/display.rviz" type="rviz" respawn="false" output="screen"/>
+		</group>
+
+		<group if="$(arg rqt)">
+			<node name="rqt" pkg="rqt_gui" type="rqt_gui" args="--perspective-file $(find mantis_description)/config/dashboard.perspective" respawn="false" output="screen"/>
+		</group>
+
+		<!-- Controller Setup -->
+		<rosparam file="$(find mantis_gazebo)/launch/mantis_sim_joint_control.yaml" command="load"/>
+
+		<node name="controller_spawner" pkg="controller_manager" type="spawner"
+		respawn="false" output="screen"
+		args="--namespace=/$(arg model_name) shoulder_velocity_controller elbow_velocity_controller joint_state_controller"/>
+
+		<!-- Model Setup -->
+		<node name="fake_battery" pkg="mantis_gazebo" type="fake_battery" respawn="false" output="screen">
+			<remap from="~battery" to="state/battery"/>
+		</node>
+
+		<node name="hil_sensor" pkg="robin_gazebo" type="hil_sensor_node" respawn="false" output="screen">
+			<remap from="hil/imu_data" to="mavros/hil/imu_ned"/>
+		</node>
+
+		<param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
+
+		<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+		args="-urdf
+			  -model $(arg model_name)
+			  -param robot_description
+			  -x $(arg spawn_x)
+			  -y $(arg spawn_y)
+			  -z $(arg spawn_z)
+			  -J joint_shoulder 1.57 joint_elbow 1.57
+			  -unpause"/>
+
+		<node pkg="tf2_ros" type="static_transform_publisher" name="tf_local_world"
+		args="0.0 0.0 0.0 0.0 0.0 0.0 world $(arg model_name)/world" clear_params="true" output="screen"/>
+
+		<node pkg="tf2_ros" type="static_transform_publisher" name="tf_local_map"
+		args="0.0 0.0 0.0 0.0 0.0 0.0 $(arg model_name)/world map" clear_params="true" output="screen"/>
+	</group>
+
+	<!-- Gazebo -->
+	<group if="$(arg gazebo)">
+		<include file="$(find mantis_gazebo)/launch/mantis_sim_gazebo.launch">
+			<!--arg name="world_name" default="worlds/mantis_stand_baton.world"/-->
+		</include>
+	</group>
+</launch>

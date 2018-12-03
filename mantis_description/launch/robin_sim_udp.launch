@@ -13,6 +13,8 @@
 	<arg name="respawn_mavros" default="false" />
 
 	<group ns="$(arg model_name)">
+		<node pkg="robin" type="robin_node" name="robin" output="screen" clear_params="true"/>
+
 		<include file="$(find mavros)/launch/node.launch">
 			<!--
 			<arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />

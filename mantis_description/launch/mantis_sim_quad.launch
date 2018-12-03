@@ -5,6 +5,10 @@
 	<arg name="frame_id" default="map"/>
 	<arg name="rviz" default="true"/>
 	<arg name="rqt" default="true"/>
+	<arg name="spawn_x" default="0.0"/>
+	<arg name="spawn_y" default="0.0"/>
+	<arg name="spawn_z" default="0.5"/>
+	<arg name="gazebo" default="true"/>
 
 	<group ns="$(arg model_name)">
 		<!--param name="tf_prefix" value="$(arg model_name)" /-->
@@ -70,7 +74,9 @@
 		args="-urdf
 			  -model $(arg model_name)
 			  -param robot_description
-			  -z 0.5
+			  -x $(arg spawn_x)
+			  -y $(arg spawn_y)
+			  -z $(arg spawn_z)
 			  -J joint_shoulder 1.57 joint_elbow 1.57
 			  -unpause"/>
 
@@ -79,12 +85,12 @@
 
 		<node pkg="tf2_ros" type="static_transform_publisher" name="tf_local_map"
 		args="0.0 0.0 0.0 0.0 0.0 0.0 $(arg model_name)/world map" clear_params="true" output="screen"/>
+	</group>
 
-		<!-- Gazebo
+	<!-- Gazebo -->
+	<group if="$(arg gazebo)">
 		<include file="$(find mantis_gazebo)/launch/mantis_sim_gazebo.launch">
-			<arg name="model" value="$(arg model)" />
-			<arg name="model_name" value="$(arg model_name)" />
+			<!--arg name="world_name" default="worlds/mantis_stand_baton.world"/-->
 		</include>
-		 -->
 	</group>
 </launch>
