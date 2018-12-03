@@ -14,8 +14,10 @@ contrail:
 
 throttle:
   min: 0.0
-  mid: 0.20
+  mid: 0.22
   max: 0.9
+
+uav_mass: 2.035
 
 # Maximum roll/pitch in radians
 tilt_max: 0.39
@@ -54,20 +56,20 @@ control:
       max: 1.0
   vel:
     x:
-      p: 0.07
-      i: 0.005
-      d: 0.001
+      p: 0.25
+      i: 0.02
+      d: 0.01
       min: -0.2
       max: 0.2
     y:
-      p: 0.07
-      i: 0.005
-      d: 0.001
+      p: 0.25
+      i: 0.02
+      d: 0.01
       min: -0.2
       max: 0.2
     z:
-      p: 0.15
-      i: 0.02
+      p: 0.5
+      i: 0.1
       d: 0.0
       min: -0.5
       max: 0.3

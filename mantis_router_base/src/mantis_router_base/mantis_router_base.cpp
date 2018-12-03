@@ -114,11 +114,12 @@ void MantisRouterBase::callback_timer(const ros::TimerEvent& e) {
 
 		Eigen::Vector3d ref_pos;
 		Eigen::Vector3d ref_vel;
+		Eigen::Vector3d ref_acc;
 		double ref_rpos;
 		double ref_rvel;
 
 		//Make certain we have a valid reference
-		if(ksolver_success && contrail_.get_reference(ref_pos, ref_vel, ref_rpos, ref_rvel, e.current_real ) ) {
+		if(ksolver_success && contrail_.get_reference(ref_pos, ref_vel, ref_acc, ref_rpos, ref_rvel, e.current_real ) ) {
 			//Fill in the current goals
 			ge_sp.translation() = ref_pos;
 			ge_sp.linear() = Eigen::AngleAxisd(ref_rpos, Eigen::Vector3d::UnitZ()).toRotationMatrix();
@@ -175,9 +176,10 @@ void MantisRouterBase::callback_timer(const ros::TimerEvent& e) {
 			msg_tri_out.header.stamp = e.current_real;
 			msg_tri_out.header.frame_id = param_frame_id_;
 			msg_tri_out.coordinate_frame = msg_tri_out.FRAME_LOCAL_NED;
-			msg_tri_out.type_mask = msg_tri_out.IGNORE_AFX | msg_tri_out.IGNORE_AFY | msg_tri_out.IGNORE_AFZ | msg_tri_out.FORCE;
+			//msg_tri_out.type_mask = msg_tri_out.IGNORE_AFX | msg_tri_out.IGNORE_AFY | msg_tri_out.IGNORE_AFZ | msg_tri_out.FORCE;
 			msg_tri_out.position = MDTools::point_from_eig(g_sp.translation());
 			msg_tri_out.velocity = MDTools::vector_from_eig(gv_sp);
+			msg_tri_out.acceleration_or_force = MDTools::vector_from_eig(ref_acc);
 			//Eigen::Vector3d ea = g_sp.linear().eulerAngles(2,1,0);
 			msg_tri_out.yaw = MDTools::extract_yaw(Eigen::Quaterniond(g_sp.linear()));
 			msg_tri_out.yaw_rate = ref_rvel;
