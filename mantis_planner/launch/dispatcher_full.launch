@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 <launch>
 	<node pkg="mantis_planner" type="dispatcher_full" name="dispatcher_full"
-	ns="/mantis_uav" clear_params="true" output="screen">
+	clear_params="true" output="screen">
 		<!--
 		<param name="action_topic_contrail" value="router_full/contrail" />
 		<param name="action_topic_joint_prefix" value="router_joints/" />
