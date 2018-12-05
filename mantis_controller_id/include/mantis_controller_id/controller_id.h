@@ -28,7 +28,7 @@ class ControllerID {
 		ros::Timer timer_high_level_;
 		ros::Timer timer_low_level_;
 
-		ros::Publisher pub_rc_;
+		ros::Publisher pub_actuators_;
 		ros::Publisher pub_accel_linear_;
 		ros::Publisher pub_accel_body_;
 		ros::Publisher pub_twist_base_;
@@ -85,7 +85,8 @@ class ControllerID {
 		int16_t map_pwm(double val);
 		void calc_motor_map(Eigen::MatrixXd &M);
 
-		void message_output_control(const ros::Time t, const std::vector<uint16_t> &pwm);
+		//void message_output_control(const ros::Time t, const std::vector<uint16_t> &pwm);
+		void message_output_control(const ros::Time t, const Eigen::VectorXd &u);
 		void message_output_feedback(const ros::Time t,
 									 const Eigen::Affine3d &g_sp,	//Base position/orientation
 									 const Eigen::Vector3d &pa,		//Base linear acceleration

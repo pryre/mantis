@@ -12,7 +12,7 @@
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Quaternion.h>
 
-#include <mavros_msgs/OverrideRCIn.h>
+#include <mavros_msgs/ActuatorControl.h>
 #include <mavros_msgs/PositionTarget.h>
 
 #include <eigen3/Eigen/Dense>
@@ -62,36 +62,32 @@ ControllerID::ControllerID() :
 	status_high_level_ = false;
 
 	if(p_.wait_for_params() && s_.wait_for_state()) {
-		pub_rc_ = nhp_.advertise<mavros_msgs::OverrideRCIn>("output/rc", 10);
+		pub_actuators_ = nhp_.advertise<mavros_msgs::ActuatorControl>("output/actuators", 10);
 
 		pub_pose_base_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/pose/base", 10);
 		pub_twist_base_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/twist/base", 10);
 		pub_accel_linear_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel/linear", 10);
 		pub_accel_body_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel/body", 10);
 
-		ROS_INFO("Inverse dynamics controller loaded. Waiting for inputs:");
-		ROS_INFO("    - state");
-		ROS_INFO("    - path");
+		ROS_INFO("Inverse dynamics controller loaded. Waiting for state...");
 
 		//Lock the controller until all the inputs are satisfied
-		while( ros::ok() && ready_check(ros::Time::now()) ) {
-			if( ref_path_.has_reference(ros::Time::now()) )
-				ROS_INFO_ONCE("Augmented dynamics got input: path");
+		mavros_msgs::ActuatorControl msg_act_out;
+		msg_act_out.header.frame_id = param_model_id_;
+		msg_act_out.group_mix = 0;
+		for(int i=0; i<8; i++) {
+				msg_act_out.controls[i] = 0;
+		}
 
-			if( s_.ok() )
-				ROS_INFO_ONCE("Augmented dynamics got input: state");
-
-			mavros_msgs::OverrideRCIn msg_rc_out;
-			for(int i=0; i<p_.motor_num(); i++) {
-					msg_rc_out.channels[i] = msg_rc_out.CHAN_NOCHANGE;
-			}
-			pub_rc_.publish(msg_rc_out);
+		while( ros::ok() && !ready_check(ros::Time::now()) ) {
+			msg_act_out.header.stamp = ros::Time::now();
+			pub_actuators_.publish(msg_act_out);
 
 			ros::spinOnce();
 			ros::Rate(param_safety_rate_).sleep();
 		}
 
-		ROS_INFO_ONCE("Inverse dynamics got all inputs!");
+		ROS_INFO_ONCE("Inverse dynamics got state!");
 
 		//Start the control loops
 		timer_high_level_ = nhp_.createTimer(ros::Duration(1.0/param_high_level_rate_), &ControllerID::callback_high_level, this );
@@ -119,17 +115,17 @@ bool ControllerID::ready_check(const ros::Time& tc) {
 	bool ready = false;
 
 	//If we still have all the inputs satisfied
-	if( s_.ok() && ref_path_.has_reference(tc) ) {
+	if( s_.ok() ) { //&& ref_path_.has_reference(tc) ) {
 		ready = true;
 	} else {
 		if(was_flight_ready_) {
-			std::string error_msg = "Input error:\n";
+			std::string error_msg = "Input error: ";
 
-			if( !ref_path_.has_reference(tc) )
-				error_msg += "no valid path\n";
+			//if( !ref_path_.has_reference(tc) )
+			//	error_msg += "no valid path\n";
 
 			if( !s_.ok() )
-				error_msg += "no state\n";
+				error_msg += "[no state]";
 
 			ROS_ERROR("%s", error_msg.c_str());
 		}
@@ -239,12 +235,10 @@ void ControllerID::callback_high_level(const ros::TimerEvent& e) {
 
 		status_high_level_ = true;
 	} else {
-		if(!goal_ok) {
-			ROS_WARN_THROTTLE(2.0, "Path error, soft failsafe");
-		}
-
 		if(!ready) {
 			ROS_WARN_THROTTLE(2.0, "State error, soft failsafe");
+		} else if(!goal_ok) {
+			ROS_WARN_THROTTLE(2.0, "Path error, soft failsafe");
 		}
 
 		status_high_level_ = false;
@@ -271,6 +265,7 @@ void ControllerID::callback_low_level(const ros::TimerEvent& e) {
 	bool ready = ready_check(e.current_real);
 
 	bool success = false;
+	Eigen::VectorXd u;
 
 	if( ready && status_high_level_ ) {
 		//Calculate the corresponding rotation to reach desired acceleration
@@ -312,11 +307,11 @@ void ControllerID::callback_low_level(const ros::TimerEvent& e) {
 		Eigen::Vector3d abz_accel = az_scale*body_z;
 
 		//Need to copy this data to access it directly
-		Eigen::VectorXd r = s_.r();
-		Eigen::VectorXd rd = s_.rd();
-		Eigen::VectorXd rdd = s_.rdd();
-		Eigen::VectorXd bw = s_.bw();
-		Eigen::VectorXd bv = s_.bv();
+		//Eigen::VectorXd r = s_.r();
+		//Eigen::VectorXd rd = s_.rd();
+		//Eigen::VectorXd rdd = s_.rdd();
+		//Eigen::VectorXd bw = s_.bw();
+		//Eigen::VectorXd bv = s_.bv();
 
 		int num_states = solver_.num_states();
 		Eigen::VectorXd tau = Eigen::VectorXd::Zero(num_states);
@@ -324,21 +319,29 @@ void ControllerID::callback_low_level(const ros::TimerEvent& e) {
 		ua(0) = 0.0;
 		ua(1) = 0.0;
 		ua(2) = abz_accel.norm();
-		//ua(2) = A.norm();
+		//ua(2) = a_sp_.norm();
 		ua.segment(3,3) << wa;
-		ua.segment(6,p_.get_dynamic_joint_num()) << rdd;
+		ua.segment(6,p_.get_dynamic_joint_num()) << Eigen::VectorXd::Zero( p_.get_dynamic_joint_num() );
 
-		if(solver_.solve_inverse_dynamics(tau, ua)) {
+		double kT = 0.0;
+		double ktx = 0.0;
+		double kty = 0.0;
+		double ktz = 0.0;
+
+		if( solver_.solve_inverse_dynamics(tau, ua) && solver_.calculate_thrust_coeffs(kT, ktx, kty, ktz)) {
 			//XXX: Hardcoded for hex in function because lazy
-			Eigen::MatrixXd M = Eigen::MatrixXd::Zero(p_.motor_num() + p_.get_dynamic_joint_num(), num_states);
-			calc_motor_map(M);
+			//Eigen::MatrixXd M = Eigen::MatrixXd::Zero(p_.motor_num() + p_.get_dynamic_joint_num(), num_states);
+			//calc_motor_map(M);
+			//u = M*tau;
 
-			Eigen::MatrixXd u = M*tau;
+			Eigen::Vector4d cforces;
+			cforces << tau(2)*kT, tau(3)*ktx, tau(4)*kty, tau(5)*ktz;
+			u = p_.get_mixer()*cforces;
 
 			//Calculate goal PWM values to generate desired torque
-			for(int i=0; i<p_.motor_num(); i++) {
-				pwm_out[i] = map_pwm(u(i));
-			}
+			//for(int i=0; i<p_.motor_num(); i++) {
+			//	pwm_out[i] = map_pwm(u(i));
+			//}
 
 			if(param_reference_feedback_)
 				message_output_feedback(e.current_real, g_sp_, a_sp_, gr_sp, w_goal, ua);
@@ -347,14 +350,7 @@ void ControllerID::callback_low_level(const ros::TimerEvent& e) {
 		}
 	}
 
-	if(!success) {
-		//Output minimums until the input info is available
-		for(int i=0; i<p_.motor_num(); i++) {
-			pwm_out[i] = p_.pwm_min();
-		}
-	}
-
-	message_output_control(e.current_real, pwm_out);
+	message_output_control(e.current_real, u);
 }
 
 Eigen::Affine3d ControllerID::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe) {
@@ -494,9 +490,10 @@ void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
 	M << cm, Eigen::MatrixXd::Zero(p_.motor_num(), p_.get_dynamic_joint_num()),
 		 Eigen::MatrixXd::Zero(p_.get_dynamic_joint_num(), 6), Eigen::MatrixXd::Identity(p_.get_dynamic_joint_num(), p_.get_dynamic_joint_num());
 }
-
+/*
 void ControllerID::message_output_control(const ros::Time t, const std::vector<uint16_t> &pwm) {
-	mavros_msgs::OverrideRCIn msg_rc_out;
+	mavros_msgs::RCOverride msg_rc_out;
+	msg_rc_out.channels.resize(8);
 
 	//Insert control data
 	ROS_ASSERT_MSG(pwm.size() <= 8, "Supported number of motors is 8");
@@ -504,12 +501,32 @@ void ControllerID::message_output_control(const ros::Time t, const std::vector<u
 		if( i<pwm.size() ) {
 			msg_rc_out.channels[i] = pwm[i];
 		} else {
-			msg_rc_out.channels[i] = msg_rc_out.CHAN_NOCHANGE;
+			msg_rc_out.channels[i] = 0;
 		}
 	}
 
 	//Publish messages
 	pub_rc_.publish(msg_rc_out);
+}
+*/
+
+void ControllerID::message_output_control(const ros::Time t, const Eigen::VectorXd &u) {
+	mavros_msgs::ActuatorControl msg_act_out;
+	msg_act_out.header.stamp = ros::Time::now();
+	msg_act_out.group_mix = 0;
+
+	//Insert control data
+	ROS_ASSERT_MSG(u.size() <= 8, "Supported number of motors is 8");
+	for(int i=0; i<8; i++) {
+		if( i<u.size() ) {
+			msg_act_out.controls[i] = u(i);
+		} else {
+			msg_act_out.controls[i] = 0;
+		}
+	}
+
+	//Publish messages
+	pub_actuators_.publish(msg_act_out);
 }
 
 void ControllerID::message_output_feedback(const ros::Time t,

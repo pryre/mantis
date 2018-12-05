@@ -3,7 +3,11 @@
 	<arg name="model_name" default="mantis_uav"/>
 
 	<group ns="$(arg model_name)">
-		<include file="$(find mantis_planner)/launch/dispatcher_full.launch"/>
+		<node pkg="mantis_planner" type="dispatcher_full" name="dispatcher_full"
+		clear_params="true" output="screen">
+			<param name="action_topic_contrail" value="router/contrail" />
+			<param name="action_topic_joint_prefix" value="router/" />
+		</node>
 
 		<node pkg="mantis_router_full" type="mantis_router_full_node" name="router"
 		clear_params="true" output="screen">

@@ -1,47 +1,67 @@
 <?xml version='1.0'?>
 <launch>
-	<arg name="arm" default="false"/>
+	<arg name="model_name" default="mantis_uav"/>
 
-	<group if="$(arg arm)">
-		<node pkg="rosservice" type="rosservice" name="arm_system" args="call --wait /mantis_uav/arm/motors '{arm: $(arg arm)}'"/>
+	<group ns="$(arg model_name)">
+		<node pkg="mantis_planner" type="dispatcher_full" name="dispatcher_full"
+		clear_params="true" output="screen">
+			<param name="action_topic_contrail" value="controller_id/contrail" />
+			<param name="action_topic_joint_prefix" value="joint_router/" />
+		</node>
+
+		<!--
+		<node pkg="mantis_router_full" type="mantis_router_full_node" name="router"
+		clear_params="true" output="screen">
+			<param name="update_rate" value="50.0" />
+
+			<param name="control_settings/track_end" value="false" />
+			<param name="control_settings/accurate_end_tracking" value="true" />
+			<param name="control_settings/reference_feedback" value="true" />
+
+			<remap from="~joint_shoulder/command" to="joint_position_controller/joint_shoulder/reference/traj"/>
+			<remap from="~joint_elbow/command" to="joint_position_controller/joint_elbow/reference/traj"/>
+		</node>
+		-->
+		<node pkg="mantis_router_joints" type="mantis_router_joints_node" name="joint_router"
+		clear_params="true" output="screen">
+			<remap from="~joint_shoulder/command" to="joint_position_controller/joint_shoulder/reference/traj"/>
+			<remap from="~joint_elbow/command" to="joint_position_controller/joint_elbow/reference/traj"/>
+		</node>
+
+		<!-- HIGH LEVEL CONTROL -->
+		<node pkg="mantis_controller_joints" type="mantis_controller_joints_node" name="joint_position_controller"
+		clear_params="true" output="screen">
+			<param name="update_rate" value="25.0" />
+			<rosparam command="load" file="$(find mantis_description)/config/mantis_joint_control.yaml"/>
+
+			<remap from="~joint_shoulder/command" to="shoulder_velocity_controller/command"/>
+			<remap from="~joint_elbow/command" to="elbow_velocity_controller/command"/>
+		</node>
+
+		<!-- LOW LEVEL CONTROL -->
+		<node pkg="mantis_controller_id" type="mantis_controller_id_node" name="controller_id"
+		clear_params="true" output="screen">
+			<rosparam command="load" file="$(find mantis_description)/config/mantis_sim_controller_id_params.yaml"/>
+
+			<param name="frame_id" value="map" />
+			<param name="model_id" value="mantis_uav" />
+			<param name="high_level_rate" value="20.0" />
+			<param name="low_level_rate" value="200.0" />
+
+			<param name="control_settings/track_end" value="false" />
+			<param name="control_settings/accurate_end_tracking" value="true" />
+			<param name="control_settings/force_compensation" value="true" />
+			<param name="control_settings/force_comp_filter_a" value="1.0" />
+			<param name="control_settings/coriolis_compensation" value="true" />
+			<param name="control_settings/reference_feedback" value="true" />
+
+			<remap from="~output/actuators" to="mavros/actuator_control" />
+		</node>
+
+		<node pkg="rostopic" type="rostopic" name="attitude_faker"
+		clear_params="true" output="screen" args="
+		pub -r 20 /mantis_uav/mavros/setpoint_raw/attitude mavros_msgs/AttitudeTarget
+		-- auto 0 '{x: 0.0, y: 0.0, z: 0.0, w: 0.0}' '{x: 0.0, y: 0.0, z: 0.0}' 0.0"/>
+
 	</group>
-
-	<node pkg="contrail" type="converter_waypoints_path" name="wp_converter" clear_params="true"
-	ns="mantis_uav" output="screen">
-		<remap from="~waypoints" to="waypoints" />
-		<remap from="~path" to="controller_id/reference/contrail/path" />
-	</node>
-
-	<!-- LOW LEVEL CONTROL -->
-	<rosparam command="load" ns="/mantis_uav" file="$(find mantis_description)/config/mantis_sim_controller_id_params.yaml"/>
-
-	<node pkg="mantis_controller_id" type="mantis_controller_id_node" name="controller_id"
-	ns="/mantis_uav" clear_params="true" output="screen">
-		<param name="frame_id" value="map" />
-		<param name="model_id" value="mantis_uav" />
-		<param name="high_level_rate" value="20.0" />
-		<param name="low_level_rate" value="200.0" />
-
-		<param name="control_settings/track_end" value="false" />
-		<param name="control_settings/accurate_end_tracking" value="true" />
-		<param name="control_settings/force_compensation" value="true" />
-		<param name="control_settings/force_comp_filter_a" value="1.0" />
-		<param name="control_settings/coriolis_compensation" value="true" />
-		<param name="control_settings/reference_feedback" value="true" />
-
-		<remap from="~reference/path" to="path" />
-
-		<remap from="~output/rc" to="command/motor_pwm" />
-	</node>
-
-	<!-- HIGH LEVEL CONTROL -->
-	<node pkg="mantis_router_joints" type="mantis_router_joints_node" name="router_joints" clear_params="true"
-	ns="mantis_uav" output="screen">
-		<rosparam command="load" file="$(find mantis_router_joints)/launch/initial_joints.yaml"/>
-
-		<remap from="~reference/discrete_progress" to="controller_id/feedback/contrail/discrete_progress"/>
-		<remap from="~reference/spline" to="mantis_path/reference/contrail/spline"/>
-		<remap from="~command/joint0" to="joint_position_controller/joint_shoulder/reference/traj"/>
-		<remap from="~command/joint1" to="joint_position_controller/joint_elbow/reference/traj"/>
-	</node>
 </launch>

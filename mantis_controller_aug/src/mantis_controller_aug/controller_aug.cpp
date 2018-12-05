@@ -7,7 +7,7 @@
 
 #include <mantis_controller_aug/controller_aug.h>
 
-#include <mavros_msgs/OverrideRCIn.h>
+#include <mavros_msgs/RCOut.h>
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
@@ -63,7 +63,7 @@ ControllerAug::ControllerAug() :
 	uaug_f_ = Eigen::Vector3d::Zero();
 
 	if( p_.wait_for_params() && s_.wait_for_state() ) {
-		pub_rc_ = nhp_.advertise<mavros_msgs::OverrideRCIn>("output/rc", 10);
+		pub_rc_ = nhp_.advertise<mavros_msgs::RCOut>("output/rc", 10);
 
 		pub_pose_ = nhp_.advertise<geometry_msgs::PoseStamped>("feedback/base/pose", 10);
 		pub_twist_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/base/twist", 10);
@@ -82,9 +82,9 @@ ControllerAug::ControllerAug() :
 			if( s_.ok() )
 				ROS_INFO_ONCE("Augmented dynamics got input: state");
 
-			mavros_msgs::OverrideRCIn msg_rc_out;
+			mavros_msgs::RCOut msg_rc_out;
 			for(int i=0; i<p_.motor_num(); i++) {
-					msg_rc_out.channels[i] = msg_rc_out.CHAN_NOCHANGE;
+					msg_rc_out.channels[i] = 0;
 			}
 			pub_rc_.publish(msg_rc_out);
 
@@ -525,7 +525,7 @@ void ControllerAug::calc_motor_map(Eigen::MatrixXd &M) {
 }
 */
 void ControllerAug::message_output_control(const ros::Time t, const std::vector<uint16_t> &pwm) {
-	mavros_msgs::OverrideRCIn msg_rc_out;
+	mavros_msgs::RCOut msg_rc_out;
 
 	//Prepare headers
 	//msg_rc_out.header.stamp = t;
@@ -537,7 +537,7 @@ void ControllerAug::message_output_control(const ros::Time t, const std::vector<
 		if( i<pwm.size() ) {
 			msg_rc_out.channels[i] = pwm[i];
 		} else {
-			msg_rc_out.channels[i] = msg_rc_out.CHAN_NOCHANGE;
+			msg_rc_out.channels[i] = 0;
 		}
 	}
 
