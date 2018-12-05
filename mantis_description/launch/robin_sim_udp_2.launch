@@ -2,12 +2,12 @@
 <launch>
 	<!-- vim: set ft=xml noet : -->
 	<!-- example launch script for PX4 based FCU's -->
-	<arg name="model_name" default="mantis_uav"/>
+	<arg name="model_name" default="mantis_uav_2"/>
 
-	<arg name="fcu_bind" default="udp://0.0.0.0:14560@0.0.0.0:14551" />
+	<arg name="fcu_bind" default="udp://0.0.0.0:14561@0.0.0.0:14554" />
 
-	<arg name="fcu_url" default="udp://0.0.0.0:14551@0.0.0.0:14560" />
-	<arg name="gcs_url" default="udp://0.0.0.0:14552@0.0.0.0:14550" />
+	<arg name="fcu_url" default="udp://0.0.0.0:14554@0.0.0.0:14561" />
+	<arg name="gcs_url" default="udp://0.0.0.0:14555@0.0.0.0:14553" />
 	<arg name="tgt_system" default="1" />
 	<arg name="tgt_component" default="1" />
 	<arg name="log_output" default="screen" />
