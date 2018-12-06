@@ -17,6 +17,8 @@ throttle:
   mid: 0.20
   max: 0.9
 
+uav_mass: 1.88
+
 # Maximum roll/pitch in radians
 tilt_max: 0.39
 
