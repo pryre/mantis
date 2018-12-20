@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   mantis_params
   mantis_state
   dynamic_reconfigure
+  message_filters
   mantis_kinematics
   contrail
 )
