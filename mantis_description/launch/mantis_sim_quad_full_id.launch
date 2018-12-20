@@ -1,0 +1,8 @@
+<?xml version='1.0'?>
+<launch>
+	<include file="$(find mantis_description)/launch/mantis_sim_quad.launch"/>
+
+	<include file="$(find mantis_description)/launch/robin_sim_udp.launch"/>
+
+	<include file="$(find mantis_description)/launch/mantis_sim_controller_id.launch"/>
+</launch>
