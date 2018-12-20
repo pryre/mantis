@@ -1,29 +1,29 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(mantis_planner)
+project(mantis_guidance_joints)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
-# add_definitions(-std=c++11)
+add_definitions(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  mantis_guidance_base
-  mantis_guidance_joints
-  std_msgs
+  actionlib_msgs
   mantis_msgs
+  mantis_params
+  tinyspline_ros
   actionlib
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-#find_package(Eigen3 REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-catkin_python_setup()
+#catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -65,14 +65,13 @@ catkin_python_setup()
 ## Generate actions in the 'action' folder
 add_action_files(
   FILES
-  Manoeuvre.action
+  JointMovement.action
 )
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
   std_msgs
-  mantis_msgs
   actionlib_msgs
 )
 
@@ -107,7 +106,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES kinetic_sample_sub_cpp
-  CATKIN_DEPENDS mantis_msgs
+  CATKIN_DEPENDS actionlib_msgs
 #  DEPENDS system_lib
 )
 
@@ -118,30 +117,31 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include_directories(include)
-#include_directories(
-#  include
-#  ${catkin_INCLUDE_DIRS}
-  #${Eigen3_INCLUDE_DIRS}
-#)
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
+)
 
 ## Declare a C++ library
-#add_library(${PROJECT_NAME}_joint
-#  src/mantis_router_joints/joint.cpp
-#)
-#add_library(${PROJECT_NAME}_manager
-#  src/mantis_router_joints/manager.cpp
-#)
+add_library(${PROJECT_NAME}_joint
+  src/mantis_guidance_joints/joint.cpp
+)
+
+add_library(${PROJECT_NAME}_manager
+  src/mantis_guidance_joints/manager.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-#add_dependencies(${PROJECT_NAME}_joint ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
-#add_dependencies(${PROJECT_NAME}_manager ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+add_dependencies(${PROJECT_NAME}_joint ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_manager ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-#add_executable(${PROJECT_NAME}_node src/mantis_router_joints_node.cpp)
+add_executable(${PROJECT_NAME}_node src/mantis_guidance_joints_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -151,22 +151,22 @@ catkin_package(
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-#add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-#target_link_libraries(${PROJECT_NAME}_joint
-#  ${catkin_LIBRARIES}
-#)
+target_link_libraries(${PROJECT_NAME}_joint
+  ${catkin_LIBRARIES}
+)
 
-#target_link_libraries(${PROJECT_NAME}_manager
-#  ${PROJECT_NAME}_joint
-#  ${catkin_LIBRARIES}
-#)
+target_link_libraries(${PROJECT_NAME}_manager
+  ${PROJECT_NAME}_joint
+  ${catkin_LIBRARIES}
+)
 
-#target_link_libraries(${PROJECT_NAME}_node
-#  ${PROJECT_NAME}_manager
-#  ${catkin_LIBRARIES}
-#)
+target_link_libraries(${PROJECT_NAME}_node
+  ${PROJECT_NAME}_manager
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -177,10 +177,10 @@ catkin_package(
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-install(PROGRAMS
-  scripts/action_dispatcher
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+#install(PROGRAMS
+#  scripts/my_python_script
+#  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
 
 ## Mark executables and/or libraries for installation
 # install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_node

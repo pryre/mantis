@@ -3,6 +3,7 @@
 	<arg name="model_name" default="mantis_uav"/>
 
 	<group ns="$(arg model_name)">
+		<!-- PATH PLANNING -->
 		<node pkg="mantis_planner" type="guidance_router" name="guidance_router"
 		clear_params="true" output="screen">
 			<param name="action_topic_contrail" value="guidance/contrail" />
@@ -22,41 +23,64 @@
 			<remap from="~joint_elbow/command" to="joint_position_controller/joint_elbow/reference/traj"/>
 		</node>
 
+		<!-- XXX: Old split method
+		<node pkg="mantis_router_base" type="mantis_router_base_node" name="router_base"
+		clear_params="true" output="screen">
+			<param name="frame_id" value="map" />
+			<param name="model_id" value="mantis_uav" />
+			<param name="path_rate" value="50.0" />
+
+			<param name="control_settings/tracked_frame" value="0" />
+			<param name="control_settings/manipulator_jacobian_alpha" value="0.2" />
+			<param name="control_settings/reference_feedback" value="true" />
+
+			<remap from="~output/triplet" to="mavel/reference/triplet"/>
+		</node>
+		-->
+
+		<!-- XXX: Handled onboard
+		<node pkg="mantis_router_joints" type="mantis_router_joints_node" name="router_joints" clear_params="true"
+		ns="mantis_uav" output="screen">
+			<remap from="~joint_shoulder/command" to="joint_position_controller/joint_shoulder/reference/traj"/>
+			<remap from="~joint_elbow/command" to="joint_position_controller/joint_elbow/reference/traj"/>
+		</node>
+		-->
+
 		<!-- HIGH LEVEL CONTROL -->
 		<node pkg="mavel" type="mavel_node" name="mavel"
 		clear_params="true" output="screen">
-			<rosparam command="load" file="$(find mantis_description)/config/mavel_sim_params.yaml"/>
+			<rosparam command="load" file="$(find mantis_description)/config/mavel_params.yaml"/>
 
 			<remap from="~command/attitude" to="mavros/setpoint_raw/attitude"/>
 			<remap from="~state/odometry" to="state/odom"/>
 			<remap from="~state/mav_state" to="mavros/state"/>
 		</node>
 
+		<!-- XXX: Handled onboard
 		<node name="joint_position_controller" pkg="mantis_controller_joints" type="mantis_controller_joints_node"
-		clear_params="true" output="screen">
+		ns="/mantis_uav" clear_params="true" output="screen">
 			<param name="update_rate" value="25.0" />
 			<rosparam command="load" file="$(find mantis_description)/config/mantis_joint_control.yaml"/>
 
 			<remap from="~joint_shoulder/command" to="shoulder_velocity_controller/command"/>
 			<remap from="~joint_elbow/command" to="elbow_velocity_controller/command"/>
 		</node>
+		-->
 
 		<!-- LOW LEVEL CONTROL -->
-		<node pkg="mantis_controller_id" type="mantis_controller_id_node" name="controller_id"
+		<node pkg="mantis_controller_feed" type="mantis_controller_feed_node" name="controller_feed"
 		clear_params="true" output="screen">
 			<param name="frame_id" value="map" />
 			<param name="model_id" value="mantis_uav" />
-			<param name="low_level_rate" value="250.0" />
+			<param name="est_rate" value="25.0" />
 
-			<param name="control_settings/setpoint_min_rate" value="10.0" />
+			<param name="control_settings/force_compensation" value="true" />
+			<param name="control_settings/force_comp_filter_a" value="1.0" />
+			<param name="control_settings/coriolis_compensation" value="true" />
 			<param name="control_settings/reference_feedback" value="true" />
 
-			<rosparam command="load" file="$(find mantis_description)/config/mantis_sim_controller_id_params.yaml"/>
-
-			<remap from="~reference/attitude" to="mavros/setpoint_raw/attitude" />
-			<remap from="~reference/accel" to="mavel/feedback/accel" />
-
-			<remap from="~output/actuators" to="mavros/actuator_control" />
+			<remap from="~command/attitude" to="mavros/setpoint_raw/attitude" />
+			<remap from="~output/normalized_payload_torque" to="mavros/actuator_control" />
 		</node>
 	</group>
 </launch>

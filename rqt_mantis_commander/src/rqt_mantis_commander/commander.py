@@ -14,7 +14,7 @@ from std_srvs.srv import SetBool
 
 import actionlib
 from contrail.msg import TrajectoryAction, TrajectoryGoal
-from mantis_router_full.msg import JointMovementAction, JointMovementGoal
+from mantis_guidance_joints.msg import JointMovementAction, JointMovementGoal
 
 class MantisCommander(Plugin):
 	def __init__(self, context):

@@ -130,7 +130,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>router/contrail</string>
+    <string>guidance/contrail</string>
    </property>
    <property name="placeholderText">
     <string>/mavros</string>
@@ -146,7 +146,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>router</string>
+    <string>guidance</string>
    </property>
    <property name="placeholderText">
     <string>/mavros</string>

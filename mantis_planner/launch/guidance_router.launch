@@ -1,0 +1,12 @@
+<?xml version='1.0'?>
+<launch>
+	<node pkg="mantis_planner" type="guidance_router" name="guidance_router"
+	clear_params="true" output="screen">
+		<!--
+		<param name="action_topic_contrail" value="router_full/contrail" />
+		<param name="action_topic_joint_prefix" value="router_joints/" />
+		-->
+		<param name="action_topic_contrail" value="guidance/contrail" />
+		<param name="action_topic_joint_prefix" value="guidance/" />
+	</node>
+</launch>

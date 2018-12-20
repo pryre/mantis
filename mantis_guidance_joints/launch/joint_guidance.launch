@@ -1,0 +1,10 @@
+<?xml version='1.0'?>
+<launch>
+	<node pkg="mantis_guidance_joints" type="mantis_guidance_joints_node" name="joint_router" clear_params="true"
+	ns="mantis_uav" output="screen">
+		<rosparam command="load" file="$(find mantis_joints)/launch/initial_joints.yaml"/>
+
+		<remap from="~command/joint0" to="joint_position_controller/joint_shoulder/reference/traj"/>
+		<remap from="~command/joint1" to="joint_position_controller/joint_elbow/reference/traj"/>
+	</node>
+</launch>

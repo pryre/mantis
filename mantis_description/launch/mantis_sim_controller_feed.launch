@@ -42,21 +42,17 @@
 		</node>
 
 		<!-- LOW LEVEL CONTROL -->
-		<node pkg="mantis_controller_id" type="mantis_controller_id_node" name="controller_id"
+		<node pkg="mantis_controller_feed" type="mantis_controller_feed_node" name="controller_feed"
 		clear_params="true" output="screen">
-			<param name="frame_id" value="map" />
-			<param name="model_id" value="mantis_uav" />
-			<param name="low_level_rate" value="250.0" />
+			<param name="est_rate" value="50.0" />
 
-			<param name="control_settings/setpoint_min_rate" value="10.0" />
+			<param name="control_settings/force_compensation" value="true" />
+			<param name="control_settings/force_comp_filter_a" value="1.0" />
+			<param name="control_settings/coriolis_compensation" value="true" />
 			<param name="control_settings/reference_feedback" value="true" />
 
-			<rosparam command="load" file="$(find mantis_description)/config/mantis_sim_controller_id_params.yaml"/>
-
-			<remap from="~reference/attitude" to="mavros/setpoint_raw/attitude" />
-			<remap from="~reference/accel" to="mavel/feedback/accel" />
-
-			<remap from="~output/actuators" to="mavros/actuator_control" />
+			<remap from="~command/attitude" to="mavros/setpoint_raw/attitude" />
+			<remap from="~output/normalized_payload_torque" to="mavros/actuator_control" />
 		</node>
 	</group>
 </launch>
