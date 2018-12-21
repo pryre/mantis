@@ -1,5 +1,5 @@
 # mantis
-ROS meta-package for a Mobile Manipulation Unmanned Aerial Vehicle (MMUAV)
+ROS meta-package for a aerial manipulators.
 
 
 ## Running the full SITL environment
