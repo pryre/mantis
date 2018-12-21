@@ -1,7 +1,6 @@
 # mantis
 ROS meta-package for a aerial manipulators.
 
-
 ## Running the full SITL environment
 
 ### For a Single UAV
