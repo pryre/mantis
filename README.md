@@ -18,7 +18,7 @@ ROS meta-package for a aerial manipulators.
 4. `roslaunch mantis_description mantis_sim_controller_feed.launch`
 6. `roslaunch mantis_planner plan_loader.launch move:=home`
 
-### For Muliple UAVs
+### For Multiple UAVs
 
 #### Common
 1. `roscore`
