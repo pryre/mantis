@@ -2,7 +2,7 @@
 #include <dynamic_reconfigure/server.h>
 
 #include <mantis_description/se_tools.h>
-#include <mantis_guidance_full/router.h>
+#include <mantis_guidance_full/manager.h>
 #include <mantis_guidance_full/joint.h>
 #include <mantis_guidance_full/ControlParamsConfig.h>
 
@@ -17,7 +17,7 @@
 
 namespace MantisGuidanceFull {
 
-Router::Router() :
+Manager::Manager() :
 	nh_(),
 	nhp_("~"),
 	p_(nh_),
@@ -29,7 +29,7 @@ Router::Router() :
 
 	nhp_.param("update_rate", param_update_rate_, param_update_rate_);
 
-	dyncfg_control_settings_.setCallback(boost::bind(&MantisGuidanceFull::Router::callback_cfg_control_settings, this, _1, _2));
+	dyncfg_control_settings_.setCallback(boost::bind(&MantisGuidanceFull::Manager::callback_cfg_control_settings, this, _1, _2));
 
 	vbe_last_ = Eigen::Matrix<double,6,1>::Zero();
 
@@ -40,7 +40,7 @@ Router::Router() :
 
 		configure_joint_routers();
 
-		timer_ = nhp_.createTimer(ros::Duration(1.0/param_update_rate_), &MantisGuidanceFull::Router::callback_timer, this );
+		timer_ = nhp_.createTimer(ros::Duration(1.0/param_update_rate_), &MantisGuidanceFull::Manager::callback_timer, this );
 
 		ROS_INFO_ONCE("Aerial manipulator guidance loaded!");
 	} else {
@@ -49,17 +49,17 @@ Router::Router() :
 	}
 }
 
-Router::~Router() {
+Manager::~Manager() {
 	remove_joint_routers();
 }
 
-void Router::callback_cfg_control_settings(mantis_guidance_full::ControlParamsConfig &config, uint32_t level) {
+void Manager::callback_cfg_control_settings(mantis_guidance_full::ControlParamsConfig &config, uint32_t level) {
 	param_tracked_frame_ = config.tracked_frame;
 	param_manipulator_jacobian_a_ = config.manipulator_jacobian_alpha;
 	param_send_reference_feedback_ = config.reference_feedback;
 }
 
-void Router::configure_joint_routers( void ) {
+void Manager::configure_joint_routers( void ) {
 	remove_joint_routers();
 
 	joint_routers_.resize( p_.get_dynamic_joint_num() );
@@ -76,7 +76,7 @@ void Router::configure_joint_routers( void ) {
 	ROS_INFO_STREAM("Spawned guidance for " << joint_routers_.size() << " joints");
 }
 
-void Router::remove_joint_routers( void ) {
+void Manager::remove_joint_routers( void ) {
 	for(int i = 0; i < joint_routers_.size(); i++) {
 		if(joint_routers_[i] != NULL) {
 			delete joint_routers_[i];
@@ -87,7 +87,7 @@ void Router::remove_joint_routers( void ) {
 	joint_routers_.clear();
 }
 
-Eigen::Affine3d Router::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe) {
+Eigen::Affine3d Manager::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, const Eigen::Affine3d &gbe) {
 	//Use this yaw only rotation to set the direction of the base (and thus end effector)
 	Eigen::Matrix3d br_sp = MDTools::extract_yaw_matrix(ge_sp.linear());
 
@@ -100,7 +100,7 @@ Eigen::Affine3d Router::calc_goal_base_transform(const Eigen::Affine3d &ge_sp, c
 	return sp*gbe.inverse();
 }
 
-Eigen::Vector3d Router::calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::VectorXd &vbe) {
+Eigen::Vector3d Manager::calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, const Eigen::Matrix3d &Re, const Eigen::VectorXd &vbe) {
 	//Velocity of the end effector in the end effector frame
 	//Eigen::VectorXd vbe = Je*rd;
 
@@ -115,7 +115,7 @@ Eigen::Vector3d Router::calc_goal_base_velocity(const Eigen::Vector3d &gev_sp, c
 	return gev_sp - Ve;
 }
 
-void Router::callback_timer(const ros::TimerEvent& e) {
+void Manager::callback_timer(const ros::TimerEvent& e) {
 	double dt = (e.current_real - e.last_real).toSec();
 	bool success = false;
 

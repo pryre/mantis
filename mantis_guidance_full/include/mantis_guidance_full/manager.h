@@ -17,7 +17,7 @@
 
 namespace MantisGuidanceFull {
 
-class Router {
+class Manager {
 	private:
 		ros::NodeHandle nh_;
 		ros::NodeHandle nhp_;
@@ -45,9 +45,9 @@ class Router {
 		Eigen::Matrix<double,6,1> vbe_last_;
 
 	public:
-		Router( void );
+		Manager( void );
 
-		~Router( void );
+		~Manager( void );
 
 		void callback_timer(const ros::TimerEvent& e);
 		void callback_cfg_control_settings(mantis_guidance_full::ControlParamsConfig &config, uint32_t level);
