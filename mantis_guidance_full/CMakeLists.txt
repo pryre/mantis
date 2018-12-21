@@ -149,7 +149,7 @@ add_library(${PROJECT_NAME}_joint
 )
 
 add_library(${PROJECT_NAME}
-  src/mantis_guidance_full/router.cpp
+  src/mantis_guidance_full/manager.cpp
 )
 
 ## Add cmake target dependencies of the library
