@@ -4,19 +4,21 @@ ROS meta-package for a aerial manipulators.
 
 ## Running the full SITL environment
 
-### All-in-One`
+### For a Single UAV
+
+#### All-in-One`
 1. `roscore`
 2. `roslaunch mantis_description mantis_sim_quad_full_feed.launch`
 6. `roslaunch mantis_planner plan_loader.launch move:=home`
 
-### Individual Terminals
+#### Individual Terminals
 1. `roscore`
 2. `roslaunch mantis_description mantis_sim_quad.launch`
 3. `roslaunch mantis_description robin_sim_udp.launch`
 4. `roslaunch mantis_description mantis_sim_controller_feed.launch`
 6. `roslaunch mantis_planner plan_loader.launch move:=home`
 
-### For muliple UAVs
+### For Muliple UAVs
 
 #### Common
 1. `roscore`
