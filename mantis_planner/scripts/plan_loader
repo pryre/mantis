@@ -14,7 +14,8 @@ from mantis_planner.msg import ManoeuvreAction, ManoeuvreGoal
 def main():
 	rospy.init_node('plan_loader', anonymous=True)
 
-	client = actionlib.SimpleActionClient('manoeuvre', ManoeuvreAction)
+	manoeuvre_topic = rospy.get_param('~manoeuvre_topic', 'manoeuvre')
+	client = actionlib.SimpleActionClient(manoeuvre_topic, ManoeuvreAction)
 	client.wait_for_server()
 
 	# Simply to ensure we have a valid timestamp later

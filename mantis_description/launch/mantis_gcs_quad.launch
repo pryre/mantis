@@ -8,22 +8,22 @@
 
 	<group ns="$(arg model_name)">
 		<!-- Odom Sync Node -->
-		<node pkg="odom_sync" type="odom_sync_node" name="odom_sync" 
+		<node pkg="odom_sync" type="odom_sync_node" name="odom_sync"
 		clear_params="true" output="screen">
 			<param name="source_namespace" value="/vicon/$(arg model_name)" />
 			<remap from="odom" to="state/odom"/>
 		</node>
 
 		<!-- Pose Reference -->
-		<node pkg="topic_tools" type="relay" name="relay_pose" 
+		<node pkg="topic_tools" type="relay" name="relay_pose"
 		args="/vicon/$(arg model_name)/pose state/pose"/>
 
-		<node pkg="topic_tools" type="drop" name="mocap_drop" 
+		<node pkg="topic_tools" type="drop" name="mocap_drop"
 		clear_params="true" output="screen"
 		args="state/pose 9 10 mavros/mocap/pose"/>
-		
+
 		<rosparam command="load" file="$(find mantis_description)/config/mantis_params_quad.yaml"/>
-		
+
 		<node pkg="mantis_params" type="mantis_params_node" name="mantis_params"
 		clear_params="true" output="screen"/>
 
@@ -38,7 +38,7 @@
 		</node>
 
 		<!-- visualization -->
-		<node pkg="mantis_kinematics" type="mantis_kinematics_forward_node" name="mantis_fk" 
+		<node pkg="mantis_kinematics" type="mantis_kinematics_forward_node" name="mantis_fk"
 		clear_params="true" output="screen">
 			<param name="frame_id" value="$(arg frame_id)" />
 			<param name="model_id" value="$(arg model_name)" />
@@ -48,13 +48,13 @@
 			<param name="prop_viz" value="true" />
 			<param name="end_effector_pose" value="true" />
 		</node>
-		
+
 		<node pkg="tf2_ros" type="static_transform_publisher" name="tf_local_world"
 		args="0.0 0.0 0.0 0.0 0.0 0.0 world $(arg model_name)/world" clear_params="true" output="screen"/>
 
 		<node pkg="tf2_ros" type="static_transform_publisher" name="tf_local_map"
 		args="0.0 0.0 0.0 0.0 0.0 0.0 $(arg model_name)/world map" clear_params="true" output="screen"/>
-	
+
 		<node pkg="tf2_ros" type="static_transform_publisher" name="tf_vicon_base_link"
 		args="0.0 0.0 0.0 0.0 0.0 0.0 $(arg model_name) $(arg model_name)/base_link" clear_params="true" output="screen"/>
 	</group>

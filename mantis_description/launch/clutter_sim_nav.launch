@@ -1,0 +1,22 @@
+<?xml version='1.0'?>
+<launch>
+	<arg name="move" default="home"/>
+	<arg name="model_name" default="mantis_uav"/>
+
+	<group ns="$(arg model_name)">
+		<node pkg="mantis_planner" type="planner_astar" name="planner_astar"
+		clear_params="true" output="screen">
+			<remap from="~request_path" to="breadcrumb/request_path"/>
+		</node>
+
+		<!-- Breadcrumb Node -->
+		<node pkg="breadcrumb" type="breadcrumb_node" name="breadcrumb" clear_params="true" output="screen">
+			<param name="search_heuristic" value="1" type="int"/>
+			<param name="allow_diagonals" value="true" type="bool"/>
+			<param name="obstacle_threshold" value="50" type="int"/>
+
+			<!-- Occupancy grid input -->
+			<remap from="grid" to="/grid"/>
+		</node>
+	</group>
+</launch>

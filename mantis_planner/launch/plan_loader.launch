@@ -1,9 +1,14 @@
 <?xml version='1.0'?>
 <launch>
 	<arg name="move" default=""/>
+	<arg name="planner" default="manoeuvre"/>
+	<arg name="model_name" default="mantis_uav"/>
 
-	<node pkg="mantis_planner" type="plan_loader" name="plan_loader"
-	ns="/mantis_uav" clear_params="true" output="screen">
-		<rosparam command="load" file="$(find mantis_planner)/manoeuvres/$(arg move).yaml"/>
-	</node>
+	<group ns="$(arg model_name)">
+		<node pkg="mantis_planner" type="plan_loader" name="plan_loader"
+		clear_params="true" output="screen">
+			<rosparam command="load" file="$(find mantis_planner)/manoeuvres/$(arg move).yaml"/>
+			<param name="manoeuvre_topic" value="$(arg planner)"/>
+		</node>
+	</group>
 </launch>
