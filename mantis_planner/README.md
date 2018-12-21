@@ -4,6 +4,7 @@ roslaunch mantis_description mantis_sim_quad_full_feed.launch
 
 #### Generate Obstacle
 roslaunch uavusr_emulator emulator.launch
+rosrun topic_tools relay /grid/real /grid
 
 #### Launch Path Planner
 roslaunch mantis_description clutter_sim_nav.launch
