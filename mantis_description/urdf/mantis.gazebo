@@ -23,6 +23,7 @@
 	</gazebo>
 	-->
 
+	<!--
 	<gazebo>
 		<plugin name="mantis_baton_grasp" filename="libmantis_gazebo_baton_grasp.so"/>
 	</gazebo>
@@ -60,7 +61,7 @@
 			</plugin>
 		</sensor>
   	</gazebo>
-
+	-->
 	<gazebo>
 		<plugin name="robin_gazebo_plugin" filename="librobin_gazebo_plugin.so"/>
 	</gazebo>

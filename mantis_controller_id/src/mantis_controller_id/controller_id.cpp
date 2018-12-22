@@ -6,11 +6,11 @@
 #include <mantis_description/se_tools.h>
 #include <mantis_controller_id/ControlParamsConfig.h>
 
-#include <geometry_msgs/PoseStamped.h>
+//#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/AccelStamped.h>
-#include <geometry_msgs/Vector3.h>
-#include <geometry_msgs/Quaternion.h>
+//#include <geometry_msgs/Vector3.h>
+//#include <geometry_msgs/Quaternion.h>
 
 #include <mavros_msgs/ActuatorControl.h>
 #include <mavros_msgs/AttitudeTarget.h>
@@ -57,7 +57,8 @@ ControllerID::ControllerID() :
 
 	if(p_.wait_for_params() && s_.wait_for_state()) {
 		pub_actuators_ = nhp_.advertise<mavros_msgs::ActuatorControl>("output/actuators", 10);
-		pub_accel_body_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel_body", 10);
+		pub_twist_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/twist", 10);
+		pub_accel_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel", 10);
 
 		ROS_INFO("[ControllerID] controller loaded, waiting for state and references...");
 
@@ -89,7 +90,7 @@ void ControllerID::callback_setpoints(const geometry_msgs::AccelStampedConstPtr&
 			tc_sp_ = accel->header.stamp;
 
 			//XXX: World frame attitude rotation
-			R_sp_ = MDTools::quaternion_from_msg(attitude->orientation);
+			R_sp_ = Eigen::Quaterniond(1.0,0.0,0.0,0.0);//MDTools::quaternion_from_msg(attitude->orientation);
 
 			//XXX: World frame acceleration vector
 			a_sp_ = MDTools::vector_from_msg(accel->accel.linear);
@@ -157,16 +158,29 @@ void ControllerID::callback_low_level(const ros::TimerEvent& e) {
 			u = p_.get_mixer()*cforces;
 
 			if(param_reference_feedback_) {
-				geometry_msgs::AccelStamped msg_accel_body_out;
-				msg_accel_body_out.header.stamp = e.current_real;
-				msg_accel_body_out.header.frame_id = param_model_id_;
-				msg_accel_body_out.accel.linear.x = ua(0);
-				msg_accel_body_out.accel.linear.y = ua(1);
-				msg_accel_body_out.accel.linear.z = ua(2);
-				msg_accel_body_out.accel.angular.x = ua(3);
-				msg_accel_body_out.accel.angular.y = ua(4);
-				msg_accel_body_out.accel.angular.z = ua(5);
-				pub_accel_body_.publish(msg_accel_body_out);
+				geometry_msgs::TwistStamped msg_twist_out;
+				geometry_msgs::AccelStamped msg_accel_out;
+
+				msg_twist_out.header.stamp = e.current_real;
+				msg_twist_out.header.frame_id = param_model_id_;
+				msg_accel_out.header = msg_twist_out.header;
+
+				msg_twist_out.twist.linear.x = 0.0;
+				msg_twist_out.twist.linear.y = 0.0;
+				msg_twist_out.twist.linear.z = 0.0;
+				msg_twist_out.twist.angular.x = w_goal.x();
+				msg_twist_out.twist.angular.y = w_goal.y();
+				msg_twist_out.twist.angular.z = w_goal.z();
+
+				msg_accel_out.accel.linear.x = ua(0);
+				msg_accel_out.accel.linear.y = ua(1);
+				msg_accel_out.accel.linear.z = ua(2);
+				msg_accel_out.accel.angular.x = ua(3);
+				msg_accel_out.accel.angular.y = ua(4);
+				msg_accel_out.accel.angular.z = ua(5);
+
+				pub_twist_.publish(msg_twist_out);
+				pub_accel_.publish(msg_accel_out);
 			}
 
 			success = true;
@@ -254,27 +268,6 @@ Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const 
 	e_R(2) = MDTools::double_clamp(e_R(2), -y_max, y_max);
 
 	return e_R;
-}
-
-void ControllerID::calc_motor_map(Eigen::MatrixXd &M) {
-	double kT = 0.0;
-	double ktx = 0.0;
-	double kty = 0.0;
-	double ktz = 0.0;
-	Eigen::MatrixXd cm = Eigen::MatrixXd::Zero(p_.motor_num(), 6);
-
-	if( solver_.calculate_thrust_coeffs(kT, ktx, kty, ktz) ) {
-		//Generate the copter map using the parameter tools
-		cm.block(0,2,p_.motor_num(),1) = kT*p_.get_mixer().block(0,0,p_.motor_num(),1);
-		cm.block(0,3,p_.motor_num(),1) = ktx*p_.get_mixer().block(0,1,p_.motor_num(),1);
-		cm.block(0,4,p_.motor_num(),1) = kty*p_.get_mixer().block(0,2,p_.motor_num(),1);
-		cm.block(0,5,p_.motor_num(),1) = ktz*p_.get_mixer().block(0,3,p_.motor_num(),1);
-	} else {
-		ROS_ERROR_THROTTLE(2.0, "Unable to calculate thrust coefficients!");
-	}
-
-	M << cm, Eigen::MatrixXd::Zero(p_.motor_num(), p_.get_dynamic_joint_num()),
-		 Eigen::MatrixXd::Zero(p_.get_dynamic_joint_num(), 6), Eigen::MatrixXd::Identity(p_.get_dynamic_joint_num(), p_.get_dynamic_joint_num());
 }
 
 void ControllerID::message_output_control(const ros::Time t, const Eigen::VectorXd &u) {

@@ -12,7 +12,7 @@
 #include <mantis_controller_id/ControlParamsConfig.h>
 #include <mantis_controller_id/controller_id.h>
 
-//#include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/TwistStamped.h>
 //#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/AccelStamped.h>
 //#include <geometry_msgs/Vector3.h>
@@ -34,7 +34,8 @@ class ControllerID {
 		ros::Timer timer_low_level_;
 
 		ros::Publisher pub_actuators_;
-		ros::Publisher pub_accel_body_;
+		ros::Publisher pub_twist_;
+		ros::Publisher pub_accel_;
 
 		std::string param_frame_id_;
 		std::string param_model_id_;
@@ -74,8 +75,6 @@ class ControllerID {
 		void callback_cfg_control_settings(mantis_controller_id::ControlParamsConfig &config, uint32_t level);
 
 		Eigen::Vector3d calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R);
-
-		void calc_motor_map(Eigen::MatrixXd &M);
 
 		void message_output_control(const ros::Time t, const Eigen::VectorXd &u);
 

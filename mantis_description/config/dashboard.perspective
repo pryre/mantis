@@ -308,6 +308,15 @@
                 }
               },
               "groups": {}
+            },
+            "plugin": {
+              "keys": {
+                "namespace": {
+                  "type": "repr",
+                  "repr": "u'/mantis_uav/mavros'"
+                }
+              },
+              "groups": {}
             }
           }
         },
@@ -361,11 +370,11 @@
                 },
                 "joint_prefix": {
                   "type": "repr",
-                  "repr": "u'router'"
+                  "repr": "u'guidance'"
                 },
                 "contrail_prefix": {
                   "type": "repr",
-                  "repr": "u'router/contrail'"
+                  "repr": "u'guidance/contrail'"
                 }
               },
               "groups": {}
