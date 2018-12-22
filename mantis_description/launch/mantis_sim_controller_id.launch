@@ -46,7 +46,7 @@
 		clear_params="true" output="screen">
 			<param name="frame_id" value="map" />
 			<param name="model_id" value="mantis_uav" />
-			<param name="low_level_rate" value="250.0" />
+			<param name="low_level_rate" value="100.0" />
 
 			<param name="control_settings/setpoint_min_rate" value="10.0" />
 			<param name="control_settings/reference_feedback" value="true" />

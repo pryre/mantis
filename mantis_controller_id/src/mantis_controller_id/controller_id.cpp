@@ -90,7 +90,7 @@ void ControllerID::callback_setpoints(const geometry_msgs::AccelStampedConstPtr&
 			tc_sp_ = accel->header.stamp;
 
 			//XXX: World frame attitude rotation
-			R_sp_ = Eigen::Quaterniond(1.0,0.0,0.0,0.0);//MDTools::quaternion_from_msg(attitude->orientation);
+			R_sp_ = MDTools::quaternion_from_msg(attitude->orientation);
 
 			//XXX: World frame acceleration vector
 			a_sp_ = MDTools::vector_from_msg(accel->accel.linear);
