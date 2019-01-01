@@ -34,7 +34,8 @@ class ControllerID {
 		ros::Timer timer_low_level_;
 
 		ros::Publisher pub_actuators_;
-		ros::Publisher pub_twist_;
+		ros::Publisher pub_att_target_;
+		//ros::Publisher pub_twist_;
 		ros::Publisher pub_accel_;
 
 		std::string param_frame_id_;
@@ -52,6 +53,7 @@ class ControllerID {
 		MantisSolver solver_;
 
 		Eigen::Matrix3d R_sp_;
+		double yr_sp_;
 		Eigen::Vector3d a_sp_;
 		ros::Time tc_sp_;
 

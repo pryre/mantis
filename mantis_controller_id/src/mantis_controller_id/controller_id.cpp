@@ -40,6 +40,10 @@ ControllerID::ControllerID() :
 	rate_pid_x_(ros::NodeHandle(nhp_, "control/rate/x")),
 	rate_pid_y_(ros::NodeHandle(nhp_, "control/rate/y")),
 	rate_pid_z_(ros::NodeHandle(nhp_, "control/rate/z")),
+	a_sp_(Eigen::Vector3d::Zero()),
+	R_sp_(Eigen::Matrix3d::Identity()),
+	yr_sp_(0),
+	tc_sp_(0),
 	was_flight_ready_(false),
 	abort_flight_(false),
 	sub_accel_(nhp_, "reference/accel", 1),
@@ -53,11 +57,10 @@ ControllerID::ControllerID() :
 	dyncfg_control_settings_.setCallback(boost::bind(&ControllerID::callback_cfg_control_settings, this, _1, _2));
 	sub_sp_sync_.registerCallback(boost::bind(&ControllerID::callback_setpoints, this, _1, _2));
 
-	a_sp_ = Eigen::Vector3d::Zero();
-
 	if(p_.wait_for_params() && s_.wait_for_state()) {
 		pub_actuators_ = nhp_.advertise<mavros_msgs::ActuatorControl>("output/actuators", 10);
-		pub_twist_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/twist", 10);
+		pub_att_target_ = nhp_.advertise<mavros_msgs::AttitudeTarget>("feedback/attitude", 10);
+		//pub_twist_ = nhp_.advertise<geometry_msgs::TwistStamped>("feedback/twist", 10);
 		pub_accel_ = nhp_.advertise<geometry_msgs::AccelStamped>("feedback/accel", 10);
 
 		ROS_INFO("[ControllerID] controller loaded, waiting for state and references...");
@@ -91,6 +94,13 @@ void ControllerID::callback_setpoints(const geometry_msgs::AccelStampedConstPtr&
 
 			//XXX: World frame attitude rotation
 			R_sp_ = MDTools::quaternion_from_msg(attitude->orientation);
+
+			//XXX: World frame yaw-rate
+			if( !(attitude->type_mask & attitude->IGNORE_YAW_RATE) ) {
+				yr_sp_ = attitude->body_rate.z;
+			} else {
+				yr_sp_= 0.0;
+			}
 
 			//XXX: World frame acceleration vector
 			a_sp_ = MDTools::vector_from_msg(accel->accel.linear);
@@ -158,19 +168,19 @@ void ControllerID::callback_low_level(const ros::TimerEvent& e) {
 			u = p_.get_mixer()*cforces;
 
 			if(param_reference_feedback_) {
-				geometry_msgs::TwistStamped msg_twist_out;
+				mavros_msgs::AttitudeTarget msg_att_out;
 				geometry_msgs::AccelStamped msg_accel_out;
 
-				msg_twist_out.header.stamp = e.current_real;
-				msg_twist_out.header.frame_id = param_model_id_;
-				msg_accel_out.header = msg_twist_out.header;
+				msg_att_out.header.stamp = e.current_real;
+				msg_att_out.header.frame_id = param_model_id_;
+				msg_accel_out.header = msg_att_out.header;
 
-				msg_twist_out.twist.linear.x = 0.0;
-				msg_twist_out.twist.linear.y = 0.0;
-				msg_twist_out.twist.linear.z = 0.0;
-				msg_twist_out.twist.angular.x = w_goal.x();
-				msg_twist_out.twist.angular.y = w_goal.y();
-				msg_twist_out.twist.angular.z = w_goal.z();
+				msg_att_out.type_mask = msg_att_out.IGNORE_THRUST;
+				msg_att_out.orientation = MDTools::quaternion_from_eig(Eigen::Quaterniond(R_sp_));
+				msg_att_out.body_rate.x = w_goal.x();
+				msg_att_out.body_rate.y = w_goal.y();
+				msg_att_out.body_rate.z = w_goal.z();
+				msg_att_out.thrust = 0.0;
 
 				msg_accel_out.accel.linear.x = ua(0);
 				msg_accel_out.accel.linear.y = ua(1);
@@ -179,7 +189,7 @@ void ControllerID::callback_low_level(const ros::TimerEvent& e) {
 				msg_accel_out.accel.angular.y = ua(4);
 				msg_accel_out.accel.angular.z = ua(5);
 
-				pub_twist_.publish(msg_twist_out);
+				pub_att_target_.publish(msg_att_out);
 				pub_accel_.publish(msg_accel_out);
 			}
 
