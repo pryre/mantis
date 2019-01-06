@@ -10,7 +10,7 @@
 
 #include <math.h>
 
-//==-- The Mantis Description Tools Namespace
+//! The Mantis Description Tools Namespace
 namespace MDTools {
 	//Math Helpers
 	Eigen::Matrix3d vee_up(const Eigen::Vector3d& w);
