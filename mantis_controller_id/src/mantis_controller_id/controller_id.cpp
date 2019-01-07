@@ -34,12 +34,12 @@ ControllerID::ControllerID() :
 	param_model_id_("mantis_uav"),
 	param_low_level_rate_(200.0),
 	dyncfg_control_settings_(ros::NodeHandle(nhp_, "control_settings")),
-	ang_pid_x_(ros::NodeHandle(nhp_, "control/ang/x")),
-	ang_pid_y_(ros::NodeHandle(nhp_, "control/ang/y")),
-	ang_pid_z_(ros::NodeHandle(nhp_, "control/ang/z")),
+	dyncfg_angle_gains_(ros::NodeHandle(nhp_, "control/ang")),
 	rate_pid_x_(ros::NodeHandle(nhp_, "control/rate/x")),
 	rate_pid_y_(ros::NodeHandle(nhp_, "control/rate/y")),
 	rate_pid_z_(ros::NodeHandle(nhp_, "control/rate/z")),
+	param_ang_gain_(4.5),
+	param_ang_yaw_w_(0.6),
 	a_sp_(Eigen::Vector3d::Zero()),
 	R_sp_(Eigen::Matrix3d::Identity()),
 	yr_sp_(0),
@@ -55,6 +55,7 @@ ControllerID::ControllerID() :
 	nhp_.param("low_level_rate", param_low_level_rate_, param_low_level_rate_);
 
 	dyncfg_control_settings_.setCallback(boost::bind(&ControllerID::callback_cfg_control_settings, this, _1, _2));
+	dyncfg_angle_gains_.setCallback(boost::bind(&ControllerID::callback_cfg_angle_gains, this, _1, _2));
 	sub_sp_sync_.registerCallback(boost::bind(&ControllerID::callback_setpoints, this, _1, _2));
 
 	if(p_.wait_for_params() && s_.wait_for_state()) {
@@ -86,6 +87,11 @@ ControllerID::~ControllerID() {
 void ControllerID::callback_cfg_control_settings(mantis_controller_id::ControlParamsConfig &config, uint32_t level) {
 	param_setpoint_timeout_ = ros::Duration(2.0/config.setpoint_min_rate);	//XXX: x2 to allow for some jitter
 	param_reference_feedback_ = config.reference_feedback;
+}
+
+void ControllerID::callback_cfg_angle_gains(mantis_controller_id::AngleGainsConfig &config, uint32_t level) {
+	param_ang_gain_ = config.p;
+	param_ang_yaw_w_ = config.yaw_w;
 }
 
 void ControllerID::callback_setpoints(const geometry_msgs::AccelStampedConstPtr& accel, const mavros_msgs::AttitudeTargetConstPtr& attitude) {
@@ -123,14 +129,14 @@ void ControllerID::callback_low_level(const ros::TimerEvent& e) {
 		was_flight_ready_ = true;
 		ROS_INFO_ONCE("[ControllerID] controller started!");
 		//Calculate the corresponding rotation to reach desired acceleration vector
-		Eigen::Vector3d e_R = calc_ang_error(R_sp_, s_.g().linear());
-		Eigen::Vector3d w_goal;
+		Eigen::Vector3d e_R = calc_ang_error(R_sp_, s_.g().linear(), param_ang_yaw_w_);
+		Eigen::Vector3d w_goal = param_ang_gain_ * e_R;
 
 		//XXX: This is more of a hack to reuse the pid control, but it works out
 		// Only proportional gains should be used for this controller
-		w_goal.x() = ang_pid_x_.step(dt, e_R.x(), 0.0);
-		w_goal.y() = ang_pid_y_.step(dt, e_R.y(), 0.0);
-		w_goal.z() = ang_pid_z_.step(dt, e_R.z(), 0.0);
+		//w_goal.x() = ang_pid_x_.step(dt, e_R.x(), 0.0);
+		//w_goal.y() = ang_pid_y_.step(dt, e_R.y(), 0.0);
+		//w_goal.z() = ang_pid_z_.step(dt, e_R.z(), 0.0);
 
 		//Calculate the normalized angular accelerations
 		Eigen::Vector3d wa;
@@ -208,74 +214,49 @@ void ControllerID::callback_low_level(const ros::TimerEvent& e) {
 	message_output_control(e.current_real, u);
 }
 
-Eigen::Vector3d ControllerID::calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R) {
-	Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
+Eigen::Vector3d ControllerID::calc_ang_error( const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R, const double yaw_w ) {
+	/*
+	XXX: Shorthand method that doesn't allow for separate yaw tuning
+	return quaternion_basis_error(Eigen::Quaterniond(R), Eigen::Quaterniond(R_sp));
+	*/
+	Eigen::Quaterniond q(R);
+	Eigen::Quaterniond q_sp(R_sp);
+	Eigen::Vector3d e_z = R.col(2);
+	Eigen::Vector3d e_z_d = R_sp.col(2);
 
-	//Method derived from px4 attitude controller:
-	//DCM from for state and setpoint
+	Eigen::Quaterniond qd_red = Eigen::Quaterniond::FromTwoVectors(e_z, e_z_d);
+	qd_red.normalize();
 
-	//Calculate shortest path to goal rotation without yaw (as it's slower than roll/pitch)
-	Eigen::Vector3d R_z = R.col(2);
-	Eigen::Vector3d R_sp_z = R_sp.col(2);
-
-	//px4: axis and sin(angle) of desired rotation
-	//px4: math::Vector<3> e_R = R.transposed() * (R_z % R_sp_z);
-	Eigen::Vector3d e_R = R.transpose() * R_z.cross(R_sp_z);
-
-	double e_R_z_sin = e_R.norm();
-	double e_R_z_cos = R_z.dot(R_sp_z);
-
-	//px4: calculate rotation matrix after roll/pitch only rotation
-	Eigen::Matrix3d R_rp;
-
-	if(e_R_z_sin > 0) {
-		//px4: get axis-angle representation
-		Eigen::Vector3d e_R_z_axis = e_R / e_R_z_sin;
-		e_R = e_R_z_axis * std::atan2(e_R_z_sin, e_R_z_cos);
-
-		//px4: cross product matrix for e_R_axis
-		Eigen::Matrix3d e_R_cp;
-		e_R_cp(0,1) = -e_R_z_axis.z();
-		e_R_cp(0,2) = e_R_z_axis.y();
-		e_R_cp(1,0) = e_R_z_axis.z();
-		e_R_cp(1,2) = -e_R_z_axis.x();
-		e_R_cp(2,0) = -e_R_z_axis.y();
-		e_R_cp(2,1) = e_R_z_axis.x();
-
-		//px4: rotation matrix for roll/pitch only rotation
-		R_rp = R * ( I + (e_R_cp * e_R_z_sin) + ( (e_R_cp * e_R_cp) * (1.0 - e_R_z_cos) ) );
+	//Handle co-linear vectoring cases
+	if ( ( fabs(qd_red.x()) >= (1.0 - 1e-5) ) || ( fabs(qd_red.y()) >= (1.0 - 1e-5) ) ) {
+		// They are in opposite directions which presents an ambiguous solution
+		// The best we can momenterily is to just accept bad weightings from the mixing and
+		// do the 'best' movement possible for 1 time step until things can be calculated
+		qd_red = q_sp;
 	} else {
-		//px4: zero roll/pitch rotation
-		R_rp = R;
+		// Transform rotation from current to desired thrust vector into a world
+		// frame reduced desired attitude reference
+		qd_red = qd_red * q;
 	}
 
-	//px4: R_rp and R_sp has the same Z axis, calculate yaw error
-	Eigen::Vector3d R_sp_x = R_sp.col(0);
-	Eigen::Vector3d R_rp_x = R_rp.col(0);
+	qd_red.normalize();
 
-	//px4: calculate weight for yaw control
-	double yaw_w = e_R_z_cos * e_R_z_cos;
+	// mix full and reduced desired attitude
+	Eigen::Quaterniond q_mix = qd_red.inverse() * q_sp;
+	q_mix = MDTools::quaternion_scale(q_mix, MDTools::sign_no_zero( q_mix.w() ) );
 
-	//ROS_INFO_STREAM("e_R_z_cos: " << e_R_z_cos << std::endl);
+	// catch numerical problems with the domain of acosf and asinf
+	//Reduce the influence of the yaw rotation using the yaw_w factor
+	q_mix.w() = cos( yaw_w * acos( MDTools::double_clamp(q_mix.w(), -1.0, 1.0) ) );
+	q_mix.x() = 0.0;
+	q_mix.y() = 0.0;
+	q_mix.z() = sin( yaw_w * asin( MDTools::double_clamp(q_mix.z(), -1.0, 1.0) ) );
+	q_mix.normalize();	//Clean up (clamping saves the prior normalizing step, but just to be safe)
 
-	//px4: e_R(2) = atan2f((R_rp_x % R_sp_x) * R_sp_z, R_rp_x * R_sp_x) * yaw_w;
-	//Eigen::Vector3d R_rp_c_sp = R_rp_x.cross(R_sp_x);
-	//e_R(2) = std::atan2(R_rp_c_sp.dot(R_sp_z), R_rp_x.dot(R_sp_x)) * yaw_w;
-	e_R(2) = std::atan2( (R_rp_x.cross(R_sp_x)).dot(R_sp_z), R_rp_x.dot(R_sp_x)) * yaw_w;
+	Eigen::Quaterniond qd = qd_red * q_mix;
+	qd.normalize();
 
-	if(e_R_z_cos < 0) {
-		//px4: for large thrust vector rotations use another rotation method:
-		//For normal operation, this implies a roll/pitch change greater than pi
-		//Should never be an issue for us
-		ROS_WARN_THROTTLE(1.0, "Large thrust vector detected!");
-	}
-
-	double rp_max = 5.0;
-	double y_max = 0.5;
-
-	e_R(0) = MDTools::double_clamp(e_R(0), -rp_max, rp_max);
-	e_R(1) = MDTools::double_clamp(e_R(1), -rp_max, rp_max);
-	e_R(2) = MDTools::double_clamp(e_R(2), -y_max, y_max);
+	Eigen::Vector3d e_R = MDTools::quaternion_basis_error(q, qd);
 
 	return e_R;
 }

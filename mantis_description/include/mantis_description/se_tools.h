@@ -13,6 +13,8 @@
 //! The Mantis Description Tools Namespace
 namespace MDTools {
 	//Math Helpers
+	double sign(const double x);
+	double sign_no_zero(const double x);
 	Eigen::Matrix3d vee_up(const Eigen::Vector3d& w);
 	Eigen::Vector3d vee_down(const Eigen::Matrix3d& W);
 	Eigen::Matrix<double,6,6> adjoint(const Eigen::Affine3d& g);
@@ -21,6 +23,8 @@ namespace MDTools {
 	void matrix_clamp(Eigen::MatrixXd &m, const double min, const double max);
 	Eigen::Matrix3d extract_yaw_matrix(const Eigen::Matrix3d& r);
 	double extract_yaw( const Eigen::Quaterniond &q );
+	Eigen::Vector3d quaternion_basis_error( const Eigen::Quaterniond &q1, const Eigen::Quaterniond &q2 );
+	Eigen::Quaterniond quaternion_scale( Eigen::Quaterniond &q, const double s);
 
 	//Conversion Helpers
 	Eigen::Vector3d vector_from_msg(const geometry_msgs::Vector3 &v);

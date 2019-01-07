@@ -12,9 +12,17 @@
 
 #include <math.h>
 
-//==-- The Mantis Description Tools Namespace
+//! The Mantis Description Tools Namespace
 namespace MDTools {
 	//Math Helpers
+	double sign(const double x) {
+		return ( x > 0.0 ) ? 1.0 : ( (x == 0.0) ? 0.0 : -1.0 );
+	}
+
+	double sign_no_zero(const double x) {
+		return ( x >= 0.0 ) ? 1.0 : -1.0;
+	}
+
 	Eigen::Matrix3d vee_up(const Eigen::Vector3d& w) {
 		Eigen::Matrix3d W;
 
@@ -98,6 +106,27 @@ namespace MDTools {
 		double siny = +2.0 * (q.w() * q.z() + q.x() * q.y());
 		double cosy = +1.0 - 2.0 * (q.y() * q.y() + q.z() * q.z());
 		return std::atan2(siny, cosy);
+	}
+
+	Eigen::Vector3d quaternion_basis_error( const Eigen::Quaterniond &q1, const Eigen::Quaterniond &q2 ) {
+		Eigen::Quaterniond qe = q1.inverse() * q2;
+		qe.normalize();
+
+		// using sin(alpha/2) scaled rotation axis as attitude error (see quaternion definition by axis angle)
+		// also taking care of the antipodal unit quaternion ambiguity
+		Eigen::Vector3d e_R = qe.vec();
+
+		return ( 2.0 * MDTools::sign_no_zero( qe.w() ) ) * e_R;
+	}
+
+	Eigen::Quaterniond quaternion_scale( Eigen::Quaterniond &q, const double s) {
+		Eigen::Quaterniond qs;
+		qs.w() = s*q.w();
+		qs.x() = s*q.x();
+		qs.y() = s*q.y();
+		qs.z() = s*q.z();
+
+		return qs;
 	}
 
 	//Conversion Helpers

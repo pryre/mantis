@@ -10,6 +10,7 @@
 #include <mantis_kinematics/solver.h>
 
 #include <mantis_controller_id/ControlParamsConfig.h>
+#include <mantis_controller_id/AngleGainsConfig.h>
 #include <mantis_controller_id/controller_id.h>
 
 #include <geometry_msgs/TwistStamped.h>
@@ -44,6 +45,7 @@ class ControllerID {
 		ros::Duration param_setpoint_timeout_;
 		double param_low_level_rate_;
 		dynamic_reconfigure::Server<mantis_controller_id::ControlParamsConfig> dyncfg_control_settings_;
+		dynamic_reconfigure::Server<mantis_controller_id::AngleGainsConfig> dyncfg_angle_gains_;
 
 		bool was_flight_ready_;
 		bool abort_flight_;
@@ -57,9 +59,8 @@ class ControllerID {
 		Eigen::Vector3d a_sp_;
 		ros::Time tc_sp_;
 
-		pidController ang_pid_x_;
-		pidController ang_pid_y_;
-		pidController ang_pid_z_;
+		double param_ang_gain_;
+		double param_ang_yaw_w_;
 		pidController rate_pid_x_;
 		pidController rate_pid_y_;
 		pidController rate_pid_z_;
@@ -75,8 +76,9 @@ class ControllerID {
 
 	private:
 		void callback_cfg_control_settings(mantis_controller_id::ControlParamsConfig &config, uint32_t level);
+		void callback_cfg_angle_gains(mantis_controller_id::AngleGainsConfig &config, uint32_t level);
 
-		Eigen::Vector3d calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R);
+		Eigen::Vector3d calc_ang_error(const Eigen::Matrix3d &R_sp, const Eigen::Matrix3d &R, const double yaw_w);
 
 		void message_output_control(const ros::Time t, const Eigen::VectorXd &u);
 
