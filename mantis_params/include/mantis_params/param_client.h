@@ -47,7 +47,7 @@ class MantisParamClient {
 		ros::Time parametric_stamp_;
 
 	public:
-		MantisParamClient( const ros::NodeHandle& nh );
+		MantisParamClient( const ros::NodeHandle& nh);
 
 		~MantisParamClient( void );
 
