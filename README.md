@@ -5,7 +5,6 @@ ROS meta-package for a aerial manipulators.
 
 ### For a Single UAV
 
-
 #### All-in-One`
 1. `roscore`
 2. `roslaunch mantis_description mantis_sim_quad_full_feed.launch`
