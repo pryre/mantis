@@ -93,17 +93,17 @@ ForwardKinematics::ForwardKinematics()
     }
     */
 		// Propeller links
-		tf_props.resize( p_.motor_num() );
-		Eigen::Vector3d arm = Eigen::Vector3d( p_.base_arm_length(), 0.0, 0.046 );
+		tf_props.resize( p_.get(MantisParams::PARAM_MOTOR_NUM) );
+		Eigen::Vector3d arm = Eigen::Vector3d( p_.get(MantisParams::PARAM_BASE_ARM_LENGTH), 0.0, 0.046 );
 
 		// Prepare common values
-		for ( int i = 0; i < p_.motor_num(); i++ ) {
-			tf_props[i].header.frame_id = s_.model_id() + "/" + p_.body_inertial( 0 ).name;
+		for ( int i = 0; i < p_.get(MantisParams::PARAM_MOTOR_NUM); i++ ) {
+			tf_props[i].header.frame_id = s_.model_id() + "/" + p_.get(MantisParams::PARAM_BODY_INERTIAL, 0 ).name;
 			tf_props[i].child_frame_id = s_.model_id() + "/link_rotor_" + std::to_string( i + 1 );
 			tf_props[i].transform.rotation.w = 1.0;
 		}
 
-		if ( p_.airframe_type() == "quad_p4" ) {
+		if ( p_.get(MantisParams::PARAM_AIRFRAME_TYPE) == MantisParams::PARAM_AIRFRAME_TYPE_QUAD_P4 ) {
 			Eigen::AngleAxisd rot( 3.0 * M_PI / 2.0, Eigen::Vector3d::UnitZ() );
 			tf_props[0].transform.translation = MDTools::vector_from_eig( rot * arm );
 			rot.angle() = M_PI / 2.0;
@@ -112,7 +112,7 @@ ForwardKinematics::ForwardKinematics()
 			tf_props[2].transform.translation = MDTools::vector_from_eig( rot * arm );
 			rot.angle() = M_PI;
 			tf_props[3].transform.translation = MDTools::vector_from_eig( rot * arm );
-		} else if ( p_.airframe_type() == "quad_x4" ) {
+		} else if ( p_.get(MantisParams::PARAM_AIRFRAME_TYPE) == MantisParams::PARAM_AIRFRAME_TYPE_QUAD_X4 ) {
 			Eigen::AngleAxisd rot( 7.0 * M_PI / 4.0, Eigen::Vector3d::UnitZ() );
 			tf_props[0].transform.translation = MDTools::vector_from_eig( rot * arm );
 			rot.angle() = 3.0 * M_PI / 4.0;
@@ -121,7 +121,7 @@ ForwardKinematics::ForwardKinematics()
 			tf_props[2].transform.translation = MDTools::vector_from_eig( rot * arm );
 			rot.angle() = 5.0 * M_PI / 4.0;
 			tf_props[3].transform.translation = MDTools::vector_from_eig( rot * arm );
-		} else if ( p_.airframe_type() == "hex_p6" ) {
+		} else if ( p_.get(MantisParams::PARAM_AIRFRAME_TYPE) == MantisParams::PARAM_AIRFRAME_TYPE_HEX_X6 ) {
 			Eigen::AngleAxisd rot( 0.0, Eigen::Vector3d::UnitZ() );
 			tf_props[0].transform.translation = MDTools::vector_from_eig( rot * arm );
 			rot.angle() = M_PI;
@@ -134,7 +134,7 @@ ForwardKinematics::ForwardKinematics()
 			tf_props[4].transform.translation = MDTools::vector_from_eig( rot * arm );
 			rot.angle() = 4.0 * M_PI / 3.0;
 			tf_props[5].transform.translation = MDTools::vector_from_eig( rot * arm );
-		} else if ( p_.airframe_type() == "hex_x6" ) {
+		} else if ( p_.get(MantisParams::PARAM_AIRFRAME_TYPE) == MantisParams::PARAM_AIRFRAME_TYPE_HEX_X6 ) {
 			Eigen::AngleAxisd rot( 9.0 * M_PI / 6.0, Eigen::Vector3d::UnitZ() );
 			tf_props[0].transform.translation = MDTools::vector_from_eig( rot * arm );
 			rot.angle() = 3.0 * M_PI / 6.0;
@@ -165,7 +165,7 @@ void ForwardKinematics::callback_timer( const ros::TimerEvent& e ) {
 
 	t.header.frame_id = s_.frame_id();
 	t.header.stamp = e.current_real;
-	t.child_frame_id = s_.model_id() + "/" + p_.body_inertial( 0 ).name;
+	t.child_frame_id = s_.model_id() + "/" + p_.get(MantisParams::PARAM_BODY_INERTIAL, 0).name;
 
 	geometry_msgs::Pose p = MDTools::pose_from_eig( s_.g() );
 	t.transform.translation.x = p.position.x;
@@ -176,20 +176,20 @@ void ForwardKinematics::callback_timer( const ros::TimerEvent& e ) {
 	tfbr_.sendTransform( t );
 	tfBuffer_.setTransform( t, ros::this_node::getName() ); // Set the base link
 
-	for ( int i = 0; i < p_.get_joint_num(); i++ ) {
-		if ( p_.joint( i ).type != "static" ) {
+	for ( int i = 0; i < p_.get(MantisParams::PARAM_JOINT_NUM); i++ ) {
+		if ( p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i).type != "static" ) {
 			Eigen::Affine3d g;
 			if ( solver_.calculate_gxy( g, i, i + 1 ) ) {
 				geometry_msgs::TransformStamped tf = tf2::eigenToTransform( g );
 				tf.header.stamp = e.current_real;
 
 				if ( i < 1 ) {
-					tf.header.frame_id = s_.model_id() + "/" + p_.body_inertial( i ).name;
+					tf.header.frame_id = s_.model_id() + "/" + p_.get(MantisParams::PARAM_BODY_INERTIAL, i).name;
 				} else {
-					tf.header.frame_id = s_.model_id() + "/" + p_.joint( i - 1 ).name;
+					tf.header.frame_id = s_.model_id() + "/" + p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i - 1).name;
 				}
 
-				tf.child_frame_id = s_.model_id() + "/" + p_.joint( i ).name;
+				tf.child_frame_id = s_.model_id() + "/" + p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i).name;
 
 				tfbr_.sendTransform( tf );
 				tfBuffer_.setTransform(
@@ -202,9 +202,9 @@ void ForwardKinematics::callback_timer( const ros::TimerEvent& e ) {
 		if ( s_.flight_ready() ) {
 			Eigen::Quaterniond r(
 				Eigen::AngleAxisd( prop_rate_, Eigen::Vector3d::UnitZ() ) );
-			Eigen::VectorXd mdir = p_.get_mixer() * Eigen::Vector4d( 0.0, 0.0, 0.0, 1.0 );
+			Eigen::VectorXd mdir = p_.get(MantisParams::PARAM_MIXER) * Eigen::Vector4d( 0.0, 0.0, 0.0, 1.0 );
 
-			for ( int i = 0; i < p_.motor_num(); i++ ) {
+			for ( int i = 0; i < p_.get(MantisParams::PARAM_MOTOR_NUM); i++ ) {
 				// tf_props[i].header.stamp = e.current_real;
 				Eigen::Quaterniond q = MDTools::quaternion_from_msg( tf_props[i].transform.rotation );
 				// Correct q for motor directions
@@ -213,7 +213,7 @@ void ForwardKinematics::callback_timer( const ros::TimerEvent& e ) {
 			}
 		}
 
-		for ( int i = 0; i < p_.motor_num(); i++ ) {
+		for ( int i = 0; i < p_.get(MantisParams::PARAM_MOTOR_NUM); i++ ) {
 			tf_props[i].header.stamp = e.current_real;
 			tfbr_.sendTransform( tf_props[i] );
 		}
@@ -289,21 +289,21 @@ e.what());
 void ForwardKinematics::configure_static_joints() {
 	ros::Time stamp = ros::Time::now();
 
-	for ( int i = 0; i < p_.get_joint_num(); i++ ) {
+	for ( int i = 0; i < p_.get(MantisParams::PARAM_JOINT_NUM); i++ ) {
 		Eigen::Affine3d g;
 
-		if ( p_.joint( i ).type == "static" ) {
+		if ( p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i).type == "static" ) {
 			if ( solver_.calculate_gxy( g, i, i + 1 ) ) {
 				geometry_msgs::TransformStamped tf = tf2::eigenToTransform( g );
 				tf.header.stamp = stamp;
 
 				if ( i < 1 ) {
-					tf.header.frame_id = s_.model_id() + "/" + p_.body_inertial( i ).name;
+					tf.header.frame_id = s_.model_id() + "/" + p_.get(MantisParams::PARAM_BODY_INERTIAL, i).name;
 				} else {
-					tf.header.frame_id = s_.model_id() + "/" + p_.joint( i - 1 ).name;
+					tf.header.frame_id = s_.model_id() + "/" + p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i-1).name;
 				}
 
-				tf.child_frame_id = s_.model_id() + "/" + p_.joint( i ).name;
+				tf.child_frame_id = s_.model_id() + "/" + p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i).name;
 
 				tfsbr_.sendTransform( tf );
 				tfBuffer_.setTransform( tf, ros::this_node::getName(),
@@ -314,18 +314,18 @@ void ForwardKinematics::configure_static_joints() {
 		if ( i > 0 ) {
 			geometry_msgs::TransformStamped tf_link;
 			tf_link.header.stamp = stamp;
-			tf_link.header.frame_id = s_.model_id() + "/" + p_.joint( i ).name;
-			tf_link.child_frame_id = s_.model_id() + "/" + p_.body_inertial( i ).name;
-			tf_link.transform.translation.x = -p_.joint( i ).r;
+			tf_link.header.frame_id = s_.model_id() + "/" + p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i).name;
+			tf_link.child_frame_id = s_.model_id() + "/" + p_.get(MantisParams::PARAM_BODY_INERTIAL, i).name;
+			tf_link.transform.translation.x = -p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i).r;
 			tf_link.transform.rotation.w = 1.0;
 			tfsbr_.sendTransform( tf_link );
 			tfBuffer_.setTransform( tf_link, ros::this_node::getName(), true );
 		}
 
-		if ( i == ( p_.get_joint_num() - 1 ) ) {
+		if ( i == ( p_.get(MantisParams::PARAM_JOINT_NUM) - 1 ) ) {
 			geometry_msgs::TransformStamped tf_end;
 			tf_end.header.stamp = stamp;
-			tf_end.header.frame_id = s_.model_id() + "/" + p_.joint( i ).name;
+			tf_end.header.frame_id = s_.model_id() + "/" + p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i).name;
 			tf_end.child_frame_id = s_.model_id() + "/end_effector";
 			tf_end.transform.rotation.w = 1.0;
 			tfsbr_.sendTransform( tf_end );

@@ -3,6 +3,16 @@
 namespace MantisParams {
 
 typedef enum {
+	PARAM_AIRFRAME_TYPE_UNSUPPORTED = 0,
+	PARAM_AIRFRAME_TYPE_QUAD_X4,
+	PARAM_AIRFRAME_TYPE_QUAD_P4,
+	PARAM_AIRFRAME_TYPE_HEX_X6,
+	PARAM_AIRFRAME_TYPE_HEX_P6,
+	PARAM_AIRFRAME_TYPE_OCTO_X8,
+	PARAM_AIRFRAME_TYPE_OCTO_P8
+} ParamsAirframeTypeList;
+
+typedef enum {
 	PARAM_TIME_UPDATED = 0,
 	PARAM_TIME_CHANGE_CONFIG,
 	PARAM_TIME_CHANGE_PARAMETRIC
@@ -54,10 +64,18 @@ const char* ParamsDoubleName[] {
 
 typedef enum {
 	PARAM_AIRFRAME_TYPE = 0
+} ParamsAirframeType;
+
+const char* ParamsAirframeTypeName[] {
+	"PARAM_AIRFRAME_TYPE"
+};
+
+typedef enum {
+	PARAM_AIRFRAME_NAME = 0
 } ParamsString;
 
 const char* ParamsStringName[] {
-	"PARAM_AIRFRAME_TYPE"
+	"PARAM_AIRFRAME_NAME"
 };
 
 typedef enum {

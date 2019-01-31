@@ -13,7 +13,7 @@
 
 #include <string>
 
-MantisSolver::MantisSolver( MantisParamClient& p, MantisStateClient& s )
+MantisSolver::MantisSolver( MantisParams::Client& p, MantisState::Client& s )
 	: p_( p )
 	, s_( s )
 	, param_load_time_( 0 )
@@ -44,7 +44,7 @@ bool MantisSolver::check_parameters( void ) {
 	// Ensures the parameters are ready
 	if ( p_.ok() ) {
 		// Make sure our local variables are up to date
-		if ( ( p_.time_updated() != param_load_time_ ) ) {
+		if ( p_.get(MantisParams::PARAM_TIME_UPDATED) != param_load_time_ ) {
 			success &= load_parameters();
 		}
 	} else {
@@ -79,28 +79,28 @@ bool MantisSolver::load_parameters( void ) {
 	manip_.reset();
 	manip_ref_.reset();
 
-	for ( int i = 0; i < p_.get_joint_num(); i++ ) {
-		if ( !manip_.add_joint( p_.joint( i ) ) ) {
+	for ( int i = 0; i < p_.get(MantisParams::PARAM_JOINT_NUM); i++ ) {
+		if ( !manip_.add_joint( p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i) ) ) {
 			ROS_FATAL( "Error loading joint %i", int( i ) );
 			success = false;
 			break;
 		}
 
-		if ( !manip_ref_.add_joint( p_.joint( i ) ) ) {
+		if ( !manip_ref_.add_joint( p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i) ) ) {
 			ROS_FATAL( "Error loading ref joint %i", int( i ) );
 			success = false;
 			break;
 		}
 	}
 
-	for ( int i = 0; i < p_.get_body_num(); i++ ) {
-		if ( !manip_.add_body( p_.body_inertial( i ).com, i - 1 ) ) {
+	for ( int i = 0; i < p_.get(MantisParams::PARAM_BODY_NUM); i++ ) {
+		if ( !manip_.add_body( p_.get(MantisParams::PARAM_BODY_INERTIAL, i).com, i - 1 ) ) {
 			ROS_FATAL( "Error loading joint %i", int( i ) );
 			success = false;
 			break;
 		}
 
-		if ( !manip_ref_.add_body( p_.body_inertial( i ).com, i - 1 ) ) {
+		if ( !manip_ref_.add_body( p_.get(MantisParams::PARAM_BODY_INERTIAL, i).com, i - 1 ) ) {
 			ROS_FATAL( "Error loading ref joint %i", int( i ) );
 			success = false;
 			break;
@@ -111,7 +111,7 @@ bool MantisSolver::load_parameters( void ) {
 	state_load_time_ = ros::Time( 0 );
 
 	if ( success ) {
-		param_load_time_ = p_.time_updated();
+		param_load_time_ = p_.get(MantisParams::PARAM_TIME_UPDATED);
 	}
 
 	return success;
@@ -160,46 +160,24 @@ int MantisSolver::num_states( void ) {
 	if ( !check_parameters() )
 		ROS_ERROR_THROTTLE( 2.0, "MantisSolver::num_states(): parameters no ok" );
 
-	return 6 + p_.get_dynamic_joint_num();
+	return 6 + p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC);
 }
 
 bool MantisSolver::calculate_mass_matrix( Eigen::MatrixXd& Dq ) {
-	/*
-  //XXX: Old method
-  Eigen::MatrixXd Dq_old = Eigen::MatrixXd::Zero(num_states(), num_states());
-
-  Eigen::VectorXd r = s_.r();
-  double l0 = manip_.joint(0).d();
-  double l1 = manip_.joint(1).r();
-
-  calc_Dq(Dq_old,
-                  p_.body_inertial(0).Ixx, p_.body_inertial(0).Iyy,
-  p_.body_inertial(0).Izz,
-                  p_.body_inertial(1).Ixx, p_.body_inertial(1).Iyy,
-  p_.body_inertial(1).Izz,
-                  p_.body_inertial(2).Ixx, p_.body_inertial(2).Iyy,
-  p_.body_inertial(2).Izz,
-                  l0, l1, p_.body_inertial(1).com, p_.body_inertial(2).com,
-                  p_.body_inertial(0).mass, p_.body_inertial(1).mass,
-  p_.body_inertial(2).mass,
-                  r(0), r(1));
-  //XXX: Take care!
-  */
-
 	bool success = false;
 
 	if ( check_description() ) {
 		// Prepare required matricies
-		const unsigned int nj = p_.get_dynamic_joint_num();
+		const unsigned int nj = p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC);
 		Dq = Eigen::MatrixXd::Zero( num_states(), num_states() );
 		// Eigen::MatrixXd M_A_A = Eigen::MatrixXd::Zero(6,6);
 		// M_A_A = MDTools::full_inertial(p_.body_inertial(0));
-		Eigen::MatrixXd M_A_A = MDTools::full_inertial( p_.body_inertial( 0 ) );
+		Eigen::MatrixXd M_A_A = MDTools::full_inertial( p_.get(MantisParams::PARAM_BODY_INERTIAL, 0) );
 		Eigen::MatrixXd M_A_J = Eigen::MatrixXd::Zero( 6, nj );
-		Eigen::MatrixXd M_J_A = Eigen::MatrixXd::Zero( nj, 6 );
+		//Eigen::MatrixXd M_J_A = Eigen::MatrixXd::Zero( nj, 6 );
 		Eigen::MatrixXd M_J_J = Eigen::MatrixXd::Zero( nj, nj );
 
-		for ( int i = 1; i < p_.get_body_num(); i++ ) {
+		for ( int i = 1; i < p_.get(MantisParams::PARAM_BODY_NUM); i++ ) {
 			Eigen::Affine3d gbic;
 			Eigen::MatrixXd Abic;
 			manip_.calculate_g_body( gbic, i );
@@ -225,15 +203,15 @@ bool MantisSolver::calculate_mass_matrix( Eigen::MatrixXd& Dq ) {
 
 			// ROS_INFO_STREAM("Jbic:\n" << Jbic);
 
-			Eigen::MatrixXd Mi = MDTools::full_inertial( p_.body_inertial( i ) );
+			Eigen::MatrixXd Mi = MDTools::full_inertial( p_.get(MantisParams::PARAM_BODY_INERTIAL, i) );
 
 			M_A_A += Abic.transpose() * Mi * Abic;
 			M_A_J += Abic.transpose() * Mi * Jbic;
-			M_J_A += Jbic.transpose() * Mi * Abic;
+			//M_J_A += Jbic.transpose() * Mi * Abic;
 			M_J_J += Jbic.transpose() * Mi * Jbic;
 		}
 
-		Dq << M_A_A, M_A_J, M_J_A, M_J_J;
+		Dq << M_A_A, M_A_J, M_A_J.transpose(), M_J_J;
 
 		success = true;
 	}
@@ -319,70 +297,86 @@ bool MantisSolver::calculate_thrust_coeffs( double& kT, double& ktx, double& kty
 		// double thrust_single = p_.rpm_thrust_m() * rpm_max + p_.rpm_thrust_c();
 		// //Use the RPM to calculate maximum thrust
 		// double thrust_single = 0.8*9.80665;
-		double thrust_single = p_.motor_thrust_max();
+		double thrust_single = p_.get(MantisParams::PARAM_MOTOR_MAX_THRUST);
 
-		if ( p_.airframe_type() == "quad_x4" ) {
-			double arm_ang = M_PI / 4.0; // 45Deg from forward to arm rotation
-			double la = p_.base_arm_length();
-			kT = 1.0 / ( p_.motor_num() * thrust_single );
-			ktx = 1.0 / ( 4.0 * la * std::sin( arm_ang ) * thrust_single );
-			kty = ktx; // Airframe is symmetric
-			ktz = 1.0 / ( p_.motor_num() * p_.motor_drag_max() );
+		switch( p_.get(MantisParams::PARAM_AIRFRAME_TYPE) ) {
+			case MantisParams:: PARAM_AIRFRAME_TYPE_QUAD_X4: {
+				double arm_ang = M_PI / 4.0; // 45Deg from forward to arm rotation
+				double la = p_.get(MantisParams::PARAM_BASE_ARM_LENGTH);
+				kT = 1.0 / ( p_.get(MantisParams::PARAM_MOTOR_NUM) * thrust_single );
+				ktx = 1.0 / ( 4.0 * la * std::sin( arm_ang ) * thrust_single );
+				kty = ktx; // Airframe is symmetric
+				ktz = 1.0 / ( p_.get(MantisParams::PARAM_MOTOR_NUM) * p_.get(MantisParams::PARAM_MOTOR_MAX_DRAG) );
 
-			success = true;
-		} else if ( p_.airframe_type() == "quad_p4" ) {
-			// XXX: UNTESTED!
-			// double arm_ang = M_PI / 4.0; //45Deg from forward to arm rotation
-			double la = p_.base_arm_length();
-			kT = 1.0 / ( p_.motor_num() * thrust_single );
-			ktx = 1.0 / ( 2.0 * la * thrust_single );
-			kty = ktx; // Airframe is symmetric
-			ktz = 1.0 / ( p_.motor_num() * p_.motor_drag_max() );
+				success = true;
+				break;
+			}
+			case MantisParams:: PARAM_AIRFRAME_TYPE_QUAD_P4: {
+				// XXX: UNTESTED!
+				// double arm_ang = M_PI / 4.0; //45Deg from forward to arm rotation
+				double la = p_.get(MantisParams::PARAM_BASE_ARM_LENGTH);
+				kT = 1.0 / ( p_.get(MantisParams::PARAM_MOTOR_NUM) * thrust_single );
+				ktx = 1.0 / ( 2.0 * la * thrust_single );
+				kty = ktx; // Airframe is symmetric
+				ktz = 1.0 / ( p_.get(MantisParams::PARAM_MOTOR_NUM) * p_.get(MantisParams::PARAM_MOTOR_MAX_DRAG) );
 
-			success = true;
-		} else if ( p_.airframe_type() == "hex_x6" ) {
-			double arm_ang = ( M_PI / 6.0 ); // 30Deg from forward to arm rotation
-			double la = p_.base_arm_length();
-			kT = 1.0 / ( p_.motor_num() * thrust_single );
-			ktx = 1.0 / ( 2.0 * la * ( 2.0 * std::sin( arm_ang ) + 1.0 ) * thrust_single );
-			kty = 1.0 / ( 4.0 * la * std::cos( arm_ang ) * thrust_single );
-			ktz = 1.0 / ( p_.motor_num() * p_.motor_drag_max() );
+				success = true;
+				break;
+			}
+			case MantisParams:: PARAM_AIRFRAME_TYPE_HEX_X6: {
+				double arm_ang = ( M_PI / 6.0 ); // 30Deg from forward to arm rotation
+				double la = p_.get(MantisParams::PARAM_BASE_ARM_LENGTH);
+				kT = 1.0 / ( p_.get(MantisParams::PARAM_MOTOR_NUM) * thrust_single );
+				ktx = 1.0 / ( 2.0 * la * ( 2.0 * std::sin( arm_ang ) + 1.0 ) * thrust_single );
+				kty = 1.0 / ( 4.0 * la * std::cos( arm_ang ) * thrust_single );
+				ktz = 1.0 / ( p_.get(MantisParams::PARAM_MOTOR_NUM) * p_.get(MantisParams::PARAM_MOTOR_MAX_DRAG) );
 
-			success = true;
-		} else if ( p_.airframe_type() == "hex_p6" ) {
-			// XXX: UNTESTED!
-			double arm_ang = ( M_PI / 3.0 ); // 30Deg from forward to arm rotation
-			double la = p_.base_arm_length();
-			kT = 1.0 / ( p_.motor_num() * thrust_single );
-			ktx = 1.0 / ( 4.0 * la * std::sin( arm_ang ) * thrust_single );
-			kty = 1.0 / ( 2.0 * la * ( 2.0 * std::cos( arm_ang ) + 1.0 ) * thrust_single );
-			ktz = 1.0 / ( p_.motor_num() * p_.motor_drag_max() );
+				success = true;
+				break;
+			}
+			case MantisParams:: PARAM_AIRFRAME_TYPE_HEX_P6: {
+				// XXX: UNTESTED!
+				double arm_ang = ( M_PI / 3.0 ); // 30Deg from forward to arm rotation
+				double la = p_.get(MantisParams::PARAM_BASE_ARM_LENGTH);
+				kT = 1.0 / ( p_.get(MantisParams::PARAM_MOTOR_NUM) * thrust_single );
+				ktx = 1.0 / ( 4.0 * la * std::sin( arm_ang ) * thrust_single );
+				kty = 1.0 / ( 2.0 * la * ( 2.0 * std::cos( arm_ang ) + 1.0 ) * thrust_single );
+				ktz = 1.0 / ( p_.get(MantisParams::PARAM_MOTOR_NUM) * p_.get(MantisParams::PARAM_MOTOR_MAX_DRAG) );
 
-			success = true;
-		} else if ( p_.airframe_type() == "octo_x8" ) {
-			// XXX: UNTESTED!
-			double arm_ang = ( M_PI / 8.0 ); // 22.5Deg from forward to arm rotation
-			double arm_ang_2 = ( M_PI / 2.0 ) - arm_ang; // 77.5Deg from forward to arm rotation
-			double la = p_.base_arm_length();
-			kT = 1.0 / ( p_.motor_num() * thrust_single );
-			ktx = 1.0 / ( 4.0 * la * ( std::sin( arm_ang ) + std::sin( arm_ang_2 ) ) * thrust_single );
-			kty = ktx; // Airframe is symmetric
-			ktz = 1.0 / ( p_.motor_num() * p_.motor_drag_max() );
+				success = true;
+				break;
+			}
+			case MantisParams:: PARAM_AIRFRAME_TYPE_OCTO_X8: {
+				// XXX: UNTESTED!
+				double arm_ang = ( M_PI / 8.0 ); // 22.5Deg from forward to arm rotation
+				double arm_ang_2 = ( M_PI / 2.0 ) - arm_ang; // 77.5Deg from forward to arm rotation
+				double la = p_.get(MantisParams::PARAM_BASE_ARM_LENGTH);
+				kT = 1.0 / ( p_.get(MantisParams::PARAM_MOTOR_NUM) * thrust_single );
+				ktx = 1.0 / ( 4.0 * la * ( std::sin( arm_ang ) + std::sin( arm_ang_2 ) ) * thrust_single );
+				kty = ktx; // Airframe is symmetric
+				ktz = 1.0 / ( p_.get(MantisParams::PARAM_MOTOR_NUM) * p_.get(MantisParams::PARAM_MOTOR_MAX_DRAG) );
 
-			success = true;
-		} else if ( p_.airframe_type() == "octo_p8" ) {
-			// XXX: UNTESTED!
-			double arm_ang = ( M_PI / 4.0 ); // 45Deg from forward to arm rotation
-			double la = p_.base_arm_length();
-			kT = 1.0 / ( p_.motor_num() * thrust_single );
-			ktx = 1.0 / ( 2.0 * la * ( 2.0 * std::sin( arm_ang ) + 1.0 ) * thrust_single );
-			kty = ktx; // Airframe is symmetric
-			ktz = 1.0 / ( p_.motor_num() * p_.motor_drag_max() );
+				success = true;
+				break;
+			}
+			case MantisParams:: PARAM_AIRFRAME_TYPE_OCTO_P8: {
+				// XXX: UNTESTED!
+				double arm_ang = ( M_PI / 4.0 ); // 45Deg from forward to arm rotation
+				double la = p_.get(MantisParams::PARAM_BASE_ARM_LENGTH);
+				kT = 1.0 / ( p_.get(MantisParams::PARAM_MOTOR_NUM) * thrust_single );
+				ktx = 1.0 / ( 2.0 * la * ( 2.0 * std::sin( arm_ang ) + 1.0 ) * thrust_single );
+				kty = ktx; // Airframe is symmetric
+				ktz = 1.0 / ( p_.get(MantisParams::PARAM_MOTOR_NUM) * p_.get(MantisParams::PARAM_MOTOR_MAX_DRAG) );
 
-			success = true;
-		} else {
-			ROS_ERROR_THROTTLE(
-				2.0, "MantisSolver::calculate_thrust_coeffs(): unknown mixer type" );
+				success = true;
+				break;
+			}
+			default: {
+				ROS_ERROR_THROTTLE( 2.0,
+									"MantisSolver::calculate_thrust_coeffs(): unknown airframe type (%s)",
+									p_.get(MantisParams::PARAM_AIRFRAME_NAME).c_str() );
+				break;
+			}
 		}
 	}
 

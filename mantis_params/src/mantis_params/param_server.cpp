@@ -6,7 +6,8 @@
 
 #include <mantis_params/param_server.h>
 
-MantisParamServer::MantisParamServer( void )
+namespace MantisParams {
+Server::Server( void )
 	: nh_()
 	, pwm_min_( 1000 )
 	, pwm_max_( 2000 )
@@ -30,7 +31,7 @@ MantisParamServer::MantisParamServer( void )
 
 	if ( ready ) {
 		pub_params_ = nh_.advertise<mantis_msgs::Parameters>( "params", 1, true );
-		srv_reload_ = nh_.advertiseService( "reload_params", &MantisParamServer::reload, this );
+		srv_reload_ = nh_.advertiseService( "reload_params", &Server::reload, this );
 
 		update();
 
@@ -38,20 +39,20 @@ MantisParamServer::MantisParamServer( void )
 	}
 }
 
-MantisParamServer::~MantisParamServer() {
+Server::~Server() {
 }
 
-bool MantisParamServer::ok( void ) {
+bool Server::ok( void ) {
 	return ( load_time_ != ros::Time( 0 ) );
 }
 
-void MantisParamServer::update( void ) {
+void Server::update( void ) {
 	load();
 
 	pub_params_.publish( get_params() );
 }
 
-mantis_msgs::Parameters MantisParamServer::get_params( void ) {
+mantis_msgs::Parameters Server::get_params( void ) {
 	mantis_msgs::Parameters p;
 
 	p.header.stamp = load_time_;
@@ -73,14 +74,14 @@ mantis_msgs::Parameters MantisParamServer::get_params( void ) {
 	return p;
 };
 
-bool MantisParamServer::reload( std_srvs::Empty::Request& req,
+bool Server::reload( std_srvs::Empty::Request& req,
 	std_srvs::Empty::Response& res ) {
 	update();
 
 	return true;
 }
 
-void MantisParamServer::load( void ) {
+void Server::load( void ) {
 	load_time_ = ros::Time::now();
 
 	ROS_INFO( "--== Loading ControllerAug Parameters ==--" );
@@ -92,7 +93,7 @@ void MantisParamServer::load( void ) {
 	nh_.param( "motor/thrust_max", motor_thrust_max_, motor_thrust_max_ );
 	nh_.param( "motor/drag_max", motor_drag_max_, motor_drag_max_ );
 
-	nh_.param( "airframe", airframe_type_, airframe_type_ );
+	nh_.param( "airframe_name", airframe_name_, airframe_name_ );
 
 	nh_.param( "pwm/min", pwm_min_, pwm_min_ );
 	nh_.param( "pwm/max", pwm_max_, pwm_max_ );
@@ -105,15 +106,18 @@ void MantisParamServer::load( void ) {
 	nh_.param( "body/num", body_num_, body_num_ );
 	for ( int i = 0; i < body_num_; i++ ) {
 		mantis_msgs::BodyInertial bi;
-		if ( nh_.getParam( "body/b" + std::to_string( i ) + "/name", bi.name ) && nh_.getParam( "body/b" + std::to_string( i ) + "/mass/m", bi.mass ) ) {
+		std::string bp = "body/b" + std::to_string( i ) + "/";
 
-			nh_.getParam( "body/b" + std::to_string( i ) + "/mass/Ixx", bi.Ixx );
-			nh_.getParam( "body/b" + std::to_string( i ) + "/mass/Ixy", bi.Ixx );
-			nh_.getParam( "body/b" + std::to_string( i ) + "/mass/Ixz", bi.Ixx );
-			nh_.getParam( "body/b" + std::to_string( i ) + "/mass/Iyy", bi.Iyy );
-			nh_.getParam( "body/b" + std::to_string( i ) + "/mass/Iyz", bi.Iyy );
-			nh_.getParam( "body/b" + std::to_string( i ) + "/mass/Izz", bi.Izz );
-			nh_.getParam( "body/b" + std::to_string( i ) + "/mass/com", bi.com );
+		if ( nh_.getParam( bp + "name", bi.name ) &&
+			 nh_.getParam( bp + "mass/m", bi.mass ) ) {
+
+			nh_.getParam( bp + "mass/Ixx", bi.Ixx );
+			nh_.getParam( bp + "mass/Ixy", bi.Ixy );
+			nh_.getParam( bp + "mass/Ixz", bi.Ixz );
+			nh_.getParam( bp + "mass/Iyy", bi.Iyy );
+			nh_.getParam( bp + "mass/Iyz", bi.Iyz );
+			nh_.getParam( bp + "mass/Izz", bi.Izz );
+			nh_.getParam( bp + "mass/com", bi.com );
 
 			bodies_.push_back( bi );
 		} else {
@@ -125,17 +129,18 @@ void MantisParamServer::load( void ) {
 	// Load in the link definitions
 	for ( int i = 0; i < body_num_; i++ ) {
 		dh_parameters::JointDescription jd;
+		std::string bp = "body/b" + std::to_string( i ) + "/";
 
-		if ( nh_.getParam( "body/b" + std::to_string( i ) + "/link/type", jd.type ) ) {
-			nh_.getParam( "body/b" + std::to_string( i ) + "/link/name", jd.name );
+		if ( nh_.getParam( bp + "link/type", jd.type ) ) {
+			 nh_.getParam( bp + "link/name", jd.name );
 
-			nh_.getParam( "body/b" + std::to_string( i ) + "/link/d", jd.d );
-			nh_.getParam( "body/b" + std::to_string( i ) + "/link/t", jd.t );
-			nh_.getParam( "body/b" + std::to_string( i ) + "/link/r", jd.r );
-			nh_.getParam( "body/b" + std::to_string( i ) + "/link/a", jd.a );
+			nh_.getParam( bp + "link/d", jd.d );
+			nh_.getParam( bp + "link/t", jd.t );
+			nh_.getParam( bp + "link/r", jd.r );
+			nh_.getParam( bp + "link/a", jd.a );
 
-			nh_.getParam( "body/b" + std::to_string( i ) + "/link/q", jd.q );
-			nh_.getParam( "body/b" + std::to_string( i ) + "/link/beta", jd.beta );
+			nh_.getParam( bp + "link/q", jd.q );
+			nh_.getParam( bp + "link/beta", jd.beta );
 
 			joints_.push_back( jd );
 		} else {
@@ -152,8 +157,13 @@ void MantisParamServer::load( void ) {
 	ROS_INFO( "  Tmax = %0.4f", motor_thrust_max_ );
 	ROS_INFO( "  Dmax = %0.4f", motor_drag_max_ );
 
-	ROS_INFO( "airframe_type: %s", airframe_type_.c_str() );
-	if ( ( airframe_type_ != "quad_x4" ) && ( airframe_type_ != "quad_p4" ) && ( airframe_type_ != "hex_x6" ) && ( airframe_type_ != "hex_x6" ) && ( airframe_type_ != "octo_x8" ) && ( airframe_type_ != "octo_p8" ) ) {
+	ROS_INFO( "airframe_name: %s", airframe_name_.c_str() );
+	if ( ( airframe_name_ != "quad_x4" ) &&
+		 ( airframe_name_ != "quad_p4" ) &&
+		 ( airframe_name_ != "hex_x6" ) &&
+		 ( airframe_name_ != "hex_x6" ) &&
+		 ( airframe_name_ != "octo_x8" ) &&
+		 ( airframe_name_ != "octo_p8" ) ) {
 
 		ROS_WARN( "Specified airframe type may not be supported!" );
 	}
@@ -169,3 +179,4 @@ void MantisParamServer::load( void ) {
 
 	ROS_INFO( "--== ControllerAug Parameters Loaded ==--" );
 }
+};

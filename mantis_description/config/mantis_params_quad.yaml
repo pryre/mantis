@@ -10,7 +10,7 @@ motor:
     #c: -1.8044052
   drag_max: 1.2 # N
 
-airframe: "quad_x4"
+airframe_name: "quad_x4"
 
 pwm:
   min: 1000

@@ -4,7 +4,7 @@
 int main( int argc, char** argv ) {
 	ros::init( argc, argv, "mantis_params" );
 
-	MantisParamServer params;
+	MantisParams::Server params;
 
 	ros::spin();
 

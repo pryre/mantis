@@ -36,8 +36,8 @@ class ForwardKinematics {
 		bool param_do_end_effector_pose_;
 		bool param_do_prop_viz_;
 
-		MantisParamClient p_;
-		MantisStateClient s_;
+		MantisParams::Client p_;
+		MantisState::Client s_;
 		MantisSolver solver_;
 
 		ros::Time time_last_update_;

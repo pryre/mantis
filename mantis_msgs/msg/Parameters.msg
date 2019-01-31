@@ -1,6 +1,15 @@
 std_msgs/Header header
 
-string airframe_type
+# Airframe name is the layout design of the multirotor base
+# Supported options:
+#	- "quad_x4"
+#	- "quad_p4"
+#	- "hex_x6"
+#	- "hex_p6"
+#	- "octo_x8"
+#	- "octo_p8"
+string airframe_name
+
 uint16 pwm_min
 uint16 pwm_max
 

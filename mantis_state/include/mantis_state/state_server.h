@@ -16,7 +16,8 @@
 
 #include <eigen3/Eigen/Dense>
 
-class MantisStateServer {
+namespace MantisState {
+class Server {
 	private:
 		ros::NodeHandle nh_;
 		ros::NodeHandle nhp_;
@@ -30,7 +31,7 @@ class MantisStateServer {
 
 		ros::Publisher pub_state_;
 
-		MantisParamClient p_;
+		MantisParams::Client p_;
 
 		bool param_use_odom_avel_;
 		double param_rate_;
@@ -56,9 +57,9 @@ class MantisStateServer {
 		bool mav_ready_;
 
 	public:
-		MantisStateServer( void );
+		Server( void );
 
-		~MantisStateServer( void );
+		~Server( void );
 
 	private:
 		void callback_estimator(const ros::TimerEvent& e);
@@ -79,4 +80,5 @@ class MantisStateServer {
 		void callback_state_mav(const mavros_msgs::State::ConstPtr& msg_in);
 		void callback_state_battery(const sensor_msgs::BatteryState::ConstPtr& msg_in);
 		void callback_state_joints(const sensor_msgs::JointState::ConstPtr& msg_in);
+};
 };

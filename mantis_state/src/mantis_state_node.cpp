@@ -4,7 +4,7 @@
 int main( int argc, char** argv ) {
 	ros::init( argc, argv, "mantis_state" );
 
-	MantisStateServer state;
+	MantisState::Server state;
 
 	ros::spin();
 

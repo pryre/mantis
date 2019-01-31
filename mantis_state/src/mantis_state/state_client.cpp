@@ -6,8 +6,10 @@
 #include <mantis_state/state_client.h>
 #include <ros/ros.h>
 
-MantisStateClient::MantisStateClient( const ros::NodeHandle& nh,
-	MantisParamClient& p )
+namespace MantisState {
+
+Client::Client( const ros::NodeHandle& nh,
+	MantisParams::Client& p )
 	: nh_( nh )
 	, p_( p )
 	, timestamp_( 0 )
@@ -23,33 +25,33 @@ MantisStateClient::MantisStateClient( const ros::NodeHandle& nh,
 	bwa_ = Eigen::Vector3d::Zero();
 
 	sub_state_ = nh_.subscribe<mantis_msgs::State>(
-		"state", 1, &MantisStateClient::callback_state, this );
+		"state", 1, &Client::callback_state, this );
 }
 
-MantisStateClient::~MantisStateClient() {
+Client::~Client() {
 }
 
-bool MantisStateClient::ok( void ) {
+bool Client::ok( void ) {
 	bool ok = true;
 
 	if ( timestamp_ == ros::Time( 0 ) )
 		ok = false;
 
-	if ( configuration_stamp_ != p_.time_configuration_change() )
+	if ( configuration_stamp_ != p_.get(MantisParams::PARAM_TIME_CHANGE_CONFIG) )
 		ok = false;
 
 	return ok;
 }
 
-const ros::Time& MantisStateClient::time_updated( void ) {
+const ros::Time& Client::time_updated( void ) {
 	return timestamp_;
 }
 
-const ros::Time& MantisStateClient::state_configuration_stamp( void ) {
+const ros::Time& Client::state_configuration_stamp( void ) {
 	return configuration_stamp_;
 }
 
-bool MantisStateClient::wait_for_state( void ) {
+bool Client::wait_for_state( void ) {
 	while ( ros::ok() && ( !ok() ) ) {
 		ros::spinOnce();
 		ros::Rate( 10 ).sleep();
@@ -58,59 +60,59 @@ bool MantisStateClient::wait_for_state( void ) {
 	return ok();
 }
 
-const std::string& MantisStateClient::frame_id( void ) {
+const std::string& Client::frame_id( void ) {
 	return frame_id_;
 }
 
-const std::string& MantisStateClient::model_id( void ) {
+const std::string& Client::model_id( void ) {
 	return child_frame_id_;
 }
 
-const Eigen::Affine3d& MantisStateClient::g( void ) {
+const Eigen::Affine3d& Client::g( void ) {
 	return g_;
 }
 
-const Eigen::Vector3d& MantisStateClient::bv( void ) {
+const Eigen::Vector3d& Client::bv( void ) {
 	return bv_;
 }
 
-Eigen::Vector3d MantisStateClient::wv( void ) {
+Eigen::Vector3d Client::wv( void ) {
 	return g_.linear() * bv_;
 }
 
-const Eigen::Vector3d& MantisStateClient::bw( void ) {
+const Eigen::Vector3d& Client::bw( void ) {
 	return bw_;
 }
 
-const Eigen::Vector3d& MantisStateClient::ba( void ) {
+const Eigen::Vector3d& Client::ba( void ) {
 	return ba_;
 }
 
-const Eigen::Vector3d& MantisStateClient::bwa( void ) {
+const Eigen::Vector3d& Client::bwa( void ) {
 	return bwa_;
 }
 
-const Eigen::VectorXd& MantisStateClient::r( void ) {
+const Eigen::VectorXd& Client::r( void ) {
 	return r_;
 }
 
-const Eigen::VectorXd& MantisStateClient::rd( void ) {
+const Eigen::VectorXd& Client::rd( void ) {
 	return rd_;
 }
 
-const Eigen::VectorXd& MantisStateClient::rdd( void ) {
+const Eigen::VectorXd& Client::rdd( void ) {
 	return rdd_;
 }
 
-const double& MantisStateClient::voltage( void ) {
+const double& Client::voltage( void ) {
 	return voltage_;
 }
 
-const bool& MantisStateClient::flight_ready( void ) {
+const bool& Client::flight_ready( void ) {
 	return flight_ready_;
 }
 
-void MantisStateClient::callback_state(
+void Client::callback_state(
 	const mantis_msgs::State::ConstPtr& msg_in ) {
 	timestamp_ = msg_in->header.stamp;
 	configuration_stamp_ = msg_in->configuration_stamp;
@@ -138,3 +140,5 @@ void MantisStateClient::callback_state(
 	voltage_ = msg_in->battery_voltage;
 	flight_ready_ = msg_in->flight_ready;
 }
+
+};

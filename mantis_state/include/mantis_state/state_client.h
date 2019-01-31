@@ -13,10 +13,11 @@
 #include <eigen3/Eigen/Dense>
 #include <string>
 
-class MantisStateClient {
+namespace MantisState {
+class Client {
 	private:
 		ros::NodeHandle nh_;
-		MantisParamClient& p_;
+		MantisParams::Client& p_;
 
 		ros::Subscriber sub_state_;
 
@@ -40,9 +41,9 @@ class MantisStateClient {
 		bool flight_ready_;
 
 	public:
-		MantisStateClient( const ros::NodeHandle& nh, MantisParamClient& p );
+		Client( const ros::NodeHandle& nh, MantisParams::Client& p );
 
-		~MantisStateClient( void );
+		~Client( void );
 
 		const ros::Time& time_updated( void );
 		const ros::Time& state_configuration_stamp( void );
@@ -68,4 +69,5 @@ class MantisStateClient {
 
 	private:
 		void callback_state(const mantis_msgs::State::ConstPtr &msg_in);
+};
 };

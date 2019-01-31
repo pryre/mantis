@@ -16,6 +16,7 @@ class Client {
 	private:
 		ros::NodeHandle nh_;
 		ros::Subscriber sub_params_;
+		ros::ServiceClient srv_reload_;
 
 		uint64_t num_bodies_;
 		uint64_t num_joints_;
@@ -25,6 +26,8 @@ class Client {
 		uint64_t num_motors_;
 
 		double total_mass_;
+
+		ParamsAirframeTypeList airframe_type_;
 
 		mantis_msgs::Parameters p_;
 		/*
@@ -60,12 +63,13 @@ class Client {
 		bool wait_for_params( void );
 		bool ok( void );
 
-		const bool& reload_params( void );
+		bool reload_params( void );
 
 		const ros::Time& get(const ParamsTime param_id);
 		const uint16_t& get(const ParamsUint16 param_id);
 		const uint64_t& get(const ParamsUint64 param_id);
 		const double& get(const ParamsDouble param_id);
+		const ParamsAirframeTypeList& get(const ParamsAirframeType param_id);
 		const std::string& get(const ParamsString param_id);
 		const mantis_msgs::BodyInertial& get(const ParamsBodyInertial param_id, const unsigned int body );
 		const dh_parameters::JointDescription& get(const ParamsJointDescription param_id, const unsigned int joint );
@@ -75,6 +79,7 @@ class Client {
 		const bool set(const ParamsUint16 param_id, const uint16_t& param);
 		const bool set(const ParamsUint64 param_id, const uint64_t& param);
 		const bool set(const ParamsDouble param_id, const double& param);
+		const bool set(const ParamsAirframeType param_id, const ParamsAirframeTypeList& param);
 		const bool set(const ParamsString param_id, const std::string& param);
 		const bool set(const ParamsBodyInertial param_id, const unsigned int body, const mantis_msgs::BodyInertial& param);
 		const bool set(const ParamsJointDescription param_id, const unsigned int joint, const dh_parameters::JointDescription& param);
@@ -85,5 +90,7 @@ class Client {
 		const bool compare_bodies( const mantis_msgs::BodyInertial& b1, const mantis_msgs::BodyInertial& b2 );
 		const bool compare_joints( const dh_parameters::JointDescription& j1, const dh_parameters::JointDescription& j2 );
 
+		void warn_get_failed(const char* param_name);
+		void warn_set_failed(const char* param_name);
 };
 };

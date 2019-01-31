@@ -9,7 +9,8 @@
 #include <string>
 #include <vector>
 
-class MantisParamServer {
+namespace MantisParams {
+class Server {
 	private:
 		ros::NodeHandle nh_;
 		ros::Publisher pub_params_;
@@ -18,7 +19,7 @@ class MantisParamServer {
 
 		ros::Time load_time_;
 
-		std::string airframe_type_;
+		std::string airframe_name_;
 		int pwm_min_;
 		int pwm_max_;
 
@@ -35,9 +36,9 @@ class MantisParamServer {
 		std::vector<dh_parameters::JointDescription> joints_;
 
 	public:
-		MantisParamServer( void );
+		Server( void );
 
-		~MantisParamServer( void );
+		~Server( void );
 
 		void update( void );
 		mantis_msgs::Parameters get_params( void );
@@ -47,4 +48,5 @@ class MantisParamServer {
 	private:
 		void load( void );
 		bool reload(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res);
+};
 };
