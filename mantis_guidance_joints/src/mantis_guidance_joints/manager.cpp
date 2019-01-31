@@ -35,13 +35,13 @@ Manager::~Manager() {
 void Manager::configure_routers( void ) {
 	remove_routers();
 
-	routers_.resize( p_.get_dynamic_joint_num() );
-	spawn_stamp_ = p_.time_configuration_change();
+	routers_.resize( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
+	spawn_stamp_ = p_.get(MantisParams::PARAM_TIME_CHANGE_CONFIG);
 
 	int cc = 0;
-	for ( int i = 0; i < p_.get_joint_num(); i++ ) {
-		if ( p_.joint( i ).type != "static" ) {
-			routers_[cc] = new MantisGuidanceJoints::Joint( nhp_, p_.joint( i ).name );
+	for ( int i = 0; i < p_.get(MantisParams::PARAM_JOINT_NUM); i++ ) {
+		if ( p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i).type != "static" ) {
+			routers_[cc] = new MantisGuidanceJoints::Joint( nhp_, p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i).name );
 			cc++;
 		}
 	}
@@ -56,7 +56,7 @@ void Manager::remove_routers( void ) {
 }
 
 void Manager::callback_timer( const ros::TimerEvent& e ) {
-	if ( p_.time_configuration_change() != spawn_stamp_ ) {
+	if ( p_.get(MantisParams::PARAM_TIME_CHANGE_CONFIG) != spawn_stamp_ ) {
 		ROS_WARN( "Reconfiguring guidance configuration" );
 		configure_routers();
 	}

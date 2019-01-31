@@ -230,15 +230,15 @@ void ControllerAcro::callback_mixer( const ros::TimerEvent& event ) {
 	// Perform the PWM mapping
 	int32_t max_output = 1000;
 	int32_t scale_factor = 1000;
-	int32_t prescaled_outputs[p_.motor_num()];
-	int32_t pwm_output_requested[p_.motor_num()];
+	int32_t prescaled_outputs[p_.get(MantisParams::PARAM_MOTOR_NUM)];
+	int32_t pwm_output_requested[p_.get(MantisParams::PARAM_MOTOR_NUM)];
 
 	Eigen::Vector4d cforces;
 	cforces << control_forces_.T, control_forces_.r, control_forces_.p,
 		control_forces_.y;
-	Eigen::VectorXd thrust_calc = p_.get_mixer() * cforces;
+	Eigen::VectorXd thrust_calc = p_.get(MantisParams::PARAM_MIXER) * cforces;
 
-	for ( uint8_t i = 0; i < p_.motor_num(); i++ ) {
+	for ( uint8_t i = 0; i < p_.get(MantisParams::PARAM_MOTOR_NUM); i++ ) {
 		prescaled_outputs[i] = (int)( thrust_calc( i ) * 1000 );
 
 		// If the thrust is 0, zero motor outputs, as we don't want any thrust at
@@ -259,7 +259,7 @@ void ControllerAcro::callback_mixer( const ros::TimerEvent& event ) {
 
 	mavros_msgs::OverrideRCIn msg_rc_out;
 
-	for ( uint8_t i = 0; i < p_.motor_num(); i++ ) {
+	for ( uint8_t i = 0; i < p_.get(MantisParams::PARAM_MOTOR_NUM); i++ ) {
 		int32_t channel_out = ( prescaled_outputs[i] * scale_factor / 1000 ); // divide by scale factor
 		msg_rc_out.channels[i] = 1000 + int32_constrain( channel_out, 0, 1000 );
 	}

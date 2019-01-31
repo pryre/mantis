@@ -58,7 +58,7 @@ mantis_msgs::Parameters Server::get_params( void ) {
 	p.header.stamp = load_time_;
 	p.header.frame_id = "mantis_uav";
 
-	p.airframe_type = airframe_type_;
+	p.airframe_name = airframe_name_;
 	p.pwm_min = pwm_min_;
 	p.pwm_max = pwm_max_;
 	p.base_arm_length = la_;

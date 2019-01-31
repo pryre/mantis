@@ -39,14 +39,14 @@ Spawner::~Spawner() {
 void Spawner::configure_controllers( void ) {
 	remove_controllers();
 
-	controllers_.resize( p_.get_dynamic_joint_num() );
-	spawn_stamp_ = p_.time_configuration_change();
+	controllers_.resize( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
+	spawn_stamp_ = p_.get(MantisParams::PARAM_TIME_CHANGE_CONFIG);
 
 	int cc = 0;
-	for ( int i = 0; i < p_.get_joint_num(); i++ ) {
-		if ( p_.joint( i ).type != "static" ) {
+	for ( int i = 0; i < p_.get(MantisParams::PARAM_JOINT_NUM); i++ ) {
+		if ( p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i).type != "static" ) {
 			controllers_[cc] = new MantisControllerJoints::Controller(
-				nhp_, p_.joint( i ).name, traj_timeout_ );
+				nhp_, p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i).name, traj_timeout_ );
 			cc++;
 		}
 	}

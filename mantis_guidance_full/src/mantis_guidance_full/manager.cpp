@@ -66,13 +66,13 @@ void Manager::callback_cfg_control_settings(
 void Manager::configure_joint_routers( void ) {
 	remove_joint_routers();
 
-	joint_routers_.resize( p_.get_dynamic_joint_num() );
-	spawn_stamp_ = p_.time_configuration_change();
+	joint_routers_.resize( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
+	spawn_stamp_ = p_.get(MantisParams::PARAM_TIME_CHANGE_CONFIG);
 
 	int cc = 0;
-	for ( int i = 0; i < p_.get_joint_num(); i++ ) {
-		if ( p_.joint( i ).type != "static" ) {
-			joint_routers_[cc] = new MantisGuidanceFull::Joint( nhp_, p_.joint( i ).name );
+	for ( int i = 0; i < p_.get(MantisParams::PARAM_JOINT_NUM); i++ ) {
+		if ( p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i ).type != "static" ) {
+			joint_routers_[cc] = new MantisGuidanceFull::Joint( nhp_, p_.get(MantisParams::PARAM_JOINT_DESCRIPTION, i ).name );
 			cc++;
 		}
 	}
@@ -128,7 +128,7 @@ void Manager::callback_timer( const ros::TimerEvent& e ) {
 	double dt = ( e.current_real - e.last_real ).toSec();
 	bool success = false;
 
-	if ( p_.time_configuration_change() != spawn_stamp_ ) {
+	if ( p_.get(MantisParams::PARAM_TIME_CHANGE_CONFIG) != spawn_stamp_ ) {
 		ROS_WARN( "Reconfiguring guidance configuration" );
 		configure_joint_routers();
 	}
@@ -136,15 +136,15 @@ void Manager::callback_timer( const ros::TimerEvent& e ) {
 	if ( ( p_.ok() ) && ( s_.ok() ) && ( contrail_.has_reference( e.current_real ) ) ) {
 		// For all joint routers
 		ROS_ASSERT_MSG(
-			joint_routers_.size() == p_.get_dynamic_joint_num(),
+			joint_routers_.size() == p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC),
 			"Joint guidance and dynamic joint param inconsistent (%i!=%i)",
-			(int)joint_routers_.size(), (int)p_.get_dynamic_joint_num() );
+			(int)joint_routers_.size(), (int)p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
 
-		Eigen::VectorXd ref_r = Eigen::VectorXd::Zero( p_.get_dynamic_joint_num() );
-		Eigen::VectorXd ref_rd = Eigen::VectorXd::Zero( p_.get_dynamic_joint_num() );
+		Eigen::VectorXd ref_r = Eigen::VectorXd::Zero( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
+		Eigen::VectorXd ref_rd = Eigen::VectorXd::Zero( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
 
 		// Update all the joint routers
-		for ( int i = 0; i < p_.get_dynamic_joint_num(); i++ ) {
+		for ( int i = 0; i < p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC); i++ ) {
 			joint_routers_[i]->update( e.current_real );
 
 			// If possible, prefer to use the joint reference

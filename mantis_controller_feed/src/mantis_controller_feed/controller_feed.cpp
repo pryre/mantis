@@ -97,7 +97,7 @@ void ControllerFeed::callback_est( const ros::TimerEvent& e ) {
 		double ktz = 0.0;
 
 		if ( solver_.calculate_thrust_coeffs( kT, ktx, kty, ktz ) ) {
-			double accel_z = cmd_throttle_ / ( kT * p_.get_total_mass() );
+			double accel_z = cmd_throttle_ / ( kT * p_.get(MantisParams::PARAM_TOTAL_MASS) );
 			// Use this to account for acceleration / translational forces
 			//  but assume that all rotations want to maintain 0 acceleration
 
@@ -120,7 +120,7 @@ void ControllerFeed::callback_est( const ros::TimerEvent& e ) {
         */
 				Eigen::Vector4d cforces;
 				cforces << 0.0, tau( 3 ) * ktx, tau( 4 ) * kty, tau( 5 ) * ktz;
-				Eigen::VectorXd uaug = p_.get_mixer() * cforces;
+				Eigen::VectorXd uaug = p_.get(MantisParams::PARAM_MIXER) * cforces;
 
 				if ( uaug_f_.size() != uaug.size() ) {
 					uaug_f_ = Eigen::VectorXd::Zero( uaug.size() );

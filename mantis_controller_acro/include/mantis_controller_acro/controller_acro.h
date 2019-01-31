@@ -23,7 +23,7 @@ class ControllerAcro {
 	private:
 		ros::NodeHandle nh_;
 		ros::NodeHandle nhp_;
-		MantisParamClient p_;
+		MantisParams::Client p_;
 
 		ros::Subscriber sub_attitude_target_;
 		ros::Subscriber sub_actuator_control_;

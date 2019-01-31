@@ -15,7 +15,7 @@ class Manager {
 		ros::NodeHandle nhp_;
 		ros::Timer timer_;
 
-		MantisParamClient p_;
+		MantisParams::Client p_;
 
 		ros::Time spawn_stamp_;
 		double param_update_rate_;

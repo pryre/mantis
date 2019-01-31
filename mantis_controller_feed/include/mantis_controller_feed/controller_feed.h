@@ -34,8 +34,8 @@ class ControllerFeed {
 		double param_est_rate_;
 		dynamic_reconfigure::Server<mantis_controller_feed::ControlParamsConfig> dyncfg_control_settings_;
 
-		MantisParamClient p_;
-		MantisStateClient s_;
+		MantisParams::Client p_;
+		MantisState::Client s_;
 		MantisSolver solver_;
 
 		double cmd_throttle_;

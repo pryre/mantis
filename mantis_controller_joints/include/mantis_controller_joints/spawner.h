@@ -17,8 +17,8 @@ class Spawner {
 		ros::NodeHandle nhp_;
 		ros::Timer timer_;
 
-		MantisParamClient p_;
-		MantisStateClient s_;
+		MantisParams::Client p_;
+		MantisState::Client s_;
 
 		ros::Time spawn_stamp_;
 		double traj_timeout_;

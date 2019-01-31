@@ -37,8 +37,8 @@ class Manager {
 
 		std::vector<MantisGuidanceFull::Joint*> joint_routers_;
 
-		MantisParamClient p_;
-		MantisStateClient s_;
+		MantisParams::Client p_;
+		MantisState::Client s_;
 		MantisSolver solver_;
 		ContrailManager contrail_;
 

@@ -131,8 +131,8 @@ void ControllerID::callback_setpoints(
 }
 
 void ControllerID::callback_low_level( const ros::TimerEvent& e ) {
-	std::vector<uint16_t> pwm_out(
-		p_.motor_num() ); // Allocate space for the number of motors
+	// Allocate space for the number of motors
+	std::vector<uint16_t> pwm_out( p_.get(MantisParams::PARAM_MOTOR_NUM) );
 
 	double dt = ( e.current_real - e.last_real ).toSec();
 	bool ready = s_.ok() && ( tc_sp_ > ros::Time( 0 ) ) && ( ( ros::Time::now() - tc_sp_ ) < param_setpoint_timeout_ );
@@ -178,8 +178,8 @@ void ControllerID::callback_low_level( const ros::TimerEvent& e ) {
 		ua( 2 ) = abz_accel.norm();
 		// ua(2) = a_sp_.norm();
 		ua.segment( 3, 3 ) << wa;
-		ua.segment( 6, p_.get_dynamic_joint_num() )
-			<< Eigen::VectorXd::Zero( p_.get_dynamic_joint_num() );
+		ua.segment( 6, p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) )
+			<< Eigen::VectorXd::Zero( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
 
 		double kT = 0.0;
 		double ktx = 0.0;
@@ -189,7 +189,7 @@ void ControllerID::callback_low_level( const ros::TimerEvent& e ) {
 		if ( solver_.solve_inverse_dynamics( tau, ua ) && solver_.calculate_thrust_coeffs( kT, ktx, kty, ktz ) ) {
 			Eigen::Vector4d cforces;
 			cforces << tau( 2 ) * kT, tau( 3 ) * ktx, tau( 4 ) * kty, tau( 5 ) * ktz;
-			u = p_.get_mixer() * cforces;
+			u = p_.get(MantisParams::PARAM_MIXER) * cforces;
 
 			if ( param_reference_feedback_ ) {
 				mavros_msgs::AttitudeTarget msg_att_out;

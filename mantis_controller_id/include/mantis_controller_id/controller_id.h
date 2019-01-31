@@ -50,8 +50,8 @@ class ControllerID {
 		bool was_flight_ready_;
 		bool abort_flight_;
 
-		MantisParamClient p_;
-		MantisStateClient s_;
+		MantisParams::Client p_;
+		MantisState::Client s_;
 		MantisSolver solver_;
 
 		Eigen::Matrix3d R_sp_;
