@@ -35,6 +35,7 @@ class Server {
 
 		bool param_use_odom_avel_;
 		double param_rate_;
+
 		ros::Time msg_odom_tr_;
 		ros::Time msg_battery_tr_;
 		ros::Time msg_joints_tr_;
@@ -42,6 +43,9 @@ class Server {
 		ros::Time msg_mav_state_tr_;
 
 		ros::Time time_last_est_;
+
+		uint16_t status_updated_fields_;
+		uint16_t status_sensor_health_;
 
 		Eigen::Affine3d g_;
 		Eigen::Vector3d bv_;

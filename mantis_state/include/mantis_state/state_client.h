@@ -50,6 +50,9 @@ class Client {
 
 		bool wait_for_state( void );
 
+		bool ok( void );
+		const bool& flight_ready( void );
+
 		const std::string& frame_id( void );
 		const std::string& model_id( void );
 
@@ -63,9 +66,6 @@ class Client {
 		const Eigen::VectorXd& rd( void );
 		const Eigen::VectorXd& rdd( void );
 		const double& voltage( void );
-		const bool& flight_ready( void );
-
-		bool ok( void );
 
 	private:
 		void callback_state(const mantis_msgs::State::ConstPtr &msg_in);

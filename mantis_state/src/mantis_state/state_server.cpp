@@ -22,6 +22,8 @@ Server::Server( void )
 	, param_rate_( 0.0 )
 	, time_last_est_( 0 ) {
 
+	//TODO: Setup dynamic reconfigure for all selection parameters and stream timeouts
+
 	nhp_.param( "use_odom_angular_velocity", param_use_odom_avel_,
 		param_use_odom_avel_ );
 	nhp_.param( "update_rate", param_rate_, param_rate_ );
@@ -114,14 +116,17 @@ void Server::callback_estimator( const ros::TimerEvent& e ) {
 }
 
 void Server::update_g( const Eigen::Affine3d& g ) {
+	//TODO: Update sensor bitfields
 	g_ = g;
 }
 
 void Server::update_bw( const Eigen::Vector3d& bw ) {
+	//TODO: Update sensor bitfields
 	bw_ = bw;
 }
 
 void Server::update_bw( const Eigen::Vector3d& bw, const double dt ) {
+	//TODO: Update sensor bitfields
 	bwa_ = ( bw - bw_ ) / dt;
 
 	update_bw( bw );
