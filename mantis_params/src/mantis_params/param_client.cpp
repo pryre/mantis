@@ -11,22 +11,25 @@
 
 #include <string>
 
-MantisParamClient::MantisParamClient( const ros::NodeHandle& nh )
+namespace MantisParams {
+
+Client::Client( const ros::NodeHandle& nh )
 	: nh_( nh )
-	, num_dynamic_joints_( 0 ) {
+	, num_dynamic_joints_( 0 )
+	, total_mass_(0.0) {
 
 	sub_params_ = nh_.subscribe<mantis_msgs::Parameters>(
-		"params", 1, &MantisParamClient::callback_params, this );
+		"params", 1, &Client::callback_params, this );
 }
 
-MantisParamClient::~MantisParamClient() {
+Client::~Client() {
 }
 
-bool MantisParamClient::ok( void ) {
-	return ( time_updated() != ros::Time( 0 ) );
+bool Client::ok( void ) {
+	return ( get(PARAM_TIME_UPDATED) != ros::Time( 0 ) );
 }
 
-bool MantisParamClient::wait_for_params( void ) {
+bool Client::wait_for_params( void ) {
 	while ( ros::ok() && ( !ok() ) ) {
 		ros::spinOnce();
 		ros::Rate( 10 ).sleep();
@@ -35,7 +38,11 @@ bool MantisParamClient::wait_for_params( void ) {
 	return ok();
 }
 
-void MantisParamClient::callback_params(
+const bool& Client::reload_params( void ) {
+	//TODO: Make a service call to param server to reload
+}
+
+void Client::callback_params(
 	const mantis_msgs::Parameters::ConstPtr& msg_in ) {
 	// At each step, configuration change is checked to see if we can skip ahead.
 	// If there is a configuration change, then a parameter change is set as well
@@ -102,11 +109,21 @@ void MantisParamClient::callback_params(
 		parametric_stamp_ = msg_in->header.stamp;
 
 	// Update the data all in one go if there was a change, just because lazy
-	if ( configuration_change || parametric_change )
+	if ( configuration_change || parametric_change ) {
 		p_ = *msg_in;
+
+		//Update our total mass as it has probably changed in either case
+		total_mass_ = 0.0;
+		for ( int i = 0; i < p_.bodies.size(); i++ ) {
+			total_mass_ += p_.bodies[i].mass;
+		}
+	}
 
 	// Handle generated variables if changed
 	if ( configuration_change ) {
+		num_bodies_ = p_.bodies.size();
+		num_joints_ = p_.joints.size();
+
 		num_dynamic_joints_ = 0;
 		for ( int i = 0; i < p_.joints.size(); i++ ) {
 			if ( p_.joints[i].type != "static" )
@@ -114,17 +131,17 @@ void MantisParamClient::callback_params(
 		}
 
 		if ( p_.airframe_type == "quad_x4" ) {
-			motor_num_ = MDTools::mixer_generate_quad_x4( mixer_ );
+			num_motors_ = MDTools::mixer_generate_quad_x4( mixer_ );
 		} else if ( p_.airframe_type == "quad_+4" ) {
-			motor_num_ = MDTools::mixer_generate_quad_p4( mixer_ );
+			num_motors_ = MDTools::mixer_generate_quad_p4( mixer_ );
 		} else if ( p_.airframe_type == "hex_x6" ) {
-			motor_num_ = MDTools::mixer_generate_hex_x6( mixer_ );
+			num_motors_ = MDTools::mixer_generate_hex_x6( mixer_ );
 		} else if ( p_.airframe_type == "hex_p6" ) {
-			motor_num_ = MDTools::mixer_generate_hex_p6( mixer_ );
+			num_motors_ = MDTools::mixer_generate_hex_p6( mixer_ );
 		} else if ( p_.airframe_type == "octo_x8" ) {
-			motor_num_ = MDTools::mixer_generate_octo_x8( mixer_ );
+			num_motors_ = MDTools::mixer_generate_octo_x8( mixer_ );
 		} else if ( p_.airframe_type == "octo_+8" ) {
-			motor_num_ = MDTools::mixer_generate_octo_p8( mixer_ );
+			num_motors_ = MDTools::mixer_generate_octo_p8( mixer_ );
 		} else {
 			mixer_ = Eigen::MatrixXd();
 			ROS_ERROR_THROTTLE( 2.0, "Unsupported mixer: %s",
@@ -133,103 +150,171 @@ void MantisParamClient::callback_params(
 	}
 }
 
-const ros::Time& MantisParamClient::time_updated( void ) {
-	return p_.header.stamp;
-}
-
-const ros::Time& MantisParamClient::time_configuration_change( void ) {
-	return configuration_stamp_;
-}
-
-const ros::Time& MantisParamClient::time_parametric_change( void ) {
-	return parametric_stamp_;
-}
-
-const std::string& MantisParamClient::airframe_type( void ) {
-	return p_.airframe_type;
-}
-
-const int16_t& MantisParamClient::pwm_min( void ) {
-	return p_.pwm_min;
-}
-
-const int16_t& MantisParamClient::pwm_max( void ) {
-	return p_.pwm_max;
-}
-
-const double& MantisParamClient::base_arm_length( void ) {
-	return p_.base_arm_length;
-}
-
-const int32_t& MantisParamClient::motor_num( void ) {
-	return motor_num_;
-}
-/*
-const double& MantisParamClient::motor_kv( void ) {
-        return p_.motor_kv;
-}
-
-const double& MantisParamClient::rpm_thrust_m( void ) {
-        return p_.rpm_thrust_m;
-}
-
-const double& MantisParamClient::rpm_thrust_c( void ) {
-        return p_.rpm_thrust_c;
-}
-*/
-
-const double& MantisParamClient::motor_thrust_max( void ) {
-	return p_.motor_thrust_max;
-}
-
-const double& MantisParamClient::motor_drag_max( void ) {
-	return p_.motor_drag_max;
-}
-
-int MantisParamClient::get_body_num( void ) {
-	return p_.bodies.size();
-}
-
-double MantisParamClient::get_total_mass( void ) {
-	double m = 0.0;
-
-	for ( int i = 0; i < p_.bodies.size(); i++ ) {
-		m += p_.bodies[i].mass;
+//==-- Parameter get calls
+const ros::Time& Client::get(const ParamsTime param_id) {
+	switch(param_id) {
+		case PARAM_TIME_UPDATED: {
+			return p_.header.stamp;
+		}
+		case PARAM_TIME_CHANGE_CONFIG: {
+			return configuration_stamp_;
+		}
+		case PARAM_TIME_CHANGE_PARAMETRIC: {
+			return parametric_stamp_;
+		}
+		default: {
+			ROS_WARN("Tried to get unsupported param_id: %s", ParamsTimeName[param_id]);
+			throw std::bad_typeid();
+		}
 	}
-
-	return m;
 }
 
-const mantis_msgs::BodyInertial&
-MantisParamClient::body_inertial( const unsigned int i ) {
-	return p_.bodies[i];
+const uint16_t& Client::get(const ParamsUint16 param_id) {
+	switch(param_id) {
+		case PARAM_PWM_MIN: {
+			return p_.pwm_min;
+		}
+		case PARAM_PWM_MAX: {
+			return p_.pwm_max;
+		}
+		default: {
+			ROS_WARN("Tried to get unsupported param_id: %s", ParamsUint16Name[param_id]);
+			throw std::bad_typeid();
+		}
+	}
 }
 
-int MantisParamClient::get_joint_num( void ) {
-	return p_.joints.size();
+const uint64_t& Client::get(const ParamsUint64 param_id) {
+	switch(param_id) {
+		case PARAM_MOTOR_NUM: {
+			return num_motors_;
+		}
+		case PARAM_BODY_NUM: {
+			return num_bodies_;
+		}
+		case PARAM_JOINT_NUM: {
+			return num_joints_;
+		}
+		case PARAM_JOINT_NUM_DYNAMIC: {
+			return num_dynamic_joints_;
+		}
+		default: {
+			ROS_WARN("Tried to get unsupported param_id: %s", ParamsUint64Name[param_id]);
+			throw std::bad_typeid();
+		}
+	}
 }
 
-int MantisParamClient::get_dynamic_joint_num( void ) {
-	return num_dynamic_joints_;
+const double& Client::get(const ParamsDouble param_id) {
+	switch(param_id) {
+		case PARAM_BASE_ARM_LENGTH: {
+			return p_.base_arm_length;
+		}
+		case PARAM_MOTOR_MAX_THRUST: {
+			return p_.motor_thrust_max;
+		}
+		case PARAM_MOTOR_MAX_DRAG: {
+			return p_.motor_drag_max;
+		}
+		case PARAM_TOTAL_MASS: {
+			return total_mass_;
+		}
+		default: {
+			ROS_WARN("Tried to get unsupported param_id: %s", ParamsDoubleName[param_id]);
+			throw std::bad_typeid();
+		}
+	}
 }
 
-const dh_parameters::JointDescription&
-MantisParamClient::joint( const unsigned int i ) {
-	return p_.joints[i];
+const std::string& Client::get(const ParamsString param_id) {
+	switch(param_id) {
+		case PARAM_AIRFRAME_TYPE: {
+			return p_.airframe_type;
+		}
+		default: {
+			ROS_WARN("Tried to get unsupported param_id: %s", ParamsStringName[param_id]);
+			throw std::bad_typeid();
+		}
+	}
 }
 
-const Eigen::MatrixXd& MantisParamClient::get_mixer( void ) {
-	return mixer_;
+const mantis_msgs::BodyInertial& Client::get(const ParamsBodyInertial param_id, const unsigned int body ) {
+	switch(param_id) {
+		case PARAM_BODY_INERTIAL: {
+			return p_.bodies[body];
+		}
+		default: {
+			ROS_WARN("Tried to get unsupported param_id: %s", ParamsBodyInertialName[param_id]);
+			throw std::bad_typeid();
+		}
+	}
 }
 
-const bool
-MantisParamClient::compare_bodies( const mantis_msgs::BodyInertial& b1,
+const dh_parameters::JointDescription& Client::get(const ParamsJointDescription param_id, const unsigned int joint ) {
+	switch(param_id) {
+		case PARAM_JOINT_DESCRIPTION: {
+			return p_.joints[joint];
+		}
+		default: {
+			ROS_WARN("Tried to get unsupported param_id: %s", ParamsJointDescriptionName[param_id]);
+			throw std::bad_typeid();
+		}
+	}
+}
+
+const Eigen::MatrixXd& Client::get(const ParamsMatrixXd param_id) {
+	switch(param_id) {
+		case PARAM_MIXER: {
+			return mixer_;
+		}
+		default: {
+			ROS_WARN("Tried to get unsupported param_id: %s", ParamsMatrixXdName[param_id]);
+			throw std::bad_typeid();
+		}
+	}
+}
+
+//==-- Parameter set calls
+const bool Client::set(const ParamsTime param_id, const ros::Time& param) {
+	return false;
+}
+
+const bool Client::set(const ParamsUint16 param_id, const uint16_t& param) {
+	return false;
+}
+
+const bool Client::set(const ParamsUint64 param_id, const uint64_t& param) {
+	return false;
+}
+
+const bool Client::set(const ParamsDouble param_id, const double& param) {
+	return false;
+}
+
+const bool Client::set(const ParamsString param_id, const std::string& param) {
+	return false;
+}
+
+const bool Client::set(const ParamsBodyInertial param_id, const unsigned int body, const mantis_msgs::BodyInertial& param) {
+	return false;
+}
+
+const bool Client::set(const ParamsJointDescription param_id, const unsigned int joint, const dh_parameters::JointDescription& param) {
+	return false;
+}
+
+const bool Client::set(const ParamsMatrixXd param_id, const Eigen::MatrixXd& param ) {
+	return false;
+}
+
+const bool Client::compare_bodies( const mantis_msgs::BodyInertial& b1,
 	const mantis_msgs::BodyInertial& b2 ) {
 	return ( ( b1.name == b2.name ) && ( b1.com == b2.com ) && ( b1.mass == b2.mass ) && ( b1.Ixx == b2.Ixx ) && ( b1.Ixy == b2.Ixy ) && ( b1.Ixz == b2.Ixz ) && ( b1.Iyy == b2.Iyy ) && ( b1.Iyz == b2.Iyz ) && ( b1.Izz == b2.Izz ) );
 }
 
-const bool
-MantisParamClient::compare_joints( const dh_parameters::JointDescription& j1,
+const bool Client::compare_joints( const dh_parameters::JointDescription& j1,
 	const dh_parameters::JointDescription& j2 ) {
 	return ( ( j1.name == j2.name ) && ( j1.type == j2.type ) && ( j1.d == j2.d ) && ( j1.t == j2.t ) && ( j1.r == j2.r ) && ( j1.a == j2.a ) && ( j1.q == j2.q ) && ( j1.beta == j2.beta ) );
 }
+
+};

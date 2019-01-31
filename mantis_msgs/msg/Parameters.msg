@@ -1,8 +1,8 @@
 std_msgs/Header header
 
 string airframe_type
-int16 pwm_min
-int16 pwm_max
+uint16 pwm_min
+uint16 pwm_max
 
 float64 base_arm_length
 #float64 motor_kv

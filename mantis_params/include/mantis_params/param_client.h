@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ros/ros.h>
+#include <mantis_params/params.h>
 #include <mantis_msgs/Parameters.h>
 #include <mantis_msgs/BodyInertial.h>
 #include <dh_parameters/JointDescription.h>
@@ -10,15 +11,20 @@
 #include <string>
 #include <vector>
 
-class MantisParamClient {
+namespace MantisParams {
+class Client {
 	private:
 		ros::NodeHandle nh_;
 		ros::Subscriber sub_params_;
 
-		int num_dynamic_joints_;
+		uint64_t num_bodies_;
+		uint64_t num_joints_;
+		uint64_t num_dynamic_joints_;
 
 		Eigen::MatrixXd mixer_;
-		int32_t motor_num_;
+		uint64_t num_motors_;
+
+		double total_mass_;
 
 		mantis_msgs::Parameters p_;
 		/*
@@ -47,43 +53,37 @@ class MantisParamClient {
 		ros::Time parametric_stamp_;
 
 	public:
-		MantisParamClient( const ros::NodeHandle& nh);
+		Client( const ros::NodeHandle& nh);
 
-		~MantisParamClient( void );
+		~Client( void );
 
 		bool wait_for_params( void );
-
-		const ros::Time& time_updated( void );
-		const ros::Time& time_configuration_change( void );
-		const ros::Time& time_parametric_change( void );
-
-		const std::string& airframe_type( void );
-		const int16_t& pwm_min( void );
-		const int16_t& pwm_max( void );
-
-		const double& base_arm_length( void );
-		const int32_t& motor_num( void );
-		//const double& motor_kv( void );
-		//const double& rpm_thrust_m( void );
-		//const double& rpm_thrust_c( void );
-		const double& motor_thrust_max( void );
-		const double& motor_drag_max( void );
-
-		int get_body_num( void );
-		double get_total_mass( void );
-		const mantis_msgs::BodyInertial& body_inertial( const unsigned int i );
-
-		int get_joint_num( void );
-		int get_dynamic_joint_num( void );
-		const dh_parameters::JointDescription& joint(const unsigned int i);
-
-		const Eigen::MatrixXd& get_mixer( void );
-
 		bool ok( void );
+
+		const bool& reload_params( void );
+
+		const ros::Time& get(const ParamsTime param_id);
+		const uint16_t& get(const ParamsUint16 param_id);
+		const uint64_t& get(const ParamsUint64 param_id);
+		const double& get(const ParamsDouble param_id);
+		const std::string& get(const ParamsString param_id);
+		const mantis_msgs::BodyInertial& get(const ParamsBodyInertial param_id, const unsigned int body );
+		const dh_parameters::JointDescription& get(const ParamsJointDescription param_id, const unsigned int joint );
+		const Eigen::MatrixXd& get(const ParamsMatrixXd param_id);
+
+		const bool set(const ParamsTime param_id, const ros::Time& param);
+		const bool set(const ParamsUint16 param_id, const uint16_t& param);
+		const bool set(const ParamsUint64 param_id, const uint64_t& param);
+		const bool set(const ParamsDouble param_id, const double& param);
+		const bool set(const ParamsString param_id, const std::string& param);
+		const bool set(const ParamsBodyInertial param_id, const unsigned int body, const mantis_msgs::BodyInertial& param);
+		const bool set(const ParamsJointDescription param_id, const unsigned int joint, const dh_parameters::JointDescription& param);
+		const bool set(const ParamsMatrixXd param_id, const Eigen::MatrixXd& param );
 
 	private:
 		void callback_params(const mantis_msgs::Parameters::ConstPtr &msg_in);
 		const bool compare_bodies( const mantis_msgs::BodyInertial& b1, const mantis_msgs::BodyInertial& b2 );
 		const bool compare_joints( const dh_parameters::JointDescription& j1, const dh_parameters::JointDescription& j2 );
 
+};
 };
