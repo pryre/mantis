@@ -64,7 +64,7 @@
 			<remap from="~battery" to="state/battery"/>
 		</node>
 
-		<node name="hil_sensor" pkg="robin_gazebo" type="hil_sensor_node" respawn="false" output="screen">
+		<node name="hil_sensor" pkg="robin_gazebo" type="hil_sensor_viz_node" respawn="false" output="screen">
 			<remap from="hil/imu_data" to="mavros/hil/imu_ned"/>
 		</node>
 

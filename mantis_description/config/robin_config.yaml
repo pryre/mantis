@@ -97,6 +97,10 @@ setpoint_attitude:
     child_frame_id: "target_attitude"
     rate_limit: 50.0
 
+#setpoint_raw
+setpoint_raw:
+  thrust_scaling: 1.0       # used in rpyt callback
+
 # setpoint_position
 setpoint_position:
   tf:
