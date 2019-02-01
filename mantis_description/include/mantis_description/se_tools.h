@@ -26,6 +26,8 @@ namespace MDTools {
 	Eigen::Vector3d quaternion_basis_error( const Eigen::Quaterniond &q1, const Eigen::Quaterniond &q2 );
 	Eigen::Quaterniond quaternion_scale( Eigen::Quaterniond &q, const double s);
 
+	double lpf(const double x, const double xp, const double alpha);
+
 	//Conversion Helpers
 	Eigen::Vector3d vector_from_msg(const geometry_msgs::Vector3 &v);
 	Eigen::Vector3d point_from_msg(const geometry_msgs::Point &p);

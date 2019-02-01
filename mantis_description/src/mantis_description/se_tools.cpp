@@ -125,6 +125,10 @@ Eigen::Quaterniond quaternion_scale( Eigen::Quaterniond& q, const double s ) {
 	return qs;
 }
 
+double lpf(const double x, const double xp, const double alpha) {
+	return ( ( 1.0 - alpha ) * xp ) + (alpha * x );
+}
+
 // Conversion Helpers
 Eigen::Vector3d vector_from_msg( const geometry_msgs::Vector3& v ) {
 	return Eigen::Vector3d( v.x, v.y, v.z );

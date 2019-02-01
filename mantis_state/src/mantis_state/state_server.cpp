@@ -73,13 +73,30 @@ Server::~Server() {
 }
 
 void Server::callback_estimator( const ros::TimerEvent& e ) {
-	if ( ( msg_odom_tr_ != ros::Time( 0 ) ) && ( msg_battery_tr_ != ros::Time( 0 ) ) && ( msg_joints_tr_ != ros::Time( 0 ) ) && ( msg_imu_tr_ != ros::Time( 0 ) ) && ( msg_mav_state_tr_ != ros::Time( 0 ) ) && ( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) == r_.size() ) ) {
+	//TODO: Better time checking with timeouts
+	if ( ( msg_odom_tr_ != ros::Time( 0 ) ) &&
+		 ( msg_battery_tr_ != ros::Time( 0 ) ) &&
+		 ( msg_joints_tr_ != ros::Time( 0 ) ) &&
+		 ( msg_imu_tr_ != ros::Time( 0 ) ) &&
+		 ( msg_mav_state_tr_ != ros::Time( 0 ) ) &&
+		 ( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) == r_.size() ) ) {
 
 		// If we can get a dt
-		if ( time_last_est_ > ros::Time( 0 ) ) {
+		if ( e.last_real > ros::Time( 0 ) ) {
+			double dt = (e.current_real - e.last_real).toSec();
 
-			// XXX: TODO: Shold have some form of state estimation here!
+			//Attitude Estimation
 
+
+			//World State Estimation
+
+
+
+
+
+
+
+			//Prepare state message
 			mantis_msgs::State state;
 			state.header.stamp = e.current_real;
 			state.header.frame_id = "map";
@@ -105,28 +122,24 @@ void Server::callback_estimator( const ros::TimerEvent& e ) {
 			}
 
 			state.battery_voltage = voltage_;
-			state.flight_ready = mav_ready_;
+			state.system_armed = system_armed_;
 
 			// Publish the final state estimate
 			pub_state_.publish( state );
 		}
-
-		time_last_est_ = e.current_real;
 	}
 }
 
+/*
 void Server::update_g( const Eigen::Affine3d& g ) {
-	//TODO: Update sensor bitfields
 	g_ = g;
 }
 
 void Server::update_bw( const Eigen::Vector3d& bw ) {
-	//TODO: Update sensor bitfields
 	bw_ = bw;
 }
 
 void Server::update_bw( const Eigen::Vector3d& bw, const double dt ) {
-	//TODO: Update sensor bitfields
 	bwa_ = ( bw - bw_ ) / dt;
 
 	update_bw( bw );
@@ -159,9 +172,9 @@ void Server::update_voltage( const double voltage ) {
 void Server::update_mav_ready( const bool ready ) {
 	mav_ready_ = ready;
 }
+*/
 
-void Server::callback_state_odom(
-	const nav_msgs::Odometry::ConstPtr& msg_in ) {
+void Server::callback_state_odom( const nav_msgs::Odometry::ConstPtr& msg_in ) {
 	double dt = ( msg_in->header.stamp - msg_odom_tr_ ).toSec();
 	msg_odom_tr_ = msg_in->header.stamp;
 
@@ -179,8 +192,7 @@ void Server::callback_state_odom(
 	}
 }
 
-void Server::callback_state_battery(
-	const sensor_msgs::BatteryState::ConstPtr& msg_in ) {
+void Server::callback_state_battery( const sensor_msgs::BatteryState::ConstPtr& msg_in ) {
 	msg_battery_tr_ = msg_in->header.stamp;
 
 	// XXX: Need to do this as the straight voltage reading is too slow

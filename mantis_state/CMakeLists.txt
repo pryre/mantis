@@ -13,10 +13,16 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   sensor_msgs
   geometry_msgs
+  dynamic_reconfigure
   mavros_msgs
 )
 
 find_package(Eigen3 REQUIRED)
+
+generate_dynamic_reconfigure_options(
+  cfg/StateParams.cfg
+  cfg/FusionParams.cfg
+)
 
 catkin_package(
   INCLUDE_DIRS include
