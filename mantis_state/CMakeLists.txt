@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(mantis_state)
 
+#set(CMAKE_CXX_FLAGS "-O2 -DEIGEN_NO_DEBUG -DNDEBUG")
+
 ## Add support for C++11, supported in ROS Kinetic and newer
 add_definitions(-std=c++11)
 
@@ -21,7 +23,7 @@ find_package(Eigen3 REQUIRED)
 
 generate_dynamic_reconfigure_options(
   cfg/StateParams.cfg
-  cfg/FusionParams.cfg
+  cfg/SensorParams.cfg
 )
 
 catkin_package(
@@ -40,6 +42,7 @@ catkin_package(
 # include_directories(include)
 include_directories(
   include
+  include/mantis_state/kalman
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
 )

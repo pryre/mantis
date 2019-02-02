@@ -13,6 +13,14 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/JointState.h>
 
+#include "mantis_state/SystemModel.hpp"
+#include "mantis_state/OrientationMeasurementModel.hpp"
+#include "mantis_state/PositionMeasurementModel.hpp"
+
+#include "ExtendedKalmanFilter.hpp"
+#include "UnscentedKalmanFilter.hpp"
+
+
 namespace MantisState {
 Server::Server( void )
 	: nh_()

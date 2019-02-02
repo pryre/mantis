@@ -108,6 +108,8 @@ typedef struct {
 	double scaling_joints;
 } sensor_params_t;
 
+typedef double T;
+
 class Server {
 	private:
 		ros::NodeHandle nh_;
@@ -136,6 +138,15 @@ class Server {
 		uint16_t status_sensor_health_;
 
 		//Current Estimated state
+		typedef MantisRobot::State<T> State_;
+		typedef MantisRobot::Control<T> Control_;
+		typedef MantisRobot::SystemModel<T> SystemModel_;
+
+		typedef MantisRobot::PositionMeasurement<T> PositionMeasurement_;
+		typedef MantisRobot::OrientationMeasurement<T> OrientationMeasurement_;
+		typedef MantisRobot::PositionMeasurementModel<T> PositionModel_;
+		typedef MantisRobot::OrientationMeasurementModel<T> OrientationModel_;
+
 		Eigen::Affine3d g_;
 		Eigen::Vector3d bv_;
 		Eigen::Vector3d ba_;
