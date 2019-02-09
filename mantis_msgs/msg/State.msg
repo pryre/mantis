@@ -36,9 +36,9 @@ geometry_msgs/Accel accel
 # Manipulator States (Same order as joints listed by the parameters)
 float64[] r
 float64[] rd
-float64[] rdd
+#float64[] rdd
 
 # Subsystem States
 float64 battery_voltage
-#bool system_safety_disengaged
-bool system_armed
+bool mav_safety_disengaged
+bool mav_ready

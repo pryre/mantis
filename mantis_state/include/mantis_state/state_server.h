@@ -22,11 +22,15 @@ namespace MantisState {
 //	T: sampling time
 //	q: gain scailing for sensor
 typedef struct {
-	bool new_data;
+	ros::Time stamp;
+
+	bool data_valid;
+	uint64_t count;
 
 	double exp_rate;
+
 	double avg_rate;
-	double sampling_time;
+	double avg_sampling_time;
 } sensor_info_t;
 
 typedef struct {
@@ -56,13 +60,14 @@ typedef struct {
 
 typedef struct {
 	sensor_info_t info;
-	geometry_msgs::Point velocity;
-} sensor_data_vel_t;
+	geometry_msgs::Vector3 linear_vel;
+} sensor_data_bvel_t;
 
 typedef struct {
 	sensor_info_t info;
-	std::vector<double> positions;
-	std::vector<double> velocities;
+	uint64_t num;
+	Eigen::VectorXd positions;
+	Eigen::VectorXd velocities;
 } sensor_data_joints_t;
 
 typedef struct {
@@ -74,9 +79,9 @@ typedef struct {
 	sensor_data_accel_t accel;
 	sensor_data_gyro_t gyro;
 	sensor_data_mag_t mag;
-	sensor_data_pos_t att;
+	sensor_data_att_t att;
 	sensor_data_pos_t pos;
-	sensor_data_pos_t vel;
+	sensor_data_bvel_t bvel;
 	sensor_data_joints_t joints;
 	sensor_data_battery_t battery;
 } sensor_readings_t;
@@ -138,6 +143,7 @@ class Server {
 		uint16_t status_sensor_health_;
 
 		//Current Estimated state
+		/*
 		typedef MantisRobot::State<T> State_;
 		typedef MantisRobot::Control<T> Control_;
 		typedef MantisRobot::SystemModel<T> SystemModel_;
@@ -146,6 +152,7 @@ class Server {
 		typedef MantisRobot::OrientationMeasurement<T> OrientationMeasurement_;
 		typedef MantisRobot::PositionMeasurementModel<T> PositionModel_;
 		typedef MantisRobot::OrientationMeasurementModel<T> OrientationModel_;
+		*/
 
 		Eigen::Affine3d g_;
 		Eigen::Vector3d bv_;

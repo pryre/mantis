@@ -22,8 +22,10 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Eigen3 REQUIRED)
 
 generate_dynamic_reconfigure_options(
-  cfg/StateParams.cfg
-  cfg/SensorParams.cfg
+  cfg/SensorAttParams.cfg
+  cfg/SensorMiscParams.cfg
+  cfg/SensorRateParams.cfg
+  cfg/SensorScalingParams.cfg
 )
 
 catkin_package(

@@ -13,12 +13,14 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/JointState.h>
 
+/*
 #include "mantis_state/SystemModel.hpp"
 #include "mantis_state/OrientationMeasurementModel.hpp"
 #include "mantis_state/PositionMeasurementModel.hpp"
 
 #include "ExtendedKalmanFilter.hpp"
 #include "UnscentedKalmanFilter.hpp"
+*/
 
 
 namespace MantisState {
@@ -26,14 +28,10 @@ Server::Server( void )
 	: nh_()
 	, nhp_( "~" )
 	, p_( nh_ )
-	, param_use_odom_avel_( false )
-	, param_rate_( 0.0 )
-	, time_last_est_( 0 ) {
+	, param_rate_( 0.0 ) {
 
 	//TODO: Setup dynamic reconfigure for all selection parameters and stream timeouts
 
-	nhp_.param( "use_odom_angular_velocity", param_use_odom_avel_,
-		param_use_odom_avel_ );
 	nhp_.param( "update_rate", param_rate_, param_rate_ );
 
 	if ( p_.wait_for_params() ) {
@@ -43,7 +41,7 @@ Server::Server( void )
 			bv_ = Eigen::Vector3d::Zero();
 			bw_ = Eigen::Vector3d::Zero();
 			ba_ = Eigen::Vector3d::Zero();
-			bwa_ = Eigen::Vector3d::Zero();
+			//bwa_ = Eigen::Vector3d::Zero();
 
 			// Additional state information
 			voltage_ = 0.0;
@@ -52,7 +50,7 @@ Server::Server( void )
 			// Parameter-reliant states
 			r_ = Eigen::VectorXd::Zero( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
 			rd_ = Eigen::VectorXd::Zero( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
-			rdd_ = Eigen::VectorXd::Zero( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
+			//rdd_ = Eigen::VectorXd::Zero( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
 
 			sub_state_odom_ = nh_.subscribe<nav_msgs::Odometry>(
 				"state/odom", 10, &Server::callback_state_odom, this );
@@ -81,108 +79,96 @@ Server::~Server() {
 }
 
 void Server::callback_estimator( const ros::TimerEvent& e ) {
-	//TODO: Better time checking with timeouts
-	if ( ( msg_odom_tr_ != ros::Time( 0 ) ) &&
-		 ( msg_battery_tr_ != ros::Time( 0 ) ) &&
-		 ( msg_joints_tr_ != ros::Time( 0 ) ) &&
-		 ( msg_imu_tr_ != ros::Time( 0 ) ) &&
-		 ( msg_mav_state_tr_ != ros::Time( 0 ) ) &&
-		 ( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) == r_.size() ) ) {
+	// If we can get a dt, and our r vector looks valid
+	if( ( e.last_real > ros::Time( 0 ) ) &&
+		( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) == sensor_data_.joints.num ) ) {
 
-		// If we can get a dt
-		if ( e.last_real > ros::Time( 0 ) ) {
-			double dt = (e.current_real - e.last_real).toSec();
+		double dt = (e.current_real - e.last_real).toSec();
 
-			//Attitude Estimation
+		//Attitude Estimation
+		//TODO
 
+		//World State Estimation
+		//TODO
 
-			//World State Estimation
+		//== DATA DUMP, REMOVE LATER! ==//
+		g_.linear() = MDTools::quaternion_from_msg( sensor_data_.att.attitude ).toRotationMatrix();
+		g_.translation() = MDTools::point_from_msg( sensor_data_.pos.position );
 
+		bv_ = MDTools::vector_from_msg( sensor_data_.bvel.linear_vel );
+		ba_ = MDTools::vector_from_msg( sensor_data_.accel.linear_acceleration );
 
+		bw_ = MDTools::vector_from_msg( sensor_data_.gyro.angular_velocity );
 
+		r_ = sensor_data_.joints.positions;
+		rd_ = sensor_data_.joints.velocities;
+		//== DATA DUMP, REMOVE LATER! ==//
 
+		//Sensor State Estimation
+		//TODO: maybe include these in the full state estimator
+		voltage_ = MDTools::lpf(sensor_data_.battery.voltage, voltage_, 0.6); //TODO: Replace 0.6 with parameter!
 
+		//Prepare state message
+		mantis_msgs::State state;
+		state.header.stamp = e.current_real;
+		state.header.frame_id = "map";
+		state.child_frame_id = "mantis_uav";
+		state.configuration_stamp = p_.get(MantisParams::PARAM_TIME_CHANGE_CONFIG);
 
+		state.pose = MDTools::pose_from_eig( g_ );
+		state.twist.linear = MDTools::vector_from_eig( bv_ );
+		state.twist.angular = MDTools::vector_from_eig( bw_ );
+		state.accel.linear = MDTools::vector_from_eig( ba_ );
+		//TODO(?): state.accel.angular = MDTools::vector_from_eig( bwa_ );
 
-			//Prepare state message
-			mantis_msgs::State state;
-			state.header.stamp = e.current_real;
-			state.header.frame_id = "map";
-			state.child_frame_id = "mantis_uav";
-			state.configuration_stamp = p_.get(MantisParams::PARAM_TIME_CHANGE_CONFIG);
+		// Some safety in case out joint configuration changes
+		// This should make things wait until r_ is updated by the joiint callback
+		state.r.resize( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
+		state.rd.resize( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
+		//state.rdd.resize( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
 
-			state.pose = MDTools::pose_from_eig( g_ );
-			state.twist.linear = MDTools::vector_from_eig( bv_ );
-			state.twist.angular = MDTools::vector_from_eig( bw_ );
-			state.accel.linear = MDTools::vector_from_eig( ba_ );
-			state.accel.angular = MDTools::vector_from_eig( bwa_ );
-
-			// Some safety in case out joint configuration changes
-			// This should make things wait until r_ is updated by the joiint callback
-			state.r.resize( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
-			state.rd.resize( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
-			state.rdd.resize( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
-
-			for ( int i = 0; i < p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC); i++ ) {
-				state.r[i] = r_[i];
-				state.rd[i] = rd_[i];
-				state.rdd[i] = rdd_[i];
-			}
-
-			state.battery_voltage = voltage_;
-			state.system_armed = system_armed_;
-
-			// Publish the final state estimate
-			pub_state_.publish( state );
+		for ( int i = 0; i < p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC); i++ ) {
+			state.r[i] = r_[i];
+			state.rd[i] = rd_[i];
+			//state.rdd[i] = rdd_[i];
 		}
+
+		state.battery_voltage = voltage_;
+		state.mav_safety_disengaged = mav_ready_;	//XXX: Need to implement this properly when fuctionallity is added in mavlink
+		state.mav_ready = mav_ready_;
+
+		// Publish the final state estimate
+		pub_state_.publish( state );
+	} else {
+		ROS_WARN_THROTTLE(10.0, "Joint state data length inconsistent joint parameters");
 	}
 }
 
-/*
-void Server::update_g( const Eigen::Affine3d& g ) {
-	g_ = g;
-}
+void Server::update_timing_data(sensor_info_t& info, const ros::Time& stamp) {
+	double rate = (stamp - info.stamp).toSec();
 
-void Server::update_bw( const Eigen::Vector3d& bw ) {
-	bw_ = bw;
-}
+	info.avg_rate = MDTools::lpf(rate, info.avg_rate, 0.6);
 
-void Server::update_bw( const Eigen::Vector3d& bw, const double dt ) {
-	bwa_ = ( bw - bw_ ) / dt;
+	//TODO: Need to implement a method similar to mavel to eliminate jitter
+	if( -sensor_params_.rate_deviation < ( info.avg_rate - info.exp_rate ) ) {
+		info.data_valid = true;
+	} else {
+		info.data_valid = false;
+	}
 
-	update_bw( bw );
+	info.stamp = stamp;
 }
-
-void Server::update_bv( const Eigen::Vector3d& bv ) {
-	bv_ = bv;
-}
-
-void Server::update_ba( const Eigen::Vector3d& ba ) {
-	ba_ = ba;
-}
-
-void Server::update_r( const Eigen::VectorXd& r ) {
-	r_ = r;
-}
-
-void Server::update_rd( const Eigen::VectorXd& rd ) {
-	rd_ = rd;
-}
-
-void Server::update_rdd( const Eigen::VectorXd& rdd ) {
-	rdd_ = rdd;
-}
-
-void Server::update_voltage( const double voltage ) {
-	voltage_ = voltage;
-}
-
-void Server::update_mav_ready( const bool ready ) {
-	mav_ready_ = ready;
-}
-*/
 
 void Server::callback_state_odom( const nav_msgs::Odometry::ConstPtr& msg_in ) {
+	update_timing_data( sensor_data_.pos.info, msg_in->header.stamp );
+	sensor_data_.att.info = sensor_data_.pos.info;
+	sensor_data_.bvel.info = sensor_data_.pos.info;
+
+	sensor_data_.pos.position = msg_in->pose.pose.position;
+	sensor_data_.att.attitude = msg_in->pose.pose.orientation;
+	sensor_data_.bvel.linear_vel = msg_in->twist.twist.linear;
+
+	/*
 	double dt = ( msg_in->header.stamp - msg_odom_tr_ ).toSec();
 	msg_odom_tr_ = msg_in->header.stamp;
 
@@ -198,48 +184,47 @@ void Server::callback_state_odom( const nav_msgs::Odometry::ConstPtr& msg_in ) {
 		Eigen::Vector3d bw = MDTools::vector_from_msg( msg_in->twist.twist.angular );
 		update_bw( bw, dt );
 	}
+	*/
 }
 
 void Server::callback_state_battery( const sensor_msgs::BatteryState::ConstPtr& msg_in ) {
-	msg_battery_tr_ = msg_in->header.stamp;
-
 	// XXX: Need to do this as the straight voltage reading is too slow
 	double voltage = 0.0;
 	for ( int i = 0; i < msg_in->cell_voltage.size(); i++ ) {
 		voltage += msg_in->cell_voltage[i];
 	}
 
-	update_voltage( voltage );
+	update_timing_data( sensor_data_.battery.info, msg_in->header.stamp );
+	sensor_data_.battery.voltage = voltage;
 }
 
-void Server::callback_state_imu(
-	const sensor_msgs::Imu::ConstPtr& msg_in ) {
-	double dt = ( msg_in->header.stamp - msg_imu_tr_ ).toSec();
-	msg_imu_tr_ = msg_in->header.stamp;
+void Server::callback_state_imu( const sensor_msgs::Imu::ConstPtr& msg_in ) {
+	update_timing_data( sensor_data_.accel.info, msg_in->header.stamp );
+	sensor_data_.gyro.info = sensor_data_.accel.info;
 
-	Eigen::Vector3d ba = MDTools::vector_from_msg( msg_in->linear_acceleration );
-	update_ba( ba );
-
-	Eigen::Vector3d bw = MDTools::vector_from_msg( msg_in->angular_velocity );
-	update_bw( bw, dt );
+	sensor_data_.accel.linear_acceleration = msg_in->linear_acceleration;
+	sensor_data_.gyro.angular_velocity = msg_in->angular_velocity;
 }
 
 void Server::callback_state_mav(
 	const mavros_msgs::State::ConstPtr& msg_in ) {
-	msg_mav_state_tr_ = msg_in->header.stamp;
 
-	bool ready = msg_in->armed && ( msg_in->mode == "OFFBOARD" );
+	if( msg_in->mode == "OFFBOARD" ) {
+		mav_ready_ = msg_in->armed;
+	} else {
+		ROS_WARN_THROTTLE(10.0, "Autopilot not in OFFBOARD mode, i.e. not ready");
+		mav_ready_ = false;
+	}
 
-	update_mav_ready( ready );
+	//mav_ready_ = msg_in->armed && ( msg_in->mode == "OFFBOARD" );
 }
 
-void Server::callback_state_joints(
-	const sensor_msgs::JointState::ConstPtr& msg_in ) {
-	double dt = ( msg_in->header.stamp - msg_joints_tr_ ).toSec();
+void Server::callback_state_joints( const sensor_msgs::JointState::ConstPtr& msg_in ) {
+	//double dt = ( msg_in->header.stamp - msg_joints_tr_ ).toSec();
 
 	Eigen::VectorXd r = Eigen::VectorXd::Zero( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
 	Eigen::VectorXd rd = Eigen::VectorXd::Zero( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
-	Eigen::VectorXd rdd = Eigen::VectorXd::Zero( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
+	//Eigen::VectorXd rdd = Eigen::VectorXd::Zero( p_.get(MantisParams::PARAM_JOINT_NUM_DYNAMIC) );
 
 	int jc = 0; // Seperate counter is used to increment only for dynamic joints
 	for ( int i = 0; i < p_.get(MantisParams::PARAM_JOINT_NUM); i++ ) {
@@ -253,8 +238,8 @@ void Server::callback_state_joints(
 					rd( jc ) = msg_in->velocity[j];
 
 					// Only update rdd if dt is acceptable
-					if ( ( dt > 0.0 ) && ( dt < 1.0 ) )
-						rdd( jc ) = ( rd( jc ) - rd_( jc ) ) / dt; // TODO: FILTER?
+					//if ( ( dt > 0.0 ) && ( dt < 1.0 ) )
+					//	rdd( jc ) = ( rd( jc ) - rd_( jc ) ) / dt; // TODO: FILTER?
 				}
 			}
 
@@ -262,13 +247,19 @@ void Server::callback_state_joints(
 		}
 	}
 
-	update_r( r );
-	update_rd( rd );
-	// Only update rdd if dt is acceptable
-	if ( ( dt > 0.0 ) && ( dt < 1.0 ) )
-		update_rdd( rdd );
 
-	msg_joints_tr_ = msg_in->header.stamp;
+	update_timing_data( sensor_data_.joints.info, msg_in->header.stamp );
+	sensor_data_.joints.num = jc;
+	sensor_data_.joints.positions = r;
+	sensor_data_.joints.velocities = rd;
+
+	//update_r( r );
+	//update_rd( rd );
+	// Only update rdd if dt is acceptable
+	//if ( ( dt > 0.0 ) && ( dt < 1.0 ) )
+	//	update_rdd( rdd );
+
+	//msg_joints_tr_ = msg_in->header.stamp;
 }
 
 };

@@ -16,16 +16,19 @@ Client::Client( const ros::NodeHandle& nh,
 	, voltage_( 0.0 )
 	, frame_id_( "map" )
 	, child_frame_id_( "mantis_uav" )
-	, flight_ready_( false ) {
+	, mav_safety_disengaged_( false )
+	, mav_armed_(false) {
 
 	g_ = Eigen::Affine3d::Identity();
 	bv_ = Eigen::Vector3d::Zero();
 	ba_ = Eigen::Vector3d::Zero();
 	bw_ = Eigen::Vector3d::Zero();
-	bwa_ = Eigen::Vector3d::Zero();
+	//bwa_ = Eigen::Vector3d::Zero();
 
-	sub_state_ = nh_.subscribe<mantis_msgs::State>(
-		"state", 1, &Client::callback_state, this );
+	sub_state_ = nh_.subscribe<mantis_msgs::State>( "state",
+													1,
+													&Client::callback_state,
+													this );
 }
 
 Client::~Client() {
@@ -87,11 +90,11 @@ const Eigen::Vector3d& Client::bw( void ) {
 const Eigen::Vector3d& Client::ba( void ) {
 	return ba_;
 }
-
+/*
 const Eigen::Vector3d& Client::bwa( void ) {
 	return bwa_;
 }
-
+*/
 const Eigen::VectorXd& Client::r( void ) {
 	return r_;
 }
@@ -99,17 +102,27 @@ const Eigen::VectorXd& Client::r( void ) {
 const Eigen::VectorXd& Client::rd( void ) {
 	return rd_;
 }
-
+/*
 const Eigen::VectorXd& Client::rdd( void ) {
 	return rdd_;
 }
-
+*/
 const double& Client::voltage( void ) {
 	return voltage_;
 }
 
-const bool& Client::flight_ready( void ) {
-	return flight_ready_;
+const bool& Client::mav_safety_disengaged( void ) {
+	return mav_safety_disengaged_;
+}
+
+const bool& Client::mav_safety_armed( void ) {
+	return mav_armed_;
+}
+
+bool Client::flight_ready( void ) {
+	return ( this->ok() &&
+			 this->mav_safety_disengaged() &&
+			 this->mav_safety_armed() );
 }
 
 void Client::callback_state(
@@ -121,24 +134,25 @@ void Client::callback_state(
 	bv_ = MDTools::vector_from_msg( msg_in->twist.linear );
 	bw_ = MDTools::vector_from_msg( msg_in->twist.angular );
 	ba_ = MDTools::vector_from_msg( msg_in->accel.linear );
-	bwa_ = MDTools::vector_from_msg( msg_in->accel.angular );
+	//bwa_ = MDTools::vector_from_msg( msg_in->accel.angular );
 
 	int num_manip_states = msg_in->r.size();
 	if ( r_.size() != num_manip_states ) {
 		// Resize our vectors if the state changed
 		r_ = Eigen::VectorXd::Zero( num_manip_states );
 		rd_ = Eigen::VectorXd::Zero( num_manip_states );
-		rdd_ = Eigen::VectorXd::Zero( num_manip_states );
+		//rdd_ = Eigen::VectorXd::Zero( num_manip_states );
 	}
 
 	for ( int i = 0; i < num_manip_states; i++ ) {
 		r_[i] = msg_in->r[i];
 		rd_[i] = msg_in->rd[i];
-		rdd_[i] = msg_in->rdd[i];
+		//rdd_[i] = msg_in->rdd[i];
 	}
 
 	voltage_ = msg_in->battery_voltage;
-	flight_ready_ = msg_in->flight_ready;
+	mav_safety_disengaged_ = msg_in->mav_safety_disengaged;
+	mav_armed_ = msg_in->mav_ready;
 }
 
 };
