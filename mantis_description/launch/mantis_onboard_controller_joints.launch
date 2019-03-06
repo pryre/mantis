@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 <launch>
 	<arg name="model_name" default="mantis_uav"/>
-	
+
 	<group ns="$(arg model_name)">
 		<!-- HIGH LEVEL CONTROL -->
 		<node name="joint_position_controller" pkg="mantis_controller_joints" type="mantis_controller_joints_node"
@@ -14,7 +14,7 @@
 		</node>
 
 		<!-- LOW LEVEL CONTROL -->
-		<node pkg="mantis_interface_dynamixel" type="mantis_interface_dynamixel_manager_node" name="dynamixel_interface"
+		<node pkg="dynamixel_group_interface" type="manager_node" name="dynamixel_interface"
 		clear_params="true" output="screen">
 			<param name="port_name" value="/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A10668JA-if00-port0" type="str" />
 			<param name="port_baud" value="3000000" type="int" />
