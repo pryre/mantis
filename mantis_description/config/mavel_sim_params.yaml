@@ -12,10 +12,9 @@ contrail:
   waypoint_yaw_accuracy: 0.1
   spline_res_per_sec: 5
 
-throttle:
-  min: 0.0
-  mid: 0.4715 #0.22
-  max: 0.9
+throttle_min: 0.0
+throttle_mid: 0.4715 #0.22
+throttle_max: 0.9
 
 #uav_mass: 2.035
 
