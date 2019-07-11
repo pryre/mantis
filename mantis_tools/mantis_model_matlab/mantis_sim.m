@@ -28,7 +28,7 @@ disp('Generating Parameters')
 %Parameters
 syms  g l0 l1 l2 lc1 lc2 m0 m1 m2 'positive'
 %Arm links
-syms phi bw1 bw1d theta bw2 bw2d psi bw3 bw3d 'real'
+syms bra brb bw1 bw1d brc bw2 bw2d brd bw3 bw3d 'real'
 syms bx by bz bvx bvxd bvy bvyd bvz bvzd 'real'
 syms r1 r2 r1d r2d r1dd r2dd 'real'
 %%
@@ -91,9 +91,9 @@ syms r1 r2 r1d r2d r1dd r2dd 'real'
 %Vhat = [w_hat, [V(4); V(5); V(6)]; ... % Velocity in ineratial frame
 %        zeros(1,3), 0];
 
-q = [phi; theta; psi; bx; by; bz; r1; r2];
-qd = [bw1; bw2; bw3; bvx; bvy; bvz; r1d; r2d];
-qdd = [bw1d; bw2d; bw3d; bvxd; bvyd; bvzd; r1dd; r2dd];
+q = [bx; by; bz; brb; brc; brd; r1; r2];
+qd = [bvx; bvy; bvz; bw1; bw2; bw3; r1d; r2d];
+qdd = [bvxd; bvyd; bvzd; bw1d; bw2d; bw3d; r1dd; r2dd];
 
 
 %%
@@ -366,7 +366,7 @@ end
 %%
 
 % Coriolis Matrix
-disp('Calculating Coriolis Matrix')
+disp('Calculating  Matrix')
 
 disp('... 0%')
 for i = 1:length(q)
@@ -382,6 +382,13 @@ for i = 1:length(q)
 
     disp(['... ', num2str(100*i/length(q)), '%'])
 end
+
+
+% A matematical introduction to robotic manipulation (pg. 277 [295])
+Cqqd_base =  [m0*vee_up([bw1; bw2; bw3]),                           zeros(3);
+                                zeros(3), (vee_up(bw)*IJ0 - IJ0*vee_up(bw))];
+
+Cqqd(1:6,1:6) = Cqqd(1:6,1:6) + Cqqd_base;
 
 %save('mantis_sim_basic.mat');
 
