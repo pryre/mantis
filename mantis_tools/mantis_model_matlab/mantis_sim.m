@@ -95,6 +95,8 @@ q = [bx; by; bz; brb; brc; brd; r1; r2];
 qd = [bvx; bvy; bvz; bw1; bw2; bw3; r1d; r2d];
 qdd = [bvxd; bvyd; bvzd; bw1d; bw2d; bw3d; r1dd; r2dd];
 
+bv = [bvx; bvy; bvz];
+bw = [bw1; bw2; bw3];
 
 %%
 disp('Calculating Kinematics')
@@ -383,12 +385,29 @@ for i = 1:length(q)
     disp(['... ', num2str(100*i/length(q)), '%'])
 end
 
-
+%%
+% A matematical introduction to robotic manipulation (pg. 167 [185])
 % A matematical introduction to robotic manipulation (pg. 277 [295])
-Cqqd_base =  [m0*vee_up([bw1; bw2; bw3]),                           zeros(3);
-                                zeros(3), (vee_up(bw)*IJ0 - IJ0*vee_up(bw))];
 
-Cqqd(1:6,1:6) = Cqqd(1:6,1:6) + Cqqd_base;
+% vee_up(bw)*m0%*bv
+% vee_up(bw)*IJ0%*bw
+% vee_up(bw)*IJ0%bw
+% simplify(cross(bw,(IJ0*bw)))
+% simplify(simplify(0.5*(vee_up(bw)*IJ0 - IJ0*vee_up(bw))*bw))
+% simplify(vee_up(bw)*(IJ0*bw))
+% simplify((vee_up(bw)*IJ0)*bw)
+% 
+% Cqqd_base =  [m0*vee_up(bw),       zeros(3);
+%                    zeros(3), vee_up(bw)*I0(4:6,4:6)]
+
+Cqqd_bm = [vee_up(bw), zeros(3);
+            zeros(3), vee_up(bw)];
+Cqqd_0 = Cqqd_bm*I0; %Cqqd_base
+Cqqd(1:6,1:6) = Cqqd(1:6,1:6) + Cqqd_0;
+
+% simplify(Cqqd_base == Cqqd_bm*I0)
+%                (vee_up(bw)*IJ0 - IJ0*vee_up(bw)) 
+% simplify(Cqqd_base(4:6,4:6)*bw == vee_up(bw)*IJ0*bw)
 
 %save('mantis_sim_basic.mat');
 
