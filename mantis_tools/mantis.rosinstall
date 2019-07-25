@@ -1,0 +1,9 @@
+- git:
+    local-name: mantis
+    uri: https://github.com/pryre/mantis.git
+- git:
+    local-name: dh_parameters
+    uri: https://github.com/pryre/dh_parameters.git
+- git:
+    local-name: dynamixel_group_interface
+    uri: https://github.com/pryre/dynamixel_group_interface.git
