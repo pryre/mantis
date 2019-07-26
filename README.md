@@ -71,6 +71,8 @@ catkin_make
 
 ## Running the full SITL environment
 
+Check the `mantis_description` [readme](mantis_description/README.md) for more information on provided launch files.
+
 ### For a Single UAV
 
 #### All-in-One`
