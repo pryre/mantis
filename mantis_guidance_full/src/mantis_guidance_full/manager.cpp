@@ -192,11 +192,10 @@ void Manager::callback_timer( const ros::TimerEvent& e ) {
 		double ref_rvel;
 
 		// Make certain we have a valid reference
-		if ( ksolver_success && contrail_.get_reference( ref_pos, ref_vel, ref_acc, ref_rpos, ref_rvel, e.current_real ) ) {
+		if ( ksolver_success && contrail_.get_reference( ref_pos, ref_vel, ref_acc, ref_rpos, ref_rvel, e.current_real, s_.g() ) ) {
 			// Fill in the current goals
 			ge_sp.translation() = ref_pos;
-			ge_sp.linear() = Eigen::AngleAxisd( ref_rpos, Eigen::Vector3d::UnitZ() )
-								 .toRotationMatrix();
+			ge_sp.linear() = Eigen::AngleAxisd( ref_rpos, Eigen::Vector3d::UnitZ() ).toRotationMatrix();
 			gev_sp = ref_vel;
 
 			if ( track_alter_success ) {
