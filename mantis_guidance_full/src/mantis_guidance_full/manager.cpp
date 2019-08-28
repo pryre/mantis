@@ -23,7 +23,7 @@ Manager::Manager()
 	, p_( nh_ )
 	, s_( nh_, p_ )
 	, solver_( p_, s_ )
-	, contrail_( nhp_ )
+	, contrail_( nhp_, "map", true )
 	, param_update_rate_( 50.0 )
 	, dyncfg_control_settings_( ros::NodeHandle( nhp_, "control_settings" ) ) {
 
