@@ -9,6 +9,7 @@ set(0,'defaultTextInterpreter','latex');
 
 % Enables plots if >0
 show_plots = 1;
+print_latex_results = 1; % outputs results in latex tablular format
 % Enables animation if >0
 % Also acts as a speed multiplier, 0.5 will be half animation speed
 show_animation = 0.0; %1.0;
@@ -30,7 +31,7 @@ camera.zoom = 0.2;
 t0 = 0;
 dt = 1/1000; % Simulation rate
 cdt = 1/250; % Controller rate
-tf = 20;
+tf = 10;
 
 % Number of maniplator links/joints
 n = 2;
@@ -55,7 +56,7 @@ num_via_points = 9;
 % 'circle_flat_yaw'
 % 'circle_raised'
 % 'circle_raised_yaw'
-tname = 'circle_raised_yaw';
+tname = 'hover';
 
 % Joint Trajectory Names:
 % (Must be a cell array of strings of size n)
@@ -64,7 +65,7 @@ tname = 'circle_raised_yaw';
 % 'swing_half'
 % 'swing_full'
 tname_r = {
-    'swing_full';
+    'swing_half';
     'steady'
 };
 
@@ -77,8 +78,8 @@ via_est_method = 'fdcc';
 % 'npid'     - Nonlinear PID (Tracking)
 % 'ctc'      - Computed Torque Control (Tracking)
 % 'feed'     - Feed-Forward Compensation (Tracking)
-control_method = 'ctc';
-ctc_fully_actuated = 1; % Allows the platform to actuate in all directions if >0
+control_method = 'npid_px4';
+control_fully_actuated = 1; % Allows the platform to actuate in all directions if >0
 
 % https://ethz.ch/content/dam/ethz/special-interest/mavt/robotics-n-intelligent-systems/rsl-dam/documents/RobotDynamics2017/RD_HS2017script.pdf
 % Pg. 76
@@ -232,6 +233,7 @@ control_tau_last = zeros(length(sn.STATE_REDUCED),1);
 % Controller integrator variables
 npid_ang_integrator = zeros(3,1);
 npid_omega_integrator = zeros(3,1);
+manip_integrator = zeros(n,1);
 
 for i = 2:length(t)
     %% Status Messages
@@ -277,13 +279,18 @@ for i = 2:length(t)
                 x_p = x(:,i-1);
             end
             
-            % Instead of normalising the thrust vector, simply use F=ma
-            kT = mass_c.m;
-            
-            [tau, acc_c, q_sp_c, npid_integrator ] = control_nonlinear_pid_px4( ...          
+            [tau_b, acc_c, q_sp_c, npid_omega_integrator ] = control_nonlinear_pid_px4( model_c, ...          
                                                      pos, vel, acc, yaw, ...
                                                      x(:,i-1), x_p, ...
-                                                     kT, cdt, npid_omega_integrator);
+                                                     cdt, npid_omega_integrator);
+                                                                                 
+            [tau_r, manip_integrator] = control_manip_decoupled( model_c, ...
+                                        r, rd, ...
+                                        x(:,i-1), ...
+                                        cdt, manip_integrator);
+            
+            tau_full = [tau_b;tau_r];
+            
         elseif strcmp(control_method, 'npid_exp')
             if i > 2
                 x_p = x(:,i-2);
@@ -291,18 +298,14 @@ for i = 2:length(t)
                 x_p = x(:,i-1);
             end
             
-            % Instead of normalising the thrust vector, simply use F=ma
-            kT = mass_c.m;
-            
-            [tau, acc_c, q_sp_c, npid_ang_integrator, npid_omega_integrator ] = control_nonlinear_pid_exp( ...          
+            [tau_full, acc_c, q_sp_c, npid_ang_integrator, npid_omega_integrator ] = control_nonlinear_pid_exp( model_c, ...          
                                                      pos, vel, acc, yaw, ...
                                                      x(:,i-1), x_p, ...
-                                                     kT, cdt, ...
-                                                     npid_ang_integrator, npid_omega_integrator);
+                                                     cdt, npid_ang_integrator, npid_omega_integrator);
         elseif strcmp(control_method, 'npid')
             % Instead of normalising the thrust vector, simply use F=ma
             kT = mass_c.m;
-            [tau, acc_c, q_sp_c, npid_ang_integrator ] = control_nonlinear_pid( ...          
+            [tau_full, acc_c, q_sp_c, npid_ang_integrator ] = control_nonlinear_pid( model_c, ...          
                                                      pos, vel, acc, ...
                                                      yaw, w_sp_s, ...
                                                      x(:,i-1), kT, ...
@@ -315,16 +318,32 @@ for i = 2:length(t)
                                          r, rd, rdd, ...
                                          x(:,i-1), ...
                                          KxP, KxD, KtP, KtD, yaw_w, KrP, KrD);
-            % Handle fully actuated cases
-            if ctc_fully_actuated > 0
-                tau = tau_full;
-            else
-                tau = [tau_full(1:3);0;0;tau_full(6:end)];
-            end
         elseif strcmp(control_method, 'feed')
-            error('TODO')
+            if i > 2
+                x_p = x(:,i-2);
+            else
+                x_p = x(:,i-1);
+            end
+            
+            [tau_b, acc_c, q_sp_c, npid_omega_integrator ] = control_feed_forward( model_c, ...
+                                         pos, vel, acc, yaw, ...
+                                         x(:,i-1), x_p, ...
+                                         cdt, npid_omega_integrator);
+                                         
+            [tau_r, manip_integrator] = control_manip_decoupled( model_c, ...
+                                        r, rd, ...
+                                        x(:,i-1), ...
+                                        cdt, manip_integrator);
+            tau_full = [tau_b;tau_r];
         else
             error('Could not determine control method to use')
+        end
+        
+        % Handle fully/under actuated cases
+        if control_fully_actuated > 0
+            tau = tau_full;
+        else
+            tau = [tau_full(1:3);0;0;tau_full(6:end)];
         end
         
         
@@ -485,6 +504,7 @@ pitch_c = eul_c(:,2);
 yaw_c = eul_c(:,1);
 
 pos_error = [s_x(1,:);s_y(1,:);s_z(1,:)] - x(sn.STATE_XYZ,:);
+max_pos_error = max(abs(pos_error),[],2);
 pos_RMSE = sqrt(mean((pos_error).^2,2));
 
 w_error = c(sn.CONTROL_WXYZ_B,:) - x(sn.STATE_WXYZ_B,:);
@@ -496,12 +516,22 @@ tv_spline = [s_x(sn.SPLINE_ACC,:);s_y(sn.SPLINE_ACC,:);s_z(sn.SPLINE_ACC,:)] +  
 tv_S_state = tv_spline./vecnorm(tv_spline,2,1);
 tv_error = thrustvec_angle_error( tv_S_state, tv_R_state);
 
+
 disp('Max Position Errors: ')
-disp(max(abs(pos_error),[],2));
+disp(max_pos_error);
 disp('Position RMSE: ')
 disp(pos_RMSE)
 disp('Omega RMSE: ')
 disp(w_RMSE)
+%%
+if print_latex_results > 0
+    ldf = '%0.3f';
+    disp('Latex results aligned as [Max Pos. Error, Pos. RMSE, Omega RMSE] as [x,y,z]:')
+    disp(['    ', num2str(max_pos_error(1), ldf), ' & ', num2str(max_pos_error(2), ldf), ' & ', num2str(max_pos_error(3), ldf), ' & ' ...
+          num2str(pos_RMSE(1), ldf), ' & ', num2str(pos_RMSE(2), ldf), ' & ', num2str(pos_RMSE(3), ldf), ' & ' ...
+          num2str(w_RMSE(1), ldf), ' & ', num2str(w_RMSE(2), ldf), ' & ', num2str(w_RMSE(3), ldf), ' \\']);
+end
+%%
 
 if show_plots > 0
     %%
@@ -550,7 +580,7 @@ if show_plots > 0
             grid on;
             yyaxis left;
             ylabel('Position ($m$)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),1.0]);
             ylim([-maxlim maxlim]);
             yyaxis right;
             ylabel('Sine Referece ($m$)');
@@ -564,6 +594,8 @@ if show_plots > 0
 
             grid on;
             ylabel('Velocity ($m/s$)');
+            maxlim = max([max(abs(ylim)),0.5]);
+            ylim([-maxlim maxlim]);
         subplot(5,1,3)
             hold on;
             yyaxis left;
@@ -580,11 +612,11 @@ if show_plots > 0
     %         xlabel('Time (s)');
             yyaxis left;
             ylabel('Pitch (rad)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),pi/16]);
             ylim([-maxlim maxlim]);
             yyaxis right;
             ylabel('Acceleration ($m/s^2$)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),1.0]);
             ylim([-maxlim maxlim]);
 
         subplot(5,1,4)
@@ -601,7 +633,7 @@ if show_plots > 0
     %         xlabel('Time (s)');
             yyaxis left;
             ylabel('$\omega_{y}$ ($rad/s$)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),0.1]);
             ylim([-maxlim maxlim]);
             yyaxis right;
             ylabel('Jerk ($m/s^3$)');
@@ -621,7 +653,7 @@ if show_plots > 0
             xlabel('Time (s)');
             yyaxis left;
             ylabel('$\dot{\omega}_{y}$ ($rad/s^{2}$)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),0.1]);
             ylim([-maxlim maxlim]);
             yyaxis right;
             ylabel('Snap ($m/s^4$)');
@@ -661,6 +693,8 @@ if show_plots > 0
             hold off;
 
             grid on;
+            maxlim = max([max(abs(ylim)),0.5]);
+            ylim([-maxlim maxlim]);
             ylabel('Velocity ($m/s$)');
 
         subplot(5,1,3)
@@ -679,11 +713,11 @@ if show_plots > 0
     %         xlabel('Time ($s$)');
             yyaxis left;
             ylabel('Roll ($rad$)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),pi/16]);
             ylim([-maxlim maxlim]);
             yyaxis right;
             ylabel('Acceleration ($m/s^2$)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),1.0]);
             ylim([-maxlim maxlim]);
 
         subplot(5,1,4)
@@ -700,7 +734,7 @@ if show_plots > 0
     %         xlabel('Time ($s$)');
             yyaxis left;
             ylabel('$\omega_{x}$ ($rad/s$)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),0.1]);
             ylim([-maxlim maxlim]);
             yyaxis right;
             ylabel('Jerk ($m/s^3$)');
@@ -720,7 +754,7 @@ if show_plots > 0
             xlabel('Time ($s$)');
             yyaxis left;
             ylabel('$\dot{\omega}_{x}$ ($rad/s^2$)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),0.1]);
             ylim([-maxlim maxlim]);
             yyaxis right;
             ylabel('Snap ($m/s^4$)');
@@ -743,7 +777,7 @@ if show_plots > 0
 
             grid on;
             ylabel('Position ($m$)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),1.5]);
             ylim([-maxlim maxlim]);
 
         subplot(5,1,2)
@@ -755,6 +789,8 @@ if show_plots > 0
 
             grid on;
             ylabel('Velocity ($m/s$)');
+            maxlim = max([max(abs(ylim)),0.5]);
+            ylim([-maxlim maxlim]);
 
         subplot(5,1,3)
             hold on;
@@ -766,7 +802,7 @@ if show_plots > 0
             ytickformat('% .2f');
     %         xlabel('Time (s)');
             ylabel('Acceleration ($m/s^2$)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),1.0]);
             ylim([-maxlim maxlim]);
 
         subplot(5,1,4)

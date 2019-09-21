@@ -1,4 +1,4 @@
-function [ tau, acc_c, q_c, ang_integrator ] = control_nonlinear_pid(pos_sp, vel_sp, acc_sp, yaw_sp, w_sp, x, kT, KxP, KxdP, KtP, KtdP, yaw_w, dt, ang_integrator)
+function [ tau, acc_c, q_c, ang_integrator ] = control_nonlinear_pid(pos_sp, vel_sp, acc_sp, yaw_sp, w_sp, x, KxP, KxdP, KtP, KtdP, yaw_w, dt, ang_integrator)
 %CONTROL_NONLINEAR_PID Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -6,8 +6,11 @@ function [ tau, acc_c, q_c, ang_integrator ] = control_nonlinear_pid(pos_sp, vel
     % This why we pick gains for MC_RATE_P, etc., to be 50-100x larger than
     % the ones used in the PX4 firmware.
     gs = 1/50;
+            
+    % Instead of normalising the thrust vector, simply use F=ma
+    kT = calc_total_mass(model);
     
-    sn = state_names_lookup();
+    sn = state_names_lookup(model.NB-6);
     R = quat2rotm(x(sn.STATE_Q)');
 
     %% High-Level 

@@ -1,4 +1,4 @@
-function [ tau, acc_c, q_c, integrator ] = control_nonlinear_pid_px4(pos_sp, vel_sp, acc_sp, yaw_sp, x, x_p, kT, dt, integrator)
+function [ tau, acc_c, q_c, integrator ] = control_nonlinear_pid_px4(model, pos_sp, vel_sp, acc_sp, yaw_sp, x, x_p, dt, integrator)
 %CONTROL_NONLINEAR_PID_PX4 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -14,9 +14,12 @@ function [ tau, acc_c, q_c, integrator ] = control_nonlinear_pid_px4(pos_sp, vel
     % Gain Scaling
     % This why we pick gains for MC_RATE_P, etc., to be 50-100x larger than
     % the ones used in the PX4 firmware.
-    gs = 1/50;
+    gs = 1/30;
+            
+    % Instead of normalising the thrust vector, simply use F=ma
+    kT = calc_total_mass(model);
     
-    sn = state_names_lookup();
+    sn = state_names_lookup(model.NB-6);
     R = quat2rotm(x(sn.STATE_Q)');
 
     %% High-Level 
