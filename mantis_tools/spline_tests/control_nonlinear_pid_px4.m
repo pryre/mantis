@@ -5,7 +5,7 @@ function [ tau, acc_c, q_c, integrator ] = control_nonlinear_pid_px4(model, pos_
     % Hardcode gains here, as they do in PX4
     KxP = 1;
     KxdP = 2;
-    MC_ANG_P = 6.5;
+    MC_ANG_P = 4.5;
     MC_RATE_P = 7.5;
     MC_RATE_I = 2.5;
     MC_RATE_D = 0.15;
@@ -14,7 +14,7 @@ function [ tau, acc_c, q_c, integrator ] = control_nonlinear_pid_px4(model, pos_
     % Gain Scaling
     % This why we pick gains for MC_RATE_P, etc., to be 50-100x larger than
     % the ones used in the PX4 firmware.
-    gs = 1/30;
+    gs = 1/20;
             
     % Instead of normalising the thrust vector, simply use F=ma
     kT = calc_total_mass(model);

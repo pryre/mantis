@@ -14,9 +14,10 @@ function [ tau, acc_c, q_c, integrator ] = control_feed_forward(model, pos_sp, v
     % Gain Scaling
     % This why we pick gains for MC_RATE_P, etc., to be 50-100x larger than
     % the ones used in the PX4 firmware.
-    gs = 1/30;
+    gs = 1/20;
             
     % Instead of normalising the thrust vector, simply use F=ma
+    % In this case, we use just the base mass, as the rest is added later
     kT = model.I{6}(6,6);
     
     sn = state_names_lookup(model.NB-6);
@@ -50,14 +51,19 @@ function [ tau, acc_c, q_c, integrator ] = control_feed_forward(model, pos_sp, v
                kT*vd_b];
      
 
-    %% Feedback Linearisation
-    xid_b = [0;0;0;
-             0;0;9.80665];
+    %% Feedforward  Linearisation
+    
+    % Set the body to accelerate vertically if the high-level is applying
+    % thrust as well. This is our "steady" condition (stable hover)
+    t_switch = double(vd_b(3) > 0);
+    xid_b = [0;0;0;0;0;t_switch*9.80665];
     rdd = zeros(model.NB-6,1); % No access to the low-level servo commands
 
     [tau_f, ~] = IDfly( model, x(sn.STATE_XI_B), xid_b, x(sn.STATE_R), x(sn.STATE_RD), rdd );
 
-    tau_ff = tau_f - kT*xid_b; % Remove gravity thrust
+    % Remove gravity thrust of this calc as it comes from the PID controllers
+    tau_ff = tau_f - kT*xid_b;
+    
     
     %% Control Output
     % PID output plus feedforward terms

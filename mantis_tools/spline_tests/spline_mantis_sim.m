@@ -7,9 +7,10 @@ clc;
 addpath( genpath('./spatial_v2') );
 set(0,'defaultTextInterpreter','latex');
 
+% Print results in latex tablular format if >0 (normally printed otherwise)
+print_latex_results = 1; 
 % Enables plots if >0
 show_plots = 1;
-print_latex_results = 1; % outputs results in latex tablular format
 % Enables animation if >0
 % Also acts as a speed multiplier, 0.5 will be half animation speed
 show_animation = 0.0; %1.0;
@@ -33,7 +34,15 @@ dt = 1/1000; % Simulation rate
 cdt = 1/250; % Controller rate
 tf = 10;
 
-% Number of maniplator links/joints
+% Model Properties
+% Frame types:
+% 'quad'
+% 'hex'
+% Manipulator types:
+% 'serial'
+% Number of maniplator links/joints: n
+frame_type = 'quad_x4';
+manip_type = 'serial';
 n = 2;
 
 % Spline Order:
@@ -60,13 +69,14 @@ tname = 'hover';
 
 % Joint Trajectory Names:
 % (Must be a cell array of strings of size n)
-% 'steady'
-% 'swing_part'
-% 'swing_half'
-% 'swing_full'
+% 'steady_0' - Joint angles 0
+% 'steady_90' - Joint angles 0
+% 'swing_part' - Joint angles 0->pi/4
+% 'swing_half' - Joint angles 0->pi/2
+% 'swing_full' - Joint angles -pi/2->pi/2
 tname_r = {
-    'swing_half';
-    'steady'
+    'steady_90';
+    'steady_0'
 };
 
 % via_est_method = 'linear';
@@ -79,7 +89,7 @@ via_est_method = 'fdcc';
 % 'ctc'      - Computed Torque Control (Tracking)
 % 'feed'     - Feed-Forward Compensation (Tracking)
 control_method = 'npid_px4';
-control_fully_actuated = 1; % Allows the platform to actuate in all directions if >0
+control_fully_actuated = 0; % Allows the platform to actuate in all directions if >0
 
 % https://ethz.ch/content/dam/ethz/special-interest/mavt/robotics-n-intelligent-systems/rsl-dam/documents/RobotDynamics2017/RD_HS2017script.pdf
 % Pg. 76
@@ -132,19 +142,20 @@ KrD = 2*w0r;    % Joint rate tracking P gain
 yaw_w = 0.6;    % Yaw weighting for rotational tracking
 theta_max = deg2rad(30); % Maximum thrust vectoring angle (from vertical)
 
-
-% Model Properties
-% Frame types:
-% 'quad'
-% 'hex'
-% Manipulator types:
-% 'serial'
-frame_type = 'quad_x4';
-manip_type = 'serial';
+% Display for logging
+print_user_settings(t0, cdt, dt, tf, ...
+                    frame_type, manip_type, n, ...
+                    order, num_via_points, via_est_method, ...
+                    tname, tname_r, ...
+                    control_method, control_fully_actuated, ...
+                    w0p, w0t, w0r);
 
 
 %% Script Variables
-disp('Generating...')
+
+% Create a lookup for all the state variables to make it easier to address
+% all sorts of indexes in our arrays
+sn = state_names_lookup(n);
 
 model_d = gen_model(frame_type, manip_type, n, camera);
 model_c = model_d; % Mass properties for controller
@@ -161,10 +172,6 @@ for i = 1:n
     r0(i) = vpr{i}(1); % Easier to capture initial joint states in this loop
 end
 
-% Create a lookup for all the state variables to make it easier to address
-% all sorts of indexes in our arrays
-sn = state_names_lookup(n);
-
 % Initial state
 x0 = [eul2quat([vppsi(1),0,0])';    % Rotation (World)
       vpx(1); vpy(1); vpz(1);       % Position (World)
@@ -175,9 +182,20 @@ x0 = [eul2quat([vppsi(1),0,0])';    % Rotation (World)
       zeros(n,1)];                  % Joint Velocity (Body)
 
 % Bad starting states:
-% x0(sn.STATE_Q) = eul2quat([pi/2,0,0])';    % Full yaw error rotation (World)
-% x0(sn.STATE_Q) = eul2quat([0,0,deg2rad(179)])';    % (Almost) Full roll error rotation (World)
-% x0(sn.STATE_XYZ) = [-1;0;1];    % Full pitch error rotation (World)
+% x0(sn.STATE_Q) = eul2quat([pi/2,0,0])';    % Half yaw error rotation (World)
+x0(sn.STATE_Q) = eul2quat([0,0,deg2rad(179)])';    % (Almost) Full roll error rotation (World)
+% x0(sn.STATE_XYZ) = [1;1;0];    % Positional Error (World)
+% x0(sn.STATE_R) = zeros(n,1);   % Arm down Joint Error (World)
+
+
+% Display starting state
+disp('--== Start State ==--');
+disp(x0([sn.STATE_Q,sn.STATE_XYZ,sn.STATE_R])');
+
+% Rest of simulator setup
+disp('----------------');
+disp(' ')
+disp('Generating...')
 
 g = 9.80665;
 g_vec = [0;0;-g];
@@ -292,25 +310,25 @@ for i = 2:length(t)
             tau_full = [tau_b;tau_r];
             
         elseif strcmp(control_method, 'npid_exp')
-            if i > 2
-                x_p = x(:,i-2);
-            else
-                x_p = x(:,i-1);
-            end
-            
-            [tau_full, acc_c, q_sp_c, npid_ang_integrator, npid_omega_integrator ] = control_nonlinear_pid_exp( model_c, ...          
-                                                     pos, vel, acc, yaw, ...
-                                                     x(:,i-1), x_p, ...
-                                                     cdt, npid_ang_integrator, npid_omega_integrator);
+%             if i > 2
+%                 x_p = x(:,i-2);
+%             else
+%                 x_p = x(:,i-1);
+%             end
+%             
+%             [tau_full, acc_c, q_sp_c, npid_ang_integrator, npid_omega_integrator ] = control_nonlinear_pid_exp( model_c, ...          
+%                                                      pos, vel, acc, yaw, ...
+%                                                      x(:,i-1), x_p, ...
+%                                                      cdt, npid_ang_integrator, npid_omega_integrator);
         elseif strcmp(control_method, 'npid')
-            % Instead of normalising the thrust vector, simply use F=ma
-            kT = mass_c.m;
-            [tau_full, acc_c, q_sp_c, npid_ang_integrator ] = control_nonlinear_pid( model_c, ...          
-                                                     pos, vel, acc, ...
-                                                     yaw, w_sp_s, ...
-                                                     x(:,i-1), kT, ...
-                                                     KxP, KxD, KtP, KtD, yaw_w, ...
-                                                     cdt, npid_ang_integrator);
+%             % Instead of normalising the thrust vector, simply use F=ma
+%             kT = mass_c.m;
+%             [tau_full, acc_c, q_sp_c, npid_ang_integrator ] = control_nonlinear_pid( model_c, ...          
+%                                                      pos, vel, acc, ...
+%                                                      yaw, w_sp_s, ...
+%                                                      x(:,i-1), kT, ...
+%                                                      KxP, KxD, KtP, KtD, yaw_w, ...
+%                                                      cdt, npid_ang_integrator);
         elseif strcmp(control_method, 'ctc')
             [tau_full, acc_c, q_sp_c ] = control_computed_torque( model_c, ...
                                          pos, vel, acc, ...
@@ -359,21 +377,21 @@ for i = 2:length(t)
         
         %% Control loop management
         % Save control signal for next step
-        sn.control_tau_last = tau;
+        control_tau_last = tau;
         % Set the control loop run again shortly
-        sn.control_tick = controller_rate;
+        control_tick = controller_rate;
         
         
     else
         % Use the control signal from the last control tick
         tau = control_tau_last;
-        c(sn.CONTROL_A,i-1) = acc_c;
-        c(sn.CONTROL_Q,i-1) = q_sp_c';
-        c(sn.CONTROL_WXYZ_B,i-1) = w_sp_s;
-        c(sn.CONTROL_DWXYZ_B,i-1) = wd_sp_s;
-        c(sn.CONTROL_R,i) = r;
-        c(sn.CONTROL_RD,i) = rd;
-        c(sn.CONTROL_RDD,i) = rdd;
+        c(sn.CONTROL_A,i) = c(sn.CONTROL_A,i-1);
+        c(sn.CONTROL_Q,i) = c(sn.CONTROL_Q,i-1);
+        c(sn.CONTROL_WXYZ_B,i) = c(sn.CONTROL_WXYZ_B,i-1);
+        c(sn.CONTROL_DWXYZ_B,i) = c(sn.CONTROL_DWXYZ_B,i-1);
+        c(sn.CONTROL_R,i) = c(sn.CONTROL_R,i-1);
+        c(sn.CONTROL_RD,i) = c(sn.CONTROL_RD,i-1);
+        c(sn.CONTROL_RDD,i) = c(sn.CONTROL_RDD,i-1);
         
         control_tick = control_tick - 1;
     end
@@ -406,35 +424,15 @@ for i = 2:length(t)
     % Then convert back to the body frame for the current time step
     x(sn.STATE_VXYZ_B,i) = R'*x(sn.STATE_VXYZ,i);
     
-% Max Position Errors: 
-%    1.0e-03 *
-% 
-%     0.5985
-%     0.9654
-%     0.4033
-% 
-% Position RMSE: 
-%    1.0e-03 *
-% 
-%     0.4228
-%     0.4459
-%     0.2816
-% 
-% Omega RMSE: 
-%     0.0047
-%     0.0040
-%     0.0068
-    
-    
     % Linear Position
     x(sn.STATE_XYZ,i) = x(sn.STATE_XYZ,i-1) + x(sn.STATE_VXYZ,i-1)*dt;
 end
 
+disp(' ') % Add some spacing, needed due to previous printf()
 disp(' ')
 
 
-%% Plotting
-disp('Plotting...')
+%% Data Analysis
 
 name_order = '';
 name_traj = '';
@@ -516,24 +514,28 @@ tv_spline = [s_x(sn.SPLINE_ACC,:);s_y(sn.SPLINE_ACC,:);s_z(sn.SPLINE_ACC,:)] +  
 tv_S_state = tv_spline./vecnorm(tv_spline,2,1);
 tv_error = thrustvec_angle_error( tv_S_state, tv_R_state);
 
-
-disp('Max Position Errors: ')
-disp(max_pos_error);
-disp('Position RMSE: ')
-disp(pos_RMSE)
-disp('Omega RMSE: ')
-disp(w_RMSE)
-%%
 if print_latex_results > 0
     ldf = '%0.3f';
     disp('Latex results aligned as [Max Pos. Error, Pos. RMSE, Omega RMSE] as [x,y,z]:')
     disp(['    ', num2str(max_pos_error(1), ldf), ' & ', num2str(max_pos_error(2), ldf), ' & ', num2str(max_pos_error(3), ldf), ' & ' ...
           num2str(pos_RMSE(1), ldf), ' & ', num2str(pos_RMSE(2), ldf), ' & ', num2str(pos_RMSE(3), ldf), ' & ' ...
           num2str(w_RMSE(1), ldf), ' & ', num2str(w_RMSE(2), ldf), ' & ', num2str(w_RMSE(3), ldf), ' \\']);
+    disp(' ')
+else
+    disp('Max Position Errors: ')
+    disp(max_pos_error);
+    disp('Position RMSE: ')
+    disp(pos_RMSE)
+    disp('Omega RMSE: ')
+    disp(w_RMSE)
 end
-%%
+
+
+%% Plotting
 
 if show_plots > 0
+    disp('Plotting...')
+    
     %%
     f1 = figure('Renderer','opengl');
         clf;
@@ -818,7 +820,7 @@ if show_plots > 0
             ytickformat('% .2f');
     %         xlabel('Time ($s$)');
             ylabel('$\psi$ ($rad$)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),0.1]);
             ylim([-maxlim maxlim]);
 
         subplot(5,1,5)
@@ -832,7 +834,7 @@ if show_plots > 0
             ytickformat('% .2f');
             xlabel('Time ($s$)');
             ylabel('$\dot{\psi}$ ($rad/s$)');
-            maxlim = max(abs(ylim));
+            maxlim = max([max(abs(ylim)),0.1]);
             ylim([-maxlim maxlim]);
 
 %%
@@ -1020,6 +1022,7 @@ end
 %%
 
 if show_full_animation > 0
+    %%
     showmotion( model_d, ...
                 t, ...
                 fbanim(x([sn.STATE_Q,sn.STATE_XYZ],:), x(sn.STATE_R,:)) );

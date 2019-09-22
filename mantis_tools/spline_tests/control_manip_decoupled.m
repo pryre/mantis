@@ -4,8 +4,11 @@ function [ tau_r, integrator ] = control_manip_decoupled(model, r_sp, rd_sp, x, 
 
     sn = state_names_lookup(model.NB-6);
 
+%     KrP = 1.25;
+%     KrdP = 0.35;
+%     KrdI = 1.8;
     KrP = 1.25;
-    KrdP = 0.35;
+    KrdP = 0.1;
     KrdI = 1.8;
     
     %% High-Level 
