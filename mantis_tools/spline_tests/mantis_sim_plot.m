@@ -1,4 +1,4 @@
-function [] = mantis_sim_plot( config, results, analysis, plotting )
+function [] = mantis_sim_plot( config, results, analysis, plotting, config_i)
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -432,8 +432,8 @@ function [] = mantis_sim_plot( config, results, analysis, plotting )
     %     axpos = ax.Position;
     %     axti = ax.TightInset;
     %     axrect = [-axti(1), -axti(2), axpos(3)+axti(1)+axti(3), axpos(4)+axti(2)+axti(4)];
-
-        vid_write = VideoWriter('./figures/animation', 'Archival');
+    
+        vid_write = VideoWriter(['./figures/animation_', num2str(config_i)], 'Archival');
     %     vid_write.Quality = 95;
         vid_write.FrameRate = framerate;
         if plotting.save_animation > 0

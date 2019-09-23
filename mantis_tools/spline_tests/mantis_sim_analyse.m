@@ -35,34 +35,47 @@ function [ analysis ] = mantis_sim_analyse( config, results, print_latex_results
 %     u0 = config.g*calc_total_mass(results.model_d);
     analysis.performance.J_fuel = sum(sum(abs(results.c(sn.CONTROL_TAU,:))))*config.time.dt;
     
+    analysis.performance.ts = 0;
     for i = length(results.t)-1:-1:1
         ts_r = 0.05; % 5% settling time range
         % Create scaling values (or use a preset if sp is zero)
+        
         p_sp = pos_ref(:,i);
         p_sp(~p_sp) = 1.0;
-        tv_sp = tv_S_ref(i);
-        tv_sp(~tv_sp) = pi;
         r_sp = results.c(sn.CONTROL_R,i);
         r_sp(~r_sp) = pi/2;
         
         ne_pos = pos_error(:,i) ./ p_sp;
-        ne_ang = analysis.tv_error(i) ./ tv_sp;
+        ne_ang = analysis.tv_error(i) ./ pi;
         ne_r = r_error(i) ./ r_sp;
         
         check = abs([ne_pos; ne_ang; ne_r]) > ts_r;
         
-        if check
-            analysis.performance.ts = results.t(i+1);
+        if any(check)
+            % If we fail the check, then we have reached the index where we
+            % are no longer within 5% (working backwards). As long as this
+            % isn't the first check (i.e. it never reached 5% settling),
+            % then we save the settling time.
+            if (i+1) < length(results.t)
+                analysis.performance.ts = results.t(i+1);
+            end
+            
             break;
         end
     end
     
     if print_latex_results > 0
         ldf = '%0.3f';
-        disp('Latex results aligned as [Max Pos. Error, Pos. RMSE, Omega RMSE] as [x,y,z]:')
+        disp('    Latex results aligned as [Max Pos. Error, Pos. RMSE, Omega RMSE] (in [x,y,z]), and [ts, J_fuel]:')
         disp(['    ', num2str(analysis.max_pos_error(1), ldf), ' & ', num2str(analysis.max_pos_error(2), ldf), ' & ', num2str(analysis.max_pos_error(3), ldf), ' & ' ...
               num2str(analysis.pos_RMSE(1), ldf), ' & ', num2str(analysis.pos_RMSE(2), ldf), ' & ', num2str(analysis.pos_RMSE(3), ldf), ' & ' ...
               num2str(analysis.w_RMSE(1), ldf), ' & ', num2str(analysis.w_RMSE(2), ldf), ' & ', num2str(analysis.w_RMSE(3), ldf), ' \\']);
+        if analysis.performance.ts > 0
+            ts_string = num2str(analysis.performance.ts, ldf);
+        else
+            ts_string = '---';
+        end
+        disp(['    ', ts_string, ' & ', num2str(analysis.performance.J_fuel, ldf)])
         disp(' ')
     else
         disp('Max Position Errors:')

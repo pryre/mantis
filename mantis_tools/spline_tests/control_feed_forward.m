@@ -1,12 +1,10 @@
-function [ tau, acc_c, q_c, integrator ] = control_feed_forward(model, pos_sp, vel_sp, acc_sp, yaw_sp, x, x_p, dt, integrator)
+function [ tau, acc_c, q_c, integrator ] = control_feed_forward(model, pos_sp, vel_sp, acc_sp, yaw_sp, x, x_p, dt, integrator, KxP, KxdP)
 %CONTROL_FEED_FORWARD Summary of this function goes here
 %   Detailed explanation goes here
 
     % Hardcode gains here, as they do in PX4
-    KxP = 1;
-    KxdP = 2;
     MC_ANG_P = 4.5;
-    MC_RATE_P = 7.5;
+    MC_RATE_P = 15.0;
     MC_RATE_I = 2.5;
     MC_RATE_D = 0.15;
     yaw_w = 0.6;

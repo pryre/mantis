@@ -9,19 +9,19 @@ set(0,'defaultTextInterpreter','latex');
 
 %%
 % Print results in latex tablular format if >0 (normally printed otherwise)
-print_latex_results = 0;
+print_latex_results = 1;
 
 % Plotting Configuration
-do_plotting = 1;
+do_plotting = 0;
 % Enables plots if >0
-plotting.show_plots = 0;
+plotting.show_plots = 1;
 % Enables animation if >0
 % Also acts as a speed multiplier, 0.5 will be half animation speed
 plotting.show_animation = 0.0; %1.0;
 plotting.save_animation = 0;
 % Enables keyframe view of animation
 % Also acts as the keyframe interval, 1.0 will be a keyframe every second
-plotting.show_keyframes =0.2; %0.2;
+plotting.show_keyframes =0; %0.2;
 plotting.keyframe_tf = 1.7; % If greater than 0, will stop showing keyframes at kf_tf
 % Enable the full 3D animation from the spatial_v2 library if >0
 % Camera setup for this animation as well
@@ -60,21 +60,32 @@ w0r = 4;
 % w0p = 6;
 % w0t = 12;
 
-configs = cell(0,1);
-configs{1} = gen_config(0, 1/1000, 1/250, 10, ...
-                        'quad_x4', 'serial', 2, ...
-                        9, 9, 'fdcc', 'hover', {'steady_90';'steady_0'}, ...
-                        'npid_px4', 0, 0.6, deg2rad(30), ...
-                        2, 20, 4);
-
 % Bad starting states:
 % x0(sn.STATE_Q) = eul2quat([pi/2,0,0])';    % Half yaw error rotation (World)
 % x0(sn.STATE_Q) = eul2quat([0,0,deg2rad(179)])';    % (Almost) Full roll error rotation (World)
 % x0(sn.STATE_XYZ) = [1;1;0];    % Positional Error (World)
 % x0(sn.STATE_R) = zeros(n,1);   % Arm down Joint Error (World)
-x0_overrides = cell(0,2);
 % x0_overrides(1,:) = {'STATE_Q', eul2quat([pi/2,0,0])'};
+
+configs = cell(0,1);
+x0_overrides = cell(0,2);
+
+% Test case 4 (inversion recovery)
 x0_overrides(1,:) = {'STATE_Q', eul2quat([0,0,deg2rad(179)])'};
+configs{1} = gen_config(0, 1/1000, 1/250, 10, ...
+                        'quad_x4', 'serial', 2, ...
+                        9, 9, 'fdcc', 'hover', {'steady_90';'steady_0'}, ...
+                        'npid_px4', 0, 0.6, deg2rad(30), ...
+                        2, 20, 4);
+configs(2:5,1) = configs(1);
+configs{2}.control.method = 'ctc';
+configs{2}.control.fully_actuated = 1;
+configs{3}.control.method = 'ctc';
+configs{3}.control.fully_actuated = 0;
+configs{4}.control.method = 'feed';
+configs{4}.control.fully_actuated = 1;
+configs{5}.control.method = 'feed';
+configs{5}.control.fully_actuated = 0;
 
 
 %% Simulation
@@ -92,36 +103,43 @@ if size(x0_overrides,1) > 0
         disp([ '    -', n, ': ', sprintf('%0.5f ', v);])
     end
     
-    disp('----------------');
-    disp(' ')
 end
 
 results = cell(size(configs));
 analyses = cell(size(configs));
 
+%% Run Simulation
+disp('--== Simulation ==--')
 for i = 1:size(configs,1)
     % Add the lookup to the workspace for the user
     % This will only be the last one, but at least it allows for some
     % interraction if n is equal for all models
     sn = state_names_lookup(configs{i}.model.n);
     
-    %% Run Simulation
+    disp(['Configuration ', num2str(i)])
     results{i} = mantis_sim_simulate( configs{i}, x0_overrides, plotting.camera );
-    
-    
-    %% Data Analysis
+end
+
+%% Data Analysis
+disp('--== Analysis ==--')
+for i = 1:size(configs,1)
+    disp(['Configuration ', num2str(i)])
     analyses{i} = mantis_sim_analyse( configs{i}, results{i}, print_latex_results );
-    
-    
-    %% Plotting
-    if do_plotting > 0
-        mantis_sim_plot(configs{i}, results{i}, analyses{i}, plotting);
-        if size(configs,1) > 1
-            input('Press enter to continue...');
-        end
-    end
+end
 
     
+%% Plotting
+
+if do_plotting > 0
+    disp('--== Plotting ==--')
+    for i = 1:size(configs,1)
+        disp(['Configuration ', num2str(i)])
+        mantis_sim_plot(configs{i}, results{i}, analyses{i}, plotting, i);
+        if size(configs,1) > 1
+            input('Press enter to continue...');
+            close all;
+        end
+    end
 end
 
 
