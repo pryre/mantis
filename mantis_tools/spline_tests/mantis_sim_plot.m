@@ -1,8 +1,9 @@
-function [] = mantis_sim_plot( config, results, analysis, plotting, config_i)
-%UNTITLED3 Summary of this function goes here
+function [ fig_handles ] = mantis_sim_plot( config, results, analysis, plotting, config_i)
+%MANTIS_SIM_PLOT Plots simulation results and analysis data
 %   Detailed explanation goes here
 
     sn = state_names_lookup(config.model.n);
+    fc = 0;
     if ~exist('./figures', 'dir')
         mkdir('./figures');
     end
@@ -64,7 +65,8 @@ function [] = mantis_sim_plot( config, results, analysis, plotting, config_i)
         disp('Plotting...')
 
         %%
-        f1 = figure('Renderer','opengl');
+        fc = fc + 1;
+        fig_handles{fc} = figure('Renderer','opengl');
             clf;
 
             title(plot_title_3d)
@@ -88,11 +90,11 @@ function [] = mantis_sim_plot( config, results, analysis, plotting, config_i)
             zlabel('Z Position ($m$)');
             %axis('equal')
         %%
-
-        f2 = figure('Renderer','opengl');
+        fc = fc + 1;
+        fig_handles{fc} = figure('Renderer','opengl');
             clf;
 
-            set(f2,'defaultAxesColorOrder',[0,0,0;0,0,0]);
+            set(fig_handles{fc},'defaultAxesColorOrder',[0,0,0;0,0,0]);
 
             subplot(5,1,1)
                 title(plot_title_x)
@@ -189,10 +191,11 @@ function [] = mantis_sim_plot( config, results, analysis, plotting, config_i)
                 maxlim = max(abs(ylim));
                 ylim([-maxlim maxlim]);
         %%
-        f3 = figure('Renderer','opengl');
+        fc = fc + 1;
+        fig_handles{fc} = figure('Renderer','opengl');
             clf;
 
-            set(f3,'defaultAxesColorOrder',[0,0,0;0,0,0]);
+            set(fig_handles{fc},'defaultAxesColorOrder',[0,0,0;0,0,0]);
 
             subplot(5,1,1)
                 title(plot_title_y)
@@ -290,10 +293,11 @@ function [] = mantis_sim_plot( config, results, analysis, plotting, config_i)
                 maxlim = max(abs(ylim));
                 ylim([-maxlim maxlim]);
         %%
-        f4 = figure('Renderer','opengl');
+        fc = fc + 1;
+        fig_handles{fc} = figure('Renderer','opengl');
             clf;
 
-            set(f4,'defaultAxesColorOrder',[0,0,0;0,0,0]);
+            set(fig_handles{fc},'defaultAxesColorOrder',[0,0,0;0,0,0]);
 
             subplot(5,1,1)
                 title(plot_title_z)
@@ -365,12 +369,13 @@ function [] = mantis_sim_plot( config, results, analysis, plotting, config_i)
                 ylim([-maxlim maxlim]);
 
     %%
-    f5 = cell(config.model.n,1);
+    fc = fc + 1;
+    fig_handles{fc} = cell(config.model.n,1);
     for i = 1:config.model.n
-        f5{i} = figure('Renderer','opengl');
+        fig_handles{fc}{i} = figure('Renderer','opengl');
             clf;
 
-            set(f5{i},'defaultAxesColorOrder',[0,0,0;0,0,0]);
+            set(fig_handles{fc}{i},'defaultAxesColorOrder',[0,0,0;0,0,0]);
             subplot(3,1,1)
                 title([plot_title_r, ' ($\mathbf{r_{', num2str(i), '}}$ Axis)}'])
 
@@ -421,8 +426,9 @@ function [] = mantis_sim_plot( config, results, analysis, plotting, config_i)
         % sim_tstep needs to be a positive integer, might not be if dt is not a
         % multiple of sim_rate
         sim_tstep = round(1/(config.time.dt*sim_rate));
-
-        f6 = figure('Renderer','opengl');
+        
+        fc = fc + 1;
+        fig_handles{fc} = figure('Renderer','opengl');
         ax = axes();
 
         axis([-flight_space,flight_space,-flight_space,flight_space,-flight_space,flight_space]);
@@ -496,7 +502,8 @@ function [] = mantis_sim_plot( config, results, analysis, plotting, config_i)
 
         kf_tstep = round((1/config.time.dt)*plotting.show_keyframes);
 
-        f7 = figure('Renderer','opengl');
+        fc = fc + 1;
+        fig_handles{fc} = figure('Renderer','opengl');
 
     %     ax1 = subplot(2,1,1);
         ax1 = axes();
@@ -520,7 +527,8 @@ function [] = mantis_sim_plot( config, results, analysis, plotting, config_i)
             zlabel('Z Position ($m$)');
             view(55,35);
 
-        f8 = figure('Renderer','opengl');  
+        fc = fc + 1;
+        fig_handles{fc} = figure('Renderer','opengl');  
     %     ax2 = subplot(2,1,2);
         ax2 = axes();
 

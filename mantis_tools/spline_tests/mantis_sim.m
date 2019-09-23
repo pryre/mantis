@@ -12,7 +12,7 @@ set(0,'defaultTextInterpreter','latex');
 print_latex_results = 1;
 
 % Plotting Configuration
-do_plotting = 0;
+do_plotting = 1;
 % Enables plots if >0
 plotting.show_plots = 1;
 % Enables animation if >0
@@ -33,59 +33,8 @@ plotting.camera.zoom = 0.2;
 
 %% User Variables
 
-%XXX: This arrangement of gain frequencies gives a response of a critically
-%damped system for both position and attitude tracking. w0r is set to be an
-%order of magnitude faster in response than w0p, which seems to give good
-%results (but I'm not 100% sure why, frequency responses mixing? Maybe a 
-% good reference would be similar to a cascade controller timings - should
-% be 5-20x more on who you ask)
-w0p = 2;
-w0t = 10*w0p;
-w0r = 4;
-
-%A bad result could be obtained with the following parameters:
-% No control:
-% w0p = 0;
-% w0t = 0;
-% Early Inversion:
-% w0p = 3.2;
-% w0t = 12;
-% Critical Inversion:
-% w0p = 3.5;
-% w0t = 12;
-% Converging Spiral:
-% w0p = 4;
-% w0t = 12;
-% Diverging Spiral:
-% w0p = 6;
-% w0t = 12;
-
-% Bad starting states:
-% x0(sn.STATE_Q) = eul2quat([pi/2,0,0])';    % Half yaw error rotation (World)
-% x0(sn.STATE_Q) = eul2quat([0,0,deg2rad(179)])';    % (Almost) Full roll error rotation (World)
-% x0(sn.STATE_XYZ) = [1;1;0];    % Positional Error (World)
-% x0(sn.STATE_R) = zeros(n,1);   % Arm down Joint Error (World)
-% x0_overrides(1,:) = {'STATE_Q', eul2quat([pi/2,0,0])'};
-
-configs = cell(0,1);
-x0_overrides = cell(0,2);
-
-% Test case 4 (inversion recovery)
-x0_overrides(1,:) = {'STATE_Q', eul2quat([0,0,deg2rad(179)])'};
-configs{1} = gen_config(0, 1/1000, 1/250, 10, ...
-                        'quad_x4', 'serial', 2, ...
-                        9, 9, 'fdcc', 'hover', {'steady_90';'steady_0'}, ...
-                        'npid_px4', 0, 0.6, deg2rad(30), ...
-                        2, 20, 4);
-configs(2:5,1) = configs(1);
-configs{2}.control.method = 'ctc';
-configs{2}.control.fully_actuated = 1;
-configs{3}.control.method = 'ctc';
-configs{3}.control.fully_actuated = 0;
-configs{4}.control.method = 'feed';
-configs{4}.control.fully_actuated = 1;
-configs{5}.control.method = 'feed';
-configs{5}.control.fully_actuated = 0;
+% Define some preset configurations to keep this script clutter-free
+[ configs, x0_overrides ] = gen_test_cases( 'tuning' );
 
 
 %% Simulation
@@ -134,10 +83,13 @@ if do_plotting > 0
     disp('--== Plotting ==--')
     for i = 1:size(configs,1)
         disp(['Configuration ', num2str(i)])
-        mantis_sim_plot(configs{i}, results{i}, analyses{i}, plotting, i);
+        h = mantis_sim_plot(configs{i}, results{i}, analyses{i}, plotting, i);
         if size(configs,1) > 1
             input('Press enter to continue...');
-            close all;
+%             for j = 1:length(h)
+%                 set(h{j},'Resizable', 'off')
+%             end
+            close all
         end
     end
 end
