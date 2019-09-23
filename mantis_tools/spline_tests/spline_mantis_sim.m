@@ -1,5 +1,7 @@
 %% Setup
 
+error('This is an older file, use mantis_sim.m instead.')
+
 close all;
 clear;
 clc;
@@ -28,127 +30,120 @@ camera.zoom = 0.2;
 
 
 %% User Variables
-% Timings
-t0 = 0;
-dt = 1/1000; % Simulation rate
-cdt = 1/250; % Controller rate
-tf = 10;
 
-% Model Properties
-% Frame types:
-% 'quad'
-% 'hex'
-% Manipulator types:
-% 'serial'
-% Number of maniplator links/joints: n
-frame_type = 'quad_x4';
-manip_type = 'serial';
-n = 2;
+    % Timings
+    config.t0 = t0;
+    config.dt = 1/1000; % Simulation rate
+    config.cdt = 1/250; % Controller rate
+    config.tf = 10;
 
-% Spline Order:
-%   cubic:  3
-%   quntic: 5
-%   septic: 7
-%   nonic:  9
-order = 9;
+    % Model Properties
+    % Frame types:
+    % 'quad'
+    % 'hex'
+    % Manipulator types:
+    % 'serial'
+    % Number of maniplator links/joints: n
+    frame_type = 'quad_x4';
+    manip_type = 'serial';
+    n = 2;
 
-% Number of vias to use during generation
-num_via_points = 9;
+    % Spline Order:
+    %   cubic:  3
+    %   quntic: 5
+    %   septic: 7
+    %   nonic:  9
+    order = 9;
 
-% Trajectory Name:
-% 'hover'
-% 'x_only'
-% 'y_only'
-% 'z_only'
-% 'yaw_only'
-% 'circle_flat'
-% 'circle_flat_yaw'
-% 'circle_raised'
-% 'circle_raised_yaw'
-tname = 'hover';
+    % Number of vias to use during generation
+    num_via_points = 9;
 
-% Joint Trajectory Names:
-% (Must be a cell array of strings of size n)
-% 'steady_0' - Joint angles 0
-% 'steady_90' - Joint angles 0
-% 'swing_part' - Joint angles 0->pi/4
-% 'swing_half' - Joint angles 0->pi/2
-% 'swing_full' - Joint angles -pi/2->pi/2
-tname_r = {
-    'steady_90';
-    'steady_0'
-};
+    % Trajectory Name:
+    % 'hover'
+    % 'x_only'
+    % 'y_only'
+    % 'z_only'
+    % 'yaw_only'
+    % 'circle_flat'
+    % 'circle_flat_yaw'
+    % 'circle_raised'
+    % 'circle_raised_yaw'
+    tname = 'hover';
 
-% via_est_method = 'linear';
-via_est_method = 'fdcc';
+    % Joint Trajectory Names:
+    % (Must be a cell array of strings of size n)
+    % 'steady_0' - Joint angles 0
+    % 'steady_90' - Joint angles 0
+    % 'swing_part' - Joint angles 0->pi/4
+    % 'swing_half' - Joint angles 0->pi/2
+    % 'swing_full' - Joint angles -pi/2->pi/2
+    tname_r = {
+        'steady_90';
+        'steady_0'
+    };
 
-% Control Method:
-% 'npid_px4' - Nonlinear PID (Regulating, PX4 Structure)
-% 'npid_exp' - Nonlinear PID (Regulating, Expanded PX4 Structure)
-% 'npid'     - Nonlinear PID (Tracking)
-% 'ctc'      - Computed Torque Control (Tracking)
-% 'feed'     - Feed-Forward Compensation (Tracking)
-control_method = 'npid_px4';
-control_fully_actuated = 0; % Allows the platform to actuate in all directions if >0
+    % via_est_method = 'linear';
+    via_est_method = 'fdcc';
 
-% https://ethz.ch/content/dam/ethz/special-interest/mavt/robotics-n-intelligent-systems/rsl-dam/documents/RobotDynamics2017/RD_HS2017script.pdf
-% Pg. 76
-% Hence, the eigenfrequency and a dimensionless damping value of the system
-% are given by:
-% ω=√kp,(3.78)
-% D=kd/2√kp.(3.79)
-% Critical damping is achieved for D=1, overcritical damping for D>1 and
-% un-dercritical  damping  for D <1. The  compliance  of  the  controller
-% can be adjusted by varying kp.  For example, assuming that the time
-% constant respectively oscillation frequency around the nominal point
-% should be 3 Hz, the ideal control gain for kp is 350. Furthermore, 
-% critical damping requires kd= 37. This holds as good starting values for
-% controller gain tuning.
+    % Control Method:
+    % 'npid_px4' - Nonlinear PID (Regulating, PX4 Structure)
+    % 'npid_exp' - Nonlinear PID (Regulating, Expanded PX4 Structure)
+    % 'npid'     - Nonlinear PID (Tracking)
+    % 'ctc'      - Computed Torque Control (Tracking)
+    % 'feed'     - Feed-Forward Compensation (Tracking)
+    control_method = 'npid_px4';
+    control_fully_actuated = 0; % Allows the platform to actuate in all directions if >0
 
-%XXX: This arrangement of gain frequencies gives a response of a critically
-%damped system for both position and attitude tracking. w0r is set to be an
-%order of magnitude faster in response than w0p, which seems to give good
-%results (but I'm not 100% sure why, frequency responses mixing? Maybe a 
-% good reference would be similar to a cascade controller timings - should
-% be 5-20x more on who you ask)
-w0p = 2;
-w0t = 10*w0p;
-w0r = 4;
+    % https://ethz.ch/content/dam/ethz/special-interest/mavt/robotics-n-intelligent-systems/rsl-dam/documents/RobotDynamics2017/RD_HS2017script.pdf
+    % Pg. 76
+    % Hence, the eigenfrequency and a dimensionless damping value of the system
+    % are given by:
+    % ω=√kp,(3.78)
+    % D=kd/2√kp.(3.79)
+    % Critical damping is achieved for D=1, overcritical damping for D>1 and
+    % un-dercritical  damping  for D <1. The  compliance  of  the  controller
+    % can be adjusted by varying kp.  For example, assuming that the time
+    % constant respectively oscillation frequency around the nominal point
+    % should be 3 Hz, the ideal control gain for kp is 350. Furthermore, 
+    % critical damping requires kd= 37. This holds as good starting values for
+    % controller gain tuning.
 
-%A bad result could be obtained with the following parameters:
-% No control:
-% w0p = 0;
-% w0t = 0;
-% Early Inversion:
-% w0p = 3.2;
-% w0t = 12;
-% Critical Inversion:
-% w0p = 3.5;
-% w0t = 12;
-% Converging Spiral:
-% w0p = 4;
-% w0t = 12;
-% Diverging Spiral:
-% w0p = 6;
-% w0t = 12;
+    %XXX: This arrangement of gain frequencies gives a response of a critically
+    %damped system for both position and attitude tracking. w0r is set to be an
+    %order of magnitude faster in response than w0p, which seems to give good
+    %results (but I'm not 100% sure why, frequency responses mixing? Maybe a 
+    % good reference would be similar to a cascade controller timings - should
+    % be 5-20x more on who you ask)
+    w0p = 2;
+    w0t = 10*w0p;
+    w0r = 4;
 
-KxP = w0p^2;    % Position tracking P gain
-KxD = 2*w0p;    % Velocity tracking P gain
-KtP = w0t^2;    % Angular tracking P gain
-KtD = 2*w0t;    % Angular rate tracking P gain
-KrP = w0r^2;    % Joint tracking P gain
-KrD = 2*w0r;    % Joint rate tracking P gain
+    %A bad result could be obtained with the following parameters:
+    % No control:
+    % w0p = 0;
+    % w0t = 0;
+    % Early Inversion:
+    % w0p = 3.2;
+    % w0t = 12;
+    % Critical Inversion:
+    % w0p = 3.5;
+    % w0t = 12;
+    % Converging Spiral:
+    % w0p = 4;
+    % w0t = 12;
+    % Diverging Spiral:
+    % w0p = 6;
+    % w0t = 12;
 
-yaw_w = 0.6;    % Yaw weighting for rotational tracking
-theta_max = deg2rad(30); % Maximum thrust vectoring angle (from vertical)
+    KxP = w0p^2;    % Position tracking P gain
+    KxD = 2*w0p;    % Velocity tracking P gain
+    KtP = w0t^2;    % Angular tracking P gain
+    KtD = 2*w0t;    % Angular rate tracking P gain
+    KrP = w0r^2;    % Joint tracking P gain
+    KrD = 2*w0r;    % Joint rate tracking P gain
 
-% Display for logging
-print_user_settings(t0, cdt, dt, tf, ...
-                    frame_type, manip_type, n, ...
-                    order, num_via_points, via_est_method, ...
-                    tname, tname_r, ...
-                    control_method, control_fully_actuated, ...
-                    w0p, w0t, w0r);
+    yaw_w = 0.6;    % Yaw weighting for rotational tracking
+    theta_max = deg2rad(30); % Maximum thrust vectoring angle (from vertical)
 
 
 %% Script Variables

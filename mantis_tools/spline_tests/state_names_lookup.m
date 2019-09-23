@@ -55,6 +55,9 @@ function [ sn ] = state_names_lookup(n)
     sn.CONTROL_DVY_B = 18+2*n;
     sn.CONTROL_DVZ_B = 19+2*n;
     sn.CONTROL_RDD = 20+2*n:20+3*n-1;
+    sn.CONTROL_TAU_BW = 20+3*n:20+3*n+3-1;
+    sn.CONTROL_TAU_BV = 20+3*n+3:20+3*n+6-1;
+    sn.CONTROL_TAU_R = 20+3*n+6:20+4*n+6-1;
 
     sn.CONTROL_A = sn.CONTROL_AX:sn.CONTROL_AZ;
     sn.CONTROL_Q = sn.CONTROL_QW:sn.CONTROL_QZ;
@@ -62,6 +65,7 @@ function [ sn ] = state_names_lookup(n)
     sn.CONTROL_WXYZ_B = sn.CONTROL_WX_B:sn.CONTROL_WZ_B;
     sn.CONTROL_DWXYZ_B = sn.CONTROL_DWX_B:sn.CONTROL_DWZ_B;
     sn.CONTROL_DVXYZ_B = sn.CONTROL_DVX_B:sn.CONTROL_DVZ_B;
+    sn.CONTROL_TAU = [sn.CONTROL_TAU_BW, sn.CONTROL_TAU_BV, sn.CONTROL_TAU_R];
 
     sn.SPLINE_POS = 1;
     sn.SPLINE_VEL = 2;
