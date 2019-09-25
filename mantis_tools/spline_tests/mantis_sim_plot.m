@@ -49,18 +49,11 @@ function [ fig_handles ] = mantis_sim_plot( config, results, analysis, plotting,
     plot_title_psi =  ['\textbf{', name_traj, ' ', name_order, ' Spline ($\mathbf{\psi}$ Axis)}'];
     plot_title_r =  ['\textbf{', name_traj, ' ', name_order, ' Spline'];
 
-    ref_traj_x = cos(linspace(0,2*pi,results.traj.num_traj_points*results.traj.via_steps + 1));
-    ref_traj_y = sin(linspace(0,2*pi,results.traj.num_traj_points*results.traj.via_steps + 1));
+%     ref_traj_x = cos(linspace(0,2*pi,results.traj.num_traj_points*results.traj.via_steps + 1));
+%     ref_traj_y = sin(linspace(0,2*pi,results.traj.num_traj_points*results.traj.via_steps + 1));
 %     ref_traj_z = linspace(0,5,results.traj.num_traj_points*results.traj.via_steps + 1);
 
-    ref_traj_dir = zeros(3,length(results.traj.vias_psi(sn.SPLINE_POS,:)));
-    yawR = eul2rotm([results.traj.vias_psi(sn.SPLINE_POS,:);
-                     zeros(size(results.traj.vias_psi(sn.SPLINE_POS,:)));
-                     zeros(size(results.traj.vias_psi(sn.SPLINE_POS,:)))]');
-    for ir = 1:length(results.traj.vias_psi(sn.SPLINE_POS,:))
-        ref_traj_dir(:,ir) = yawR(:,:,ir)*[1;0;0];
-    end
-    
+
     if plotting.show_plots > 0
         disp('Plotting...')
 
@@ -76,7 +69,7 @@ function [ fig_handles ] = mantis_sim_plot( config, results, analysis, plotting,
             plot3(results.x(sn.STATE_X,:), results.x(sn.STATE_Y,:), results.x(sn.STATE_Z,:), 'b-');
             scatter3(results.traj.vias_x(sn.SPLINE_POS,:), results.traj.vias_y(sn.SPLINE_POS,:), results.traj.vias_z(sn.SPLINE_POS,:), 'ro')
             scatter3(results.x(sn.STATE_X,1), results.x(sn.STATE_Y,1), results.x(sn.STATE_Z,1), 'bx')
-            quiver3(results.traj.vpx, results.traj.vpy, results.traj.vpz, ref_traj_dir(1,:), ref_traj_dir(2,:), ref_traj_dir(3,:), 'r')
+            quiver3(results.traj.vpx, results.traj.vpy, results.traj.vpz, analysis.traj.ref_traj_dir(1,:), analysis.traj.ref_traj_dir(2,:), analysis.traj.ref_traj_dir(3,:), 'r')
             hold off;
             axis('equal')
             maxlim = max([abs(ylim),abs(xlim)]);
@@ -104,8 +97,8 @@ function [ fig_handles ] = mantis_sim_plot( config, results, analysis, plotting,
                 plot(results.t,results.traj.s_x(1,:), 'r-');
                 scatter(results.traj.t_vias, results.traj.vias_x(sn.SPLINE_POS,:), 'ro')
                 plot(results.t,results.x(sn.STATE_X,:), 'b-');
-                yyaxis right;
-                plot(results.t,ref_traj_x, 'k--')
+%                 yyaxis right;
+%                 plot(results.t,ref_traj_x, 'k--')
                 hold off;
 
                 grid on;
@@ -113,9 +106,9 @@ function [ fig_handles ] = mantis_sim_plot( config, results, analysis, plotting,
                 ylabel('Position ($m$)');
                 maxlim = max([max(abs(ylim)),1.0]);
                 ylim([-maxlim maxlim]);
-                yyaxis right;
-                ylabel('Sine Referece ($m$)');
-                ylim([-maxlim maxlim]);
+%                 yyaxis right;
+%                 ylabel('Sine Referece ($m$)');
+%                 ylim([-maxlim maxlim]);
             subplot(5,1,2)
                 hold on;
                 plot(results.t,results.traj.s_x(2,:), 'r-');
@@ -205,18 +198,18 @@ function [ fig_handles ] = mantis_sim_plot( config, results, analysis, plotting,
                 plot(results.t,results.traj.s_y(1,:), 'r-');
                 scatter(results.traj.t_vias, results.traj.vias_y(sn.SPLINE_POS,:), 'ro')
                 plot(results.t,results.x(sn.STATE_Y,:), 'b-');
-                yyaxis right;
-                plot(results.t,ref_traj_y, 'k--')
-                hold off;
+%                 yyaxis right;
+%                 plot(results.t,ref_traj_y, 'k--')
+%                 hold off;
 
                 grid on;
                 yyaxis left;
                 ylabel('Position ($m$)');
                 maxlim = max(abs(ylim));
                 ylim([-maxlim maxlim]);
-                yyaxis right;
-                ylabel('Cosine Referece ($m$)');
-                ylim([-maxlim maxlim]);
+%                 yyaxis right;
+%                 ylabel('Cosine Referece ($m$)');
+%                 ylim([-maxlim maxlim]);
             subplot(5,1,2)
                 hold on;
                 plot(results.t,results.traj.s_y(2,:), 'r-');

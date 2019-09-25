@@ -1,4 +1,4 @@
-function [ analysis ] = mantis_sim_analyse( config, results, print_latex_results )
+function [ analysis ] = mantis_sim_analyse( config, results )
 %MANTIS_SIM_SIMULATE Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -14,7 +14,15 @@ function [ analysis ] = mantis_sim_analyse( config, results, print_latex_results
     analysis.roll_c = eul_c(:,3);
     analysis.pitch_c = eul_c(:,2);
     analysis.yaw_c = eul_c(:,1);
-
+    
+    analysis.traj.ref_traj_dir = zeros(3,length(results.traj.vias_psi(sn.SPLINE_POS,:)));
+    yawR = eul2rotm([results.traj.vias_psi(sn.SPLINE_POS,:);
+                     zeros(size(results.traj.vias_psi(sn.SPLINE_POS,:)));
+                     zeros(size(results.traj.vias_psi(sn.SPLINE_POS,:)))]');
+    for ir = 1:length(results.traj.vias_psi(sn.SPLINE_POS,:))
+        analysis.traj.ref_traj_dir(:,ir) = yawR(:,:,ir)*[1;0;0];
+    end
+    
     pos_ref = [results.traj.s_x(1,:);results.traj.s_y(1,:);results.traj.s_z(1,:)];
     pos_error = pos_ref - results.x(sn.STATE_XYZ,:);
     analysis.max_pos_error = max(abs(pos_error),[],2);
@@ -35,19 +43,21 @@ function [ analysis ] = mantis_sim_analyse( config, results, print_latex_results
 %     u0 = config.g*calc_total_mass(results.model_d);
     analysis.performance.J_fuel = sum(sum(abs(results.c(sn.CONTROL_TAU,:))))*config.time.dt;
     
-    analysis.performance.ts = 0;
+    analysis.performance.ts = NaN;
     for i = length(results.t)-1:-1:1
         ts_r = 0.05; % 5% settling time range
         % Create scaling values (or use a preset if sp is zero)
         
-        p_sp = pos_ref(:,i);
-        p_sp(~p_sp) = 1.0;
-        r_sp = results.c(sn.CONTROL_R,i);
-        r_sp(~r_sp) = pi/2;
+%         p_sp = pos_ref(:,i);
+%         p_sp(~p_sp) = 1.0;
+%         r_sp = results.c(sn.CONTROL_R,i);
+%         r_sp(~r_sp) = pi/2;
+        p_sp = 1.0;
+        r_sp = pi/2;
         
         ne_pos = pos_error(:,i) ./ p_sp;
         ne_ang = analysis.tv_error(i) ./ pi;
-        ne_r = r_error(i) ./ r_sp;
+        ne_r = r_error(:,i) ./ r_sp;
         
         check = abs([ne_pos; ne_ang; ne_r]) > ts_r;
         
@@ -63,33 +73,19 @@ function [ analysis ] = mantis_sim_analyse( config, results, print_latex_results
             break;
         end
     end
-    
-    if print_latex_results > 0
-        ldf = '%0.3f';
-        disp('    Latex results aligned as [Max Pos. Error, Pos. RMSE, Omega RMSE] (in [x,y,z]), and [ts, J_fuel]:')
-        disp(['    ', num2str(analysis.max_pos_error(1), ldf), ' & ', num2str(analysis.max_pos_error(2), ldf), ' & ', num2str(analysis.max_pos_error(3), ldf), ' & ' ...
-              num2str(analysis.pos_RMSE(1), ldf), ' & ', num2str(analysis.pos_RMSE(2), ldf), ' & ', num2str(analysis.pos_RMSE(3), ldf), ' & ' ...
-              num2str(analysis.w_RMSE(1), ldf), ' & ', num2str(analysis.w_RMSE(2), ldf), ' & ', num2str(analysis.w_RMSE(3), ldf), ' \\']);
-        if analysis.performance.ts > 0
-            ts_string = num2str(analysis.performance.ts, ldf);
-        else
-            ts_string = '---';
-        end
-        disp(['    ', ts_string, ' & ', num2str(analysis.performance.J_fuel, ldf)])
-        disp(' ')
-    else
-        disp('Max Position Errors:')
-        disp(analysis.max_pos_error);
-        disp('Position RMSE:')
-        disp(analysis.pos_RMSE)
-        disp('Omega RMSE:')
-        disp(analysis.w_RMSE)
-        disp('Joint RMSE:')
-        disp(analysis.r_RMSE)
-        disp('Total Control Cost:')
-        disp(analysis.performance.J_fuel)
-        disp('5% Settling Time:')
-        disp(analysis.performance.ts)
+    % If we reached the end of the loop, then we never diverged from
+    % settled state
+    if i == 1
+        analysis.performance.ts = config.time.t0;
     end
+    
+    tdf = '%0.2f ';
+    ldf = '%0.5f ';
+    disp(['    5% Settling Time:    ', num2str(analysis.performance.ts,tdf)])
+    disp(['    Total Control Cost:  ', num2str(analysis.performance.J_fuel,tdf)])
+    disp(['    Max Position Errors: ', num2str(analysis.max_pos_error',ldf)])
+    disp(['    Position RMSE:       ', num2str(analysis.pos_RMSE',ldf)])
+    disp(['    Omega RMSE:          ', num2str(analysis.w_RMSE',ldf)])
+    disp(['    Joint RMSE:          ', num2str(analysis.r_RMSE',ldf)])
 end
 

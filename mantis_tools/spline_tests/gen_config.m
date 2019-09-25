@@ -22,6 +22,7 @@ function [ config ] = gen_config(t0, dt, cdt, tf, frame_type, manip_type, n, ord
 %       - dvia_est_method: Estimation method for via derivatives
 %       - tname_base: Trajectory name for the base to track
 %           - 'hover'
+%           - 'hover2'
 %           - 'x_only'
 %           - 'y_only'
 %           - 'z_only'

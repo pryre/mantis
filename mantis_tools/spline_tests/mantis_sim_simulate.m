@@ -97,11 +97,23 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
     npid_omega_integrator = zeros(3,1);
     manip_integrator = zeros(config.model.n,1);
 
+    % Fill in the control inputs for the first time step (to avoid analysis
+    % issues)
+    c(sn.CONTROL_A,1) =  -config.g_vec;
+    c(sn.CONTROL_Q,1) = x0(sn.STATE_Q);
+    c(sn.CONTROL_WXYZ_B,1) = x0(sn.STATE_WXYZ_B);
+    c(sn.CONTROL_DWXYZ_B,1) = zeros(size(sn.CONTROL_DWXYZ_B));
+    c(sn.CONTROL_R,1) = x0(sn.STATE_R);
+    c(sn.CONTROL_RD,1) = x0(sn.STATE_RD);
+    c(sn.CONTROL_RDD,1) = zeros(size(sn.CONTROL_RDD));
+    c(sn.CONTROL_TAU,1) = zeros(size(sn.CONTROL_TAU));
+    
+            
     for i = 2:length(t)
         %% Status Messages
         progress = 100*i/length(t);
         if progress > progressLast + 0.1
-            msg = sprintf('Simulating... %3.1f', progress);
+            msg = sprintf('Simulating... %3.1f%', progress);
             fprintf([reverseStr, msg]);
             reverseStr = repmat(sprintf('\b'), 1, length(msg));
             progressLast = progress;

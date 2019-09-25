@@ -14,6 +14,9 @@ function [via_points_x, via_points_y, via_points_z, via_points_psi ] = trajector
 
     if strcmp(trajectory,'hover')
         via_points_x = via_points_y;
+    elseif strcmp(trajectory,'hover2')
+        via_points_x = via_points_y;
+        via_points_z = 2*ones(1,num_via_points);
     elseif strcmp(trajectory,'x_only')
         via_points_x = x_traj;
     elseif strcmp(trajectory,'y_only')
