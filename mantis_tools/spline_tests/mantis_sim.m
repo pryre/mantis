@@ -6,6 +6,7 @@ clc;
 
 addpath( genpath('./spatial_v2') );
 set(0,'defaultTextInterpreter','latex');
+% set(0, 'DefaultFigureRenderer', 'painter');
 
 %%
 
@@ -14,9 +15,12 @@ export_latex_analysis = 1;
 show_settling_time = 1;
 
 % Plotting Configuration
-do_plotting = 0;
+do_plotting = 1;
 % Overly plot of multiple configs
 plotting.show_multiconfig_plot = 1;
+plotting.show_multiconfig_list_reference = 1;
+plotting.show_multiconfig_end_effector = 1;
+plotting.show_multiconfig_step = 100;
 plotting.flight_space = 2;
 plotting.multiconfig_legends = {'NPID-U', 'CTC-F', 'CTC-U', 'Feed-F', 'Feed-U'};
 % Enables plots if >0
@@ -48,18 +52,28 @@ camera.zoom = 0.2;
 % See "help gen_test_cases" for test_name options
 % test_name = 'hover_0_0';
 % plotting.multiconfig_plot_title = 'Steady Hover (\(r_{1}=r_{2}=0^{\circ}\))';
+
 % test_name = 'hover_90_0';
 % plotting.multiconfig_plot_title = 'Steady Hover (\(r_{1}=90^{\circ},\,r_{2}=0^{\circ}\))';
+
 % test_name = 'full_state_error';
 % plotting.multiconfig_plot_title = 'Full State Errors (\(e_{p_{b}}=1,\,e_{\psi_{b}}=e_{r_{1}}=e_{r_{2}}=90^{\circ}\))';
+
 % test_name = 'inversion_0_0';
 % plotting.multiconfig_plot_title = 'Inversion Recovery (\(e_{\phi_{b}}=1,\,r_{1}=r_{2}=0^{\circ}\))';
+
 % test_name = 'inversion_90_0';
 % plotting.multiconfig_plot_title = 'Inversion Recovery (\(e_{\phi_{b}}=179^{\circ},\,r_{1}=90^{\circ},\,r_{2}=0^{\circ}\))';
+
 % test_name = 'tuning';
-test_name = 'spiral_base';
+
+% test_name = 'spiral_base';
+% show_settling_time = 0;
+% plotting.multiconfig_plot_title = 'Vectoring Base Tracking';
+
+test_name = 'spiral_end';
 show_settling_time = 0;
-plotting.multiconfig_plot_title = 'Vectoring Base Tracking';
+plotting.multiconfig_plot_title = 'Vectoring End Tracking';
 
 % Define some preset configurations to keep this script clutter-free
 [ configs, x0_overrides ] = gen_test_cases( test_name );
@@ -90,20 +104,22 @@ analyses = cell(size(configs));
 disp('--== Simulation ==--')
 sn = state_names_lookup(configs{1}.model.n);
 
-parfor j = 1:size(configs,1)
+% for i = 1:size(configs,1)
+parfor i = 1:size(configs,1)
     % Add the lookup to the workspace for the user
     % This will only be the last one, but at least it allows for some
     % interraction if n is equal for all models
     
-    disp(['Configuration ', num2str(j)])
-    results{j} = mantis_sim_simulate( configs{j}, x0_overrides, camera );
+    disp(['Configuration ', num2str(i)])
+    results{i} = mantis_sim_simulate( configs{i}, x0_overrides, camera );
     disp(' ')
 end
 
 %% Data Analysis
 disp('--== Analysis ==--')
 
-for i = 1:size(configs,1)
+% for j = 1:size(configs,1)
+parfor i = 1:size(configs,1)
     disp(['Configuration ', num2str(i)])
     analyses{i} = mantis_sim_analyse( configs{i}, results{i} );
 end
@@ -130,21 +146,46 @@ if do_plotting > 0
 end
     %%
 if plotting.show_multiconfig_plot > 0
-
     fm = figure();
         clf;
 
         title(plotting.multiconfig_plot_title)
         hold on;
-        for i = 1:size(configs,1)
-            plot3(results{i}.x(sn.STATE_X,:), results{i}.x(sn.STATE_Y,:), results{i}.x(sn.STATE_Z,:));
-        end
-        
         % Assume that we have the same reference and x0 for all configs
-        plot3(results{1}.traj.s_x(1,:), results{1}.traj.s_y(1,:), results{1}.traj.s_z(1,:), 'r--');
+        plot3(results{1}.c(sn.CONTROL_PX_B,1:plotting.show_multiconfig_step:end), results{1}.c(sn.CONTROL_PY_B,1:plotting.show_multiconfig_step:end), results{1}.c(sn.CONTROL_PZ_B,1:plotting.show_multiconfig_step:end), 'r-');
+        if plotting.show_multiconfig_end_effector
+            plot3(analyses{i}.end_effector_pos.ref(1,1:plotting.show_multiconfig_step:end), analyses{i}.end_effector_pos.ref(2,1:plotting.show_multiconfig_step:end), analyses{i}.end_effector_pos.ref(3,1:plotting.show_multiconfig_step:end), 'r--');
+        end
         scatter3(results{1}.traj.vias_x(sn.SPLINE_POS,:), results{1}.traj.vias_y(sn.SPLINE_POS,:), results{1}.traj.vias_z(sn.SPLINE_POS,:), 'ro')
         quiver3(results{1}.traj.vpx, results{1}.traj.vpy, results{1}.traj.vpz, analyses{1}.traj.ref_traj_dir(1,:), analyses{1}.traj.ref_traj_dir(2,:), analyses{1}.traj.ref_traj_dir(3,:), 'r', 'AutoScaleFactor', 0.2)
 %         scatter3(results{1}.x(sn.STATE_X,1), results{1}.x(sn.STATE_Y,1), results{1}.x(sn.STATE_Z,1), 'bx')
+        
+        cmap = lines(size(configs,1));
+        
+        for i = 1:size(configs,1)
+            plot3(results{i}.x(sn.STATE_X,1:plotting.show_multiconfig_step:end), results{i}.x(sn.STATE_Y,1:plotting.show_multiconfig_step:end), results{i}.x(sn.STATE_Z,1:plotting.show_multiconfig_step:end), '-', 'Color', cmap(i,:));
+        
+            if plotting.show_multiconfig_end_effector
+                plot3(analyses{i}.end_effector_pos.state(1,1:plotting.show_multiconfig_step:end), analyses{i}.end_effector_pos.state(2,1:plotting.show_multiconfig_step:end), analyses{i}.end_effector_pos.state(3,1:plotting.show_multiconfig_step:end), '--', 'Color', cmap(i,:));
+            end
+        end
+        
+        lp = [];
+        leg_names = plotting.multiconfig_legends;
+        if plotting.show_multiconfig_list_reference
+            lp(end+1) = plot3(nan, nan, nan, 'r-');
+            leg_names = { 'Reference', leg_names{:}};
+        end
+        
+        % Fake data inputs for legend
+        for i = 1:size(configs,1)
+            lp(end+1) = plot3(nan, nan, nan, '-', 'Color', cmap(i,:));
+        end
+        
+        if plotting.show_multiconfig_end_effector
+            lp(end+1) = plot3(nan, nan, nan, 'k--');
+            leg_names(end+1) = {'End Effectors'};
+        end
         hold off;
         
         axis('equal')
@@ -161,13 +202,14 @@ if plotting.show_multiconfig_plot > 0
         ylabel('Y Position ($m$)');
         zlabel('Z Position ($m$)');
         
-        l = legend(plotting.multiconfig_legends,'Interpreter','latex');
+        l = legend(lp, leg_names,'Interpreter','latex');
         set(l,'Position',[0.80, ...
                           0.50, ...
                           0.17, ...
                           0.20]);
-
+                      
     print(fm, ['./figures/',test_name], '-depsc')
+%     fix_dottedline(['./figures/',test_name,'.eps'])
 end
 
 

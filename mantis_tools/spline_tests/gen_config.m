@@ -1,4 +1,4 @@
-function [ config ] = gen_config(t0, dt, cdt, tf, frame_type, manip_type, n, order, num_vias, dvia_est_method, tname_base, tname_r, control_method, control_fully_actuated, yaw_w, theta_max, w0p, w0t, w0r)
+function [ config ] = gen_config(t0, dt, cdt, tf, frame_type, manip_type, n, order, num_vias, dvia_est_method, tname_base, tname_r, control_method, control_fully_actuated, tracking_frame, yaw_w, theta_max, w0p, w0t, w0r)
 %GEN_CONFIG Helper function to generate user configs
 %   Time Settings: 
 %       - t0: Start time
@@ -45,6 +45,10 @@ function [ config ] = gen_config(t0, dt, cdt, tf, frame_type, manip_type, n, ord
 %           - 'ctc'      - Computed Torque Control (Tracking)
 %           - 'feed'     - Feed-Forward Compensation (Tracking)
 %       - control_fully_actuated: Allows the platform to actuate in all directions if >0
+%       - tracking_frame: Frame of refernce for the controller to use during tracking
+%           - 0 for tracking the base
+%           - n for tracking joint n
+%           - n+1 for tracking at the end effector
 %       - yaw_w: Weighting for yaw-ing actuation
 %       - theta_max: Maximum tilt angle to be tracked
 %    Tuning Parameters:
@@ -81,6 +85,7 @@ function [ config ] = gen_config(t0, dt, cdt, tf, frame_type, manip_type, n, ord
     % Control
     config.control.method = control_method;
     config.control.fully_actuated = control_fully_actuated;
+    config.control.tracking_frame = tracking_frame;
     config.control.yaw_w = yaw_w;    % Yaw weighting for rotational tracking
     config.control.theta_max = theta_max; % Maximum thrust vectoring angle (from vertical)
 

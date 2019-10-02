@@ -19,12 +19,12 @@ function [ analysis ] = mantis_sim_analyse( config, results )
     yawR = eul2rotm([results.traj.vias_psi(sn.SPLINE_POS,:);
                      zeros(size(results.traj.vias_psi(sn.SPLINE_POS,:)));
                      zeros(size(results.traj.vias_psi(sn.SPLINE_POS,:)))]');
-    for ir = 1:length(results.traj.vias_psi(sn.SPLINE_POS,:))
-        analysis.traj.ref_traj_dir(:,ir) = yawR(:,:,ir)*[1;0;0];
+    for i = 1:length(results.traj.vias_psi(sn.SPLINE_POS,:))
+        analysis.traj.ref_traj_dir(:,i) = yawR(:,:,i)*[1;0;0];
     end
     
-    pos_ref = [results.traj.s_x(1,:);results.traj.s_y(1,:);results.traj.s_z(1,:)];
-    pos_error = pos_ref - results.x(sn.STATE_XYZ,:);
+%     pos_ref = [results.traj.s_x(1,:);results.traj.s_y(1,:);results.traj.s_z(1,:)];
+    pos_error = results.c(sn.CONTROL_P_B,:) - results.x(sn.STATE_XYZ,:);
     analysis.max_pos_error = max(abs(pos_error),[],2);
     analysis.pos_RMSE = sqrt(mean((pos_error).^2,2));
 
@@ -39,6 +39,25 @@ function [ analysis ] = mantis_sim_analyse( config, results )
     tv_spline = [results.traj.s_x(sn.SPLINE_ACC,:);results.traj.s_y(sn.SPLINE_ACC,:);results.traj.s_z(sn.SPLINE_ACC,:)] - config.g_vec;
     tv_S_ref = tv_spline./vecnorm(tv_spline,2,1);
     analysis.tv_error = thrustvec_angle_error( tv_S_ref, tv_R_state);
+    
+    analysis.end_effector_pos.ref = zeros(3,length(results.t));
+    analysis.end_effector_pos.state = zeros(3,length(results.t));
+    for i = 1:length(results.t)
+        g_be = inverse_trans(pluho(FKfly(results.model_d, config.model.n+1, results.x(sn.STATE_R,i), [], [])));
+%         g_b = [quat2rotm(x(sn.STATE_Q)'), x(sn.STATE_XYZ);
+%                zeros(1,3), 1];
+        g_b = [R_state(:,:,i), results.x(sn.STATE_XYZ,i);
+               zeros(1,3), 1];
+        g_e = g_b*g_be;
+        analysis.end_effector_pos.state(:,i) = g_e(1:3,4);
+        
+        if i == 1
+            % no ref on first pass
+            analysis.end_effector_pos.ref(:,i) = analysis.end_effector_pos.state(:,i);
+        else
+            analysis.end_effector_pos.ref(:,i) = results.c(sn.CONTROL_P_E,i);
+        end
+    end
     
 %     u0 = config.g*calc_total_mass(results.model_d);
     analysis.performance.J_fuel = sum(sum(abs(results.c(sn.CONTROL_TAU,:))))*config.time.dt;

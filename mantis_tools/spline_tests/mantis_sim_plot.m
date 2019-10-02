@@ -2,6 +2,7 @@ function [ fig_handles ] = mantis_sim_plot( config, results, analysis, plotting,
 %MANTIS_SIM_PLOT Plots simulation results and analysis data
 %   Detailed explanation goes here
 
+    fig_handles = {};
     sn = state_names_lookup(config.model.n);
     fc = 0;
     if ~exist('./figures', 'dir')

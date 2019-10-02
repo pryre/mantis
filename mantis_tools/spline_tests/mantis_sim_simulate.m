@@ -83,6 +83,7 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
 
     % Build control vector
     c = zeros(20+3*config.model.n-1,length(t));
+    c(sn.CONTROL_P_B,1) = x0(sn.STATE_XYZ);
 
 
     %% Simulation
@@ -118,7 +119,12 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
             reverseStr = repmat(sprintf('\b'), 1, length(msg));
             progressLast = progress;
         end
+        
+        % Previous rotation matrix (for ease of use)
+        R_p = quat2rotm(x(sn.STATE_Q,i-1)');
 
+        pos_e = zeros(3,1);
+        
         if control_tick <= 1
             %% Guidance
             % Spline reference vectors
@@ -141,9 +147,44 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
                 rdd(j) = s_r{j}(sn.SPLINE_ACC,i);
             end
 
-            % Projection to SO(3)/so(3)
-            [R_sp_s, w_sp_s, wd_sp_s] = map_angles_rates_accels(acc, jerk, snap, yaw, dyaw, ddyaw);
+            if config.control.tracking_frame == 0
+                % Base Tracking
+                % Projection to SO(3)/so(3)
+                [R_sp_s, w_sp_s, wd_sp_s] = map_angles_rates_accels(acc, jerk, snap, yaw, dyaw, ddyaw);
+                pos_b = pos;
+                vel_b = vel;
+                acc_b = acc;
+            elseif config.control.tracking_frame > config.model.n
+                % End effector tracking
+                pos_e = pos;
+                vel_e = vel;
+                
+                Psi_b = [cos(yaw), -sin(yaw), 0;
+                         sin(yaw),  cos(yaw), 0;
+                                0,         0, 1];
 
+                [X_be, eta_be, etad_be] = FKfly(model_c, config.model.n+1, r, rd, rdd);
+                g_be = inverse_trans(pluho(X_be));
+                R_be = g_be(1:3,1:3);
+                
+                R_e = Psi_b*R_be;
+                gt_e = [R_e, pos_e;
+                        zeros(1,3),   1];
+                g_b = gt_e*inverse_trans(g_be);
+
+                pd_be = R_e*eta_be(4:6);
+                pdd_be = R_e*etad_be(4:6);
+
+                pos_b = g_b(1:3,4);
+                vel_b = vel_e - pd_be;
+                acc_b = acc - pdd_be;
+                
+                R_sp_s = Psi_b;
+                w_sp_s = zeros(3,1);
+                wd_sp_s = zeros(3,1);
+            else
+                error('Tracking intermediate frames has not been implemented');
+            end
 
             %% Control Law
             if strcmp(config.control.method, 'npid_px4')
@@ -154,7 +195,7 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
                 end
 
                 [tau_b, acc_c, q_sp_c, npid_omega_integrator ] = control_nonlinear_pid_px4( model_c, ...          
-                                                         pos, vel, acc, yaw, ...
+                                                         pos_b, vel_b, acc_b, yaw, ...
                                                          x(:,i-1), x_p, ...
                                                          config.time.cdt, npid_omega_integrator, ...
                                                          KxP, KxD);
@@ -174,21 +215,21 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
     %             end
     %             
     %             [tau_full, acc_c, q_sp_c, npid_ang_integrator, npid_omega_integrator ] = control_nonlinear_pid_exp( model_c, ...          
-    %                                                      pos, vel, acc, yaw, ...
+    %                                                      pos_b, vel_b, acc_b, yaw, ...
     %                                                      x(:,i-1), x_p, ...
     %                                                      cdt, npid_ang_integrator, npid_omega_integrator);
             elseif strcmp(config.control.method, 'npid')
     %             % Instead of normalising the thrust vector, simply use F=ma
     %             kT = mass_c.m;
     %             [tau_full, acc_c, q_sp_c, npid_ang_integrator ] = control_nonlinear_pid( model_c, ...          
-    %                                                      pos, vel, acc, ...
+    %                                                      pos_b, vel_b, acc_b, ...
     %                                                      yaw, w_sp_s, ...
     %                                                      x(:,i-1), kT, ...
     %                                                      KxP, KxD, KtP, KtD, yaw_w, ...
     %                                                      cdt, npid_ang_integrator);
             elseif strcmp(config.control.method, 'ctc')
                 [tau_full, acc_c, q_sp_c ] = control_computed_torque( model_c, ...
-                                             pos, vel, acc, ...
+                                             pos_b, vel_b, acc_b, ...
                                              yaw, R_sp_s, w_sp_s, wd_sp_s, ...
                                              r, rd, rdd, ...
                                              x(:,i-1), ...
@@ -201,7 +242,7 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
                 end
 
                 [tau_b, acc_c, q_sp_c, npid_omega_integrator ] = control_feed_forward( model_c, ...
-                                             pos, vel, acc, yaw, ...
+                                             pos_b, vel_b, acc_b, yaw, ...
                                              x(:,i-1), x_p, ...
                                              config.time.cdt, npid_omega_integrator, ...
                                              KxP, KxD);
@@ -224,6 +265,8 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
 
 
             %% Save control inputs
+            c(sn.CONTROL_P_B,i) = pos_b;
+            c(sn.CONTROL_P_E,i) = pos_e;
             c(sn.CONTROL_A,i) = acc_c;
             c(sn.CONTROL_Q,i) = q_sp_c';
             c(sn.CONTROL_WXYZ_B,i) = w_sp_s;
@@ -244,6 +287,8 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
         else
             % Use the control signal from the last control tick
             tau = control_tau_last;
+            c(sn.CONTROL_P_B,i) = c(sn.CONTROL_P_B,i-1);
+            c(sn.CONTROL_P_E,i) = c(sn.CONTROL_P_E,i-1);
             c(sn.CONTROL_A,i) = c(sn.CONTROL_A,i-1);
             c(sn.CONTROL_Q,i) = c(sn.CONTROL_Q,i-1);
             c(sn.CONTROL_WXYZ_B,i) = c(sn.CONTROL_WXYZ_B,i-1);
@@ -261,8 +306,6 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
         dx = mantis_sim_run(x(:,i-1), tau, model_d);
 
         % Update Dynamics
-        % Previous rotation matrix (for ease of use)
-        R_p = quat2rotm(x(sn.STATE_Q,i-1)');
 
         % Joints
         x(sn.STATE_RD,i) = x(sn.STATE_RD,i-1) + dx(sn.STATE_REDUCED_RD)*config.time.dt;

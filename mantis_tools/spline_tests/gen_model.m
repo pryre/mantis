@@ -27,10 +27,10 @@ function [ fbmodel ] = gen_model( frame_type, manip_type, n, camera )
     mIc = diag( [LINK_IXX,LINK_IYY,LINK_IZZ] );
         
     model.camera = camera;
-    model.NB = n+1;
-    model.parent = 0:n;
-    model.jtype = cell(1,model.NB);
-    model.Xtree = cell(1,model.NB); %model.Xtree = {eye(6), eye(6)};
+    model.NB = n+1; % +1 here is for floating base
+    model.parent = 0:n+1; % +1 here is for end effector
+    model.jtype = cell(1,model.NB+1); % +1 here is for end effector
+    model.Xtree = cell(1,model.NB+1); % +1 here is for end effector
     model.I = cell(1,model.NB);
 
     model.gravity = [0 0 0];    % zero gravity is not the default,
@@ -64,9 +64,9 @@ function [ fbmodel ] = gen_model( frame_type, manip_type, n, camera )
     end        
                                 
     if strcmp(manip_type, 'serial')
+        bt = [LINK_LEN, 0, 0];
         for i = 2:model.NB
             model.jtype{i} = 'Rz';
-            bt = [LINK_LEN, 0, 0];
             
             if (i == 2)
                 % Small offset to align with the bottom of the platform for
@@ -80,7 +80,6 @@ function [ fbmodel ] = gen_model( frame_type, manip_type, n, camera )
             else
                 % For the rest of the links, we stack them straight
                 % downwards, only varying the link length
-                bt = [LINK_LEN 0 0];
                 model.Xtree(i) = {plux(eye(3), bt)};
             end
             
@@ -96,6 +95,12 @@ function [ fbmodel ] = gen_model( frame_type, manip_type, n, camera )
                 'colour', [0.6 0.3 0.8], ...            % Joint Colour
                 'cyl', [j0s; j0e], LINK_RAD };          % Previous Joint
         end
+        
+        % Add a final child link to act as the end effector
+        %model.parent(model.NB+1) = %... already set
+        model.jtype{model.NB+1} = 'Rz';
+        model.Xtree(model.NB+1) = {plux(eye(3), bt)};
+        %model.I{model.NB+1} = %... not used
         
         fbmodel = floatbase(model); % replace joint 1 with a chain of 6
                                     % joints emulating a floating base
