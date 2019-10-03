@@ -15,13 +15,14 @@ export_latex_analysis = 1;
 show_settling_time = 1;
 
 % Plotting Configuration
-do_plotting = 1;
+do_plotting = 0;
+plotting.flight_space = [-1,1,-1,1,0,2];
 % Overly plot of multiple configs
 plotting.show_multiconfig_plot = 1;
-plotting.show_multiconfig_list_reference = 1;
-plotting.show_multiconfig_end_effector = 1;
+plotting.show_multiconfig_list_reference = 0;
+plotting.show_multiconfig_end_effector = 0;
+plotting.show_multiconfig_quiv_scale = 0.2;
 plotting.show_multiconfig_step = 100;
-plotting.flight_space = 2;
 plotting.multiconfig_legends = {'NPID-U', 'CTC-F', 'CTC-U', 'Feed-F', 'Feed-U'};
 % Enables plots if >0
 plotting.show_plots = 0;
@@ -54,6 +55,8 @@ camera.zoom = 0.2;
 % plotting.multiconfig_plot_title = 'Steady Hover (\(r_{1}=r_{2}=0^{\circ}\))';
 
 % test_name = 'hover_90_0';
+% plotting.flight_space = [-0.2,0.2,-0.2,0.2,0.8,1.2];
+% plotting.show_multiconfig_quiv_scale = 0.1;
 % plotting.multiconfig_plot_title = 'Steady Hover (\(r_{1}=90^{\circ},\,r_{2}=0^{\circ}\))';
 
 % test_name = 'full_state_error';
@@ -65,15 +68,46 @@ camera.zoom = 0.2;
 % test_name = 'inversion_90_0';
 % plotting.multiconfig_plot_title = 'Inversion Recovery (\(e_{\phi_{b}}=179^{\circ},\,r_{1}=90^{\circ},\,r_{2}=0^{\circ}\))';
 
-% test_name = 'tuning';
+% test_name = 'tuning_converging';
+% plotting.show_multiconfig_step = 10;
+% plotting.flight_space = [-0.6,0.6,-0.6,0.6,0,1.2];
+% plotting.multiconfig_plot_title = 'CTC-F High-Level Tracking (Converging)';
+% plotting.multiconfig_legends = {'\(\omega_{0p}=1\)', ...
+%                                 '\(\omega_{0p}=2\)', ...
+%                                 '\(\omega_{0p}=5\)'};
 
-% test_name = 'spiral_base';
+% test_name = 'tuning_diverging';
+% plotting.show_multiconfig_step = 10;
+% plotting.flight_space = [-0.6,0.6,-0.6,0.6,0,1.2];
+% plotting.multiconfig_plot_title = 'CTC-F High-Level Tracking (Diverging)';
+% plotting.multiconfig_legends = {'\(\omega_{0p}=8.250\)', ...
+%                                 '\(\omega_{0p}=8.625\)'};
+
+% test_name = 'spiral_base_slow';
 % show_settling_time = 0;
-% plotting.multiconfig_plot_title = 'Vectoring Base Tracking';
+% plotting.show_multiconfig_list_reference = 1;
+% plotting.flight_space = [-2,2,-2,2,0,4];
+% plotting.multiconfig_plot_title = 'Vectoring Base Tracking (\(\Delta t = 40s\))';
 
-test_name = 'spiral_end';
+% test_name = 'spiral_base_quick';
+% show_settling_time = 0;
+% plotting.show_multiconfig_list_reference = 1;
+% plotting.flight_space = [-2,2,-2,2,0,4];
+% plotting.multiconfig_plot_title = 'Vectoring Base Tracking (\(\Delta t = 10s\))';
+
+% test_name = 'spiral_end_slow';
+% show_settling_time = 0;
+% plotting.show_multiconfig_end_effector = 1;
+% plotting.show_multiconfig_list_reference = 1;
+% plotting.flight_space = [-2,2,-2,2,0,4];
+% plotting.multiconfig_plot_title = 'Vectoring End Tracking (\(\Delta t = 40s\))';
+
+test_name = 'spiral_end_quick';
 show_settling_time = 0;
-plotting.multiconfig_plot_title = 'Vectoring End Tracking';
+plotting.show_multiconfig_end_effector = 1;
+plotting.show_multiconfig_list_reference = 1;
+plotting.flight_space = [-2,2,-2,2,0,4];
+plotting.multiconfig_plot_title = 'Vectoring End Tracking (\(\Delta t = 10s\))';
 
 % Define some preset configurations to keep this script clutter-free
 [ configs, x0_overrides ] = gen_test_cases( test_name );
@@ -153,11 +187,11 @@ if plotting.show_multiconfig_plot > 0
         hold on;
         % Assume that we have the same reference and x0 for all configs
         plot3(results{1}.c(sn.CONTROL_PX_B,1:plotting.show_multiconfig_step:end), results{1}.c(sn.CONTROL_PY_B,1:plotting.show_multiconfig_step:end), results{1}.c(sn.CONTROL_PZ_B,1:plotting.show_multiconfig_step:end), 'r-');
-        if plotting.show_multiconfig_end_effector
+        if plotting.show_multiconfig_end_effector > 0
             plot3(analyses{i}.end_effector_pos.ref(1,1:plotting.show_multiconfig_step:end), analyses{i}.end_effector_pos.ref(2,1:plotting.show_multiconfig_step:end), analyses{i}.end_effector_pos.ref(3,1:plotting.show_multiconfig_step:end), 'r--');
         end
         scatter3(results{1}.traj.vias_x(sn.SPLINE_POS,:), results{1}.traj.vias_y(sn.SPLINE_POS,:), results{1}.traj.vias_z(sn.SPLINE_POS,:), 'ro')
-        quiver3(results{1}.traj.vpx, results{1}.traj.vpy, results{1}.traj.vpz, analyses{1}.traj.ref_traj_dir(1,:), analyses{1}.traj.ref_traj_dir(2,:), analyses{1}.traj.ref_traj_dir(3,:), 'r', 'AutoScaleFactor', 0.2)
+        quiver3(results{1}.traj.vpx, results{1}.traj.vpy, results{1}.traj.vpz, analyses{1}.traj.ref_traj_dir(1,:), analyses{1}.traj.ref_traj_dir(2,:), analyses{1}.traj.ref_traj_dir(3,:), 'r', 'AutoScaleFactor', plotting.show_multiconfig_quiv_scale)
 %         scatter3(results{1}.x(sn.STATE_X,1), results{1}.x(sn.STATE_Y,1), results{1}.x(sn.STATE_Z,1), 'bx')
         
         cmap = lines(size(configs,1));
@@ -172,9 +206,9 @@ if plotting.show_multiconfig_plot > 0
         
         lp = [];
         leg_names = plotting.multiconfig_legends;
-        if plotting.show_multiconfig_list_reference
+        if plotting.show_multiconfig_list_reference > 0
             lp(end+1) = plot3(nan, nan, nan, 'r-');
-            leg_names = { 'Reference', leg_names{:}};
+            leg_names = [{'Reference'}, leg_names];
         end
         
         % Fake data inputs for legend
@@ -182,19 +216,20 @@ if plotting.show_multiconfig_plot > 0
             lp(end+1) = plot3(nan, nan, nan, '-', 'Color', cmap(i,:));
         end
         
-        if plotting.show_multiconfig_end_effector
+        if plotting.show_multiconfig_end_effector > 0
             lp(end+1) = plot3(nan, nan, nan, 'k--');
-            leg_names(end+1) = {'End Effectors'};
+            leg_names(end+1) = {'End Eff.'};
         end
         hold off;
         
         axis('equal')
+        axis(plotting.flight_space)
 %         xlim([results{1}.x(sn.STATE_X,1)-fa, results{1}.x(sn.STATE_X,1)+fa]);
 %         ylim([results{1}.x(sn.STATE_Y,1)-fa, results{1}.x(sn.STATE_Y,1)+fa]);
 %         zlim([results{1}.x(sn.STATE_Z,1)-fa, results{1}.x(sn.STATE_Z,1)+fa]);
-        xlim([-plotting.flight_space, plotting.flight_space]);
-        ylim([-plotting.flight_space, plotting.flight_space]);
-        zlim([0, 2*plotting.flight_space]);
+%         xlim([-plotting.flight_space, plotting.flight_space]);
+%         ylim([-plotting.flight_space, plotting.flight_space]);
+%         zlim([0, 2*plotting.flight_space]);
         view(55,35);
 
         grid on;
@@ -208,79 +243,14 @@ if plotting.show_multiconfig_plot > 0
                           0.17, ...
                           0.20]);
                       
-    print(fm, ['./figures/',test_name], '-depsc')
-%     fix_dottedline(['./figures/',test_name,'.eps'])
+    set(gca, 'SortMethod', 'ChildOrder');
+    set(fm, 'Color', 'w');
+                      
+%     print(fm, ['./figures/',test_name], '-depsc')
+    export_fig(['./figures/',test_name], '-eps', fm)
+
+
 end
-
-
-% %% Tuning-specific figure
-% 
-% fm = figure();
-%     clf;
-% 
-%     title('CTC-F High-Level Tuning (Converging)')
-%     hold on;
-%     for i = 1:3
-%         plot3(results{i}.x(sn.STATE_X,:), results{i}.x(sn.STATE_Y,:), results{i}.x(sn.STATE_Z,:));
-%     end
-%     hold off;
-% 
-%     axis('equal')
-%     xlim([-plotting.flight_space, plotting.flight_space]);
-%     ylim([-plotting.flight_space, plotting.flight_space]);
-%     zlim([0.5, 1.5]);
-%     view(55,35);
-% 
-%     grid on;
-%     xlabel('X Position ($m$)');
-%     ylabel('Y Position ($m$)');
-%     zlabel('Z Position ($m$)');
-% 
-%     l = legend({'\(\omega_{0p}=2\)', ...
-%                 '\(\omega_{0p}=5\)', ...
-%                 '\(\omega_{0p}=10\)'}, ...
-%                'Interpreter','latex');
-%     set(l,'Position',[0.80, ...
-%                       0.50, ...
-%                       0.17, ...
-%                       0.20]);
-% 
-% print(fm, ['./figures/',test_name,'1'], '-depsc')
-% 
-% close(fm)
-% 
-% fm = figure();
-%     clf;
-% 
-%     title('CTC-F High-Level Tuning (Diverging)')
-%     hold on;
-%     for i = 4:5
-%         plot3(results{i}.x(sn.STATE_X,:), results{i}.x(sn.STATE_Y,:), results{i}.x(sn.STATE_Z,:));
-%     end
-%     hold off;
-% 
-%     axis('equal')
-%     xlim([-plotting.flight_space, plotting.flight_space]);
-%     ylim([-plotting.flight_space, plotting.flight_space]);
-%     zlim([0.5, 1.5]);
-%     view(55,35);
-% 
-%     grid on;
-%     xlabel('X Position ($m$)');
-%     ylabel('Y Position ($m$)');
-%     zlabel('Z Position ($m$)');
-% 
-%     l = legend({'\(\omega_{0p}=11\)', ...
-%                 '\(\omega_{0p}=11.5\)'}, ...
-%                'Interpreter','latex');
-%     set(l,'Position',[0.80, ...
-%                       0.50, ...
-%                       0.17, ...
-%                       0.20]);
-% 
-% print(fm, ['./figures/',test_name,'2'], '-depsc')
-% 
-% close(fm)
 
 
 
