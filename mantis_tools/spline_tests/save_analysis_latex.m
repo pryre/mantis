@@ -11,10 +11,10 @@ function [] = save_analysis_latex( test_name, configs, analyses, show_settling_t
     fid = fopen([filepath, filename], 'w');
     
     for i = 1:length(configs)
-        formatSpec = '%s %s %s %s %s %s \\\\\n';
-        formatSpecLast = '%s %s %s %s %s %s\n'; % Can't have the \\ on the last line
-        formatSpecNoTs = '%s %s %s %s %s \\\\\n';
-        formatSpecLastNoTs = '%s %s %s %s %s\n'; % Can't have the \\ on the last line           
+        formatSpec = '%s %s %s %s %s %s %s \\\\\n';
+        formatSpecLast = '%s %s %s %s %s %s %s\n'; % Can't have the \\ on the last line
+        formatSpecNoTs = '%s %s %s %s %s %s \\\\\n';
+        formatSpecLastNoTs = '%s %s %s %s %s %s\n'; % Can't have the \\ on the last line           
         cname = 'UDEF.';
         
         if strcmp(configs{i}.control.method, 'npid_px4')
@@ -44,19 +44,22 @@ function [] = save_analysis_latex( test_name, configs, analyses, show_settling_t
         pmax = num2str(analyses{i}.max_pos_error',' & %.3f');
         p = num2str(analyses{i}.pos_RMSE',' & %.3f');
         w = num2str(analyses{i}.w_RMSE',' & %.3f');
-%         r = num2str(analyses{i}.r_RMSE',' & %.3f');
+        r = '';
+        for j = 1:configs{i}.model.n
+            r = [r, num2str(analyses{i}.r_RMSE(j),' & %.3f')];
+        end
         
         if show_settling_time
             if i < length(configs)
-                fprintf(fid, formatSpec, cname, ts, J, pmax, p, w);
+                fprintf(fid, formatSpec, cname, ts, J, pmax, p, w, r);
             else
-                fprintf(fid, formatSpecLast, cname, ts, J, pmax, p, w);
+                fprintf(fid, formatSpecLast, cname, ts, J, pmax, p, w, r);
             end
         else
             if i < length(configs)
-                fprintf(fid, formatSpecNoTs, cname, J, pmax, p, w);
+                fprintf(fid, formatSpecNoTs, cname, J, pmax, p, w, r);
             else
-                fprintf(fid, formatSpecLastNoTs, cname, J, pmax, p, w);
+                fprintf(fid, formatSpecLastNoTs, cname, J, pmax, p, w, r);
             end
         end
     end

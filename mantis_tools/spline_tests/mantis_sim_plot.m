@@ -1,4 +1,4 @@
-function [ fig_handles ] = mantis_sim_plot( config, results, analysis, plotting, config_i)
+function [ fig_handles ] = mantis_sim_plot( test_name, config, results, analysis, plotting, config_i)
 %MANTIS_SIM_PLOT Plots simulation results and analysis data
 %   Detailed explanation goes here
 
@@ -23,6 +23,8 @@ function [ fig_handles ] = mantis_sim_plot( config, results, analysis, plotting,
 
     if strcmp(config.spline.tname_base, 'hover')
         name_traj = 'Hover';
+    elseif strcmp(config.spline.tname_base, 'hover2')
+        name_traj = 'Hover';
     elseif strcmp(config.spline.tname_base, 'yaw_only')
         name_traj = '$\mathbf{\psi}$-Only';
     elseif strcmp(config.spline.tname_base, 'x_only')
@@ -40,7 +42,7 @@ function [ fig_handles ] = mantis_sim_plot( config, results, analysis, plotting,
     elseif strcmp(config.spline.tname_base, 'circle_raised_yaw')
         name_traj = 'XYZ$\mathbf{\psi}$ Corkscrew';
     else
-        error(['Unknown plot title for tname (', tname])
+        error(['Unknown plot title for tname: ', config.spline.tname_base])
     end
 
     plot_title_3d = ['\textbf{', name_traj, ' ', name_order, ' Spline (3D)}'];
@@ -542,10 +544,12 @@ function [ fig_handles ] = mantis_sim_plot( config, results, analysis, plotting,
             axis tight;
             axis equal;
             grid on;
+%             view(55,35);
+            view(90.1,30);
             xticks([]);
             ylabel('Time ($s$)');
             zticks([]);
-            view(55,35);
+            title('\textbf{Keyframes of Robot Base Motion}')
 
     %     print(f6, ['./figures/keyframes_3d_',name_traj], '-dpng')
     %     print(f7, ['./figures/keyframes_time_',name_traj], '-dpng')

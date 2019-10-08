@@ -40,7 +40,7 @@ function [ configs, x0_overrides ] = gen_test_cases( test_name )
         configs{5}.control.fully_actuated = 0;
     % ---------------------------------------------------------------------
     elseif strcmp(test_name, 'hover_90_0')
-        configs{1} = gen_config(0, 1/1000, 1/250, 40, ...
+        configs{1} = gen_config(0, 1/1000, 1/250, 30, ...
                                 'quad_x4', 'serial', 2, ...
                                 9, 9, 'fdcc', 'hover', {'steady_90';'steady_0'}, ...
                                 'npid_px4', 0, 0, 0.6, deg2rad(30), ...
@@ -60,7 +60,7 @@ function [ configs, x0_overrides ] = gen_test_cases( test_name )
         x0_overrides(2,:) = {'STATE_XYZ', [1;1;0]};
         x0_overrides(3,:) = {'STATE_R', [0;0]};
         
-        configs{1} = gen_config(0, 1/1000, 1/250, 40, ...
+        configs{1} = gen_config(0, 1/1000, 1/250, 30, ...
                                 'quad_x4', 'serial', 2, ...
                                 9, 9, 'fdcc', 'hover', {'steady_90';'steady_90'}, ...
                                 'npid_px4', 0, 0, 0.6, deg2rad(30), ...
@@ -79,7 +79,7 @@ function [ configs, x0_overrides ] = gen_test_cases( test_name )
         x0_overrides(1,:) = {'STATE_Q', eul2quat([0,0,deg2rad(179)])'};
         x0_overrides(2,:) = {'STATE_XYZ', [0;0;2]};
         
-        configs{1} = gen_config(0, 1/1000, 1/250, 40, ...
+        configs{1} = gen_config(0, 1/1000, 1/250, 30, ...
                                 'quad_x4', 'serial', 2, ...
                                 9, 9, 'fdcc', 'hover2', {'steady_0';'steady_0'}, ...
                                 'npid_px4', 0, 0, 0.6, deg2rad(30), ...
@@ -98,7 +98,7 @@ function [ configs, x0_overrides ] = gen_test_cases( test_name )
         x0_overrides(1,:) = {'STATE_Q', eul2quat([0,0,deg2rad(179)])'};
         x0_overrides(2,:) = {'STATE_XYZ', [0;0;2]};
         
-        configs{1} = gen_config(0, 1/1000, 1/250, 40, ...
+        configs{1} = gen_config(0, 1/1000, 1/250, 30, ...
                                 'quad_x4', 'serial', 2, ...
                                 9, 9, 'fdcc', 'hover2', {'steady_90';'steady_0'}, ...
                                 'npid_px4', 0, 0, 0.6, deg2rad(30), ...
@@ -132,21 +132,10 @@ function [ configs, x0_overrides ] = gen_test_cases( test_name )
                                 'ctc', 1, 0, 0.6, deg2rad(30), ...
                                 1, 15, 4);
         configs(2:3,1) = configs(1);
-        % No control:
-        % w0p = 0;
-        % w0t = 0;
-        % Slight ocsillation:
         configs{2}.tuning.w0p = 2;
-        configs{2}.tuning.w0t = 15;
-%         configs{2}.tuning.w0p = 5;
-%         configs{2}.tuning.w0t = 20;
-        % Critical Inversion:
         configs{3}.tuning.w0p = 5;
-        configs{3}.tuning.w0t = 15;
-%         configs{3}.tuning.w0p = 10;
-%         configs{3}.tuning.w0t = 20;
     % ---------------------------------------------------------------------
-    elseif strcmp(test_name, 'tuning_diverging')
+    elseif strcmp(test_name, 'tuning_oscillating')
         % This arrangement of gain frequencies gives a response of a
         % critically damped system for both position and attitude tracking.
         % w0r is set to be an order of magnitude faster in response than
@@ -163,17 +152,54 @@ function [ configs, x0_overrides ] = gen_test_cases( test_name )
                                 'quad_x4', 'serial', 2, ...
                                 9, 9, 'fdcc', 'hover', {'steady_0';'steady_0'}, ...
                                 'ctc', 1, 0, 0.6, deg2rad(30), ...
-                                8.25, 15, 4);
-        configs(2,1) = configs(1);
+                                2.5, 15, 4);
+        configs(2:3,1) = configs(1);
+        configs{2}.tuning.w0p = 3;
+        configs{3}.tuning.w0p = 3.75;
+    % ---------------------------------------------------------------------
+    elseif strcmp(test_name, 'tuning_oscillating_more')
+        % This arrangement of gain frequencies gives a response of a
+        % critically damped system for both position and attitude tracking.
+        % w0r is set to be an order of magnitude faster in response than
+        % w0p, which seems to give good results (but I'm not 100% sure why,
+        % frequency responses mixing? Maybe a good reference would be
+        % similar to a cascade controller timings - should be 5-20x more on
+        % who you ask)
+        %     w0p = 2;
+        %     w0t = 10*w0p;
+        %     w0r = 4;
+        x0_overrides(1,:) = {'STATE_Q', eul2quat([0,0,deg2rad(179)])'};
         
-        % Converging Spiral:
-%         configs{1}.tuning.w0p = 11;
-%         configs{1}.tuning.w0t = 20;
-        % Diverging Spiral:
-        configs{2}.tuning.w0p = 8.6250;
-        configs{2}.tuning.w0t = 15;
-%         configs{2}.tuning.w0p = 11.5;
-%         configs{2}.tuning.w0t = 20;
+        configs{1} = gen_config(0, 1/1000, 1/250, 10, ...
+                                'quad_x4', 'serial', 2, ...
+                                9, 9, 'fdcc', 'hover', {'steady_0';'steady_0'}, ...
+                                'ctc', 1, 0, 0.6, deg2rad(30), ...
+                                6, 15, 4);
+        configs(2:3,1) = configs(1);
+        configs{2}.tuning.w0p = 6.75;
+        configs{3}.tuning.w0p = 7.5;
+    % ---------------------------------------------------------------------
+    elseif strcmp(test_name, 'tuning_unstable')
+        % This arrangement of gain frequencies gives a response of a
+        % critically damped system for both position and attitude tracking.
+        % w0r is set to be an order of magnitude faster in response than
+        % w0p, which seems to give good results (but I'm not 100% sure why,
+        % frequency responses mixing? Maybe a good reference would be
+        % similar to a cascade controller timings - should be 5-20x more on
+        % who you ask)
+        %     w0p = 2;
+        %     w0t = 10*w0p;
+        %     w0r = 4;
+        x0_overrides(1,:) = {'STATE_Q', eul2quat([0,0,deg2rad(179)])'};
+        
+        configs{1} = gen_config(0, 1/1000, 1/250, 10, ...
+                                'quad_x4', 'serial', 2, ...
+                                9, 9, 'fdcc', 'hover', {'steady_0';'steady_0'}, ...
+                                'ctc', 1, 0, 0.6, deg2rad(30), ...
+                                7.875, 15, 4);
+        configs(2:3,1) = configs(1);
+        configs{2}.tuning.w0p = 8.25;
+        configs{3}.tuning.w0p = 8.6250;
     % ---------------------------------------------------------------------
     elseif contains(test_name, 'spiral_base')
         if strcmp(test_name, 'spiral_base_slow')
