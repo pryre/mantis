@@ -1,4 +1,9 @@
-function [ tau, acc_c, q_c, integrator ] = control_feed_forward(model, pos_sp, vel_sp, acc_sp, yaw_sp, x, x_p, dt, integrator, KxP, KxdP)
+function [ tau, acc_c, q_c, pos_integrator, w_integrator ] = control_feed_forward(model, ...
+                                                            pos_sp, vel_sp, acc_sp,...
+                                                            yaw_sp,...
+                                                            x, x_p,...
+                                                            dt, pos_integrator, w_integrator,...
+                                                            KxP, KxI, KxdP)
 %CONTROL_FEED_FORWARD Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -22,9 +27,10 @@ function [ tau, acc_c, q_c, integrator ] = control_feed_forward(model, pos_sp, v
     R = quat2rotm(x(sn.STATE_Q)');
 
     %% High-Level 
-    [ vd_b, acc_c, ~, q_c ] = control_acceleration_vector(pos_sp, vel_sp, acc_sp, yaw_sp, ...       % References
+    [ vd_b, acc_c, ~, q_c, pos_integrator] = control_acceleration_vector(pos_sp, vel_sp, acc_sp, yaw_sp, ...       % References
                                                           x(sn.STATE_XYZ), x(sn.STATE_VXYZ), R, ... % States
-                                                          KxP, KxdP);                               % Gains
+                                                          KxP, KxdP, ... % Gains
+                                                          KxI, pos_integrator, dt); %Integral Terms
 
 
     %% Low-Level
@@ -34,9 +40,9 @@ function [ tau, acc_c, q_c, integrator ] = control_feed_forward(model, pos_sp, v
     ew = w_sp - x(sn.STATE_WXYZ_B);
     ewd = wd_sp - (x(sn.STATE_WXYZ_B) - x_p(sn.STATE_WXYZ_B))/dt;
 
-    integrator = integrator + ew*dt;
+    w_integrator = w_integrator + ew*dt;
 
-    wd_b = MC_RATE_P*ew + MC_RATE_I*integrator + MC_RATE_D*ewd;
+    wd_b = MC_RATE_P*ew + MC_RATE_I*w_integrator + MC_RATE_D*ewd;
     
     
     %% Gain Reduction Factor

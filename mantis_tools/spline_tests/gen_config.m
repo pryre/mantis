@@ -1,4 +1,8 @@
-function [ config ] = gen_config(t0, dt, cdt, tf, frame_type, manip_type, n, order, num_vias, dvia_est_method, tname_base, tname_r, control_method, control_fully_actuated, tracking_frame, yaw_w, theta_max, w0p, w0t, w0r)
+function [ config ] = gen_config(t0, dt, cdt, tf, ...
+                                frame_type, manip_type, n, ...
+                                order, num_vias, dvia_est_method, tname_base, tname_r, ...
+                                control_method, use_pos_int, control_fully_actuated, tracking_frame, yaw_w, theta_max, ...
+                                w0p, w0t, w0r)
 %GEN_CONFIG Helper function to generate user configs
 %   Time Settings: 
 %       - t0: Start time
@@ -44,6 +48,7 @@ function [ config ] = gen_config(t0, dt, cdt, tf, frame_type, manip_type, n, ord
 %           - 'npid'     - Nonlinear PID (Tracking)
 %           - 'ctc'      - Computed Torque Control (Tracking)
 %           - 'feed'     - Feed-Forward Compensation (Tracking)
+%       - use_pos_int: Enables the integral terms on the position controller
 %       - control_fully_actuated: Allows the platform to actuate in all directions if >0
 %       - tracking_frame: Frame of refernce for the controller to use during tracking
 %           - 0 for tracking the base
@@ -62,6 +67,7 @@ function [ config ] = gen_config(t0, dt, cdt, tf, frame_type, manip_type, n, ord
     
     config.g_vec = [0;0;-9.80665]; % TODO: Make a parameter of this func.
     config.g = norm(config.g_vec);
+    config.wind = [0;0;0];
 
     % Settings
     % Timings
@@ -84,6 +90,7 @@ function [ config ] = gen_config(t0, dt, cdt, tf, frame_type, manip_type, n, ord
 
     % Control
     config.control.method = control_method;
+    config.control.use_pos_int = use_pos_int;
     config.control.fully_actuated = control_fully_actuated;
     config.control.tracking_frame = tracking_frame;
     config.control.yaw_w = yaw_w;    % Yaw weighting for rotational tracking
@@ -93,8 +100,5 @@ function [ config ] = gen_config(t0, dt, cdt, tf, frame_type, manip_type, n, ord
     config.tuning.w0p = w0p;
     config.tuning.w0t = w0t;
     config.tuning.w0r = w0r;
-    
-    % Display for logging
-    print_config(config);
 end
 

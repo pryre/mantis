@@ -67,6 +67,11 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
     KtD = 2*config.tuning.w0t;    % Angular rate tracking P gain
     KrP = config.tuning.w0r^2;    % Joint tracking P gain
     KrD = 2*config.tuning.w0r;    % Joint rate tracking P gain
+    
+    KxI = 0;
+    if config.control.use_pos_int > 0
+        KxI = 0.5*KxP;
+    end
 
     % Sanity check:
     % Ensure that our time vectors ended up the same size, and same dt,
@@ -94,10 +99,18 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
     control_tau_last = zeros(length(sn.STATE_REDUCED),1);
 
     % Controller integrator variables
+    pos_integrator = zeros(3,1);
     npid_ang_integrator = zeros(3,1);
     npid_omega_integrator = zeros(3,1);
     manip_integrator = zeros(config.model.n,1);
-
+    
+    % Aerodynamic properties (if wind enabled)
+    aero.Cd = 0.8;
+    aero.rho = 1.225;
+    aero.mass = calc_total_mass(model_d);
+    aero.A = (0.5*0.05) + config.model.n*(0.25*0.01);
+    aero.do_aero = sum(abs(config.wind)) > 0;
+    
     % Fill in the control inputs for the first time step (to avoid analysis
     % issues)
     c(sn.CONTROL_A,1) =  -config.g_vec;
@@ -186,7 +199,7 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
                 error('Tracking intermediate frames has not been implemented');
             end
 
-            %% Control Law
+            %% Control Law            
             if strcmp(config.control.method, 'npid_px4')
                 if i > 2
                     x_p = x(:,i-2);
@@ -194,11 +207,11 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
                     x_p = x(:,i-1);
                 end
 
-                [tau_b, acc_c, q_sp_c, npid_omega_integrator ] = control_nonlinear_pid_px4( model_c, ...          
+                [tau_b, acc_c, q_sp_c, pos_integrator, npid_omega_integrator ] = control_nonlinear_pid_px4( model_c, ...          
                                                          pos_b, vel_b, acc_b, yaw, ...
                                                          x(:,i-1), x_p, ...
-                                                         config.time.cdt, npid_omega_integrator, ...
-                                                         KxP, KxD);
+                                                         config.time.cdt, pos_integrator, npid_omega_integrator, ...
+                                                         KxP, KxI, KxD);
 
                 [tau_r, manip_integrator] = control_manip_decoupled( model_c, ...
                                             r, rd, ...
@@ -228,12 +241,15 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
     %                                                      KxP, KxD, KtP, KtD, yaw_w, ...
     %                                                      cdt, npid_ang_integrator);
             elseif strcmp(config.control.method, 'ctc')
-                [tau_full, acc_c, q_sp_c ] = control_computed_torque( model_c, ...
+                [tau_full, acc_c, q_sp_c, pos_integrator ] = control_computed_torque( model_c, config.time.cdt, ...
                                              pos_b, vel_b, acc_b, ...
                                              yaw, R_sp_s, w_sp_s, wd_sp_s, ...
                                              r, rd, rdd, ...
                                              x(:,i-1), ...
-                                             KxP, KxD, KtP, KtD, config.control.yaw_w, KrP, KrD);
+                                             KxP, KxD, ...
+                                             KxI, pos_integrator, ...
+                                             KtP, KtD, config.control.yaw_w, ...
+                                             KrP, KrD );
             elseif strcmp(config.control.method, 'feed')
                 if i > 2
                     x_p = x(:,i-2);
@@ -241,11 +257,11 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
                     x_p = x(:,i-1);
                 end
 
-                [tau_b, acc_c, q_sp_c, npid_omega_integrator ] = control_feed_forward( model_c, ...
+                [tau_b, acc_c, q_sp_c, pos_integrator, npid_omega_integrator ] = control_feed_forward( model_c, ...
                                              pos_b, vel_b, acc_b, yaw, ...
                                              x(:,i-1), x_p, ...
-                                             config.time.cdt, npid_omega_integrator, ...
-                                             KxP, KxD);
+                                             config.time.cdt, pos_integrator, npid_omega_integrator, ...
+                                             KxP, KxI, KxD);
 
                 [tau_r, manip_integrator] = control_manip_decoupled( model_c, ...
                                             r, rd, ...
@@ -304,6 +320,17 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
 
         %% Simulte Time Step
         dx = mantis_sim_run(x(:,i-1), tau, model_d);
+        
+        
+        % Calculate aerodynamic effects if wind present
+        aero_acc = zeros(3,1);
+        if aero.do_aero > 0
+            wind_v = config.wind; %- x(sn.STATE_VXYZ,i-1);
+            % Use [v.*abs(v)] instead of [v.^2] to preserve direction
+            aero_drag = 0.5*aero.rho*aero.A*aero.Cd*(wind_v.*abs(wind_v));
+            aero_acc = aero_drag*aero.mass;
+        end
+
 
         % Update Dynamics
 
@@ -322,8 +349,9 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
         x(sn.STATE_Q,i) = rotm2quat(R)';
 
         % Linear Velocity
+        
         % Propogate linear velocity in the world frame
-        x(sn.STATE_VXYZ,i)= x(sn.STATE_VXYZ,i-1) + (config.g_vec + R_p*dx(sn.STATE_REDUCED_V_B))*config.time.dt;
+        x(sn.STATE_VXYZ,i) = x(sn.STATE_VXYZ,i-1) + (config.g_vec + aero_acc + R_p*dx(sn.STATE_REDUCED_V_B))*config.time.dt;
         % Then convert back to the body frame for the current time step
         x(sn.STATE_VXYZ_B,i) = R'*x(sn.STATE_VXYZ,i);
 

@@ -1,4 +1,12 @@
-function [ tau, acc_c, q_c ] = control_computed_torque( model, pos_sp, vel_sp, acc_sp, yaw_sp, R_sp, w_sp, wd_sp, r_sp, rd_sp, rdd_sp, x, KxP, KxdP, KtP, KtdP, yaw_w, KrP, KrD )
+function [ tau, acc_c, q_c, pos_int ] = control_computed_torque( model, dt, ... 
+                                                                pos_sp, vel_sp, acc_sp, ...
+                                                                yaw_sp, R_sp, w_sp, wd_sp, ...
+                                                                r_sp, rd_sp, rdd_sp, ...
+                                                                x, ...
+                                                                KxP, KxdP, ...
+                                                                KxI, pos_int, ...
+                                                                KtP, KtdP, yaw_w,...
+                                                                KrP, KrD )
 %COMPUTED_TORQUE_CONTROL Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -7,9 +15,10 @@ function [ tau, acc_c, q_c ] = control_computed_torque( model, pos_sp, vel_sp, a
 
 
     %% High-Level 
-    [ vd_b, acc_c, ~, q_c ] = control_acceleration_vector(pos_sp, vel_sp, acc_sp, yaw_sp, ...       % References
+    [ vd_b, acc_c, ~, q_c, pos_int ] = control_acceleration_vector(pos_sp, vel_sp, acc_sp, yaw_sp, ...       % References
                                                             x(sn.STATE_XYZ), x(sn.STATE_VXYZ), R, ... % States
-                                                            KxP, KxdP);                               % Gains
+                                                            KxP, KxdP, ... % Gains
+                                                            KxI, pos_int, dt); %Integral Terms
 
     
     %% Low-Level

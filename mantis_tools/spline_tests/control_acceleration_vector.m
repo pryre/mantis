@@ -1,10 +1,22 @@
-function [ vd_b, acc_c, R_c, q_c ] = control_acceleration_vector(pos_sp, vel_sp, acc_sp, yaw_sp, pos, vel, R, Kp, Kd)
+function [ vd_b, acc_c, R_c, q_c, integrator ] = control_acceleration_vector(pos_sp, vel_sp, acc_sp, yaw_sp, pos, vel, R, Kp, Kd, Ki, integrator, dt)
 %CONTROL_ACCELERATION_VECTOR Summary of this function goes here
 %   Detailed explanation goes here
 
     %% PD Tracking Controller
+    
+            
+    % Common integrator for all methods
+
+    
     % Build acceleration control reference from spline tracking error
-    acc_c = acc_sp + Kp*(pos_sp - pos) + Kd*(vel_sp - vel);
+    ep = (pos_sp - pos);
+    ev = (vel_sp - vel);
+    
+    if Ki > 0
+        integrator = integrator + ep*dt;
+    end
+    
+    acc_c = acc_sp + Kp*ep + Ki*integrator + Kd*ev;
 
     % Rotation control reference from acceleration vector with tracking error
     [R_c, q_c] = rot_from_vec_yaw(acc_c, yaw_sp);

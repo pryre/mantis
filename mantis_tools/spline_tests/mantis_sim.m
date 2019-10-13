@@ -100,13 +100,13 @@ camera.zoom = 0.2;
 % %                                 '\(\omega_{0p}=6.75\)', ...
 % %                                 '\(\omega_{0p}=7.5\)'};
 
-test_name = 'tuning_unstable';
-plotting.show_multiconfig_step = 10;
-plotting.flight_space = [-0.6,0.6,-0.6,0.6,0,1.2];
-plotting.multiconfig_plot_title = '\textbf{CTC-F High-Level Tracking (Unstable)}';
-plotting.multiconfig_legends = {'\(\omega_{0p}=7.875\)', ...
-                                '\(\omega_{0p}=8.250\)', ...
-                                '\(\omega_{0p}=8.625\)'};
+% test_name = 'tuning_unstable';
+% plotting.show_multiconfig_step = 10;
+% plotting.flight_space = [-0.6,0.6,-0.6,0.6,0,1.2];
+% plotting.multiconfig_plot_title = '\textbf{CTC-F High-Level Tracking (Unstable)}';
+% plotting.multiconfig_legends = {'\(\omega_{0p}=7.875\)', ...
+%                                 '\(\omega_{0p}=8.250\)', ...
+%                                 '\(\omega_{0p}=8.625\)'};
 
 % test_name = 'spiral_base_slow';
 % show_settling_time = 0;
@@ -133,6 +133,14 @@ plotting.multiconfig_legends = {'\(\omega_{0p}=7.875\)', ...
 % plotting.show_multiconfig_list_reference = 1;
 % plotting.flight_space = [-2,2,-2,2,0,4];
 % plotting.multiconfig_plot_title = '\textbf{Vectoring End Tracking (\(\mathbf{\Delta t = 10s}\))}';
+
+test_name = 'wind_compensation';
+show_settling_time = 0;
+plotting.show_multiconfig_list_reference = 1;
+plotting.flight_space = [-1.5,1.5,-1.5,1.5,0,2];
+plotting.multiconfig_plot_title = '\textbf{Tracking Performance with Constant Wind}';
+plotting.multiconfig_legends = {'Uncompensated', ...
+                                'Compensated'};
 
 % Define some preset configurations to keep this script clutter-free
 [ configs, x0_overrides ] = gen_test_cases( test_name );
@@ -212,6 +220,8 @@ end
     %%
 if plotting.show_multiconfig_plot > 0
     cmap = lines(size(configs,1));
+%     cmap = [     0, 0.4470, 0.7410; ...
+%             0.4660, 0.6740, 0.1880];
     
     xticks = linspace(plotting.flight_space(1),plotting.flight_space(2),5);
     yticks = linspace(plotting.flight_space(3),plotting.flight_space(4),5);
