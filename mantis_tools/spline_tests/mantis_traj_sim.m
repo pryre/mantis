@@ -30,7 +30,7 @@ camera.zoom = 0.2;
 % % cp ./figures/* ~/Cloudstor/PhD/Thesis/graphics/results/simulated
 % copyfile ./figures/* ~/Cloudstor/PhD/Thesis/graphics/results/simulated
 
-dt = 1/1000;
+dt = 1/100; % XXX: Approximately 1/14 gives 8 samples per segment at 5s/9v;
 
 default_config = gen_config(0, dt, dt, 1, ...
                             'quad_x4', 'serial', 2, ...
@@ -254,8 +254,8 @@ for i = 1:size(configs,1)
     l = legend(alnames);
     flushLegend(l,'Location','NorthWest');
     
-    export_fig([test_name,'_throttle_case_', num2str(i)], '-eps', fT)
-    export_fig([test_name,'_throttle_case_', num2str(i)], '-png', fT)
+%     export_fig([test_name,'_throttle_case_', num2str(i)], '-eps', fT)
+%     export_fig([test_name,'_throttle_case_', num2str(i)], '-png', fT)
 end
 
 

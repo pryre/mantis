@@ -168,80 +168,102 @@ function [ results ] = mantis_traj_sim_simulate( config, camera )
             rd = zeros(config.model.n,1);
             rdd = zeros(config.model.n,1);
             
-            acc_c = acc_b;
-            q_sp_c = [1,0,0,0];
-            
-            
-            % Feedback Linearisation
-            xid_b = [wd_sp_s;
-                     acc_b];
-
-            [tauf, taur] = IDfly( model_d, zeros(6,1), xid_b, r, zeros(config.model.n,1), rdd ); 
-
-            tau = [tauf; ...
-                   taur];
+%             acc_c = acc_b;
+%             q_sp_c = [1,0,0,0];
+%             
+%             
+%             % Feedback Linearisation
+%             xid_b = [wd_sp_s;
+%                      acc_b];
+% 
+%             [tauf, taur] = IDfly( model_d, zeros(6,1), xid_b, r, zeros(config.model.n,1), rdd ); 
+% 
+%             tau = [tauf; ...
+%                    taur];
 
         else
-            %% Control Law
+            
             % Base Tracking
             % Projection to SO(3)/so(3)
             [R_sp_s, w_sp_s, wd_sp_s] = map_angles_rates_accels(acc, jerk, snap, yaw, dyaw, ddyaw);
             pos_b = pos;
             vel_b = vel;
             acc_b = acc;
-
             
-            %Handle fully actuated case
-            [tau, acc_c, q_sp_c, pos_integrator ] = control_computed_torque( model_c, config.time.cdt, ...
-                                         pos_b, vel_b, acc_b, ...
-                                         yaw, R_sp_s, w_sp_s, wd_sp_s, ...
-                                         r, rd, rdd, ...
-                                         x(:,i-1), ...
-                                         KxP, KxD, ...
-                                         KxI, pos_integrator, ...
-                                         KtP, KtD, config.control.yaw_w, ...
-                                         KrP, KrD );
-
-            %% Simulte Time Step
-            dx = mantis_sim_run(x(:,i-1), tau, model_d);
-
-            % Calculate aerodynamic effects if wind present
-            aero_acc = zeros(3,1);
-            if aero.do_aero > 0
-                wind_v = config.wind; %- x(sn.STATE_VXYZ,i-1);
-                % Use [v.*abs(v)] instead of [v.^2] to preserve direction
-                aero_drag = 0.5*aero.rho*aero.A*aero.Cd*(wind_v.*abs(wind_v));
-                aero_acc = aero_drag*aero.mass;
-            end
-
-
-            % Update Dynamics
-
-            % Joints
-            x(sn.STATE_RD,i) = x(sn.STATE_RD,i-1) + dx(sn.STATE_REDUCED_RD)*config.time.dt;
-            x(sn.STATE_R,i) = x(sn.STATE_R,i-1) + x(sn.STATE_RD,i-1)*config.time.dt;
-
-
-            % Angular Velocity
-            x(sn.STATE_WXYZ_B,i) = x(sn.STATE_WXYZ_B,i-1) + dx(sn.STATE_REDUCED_W_B)*config.time.dt;
-        %     % Perfect angular velocity tracking
-        %     x(sn.STATE_WXYZ_B,i) = R_p'*R_sp_s*c(sn.CONTROL_WXYZ_B,i); %XXX: Need to pull into the current frame of reference
-
-            % Rotation
-            R = orthagonalize_rotm(R_p + R_p*vee_up(x(sn.STATE_WXYZ_B,i-1)*config.time.dt));
-            x(sn.STATE_Q,i) = rotm2quat(R)';
-
-            % Linear Velocity
-
-            % Propogate linear velocity in the world frame
-            x(sn.STATE_VXYZ,i) = x(sn.STATE_VXYZ,i-1) + (config.g_vec + aero_acc + R_p*dx(sn.STATE_REDUCED_V_B))*config.time.dt;
-            % Then convert back to the body frame for the current time step
-            x(sn.STATE_VXYZ_B,i) = R'*x(sn.STATE_VXYZ,i);
-
-            % Linear Position
-            x(sn.STATE_XYZ,i) = x(sn.STATE_XYZ,i-1) + x(sn.STATE_VXYZ,i-1)*config.time.dt;
-
         end
+        
+        acc_c = acc_b;
+        q_sp_c = rotm2quat(R_sp_s);
+
+        % Feedback Linearisation
+        xid_b = [wd_sp_s;
+                 acc_b];
+
+        [tauf, taur] = IDfly( model_d, zeros(6,1), xid_b, r, zeros(config.model.n,1), rdd ); 
+
+        tau = [tauf; ...
+               taur];
+
+%             %% Control Law
+%             % Base Tracking
+%             % Projection to SO(3)/so(3)
+%             [R_sp_s, w_sp_s, wd_sp_s] = map_angles_rates_accels(acc, jerk, snap, yaw, dyaw, ddyaw);
+%             pos_b = pos;
+%             vel_b = vel;
+%             acc_b = acc;
+% 
+%             
+%             %Handle fully actuated case
+%             [tau, acc_c, q_sp_c, pos_integrator ] = control_computed_torque( model_c, config.time.cdt, ...
+%                                          pos_b, vel_b, acc_b, ...
+%                                          yaw, R_sp_s, w_sp_s, wd_sp_s, ...
+%                                          r, rd, rdd, ...
+%                                          x(:,i-1), ...
+%                                          KxP, KxD, ...
+%                                          KxI, pos_integrator, ...
+%                                          KtP, KtD, config.control.yaw_w, ...
+%                                          KrP, KrD );
+% 
+%             %% Simulte Time Step
+%             dx = mantis_sim_run(x(:,i-1), tau, model_d);
+% 
+%             % Calculate aerodynamic effects if wind present
+%             aero_acc = zeros(3,1);
+%             if aero.do_aero > 0
+%                 wind_v = config.wind; %- x(sn.STATE_VXYZ,i-1);
+%                 % Use [v.*abs(v)] instead of [v.^2] to preserve direction
+%                 aero_drag = 0.5*aero.rho*aero.A*aero.Cd*(wind_v.*abs(wind_v));
+%                 aero_acc = aero_drag*aero.mass;
+%             end
+% 
+% 
+%             % Update Dynamics
+% 
+%             % Joints
+%             x(sn.STATE_RD,i) = x(sn.STATE_RD,i-1) + dx(sn.STATE_REDUCED_RD)*config.time.dt;
+%             x(sn.STATE_R,i) = x(sn.STATE_R,i-1) + x(sn.STATE_RD,i-1)*config.time.dt;
+% 
+% 
+%             % Angular Velocity
+%             x(sn.STATE_WXYZ_B,i) = x(sn.STATE_WXYZ_B,i-1) + dx(sn.STATE_REDUCED_W_B)*config.time.dt;
+%         %     % Perfect angular velocity tracking
+%         %     x(sn.STATE_WXYZ_B,i) = R_p'*R_sp_s*c(sn.CONTROL_WXYZ_B,i); %XXX: Need to pull into the current frame of reference
+% 
+%             % Rotation
+%             R = orthagonalize_rotm(R_p + R_p*vee_up(x(sn.STATE_WXYZ_B,i-1)*config.time.dt));
+%             x(sn.STATE_Q,i) = rotm2quat(R)';
+% 
+%             % Linear Velocity
+% 
+%             % Propogate linear velocity in the world frame
+%             x(sn.STATE_VXYZ,i) = x(sn.STATE_VXYZ,i-1) + (config.g_vec + aero_acc + R_p*dx(sn.STATE_REDUCED_V_B))*config.time.dt;
+%             % Then convert back to the body frame for the current time step
+%             x(sn.STATE_VXYZ_B,i) = R'*x(sn.STATE_VXYZ,i);
+% 
+%             % Linear Position
+%             x(sn.STATE_XYZ,i) = x(sn.STATE_XYZ,i-1) + x(sn.STATE_VXYZ,i-1)*config.time.dt;
+% 
+%         end
         
         
         %% Save control inputs
