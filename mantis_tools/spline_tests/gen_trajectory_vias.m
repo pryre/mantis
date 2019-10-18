@@ -1,4 +1,4 @@
-function [via_points_x, via_points_y, via_points_z, via_points_psi ] = trajectory_vias(trajectory,num_via_points)
+function [via_points_x, via_points_y, via_points_z, via_points_psi ] = gen_trajectory_vias(trajectory,num_via_points)
 %TRAJECTORY_VIAS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -19,6 +19,8 @@ function [via_points_x, via_points_y, via_points_z, via_points_psi ] = trajector
         via_points_z = 2*ones(1,num_via_points);
     elseif strcmp(trajectory,'x_only')
         via_points_x = x_traj;
+    elseif strcmp(trajectory,'x_only_1m')
+        via_points_x = linspace(0,1,num_via_points);
     elseif strcmp(trajectory,'y_only')
         via_points_y = y_traj;
     elseif strcmp(trajectory,'z_only')

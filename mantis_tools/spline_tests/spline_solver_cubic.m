@@ -1,4 +1,4 @@
-function [ st, sq ] = spline_solver_cubic( n, st0, stf, q0, qd0, qf, qdf )
+function [ a ] = spline_solver_cubic( dt, q0, qd0, qf, qdf )
 %QUINTIC_SPLINE_SOLVER Computes a quintic polynomial reference trajectory
 %   Primary use of this solution is to provide continous acceleration (and 
 %   therefore a non-impulsive jerk), which should not induce vibrational 
@@ -24,9 +24,9 @@ function [ st, sq ] = spline_solver_cubic( n, st0, stf, q0, qd0, qf, qdf )
     %% Simultaneous Polynomial Equations
     % Use a normalized time to build the matrix
     % This helps ensure that we stay away from floating point issues
-    t0 = 0;
-    tf = 1;
-    dt = stf - st0;
+%     t0 = 0;
+%     tf = 1;
+%     dt = stf - st0;
     
 %     M = [ 1, t0, t0^2,   t0^3;
 %           0,  1, 2*t0, 3*t0^2;
@@ -35,25 +35,13 @@ function [ st, sq ] = spline_solver_cubic( n, st0, stf, q0, qd0, qf, qdf )
 
 
     %% Coefficient Solver
+    
+    % Normalized solver
+%     sdt = 1;
    
     b=[q0; qd0*dt; qf; qdf*dt];
     M = spline_solver_gen_tnorm_ls( length(b) );
     a = inv(M)*b;
 
-    
-    %% Spline Calculator
-    
-    t = linspace(t0, tf, n);
-    st = linspace(st0, stf, n);
-    c = ones(size(t));
-    
-    q =        a(1).*c +     a(2).*t +    a(3).*t.^2 +    a(4).*t.^3;
-    qd =       a(2).*c +   2*a(3).*t +  3*a(4).*t.^2;
-    qdd =    2*a(3).*c +   6*a(4).*t;
-    qddd =   6*a(4).*c;
-    qdddd = zeros(1,n);
-
-    % Devide derivatives by dt 
-    sq = [q; qd./dt; qdd./(dt^2); qddd./(dt^3); qdddd./(dt^4)];
 end
 

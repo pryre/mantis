@@ -1,4 +1,4 @@
-function [via_points_r ] = trajectory_vias_r(trajectory,num_via_points)
+function [via_points_r ] = gen_trajectory_vias_r(trajectory,num_via_points)
 %TRAJECTORY_VIAS Summary of this function goes here
 %   Detailed explanation goes here
 

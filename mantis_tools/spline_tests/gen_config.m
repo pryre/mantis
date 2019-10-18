@@ -24,10 +24,11 @@ function [ config ] = gen_config(t0, dt, cdt, tf, ...
 %           - nonic = 9
 %       - num_vias: Number of vias to use during generation
 %       - dvia_est_method: Estimation method for via derivatives
-%       - tname_base: Trajectory name for the base to track
+%       - tname_base: Tracking frame trajectory (gen_trajectory_vias)
 %           - 'hover'
 %           - 'hover2'
 %           - 'x_only'
+%           - 'x_only_1m'
 %           - 'y_only'
 %           - 'z_only'
 %           - 'yaw_only'
@@ -35,7 +36,7 @@ function [ config ] = gen_config(t0, dt, cdt, tf, ...
 %           - 'circle_flat_yaw'
 %           - 'circle_raised'
 %           - 'circle_raised_yaw'
-%       - tname_r: Trajectory name for each joint to track (cell array (n))
+%       - tname_r: Joint trajectories (gen_trajectory_vias_r) (cell array (Nx1))
 %           - 'steady_0' - Joint angles 0
 %           - 'steady_90' - Joint angles 0
 %           - 'swing_part' - Joint angles 0->pi/4
@@ -61,8 +62,8 @@ function [ config ] = gen_config(t0, dt, cdt, tf, ...
 %       - w0t: Natural frequency for tuning attitude control
 %       - w0r: Natural frequency for tuning joint control
 
-    if cdt <= dt
-        error('cdt > dt')
+    if cdt < dt
+        error('cdt >= dt')
     end
     
     config.g_vec = [0;0;-9.80665]; % TODO: Make a parameter of this func.

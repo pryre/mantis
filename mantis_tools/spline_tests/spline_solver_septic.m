@@ -1,4 +1,4 @@
-function [ st, sq ] = spline_solver_septic( n, st0, stf, q0, qd0, qdd0, qddd0, qf, qdf, qddf, qdddf )
+function [ a ] = spline_solver_septic( dt, q0, qd0, qdd0, qddd0, qf, qdf, qddf, qdddf )
 %QUINTIC_SPLINE_SOLVER Computes a septic polynomial reference trajectory
 %   Primary use of this solution is to provide continous acceleration (and 
 %   therefore a non-impulsive jerk), which should not induce vibrational 
@@ -26,9 +26,9 @@ function [ st, sq ] = spline_solver_septic( n, st0, stf, q0, qd0, qdd0, qddd0, q
     %% Simultaneous Polynomial Equations
     % Use a normalized time to build the matrix
     % This helps ensure that we stay away from floating point issues
-    t0 = 0;
-    tf = 1;
-    dt = stf - st0;
+%     t0 = 0;
+%     tf = 1;
+%     dt = stf - st0;
     
 %     M = [ 1, t0, t0^2,   t0^3,    t0^4,    t0^5,     t0^6,     t0^7;
 %           0,  1, 2*t0, 3*t0^2,  4*t0^3,  5*t0^4,   6*t0^5,   7*t0^6;
@@ -42,24 +42,12 @@ function [ st, sq ] = spline_solver_septic( n, st0, stf, q0, qd0, qdd0, qddd0, q
 
     %% Coefficient Solver
     
+    % Normalized solver
+%     dt = 1;
+    
     b=[q0; qd0*dt; qdd0*(dt^2); qddd0*(dt^3); qf; qdf*dt; qddf*(dt^2); qdddf*(dt^3)];
     M = spline_solver_gen_tnorm_ls( length(b) );
     a = inv(M)*b;
     
-
-    %% Spline Calculator
-    
-    t = linspace(t0, tf, n);
-    st = linspace(st0, stf, n);
-    c = ones(size(t));
-    
-    q =        a(1).*c +     a(2).*t +     a(3).*t.^2 +     a(4).*t.^3 +     a(5).*t.^4 +    a(6).*t.^5 +   a(7).*t.^6 + a(8).*t.^7;
-    qd =       a(2).*c +   2*a(3).*t +   3*a(4).*t.^2 +   4*a(5).*t.^3 +   5*a(6).*t.^4 +  6*a(7).*t.^5 + 7*a(8).*t.^6;
-    qdd =    2*a(3).*c +   6*a(4).*t +  12*a(5).*t.^2 +  20*a(6).*t.^3 +  30*a(7).*t.^4 + 42*a(8).*t.^5;
-    qddd =   6*a(4).*c +  24*a(5).*t +  60*a(6).*t.^2 + 120*a(7).*t.^3 + 210*a(8).*t.^4;
-    qdddd = 24*a(5).*c + 120*a(6).*t + 360*a(7).*t.^2 + 840*a(8).*t.^3;
-    
-    % Devide derivatives by dt 
-    sq = [q; qd./dt; qdd./(dt^2); qddd./(dt^3); qdddd./(dt^4)];
 end
 

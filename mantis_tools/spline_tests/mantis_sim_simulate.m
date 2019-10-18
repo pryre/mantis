@@ -13,11 +13,11 @@ function [ results ] = mantis_sim_simulate( config, x0_overrides, camera )
 
     controller_rate = floor((1/config.time.dt)/(1/config.time.cdt));
 
-    [vpx, vpy, vpz, vppsi] = trajectory_vias(config.spline.tname_base, config.spline.num_vias);
+    [vpx, vpy, vpz, vppsi] = gen_trajectory_vias(config.spline.tname_base, config.spline.num_vias);
     vpr = cell(config.model.n,1);
     r0 = zeros(config.model.n,1);
     for i = 1:config.model.n
-        vpr{i} = trajectory_vias_r(config.spline.tname_r{i}, config.spline.num_vias);
+        vpr{i} = gen_trajectory_vias_r(config.spline.tname_r{i}, config.spline.num_vias);
         r0(i) = vpr{i}(1); % Easier to capture initial joint states in this loop
     end
 
