@@ -1,20 +1,11 @@
-function [ t, s ] = gen_spline( t_vias, vias, order, dt )
+function [ t, s ] = gen_spline_samples( t_vias, vias, order, num_samples )
 %GEN_DATA_POINT_STRUCT Summary of this function goes here
 %   Detailed explanation goes here
-
-    % Full trajectory times
-    t0 = t_vias(1);
-    tf = t_vias(end);
     
     % Pre-allocate vectors
-    t = t0:dt:tf;
-    s = zeros(5,length(t));
-%     t = [];
-%     s = zeros(5,0);
-
-    % Itterate over the list of vias in pairs
-%     si = 1;
-
+    t = zeros(1,0);
+    s = zeros(5,0);
+    
     for i = 2:size(vias,2)
         
         % Segment times
@@ -22,21 +13,7 @@ function [ t, s ] = gen_spline( t_vias, vias, order, dt )
         stf = t_vias(i);
         sdt = stf-st0;
         
-%         if mod(sdt,dt)
-%             error('Bad alignment between t_vias and dt');
-%         end
-        
-        sr0 = find(t==st0);
-        srf = find(t==stf);
-        
-        if ~any(sr0) || ~any(srf)
-            error('Could not align segment times to t');
-        end
-        
-        sr = sr0:srf;
-        
-        st = linspace(0, 1, length(sr));
-        
+        st = linspace(0, 1, num_samples);  
         
         switch(order)
             case 3
@@ -82,12 +59,15 @@ function [ t, s ] = gen_spline( t_vias, vias, order, dt )
 
         %% Spline Calculator
 
+        nt = linspace(0, 1, num_samples);  
         a = zeros(10,1);
         a(1:length(as)) = as;
         a = flip(a)';   % We want decending order (spline_calculator) and horizontal (for polyder)
-        sq = spline_calculator(st, sdt, a);
-        
-        s(:,sr) = sq;
+        sq = spline_calculator(nt, sdt, a);
+                
+        st = linspace(st0, stf, num_samples);
+        t = [t(1:end-1), st];
+        s = [s(:,1:end-1), sq];
     end
 end
 
