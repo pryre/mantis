@@ -18,6 +18,8 @@ set(0,'DefaultFigureColor','w');
 
 %%
 
+do_export_figures = 0;
+
 camera.body = 0; % Set to 6 to track the robot base
 camera.direction = [-3 -3 2];	% Downwards better viewing angle
 camera.zoom = 0.2;
@@ -34,6 +36,7 @@ camera.zoom = 0.2;
 test_name = './figures/traj_optcost';
 % l_names = {'Hover Swing', 'Trans. Steady', 'Trans. Swing', 'Trans. Swing (\(t=\infty\))'};
 
+optimise_vias_step = 0.5;
 optimise_path_step = 0.5;
 optimise_seg_step = 0.5;
 
@@ -45,7 +48,8 @@ e_step = 0.0001;
 num_samples = 100;
 
 nv = 5;
-vt = 50*[0,1,2,3,4];
+% vt = 50*[0,1,2,3,4];
+vt = 0:nv-1;
 vpx = [0, 1, 1.5, 2.5,  7];
 vpy = [0, 2,  -1,   0, -1];
 vpz = [0, 1,  0,   1, 2];
@@ -126,15 +130,92 @@ analyses = cell(0,1);
 sn = state_names_lookup(config.model.n);
 
 
+%% Optimisation Pre-Step - Time segment equalisation
+
+step = optimise_vias_step;
+vt_last = zeros(size(vt));
+
+kJp = 4;
+kJy = 2;
+kJr = {0.5;0.25};
+
+a = 0;
+
+for i = 2:size(vt,2)
+%     dt = vt(i) - vt(i-1);
+    dx = vpx(i) - vpx(i-1);
+    dy = vpy(i) - vpy(i-1);
+    dz = vpz(i) - vpz(i-1);
+    dpsi = vppsi(i) - vppsi(i-1);
+    dr = cell(config.model.n,1);
+    for j = 1:config.model.n
+        dr{j} = vpr{j}(i) - vpr{j}(i-1);
+    end
+    
+    J = abs(kJp*dx) + abs(kJp*dy) + abs(kJp*dz) + abs(kJy*dpsi);
+    for j = 1:config.model.n
+        J = J + abs(kJr{j}*dr{j});
+    end
+    
+    disp(J);
+    if i == 2
+        a = 1/J;
+    end
+
+    vt_last(i) = vt_last(i-1) + a*J;
+end
+
+vt_last
+
+% Shrink time scale such that as the step decreases, changes also
+% decrease
+% vias.time = vt_last;
+
+%     t = vias.time(1):config.time.dt:vias.time(end);
+% vias.time = t(floor(linspace(1,length(t),config.spline.num_vias)));
+
+% [vpx, vpy, vpz, vppsi] = gen_trajectory_vias(config.spline.tname_base, config.spline.num_vias);
+% vpr = cell(config.model.n,1);
+% r0 = zeros(config.model.n,1);
+% for i = 1:config.model.n
+%     vpr{i} = gen_trajectory_vias_r(config.spline.tname_r{i}, config.spline.num_vias);
+%     r0(i) = vpr{i}(1); % Easier to capture initial joint states in this loop
+% end
+% 
+% vias.x = gen_vias(config.spline.dvia_est_method, vpx, vias.time);
+% vias.y = gen_vias(config.spline.dvia_est_method, vpy, vias.time);
+% vias.z = gen_vias(config.spline.dvia_est_method, vpz, vias.time);
+% vias.psi = gen_vias(config.spline.dvia_est_method, vppsi, vias.time);
+% vias.r = cell(config.model.n,1);
+% for j = 1:config.model.n
+%     vias.r{j} = gen_vias(config.spline.dvia_est_method, vpr{j}, vias.time);
+% end
+% 
+% disp(vias.time)
+% disp(vias.x(1,:))
+% disp(vias.y(1,:))
+% disp(vias.z(1,:))
+% disp(vias.psi(1,:))
+% for j = 1:config.model.n
+%     disp(vias.r{j}(1,:))
+% end
+
+
+%     [ t, s_x, s_y, s_z, s_psi, s_r ] = mantis_opt_sim_spline_gen( config, vias, num_samples );
+
+vt_last_step_0 = vt_last;
+
+vt_last = 100*vt_last;
+
 %% Optimisation Step 1 - Whole path performance
 % Necessary to do first to optimise the derivatives
 disp('Path Duration')
 step = optimise_path_step;
-vt_last = vt;
+% vt_last = vt;
 
 i = 1;
 num_optim = 0;
-while true    
+while true
     % Shrink time scale such that as the step decreases, changes also
     % decrease
     vias.time = (1-step)*vt_last;
@@ -340,8 +421,10 @@ ft = figure();
     set(gca,'SortMethod','ChildOrder')
 
 fig_name = [test_name, '_traj'];
-export_fig(fig_name, '-eps', ft)
-export_fig(fig_name, '-png', ft)
+if logical(do_export_figures)
+    export_fig(fig_name, '-eps', ft)
+    export_fig(fig_name, '-png', ft)
+end
 
 
 %%
@@ -398,9 +481,12 @@ for i = [1,num_optim_step_1,num_optim]
         l = legend(lp,alnames);
         flushLegend(l,'Location','NorthWest');
     end
+    
     fig_name = [test_name, '_step_', num2str(i)];
-    export_fig(fig_name, '-eps', fT)
-    export_fig(fig_name, '-png', fT)
+    if logical(do_export_figures)
+        export_fig(fig_name, '-eps', fT)
+        export_fig(fig_name, '-png', fT)
+    end
 end
 
 
