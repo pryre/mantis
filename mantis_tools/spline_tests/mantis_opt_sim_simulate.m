@@ -1,4 +1,4 @@
-function [ results ] = mantis_opt_sim_simulate( config, camera, vias, num_samples )
+function [ results ] = mantis_opt_sim_simulate( config, camera, vias, num_samples, do_sim_steps )
 %MANTIS_SIM_SIMULATE Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -63,75 +63,76 @@ function [ results ] = mantis_opt_sim_simulate( config, camera, vias, num_sample
 %     c(sn.CONTROL_RDD,1) = zeros(size(sn.CONTROL_RDD));
 %     c(sn.CONTROL_TAU,1) = zeros(size(sn.CONTROL_TAU));
 %     
-            
-    for i = 1:length(t)
-%         %% Status Messages
-%         progress = 100*i/length(t);
-%         if progress > progressLast + 0.1
-%             msg = sprintf('Simulating... %3.1f%', progress);
-%             fprintf([reverseStr, msg]);
-%             reverseStr = repmat(sprintf('\b'), 1, length(msg));
-%             progressLast = progress;
-%         end
-%         
-%         % Previous rotation matrix (for ease of use)
-%         R_p = quat2rotm(x(sn.STATE_Q,i-1)');
 
-        pos_e = zeros(3,1);
-        
-        %% Guidance
-        % Spline reference vectors
-        pos = [s_x(sn.SPLINE_POS,i);s_y(sn.SPLINE_POS,i);s_z(sn.SPLINE_POS,i)];
-        vel = [s_x(sn.SPLINE_VEL,i);s_y(sn.SPLINE_VEL,i);s_z(sn.SPLINE_VEL,i)];
-        acc = [s_x(sn.SPLINE_ACC,i);s_y(sn.SPLINE_ACC,i);s_z(sn.SPLINE_ACC,i)] - config.g_vec; %XXX: -g to have a positive term for gravity added
-        jerk = [s_x(sn.SPLINE_JERK,i);s_y(sn.SPLINE_JERK,i);s_z(sn.SPLINE_JERK,i)];
-        snap = [s_x(sn.SPLINE_SNAP,i);s_y(sn.SPLINE_SNAP,i);s_z(sn.SPLINE_SNAP,i)];
+    if logical(do_sim_steps)
+        for i = 1:length(t)
+    %         %% Status Messages
+    %         progress = 100*i/length(t);
+    %         if progress > progressLast + 0.1
+    %             msg = sprintf('Simulating... %3.1f%', progress);
+    %             fprintf([reverseStr, msg]);
+    %             reverseStr = repmat(sprintf('\b'), 1, length(msg));
+    %             progressLast = progress;
+    %         end
+    %         
+    %         % Previous rotation matrix (for ease of use)
+    %         R_p = quat2rotm(x(sn.STATE_Q,i-1)');
 
-        yaw = s_psi(sn.SPLINE_POS,i);
-        dyaw = s_psi(sn.SPLINE_VEL,i);
-        ddyaw = s_psi(sn.SPLINE_ACC,i);
+            pos_e = zeros(3,1);
 
-        r = zeros(config.model.n,1);
-        rd = zeros(config.model.n,1);
-        rdd = zeros(config.model.n,1);
-        for j = 1:config.model.n
-            r(j) = s_r{j}(sn.SPLINE_POS,i);
-            rd(j) = s_r{j}(sn.SPLINE_VEL,i);
-            rdd(j) = s_r{j}(sn.SPLINE_ACC,i);
+            %% Guidance
+            % Spline reference vectors
+            pos = [s_x(sn.SPLINE_POS,i);s_y(sn.SPLINE_POS,i);s_z(sn.SPLINE_POS,i)];
+            vel = [s_x(sn.SPLINE_VEL,i);s_y(sn.SPLINE_VEL,i);s_z(sn.SPLINE_VEL,i)];
+            acc = [s_x(sn.SPLINE_ACC,i);s_y(sn.SPLINE_ACC,i);s_z(sn.SPLINE_ACC,i)] - config.g_vec; %XXX: -g to have a positive term for gravity added
+            jerk = [s_x(sn.SPLINE_JERK,i);s_y(sn.SPLINE_JERK,i);s_z(sn.SPLINE_JERK,i)];
+            snap = [s_x(sn.SPLINE_SNAP,i);s_y(sn.SPLINE_SNAP,i);s_z(sn.SPLINE_SNAP,i)];
+
+            yaw = s_psi(sn.SPLINE_POS,i);
+            dyaw = s_psi(sn.SPLINE_VEL,i);
+            ddyaw = s_psi(sn.SPLINE_ACC,i);
+
+            r = zeros(config.model.n,1);
+            rd = zeros(config.model.n,1);
+            rdd = zeros(config.model.n,1);
+            for j = 1:config.model.n
+                r(j) = s_r{j}(sn.SPLINE_POS,i);
+                rd(j) = s_r{j}(sn.SPLINE_VEL,i);
+                rdd(j) = s_r{j}(sn.SPLINE_ACC,i);
+            end
+
+            % Base Tracking
+            % Projection to SO(3)/so(3)
+            [R_sp_s, w_sp_s, wd_sp_s] = map_angles_rates_accels(acc, jerk, snap, yaw, dyaw, ddyaw);
+            pos_b = pos;
+            vel_b = vel;
+            acc_b = acc;
+
+            acc_c = acc_b;
+            q_sp_c = rotm2quat(R_sp_s);
+
+            % Feedback Linearisation
+            xid_b = [wd_sp_s;
+                     acc_b];
+
+            [tauf, taur] = IDfly( model_d, zeros(6,1), xid_b, r, zeros(config.model.n,1), rdd ); 
+
+            tau = [tauf; ...
+                   taur];
+
+            %% Save control inputs
+            c(sn.CONTROL_P_B,i) = pos_b;
+            c(sn.CONTROL_P_E,i) = pos_e;
+            c(sn.CONTROL_A,i) = acc_c;
+            c(sn.CONTROL_Q,i) = q_sp_c';
+            c(sn.CONTROL_WXYZ_B,i) = w_sp_s;
+            c(sn.CONTROL_DWXYZ_B,i) = wd_sp_s;
+            c(sn.CONTROL_R,i) = r;
+            c(sn.CONTROL_RD,i) = rd;
+            c(sn.CONTROL_RDD,i) = rdd;
+            c(sn.CONTROL_TAU,i) = tau;
         end
-
-        % Base Tracking
-        % Projection to SO(3)/so(3)
-        [R_sp_s, w_sp_s, wd_sp_s] = map_angles_rates_accels(acc, jerk, snap, yaw, dyaw, ddyaw);
-        pos_b = pos;
-        vel_b = vel;
-        acc_b = acc;
-        
-        acc_c = acc_b;
-        q_sp_c = rotm2quat(R_sp_s);
-
-        % Feedback Linearisation
-        xid_b = [wd_sp_s;
-                 acc_b];
-
-        [tauf, taur] = IDfly( model_d, zeros(6,1), xid_b, r, zeros(config.model.n,1), rdd ); 
-
-        tau = [tauf; ...
-               taur];
-        
-        %% Save control inputs
-        c(sn.CONTROL_P_B,i) = pos_b;
-        c(sn.CONTROL_P_E,i) = pos_e;
-        c(sn.CONTROL_A,i) = acc_c;
-        c(sn.CONTROL_Q,i) = q_sp_c';
-        c(sn.CONTROL_WXYZ_B,i) = w_sp_s;
-        c(sn.CONTROL_DWXYZ_B,i) = wd_sp_s;
-        c(sn.CONTROL_R,i) = r;
-        c(sn.CONTROL_RD,i) = rd;
-        c(sn.CONTROL_RDD,i) = rdd;
-        c(sn.CONTROL_TAU,i) = tau;
     end
-
     
     %% Prepare Results
     

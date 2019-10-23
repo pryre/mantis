@@ -128,93 +128,154 @@ M = [Mb, zeros(6,2);
 results = cell(0,1);
 analyses = cell(0,1);
 sn = state_names_lookup(config.model.n);
+num_optim = 0;
 
 
-%% Optimisation Pre-Step - Time segment equalisation
-
-step = optimise_vias_step;
-vt_last = zeros(size(vt));
-
-kJp = 4;
-kJy = 2;
-kJr = {0.5;0.25};
-
-a = 0;
-
-for i = 2:size(vt,2)
-%     dt = vt(i) - vt(i-1);
-    dx = vpx(i) - vpx(i-1);
-    dy = vpy(i) - vpy(i-1);
-    dz = vpz(i) - vpz(i-1);
-    dpsi = vppsi(i) - vppsi(i-1);
-    dr = cell(config.model.n,1);
-    for j = 1:config.model.n
-        dr{j} = vpr{j}(i) - vpr{j}(i-1);
-    end
-    
-    J = abs(kJp*dx) + abs(kJp*dy) + abs(kJp*dz) + abs(kJy*dpsi);
-    for j = 1:config.model.n
-        J = J + abs(kJr{j}*dr{j});
-    end
-    
-    disp(J);
-    if i == 2
-        a = 1/J;
-    end
-
-    vt_last(i) = vt_last(i-1) + a*J;
+%% Optimisation Step 0 - Initial state
+vias.time = vt;
+vias.x = gen_vias(config.spline.dvia_est_method, vpx, vias.time);
+vias.y = gen_vias(config.spline.dvia_est_method, vpy, vias.time);
+vias.z = gen_vias(config.spline.dvia_est_method, vpz, vias.time);
+vias.psi = gen_vias(config.spline.dvia_est_method, vppsi, vias.time);
+vias.r = cell(config.model.n,1);
+for j = 1:config.model.n
+    vias.r{j} = gen_vias(config.spline.dvia_est_method, vpr{j}, vias.time);
 end
 
-vt_last
+% Run Simulation
+result = mantis_opt_sim_simulate( config, camera, vias, num_samples, 0);
+result.vias = vias;
 
-% Shrink time scale such that as the step decreases, changes also
-% decrease
-% vias.time = vt_last;
+% Data Analysis
+analysis.J_fuel = zeros(8,size(result.t,2));
+analysis.J_act = zeros(8,size(result.t,2));
 
-%     t = vias.time(1):config.time.dt:vias.time(end);
-% vias.time = t(floor(linspace(1,length(t),config.spline.num_vias)));
+% Record improved values 
+num_optim = num_optim + 1;
 
-% [vpx, vpy, vpz, vppsi] = gen_trajectory_vias(config.spline.tname_base, config.spline.num_vias);
-% vpr = cell(config.model.n,1);
-% r0 = zeros(config.model.n,1);
+results{num_optim} = result;
+analyses{num_optim} = analysis;
+
+
+
+%% Optimisation Step 1 - Time segment equalisation
+
+vt_last = vt;
+
+% vt_last = zeros(size(vt));
+% 
+% a = 0;
+% 
+% dvpx = vpx(2:end) - vpx(1:end-1);
+% dvpy = vpy(2:end) - vpy(1:end-1);
+% dvpz = vpz(2:end) - vpz(1:end-1);
+% dvppsi = vppsi(2:end) - vppsi(1:end-1);
+% dvpr = cell(config.model.n,1);
 % for i = 1:config.model.n
-%     vpr{i} = gen_trajectory_vias_r(config.spline.tname_r{i}, config.spline.num_vias);
-%     r0(i) = vpr{i}(1); % Easier to capture initial joint states in this loop
+%     dvpr{i} = vpr{i}(2:end) - vpr{i}(1:end-1);
 % end
 % 
-% vias.x = gen_vias(config.spline.dvia_est_method, vpx, vias.time);
-% vias.y = gen_vias(config.spline.dvia_est_method, vpy, vias.time);
-% vias.z = gen_vias(config.spline.dvia_est_method, vpz, vias.time);
-% vias.psi = gen_vias(config.spline.dvia_est_method, vppsi, vias.time);
-% vias.r = cell(config.model.n,1);
-% for j = 1:config.model.n
-%     vias.r{j} = gen_vias(config.spline.dvia_est_method, vpr{j}, vias.time);
+% dist_x = sum(abs(dvpx));
+% dist_y = sum(abs(dvpy));
+% dist_z = sum(abs(dvpz));
+% dist_psi = sum(abs(dvppsi));
+% dist_r = cell(config.model.n,1);
+% for i = 1:config.model.n
+%     dist_r{i} = sum(abs(dvpr{i}));
 % end
 % 
-% disp(vias.time)
-% disp(vias.x(1,:))
-% disp(vias.y(1,:))
-% disp(vias.z(1,:))
-% disp(vias.psi(1,:))
-% for j = 1:config.model.n
-%     disp(vias.r{j}(1,:))
+% for i = 1:(size(vt,2) - 1)
+%     if dist_x > 0
+%         dx = abs(dvpx(i)) / dist_x;
+%     else
+%         dx = 0;
+%     end
+%     if dist_y > 0
+%         dy = abs(dvpy(i)) / dist_y;
+%     else
+%         dy = 0;
+%     end
+%     if dist_z > 0
+%         dz = abs(dvpz(i)) / dist_z;
+%     else
+%         dz = 0;
+%     end
+%     if dist_psi > 0
+%         dpsi = abs(dvppsi(i)) / dist_psi;
+%     else
+%         dpsi = 0;
+%     end
+%     
+%     dr = cell(config.model.n,1);
+%     for j = 1:config.model.n
+%         if dist_r{j} > 0
+%             dr{j} = abs(dvpr{j}(i)) / dist_r{j};
+%         else
+%             dr{j} = 0;
+%         end
+%     end
+%     
+%     J = sqrt(dx^2 + dy^2 + dz^2) + dpsi;
+%     for j = 1:config.model.n
+%        J = J + dr{j};
+%     end
+%     
+%     % First segment should be normalised (dvt(1->2) = 1)
+%     if i == 1
+%         a = 1/J;
+%     end
+% 
+%     vt_last(i+1) = vt_last(i) + a*J;
 % end
-
-
-%     [ t, s_x, s_y, s_z, s_psi, s_r ] = mantis_opt_sim_spline_gen( config, vias, num_samples );
 
 vt_last_step_0 = vt_last;
+vias.time = 100*vt_last;
+vt_last = vias.time;
 
-vt_last = 100*vt_last;
+vias.x = gen_vias(config.spline.dvia_est_method, vpx, vias.time);
+vias.y = gen_vias(config.spline.dvia_est_method, vpy, vias.time);
+vias.z = gen_vias(config.spline.dvia_est_method, vpz, vias.time);
+vias.psi = gen_vias(config.spline.dvia_est_method, vppsi, vias.time);
+vias.r = cell(config.model.n,1);
+for j = 1:config.model.n
+    vias.r{j} = gen_vias(config.spline.dvia_est_method, vpr{j}, vias.time);
+end
 
-%% Optimisation Step 1 - Whole path performance
+% Run Simulation
+result = mantis_opt_sim_simulate( config, camera, vias, num_samples, 1);
+result.vias = vias;
+
+% Data Analysis
+tau = result.c(sn.CONTROL_TAU,:);
+analysis.J_fuel = sum(abs(tau));
+
+analysis.J_act = zeros(8,size(tau,2));
+
+for j = 1:size(tau,2)
+    analysis.J_act(:,j) = M*tau(:,j);
+end
+
+max_J_act = max(max(analysis.J_act));
+
+J1 = kJ - max_J_act;
+
+if J1 < 0
+    error('Bad initial trajectory time guess')
+else
+    % Record improved values 
+    num_optim = num_optim + 1;
+
+    results{num_optim} = result;
+    analyses{num_optim} = analysis;
+end
+
+%% Optimisation Step 2 - Whole path performance
 % Necessary to do first to optimise the derivatives
 disp('Path Duration')
 step = optimise_path_step;
 % vt_last = vt;
 
 i = 1;
-num_optim = 0;
 while true
     % Shrink time scale such that as the step decreases, changes also
     % decrease
@@ -242,7 +303,7 @@ while true
 
 
     %% Run Simulation
-    result = mantis_opt_sim_simulate( config, camera, vias, num_samples);
+    result = mantis_opt_sim_simulate( config, camera, vias, num_samples, 1);
     result.vias = vias;
     
     %% Data Analysis
@@ -259,23 +320,34 @@ while true
     
     J1 = kJ - max_J_act;
     
+%     if J1 > 0
+%         % Record improved values 
+%         num_optim = num_optim + 1;
+%         
+%         results{num_optim} = result;
+%         analyses{num_optim} = analysis;
+%     end
+
+    % We got an improved value, so update the best times
     if J1 > 0
+        vt_last = vias.time;
+    end
+    
+    if ( (J1 < e) && (J1 > 0) ) || (step < e_step )
+        disp('Well optimised!')
+        
         % Record improved values 
         num_optim = num_optim + 1;
         
         results{num_optim} = result;
         analyses{num_optim} = analysis;
-    end
-    
-    if ( (J1 < e) && (J1 > 0) ) || (step < e_step )
-        disp('Well optimised!')
+        
         if (step < e_step )
             disp('Cannot optimise further')
         end
         break
     elseif J1 > 0
         disp('shrink!')
-        vt_last = vias.time;
     elseif J1 < 0
         disp('decrease step...')
         step = optimise_path_step*step;
@@ -290,13 +362,13 @@ num_optim_step_1 = num_optim;
 vt_last_step_1 = vt_last;
 
 
-%% Optimisation Step 2 - Segment aggression
+%% Optimisation Step 3 - Segment aggression
 % Forces each segment to perform to the same standard
 vias_whole_path = vias;
 
 i = 1;
 for k = 2:size(vt,2)
-    disp(['Segment ', num2str(k-1)])
+    disp(['Segment Duration: ', num2str(k-1)])
     step = optimise_seg_step;
     
     while true
@@ -312,7 +384,7 @@ for k = 2:size(vt,2)
         dvt_diff = dvt - dvt_new;
         vias.time(k:end) = vias.time(k:end) - dvt_diff;
         
-    %%
+    %% XXX: Can't do this per segment as it changes other segments
     %     t = vias.time(1):config.time.dt:vias.time(end);
         % vias.time = t(floor(linspace(1,length(t),config.spline.num_vias)));
 
@@ -335,7 +407,7 @@ for k = 2:size(vt,2)
 
 
         %% Run Simulation
-        result = mantis_opt_sim_simulate( config, camera, vias, num_samples);
+        result = mantis_opt_sim_simulate( config, camera, vias, num_samples, 1);
         result.vias = vias;
         
         
@@ -353,26 +425,41 @@ for k = 2:size(vt,2)
         inds0 = find(result.t==vias.time(k-1));
         indsf = find(result.t==vias.time(k));
         max_J_act = max(max(analysis.J_act(:,inds0:indsf)));
-
+        
         J1 = kJ - max_J_act;
 
+%         if J1 > 0
+%             % Record improved values 
+%             num_optim = num_optim + 1;
+% 
+%             results{num_optim} = result;
+%             analyses{num_optim} = analysis;
+%         end
+
+        % We got an improved value, so update the best times
         if J1 > 0
+            vt_last = vias.time;
+        end
+        
+        if ( (J1 < e) && (J1 > 0) ) || (step < e_step )
+            disp('Well optimised!')            
+%             result.t(inds0)
+%             result.t(indsf)
+%             max_J_act
+%             J1
+        
             % Record improved values 
             num_optim = num_optim + 1;
 
             results{num_optim} = result;
             analyses{num_optim} = analysis;
-        end
 
-        if ( (J1 < e) && (J1 > 0) ) || (step < e_step )
-            disp('Well optimised!')
             if (step < e_step )
                 disp('Cannot optimise further')
             end
             break
         elseif J1 > 0
             disp('shrink!')
-            vt_last = vias.time;
         elseif J1 < 0
             disp('decrease step...')
             step = optimise_path_step*step;
@@ -386,67 +473,30 @@ for k = 2:size(vt,2)
 end
 
 
+%% Plotting - Step-by-step
 
-
-%%
-
-
-if num_optim <= 0
-    error('No solution found')    
-end
-
-
-%% Plotting
-brewermap('Spectral');
-cmap = brewermap(num_optim+1);
-
-ft = figure();
-    clf;
-
-    title('Optimised 3D Trajectory')
-    hold on;
-    tmax = 0;
-    tmin = inf;
-    scatter3(vias.x(1,:),vias.y(1,:),vias.z(1,:), 'or')
-    
-    for i = 1:num_optim
-        plot3(results{i}.traj.s_x(1,:),results{i}.traj.s_y(1,:),results{i}.traj.s_z(1,:),'Color',cmap(i,:));
-    end
-    
-    axis('equal')
-    xlabel('X Position ($m$)')
-    ylabel('Y Position ($m$)')
-    zlabel('Z Position ($m$)')
-    view([-45,35])
-    set(gca,'SortMethod','ChildOrder')
-
-fig_name = [test_name, '_traj'];
-if logical(do_export_figures)
-    export_fig(fig_name, '-eps', ft)
-    export_fig(fig_name, '-png', ft)
-end
-
-
-%%
 a_ignore_map = [1,3,5,8];
 % alnames = {'\(\omega_{bx}\)';'\(\omega_{by}\)';'\(\omega_{bz}\)'; ...
 %            '\(v_{bx}\)';'\(v_{by}\)';'\(v_{bz}\)'; ...
 %            '\(r_{1}\)';'\(r_{2}\)'};
 % alnames(a_ignore_map) = [];
+s_names = cell(0,1);
 alnames = {'$k_{J}$';  '$t_{\mathcal{Q}}$'
            '\(m_{1}\)';'\(m_{2}\)';'\(m_{3}\)'; ...
            '\(m_{4}\)';'\(m_{5}\)';'\(m_{6}\)'; ...
            '\(r_{1}\)';'\(r_{2}\)'};
 
-acmap = brewermap(8);
+acmap = brewermap(8)*0.9;
 
-for i = [1,num_optim_step_1,num_optim]
+for i = 1:num_optim %[1,num_optim_step_1,num_optim]
+    s_names{i} = num2str(i-1);
+    
     fT = figure();
     clf;
 
     step_t_lim = [results{i}.vias.time(1),results{i}.vias.time(end)];
     
-    title(['Normalised Actuator Command -- Step ', num2str(i)])
+    title(['Normalised Actuator Command -- Step ', num2str(i-1)])
     hold on;
     % Plot actuator limit and via segemnts
     plot(step_t_lim, [kJ,kJ], '--k')
@@ -469,7 +519,7 @@ for i = [1,num_optim_step_1,num_optim]
     yticklabels({'0','20','40','60','80','100'})
     ylabel('Actuator Command (\%)')
     
-    if i == 1
+    if i-1 == 1
         % Fake data for legend
         lp = [];
         lp(end+1) = plot(nan, nan, '--k');
@@ -482,17 +532,50 @@ for i = [1,num_optim_step_1,num_optim]
         flushLegend(l,'Location','NorthWest');
     end
     
-    fig_name = [test_name, '_step_', num2str(i)];
+    fig_name = [test_name, '_step_', num2str(i-1)];
     if logical(do_export_figures)
         export_fig(fig_name, '-eps', fT)
         export_fig(fig_name, '-png', fT)
     end
 end
 
+%% Plotting - Trajectories
 
+brewermap('Spectral');
+cmap = brewermap(num_optim)*0.9;
 
+ft = figure();
+    clf;
 
+    title('Optimised 3D Trajectory')
+    hold on;
+    tmax = 0;
+    tmin = inf;
+    scatter3(vias.x(1,:),vias.y(1,:),vias.z(1,:), 'or')
+    
+    for i = 1:num_optim
+        plot3(results{i}.traj.s_x(1,:),results{i}.traj.s_y(1,:),results{i}.traj.s_z(1,:),'Color',cmap(i,:));
+    end
+    
+    axis('equal')
+    xlabel('X Position ($m$)')
+    ylabel('Y Position ($m$)')
+    zlabel('Z Position ($m$)')
+    view([-45,35])
+    set(gca,'SortMethod','ChildOrder')
+    
+    colormap(brewermap);
+    cb = colorbar('Ticks',linspace(0,1,num_optim),...
+         'TickLabels',s_names);
+    cb.Label.String = 'Optimisation Step';
+    cb.Label.Interpreter = 'latex';
+    set(cb,'TickLabelInterpreter','latex');
 
+fig_name = [test_name, '_traj'];
+if logical(do_export_figures)
+    export_fig(fig_name, '-eps', ft)
+    export_fig(fig_name, '-png', ft)
+end
 
 
 
