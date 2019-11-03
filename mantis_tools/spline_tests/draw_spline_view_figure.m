@@ -4,7 +4,7 @@ function [ f ] = draw_spline_view_figure( t, s, tv, v, order, n )
 
     shape_names = {'Constant', 'Linear', 'Quadratic', 'Cubic', 'Quartic', 'Quintic', 'Sextic', 'Septic', 'Octic', 'Nonic'};
 
-    f = figure();
+    f = figure('Position', [10 10 500 707]);
     clf;
     set(f,'defaultAxesColorOrder',[0,0,0;0,0,0]);
     

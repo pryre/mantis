@@ -89,6 +89,7 @@ f2 = figure();
     hold off;
 
     axis('square')
+    axis([-2 2 0 4])
     xlabel('X Position (\(m\))')
     ylabel('Y Position (\(m\))')
     legend('Unconditioned','Precise', 'Vias', 'Location', 'SouthEast')

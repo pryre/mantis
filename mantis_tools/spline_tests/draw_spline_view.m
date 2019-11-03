@@ -24,15 +24,15 @@ num_via_points = length(vp);
 
 t = t0:dt:tf;
 t_vias = linspace(t0,tf,num_via_points);
-sd = t_vias(2) - t_vias(1);
+% sd = t_vias(2) - t_vias(1);
 
-vias = gen_vias(via_est_method, vp, sd);
-via_steps = ((tf - t0) / dt) / (num_via_points - 1);
+vias = gen_vias(via_est_method, vp, t_vias);
+% via_steps = ((tf - t0) / dt) / (num_via_points - 1);
 
-[~, s3] = gen_spline(t0, tf, vias, 3, via_steps);
-[~, s5] = gen_spline(t0, tf, vias, 5, via_steps);
-[~, s7] = gen_spline(t0, tf, vias, 7, via_steps);
-[~, s9] = gen_spline(t0, tf, vias, 9, via_steps);
+[~, s3] = gen_spline(t_vias, vias, 3, dt);
+[~, s5] = gen_spline(t_vias, vias, 5, dt);
+[~, s7] = gen_spline(t_vias, vias, 7, dt);
+[~, s9] = gen_spline(t_vias, vias, 9, dt);
 
 
 %%
@@ -44,17 +44,15 @@ f4 = draw_spline_view_figure( t, s9, t_vias, vias, 9, '\(\mathbf{9^{th}}\) \text
 
 
 %%
-% print(f1, 'spline_cubic', '-depsc')
-% print(f2, 'spline_quintic', '-depsc')
-% print(f3, 'spline_septic', '-depsc')
-%%
-print(f4, 'spline_nonic', '-depsc')
+print(f1, './figures/spline_cubic', '-depsc')
+print(f2, './figures/spline_quintic', '-depsc')
+print(f3, './figures/spline_septic', '-depsc')
+print(f4, './figures/spline_nonic', '-depsc')
 
 %%
-% print(f1, './spline_cubic.png', '-dpng', '-r720')
-% print(f2, './spline_quintic.png', '-dpng', '-r720')
-% print(f3, './spline_septic.png', '-dpng', '-r720')
-%%
-print(f4, './spline_nonic.png', '-dpng', '-r720')
+print(f1, './figures/spline_cubic.png', '-dpng', '-r720')
+print(f2, './figures/spline_quintic.png', '-dpng', '-r720')
+print(f3, './figures/spline_septic.png', '-dpng', '-r720')
+print(f4, './figures/spline_nonic.png', '-dpng', '-r720')
 
 
