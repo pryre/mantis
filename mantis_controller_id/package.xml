@@ -42,7 +42,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>roscpp</build_depend>
-  <build_depend>contrail</build_depend>
+  <build_depend>contrail_manager</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>mavros_msgs</build_depend>
   <build_depend>mantis_description</build_depend>
@@ -55,7 +55,7 @@
   <build_depend>eigen</build_depend>
 
   <run_depend>roscpp</run_depend>
-  <run_depend>contrail</run_depend>
+  <run_depend>contrail_manager</run_depend>
   <run_depend>mantis_description</run_depend>
   <run_depend>mantis_params</run_depend>
   <run_depend>mantis_state</run_depend>

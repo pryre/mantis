@@ -3,7 +3,7 @@
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
 
-#include <contrail/ContrailManager.h>
+#include <contrail_manager/ContrailManager.h>
 #include <pid_controller_lib/pidController.h>
 #include <mantis_params/param_client.h>
 #include <mantis_state/state_client.h>

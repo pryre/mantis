@@ -15,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   mantis_state
   dynamic_reconfigure
   mantis_kinematics
-  contrail
+  contrail_manager
 )
 
 ## System dependencies are found with CMake's conventions

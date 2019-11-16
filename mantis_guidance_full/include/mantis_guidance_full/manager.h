@@ -8,7 +8,7 @@
 #include <mantis_params/param_client.h>
 #include <mantis_state/state_client.h>
 #include <mantis_kinematics/solver.h>
-#include <contrail/ContrailManager.h>
+#include <contrail_manager/ContrailManager.h>
 
 #include <mantis_guidance_full/joint.h>
 
