@@ -42,3 +42,14 @@ MAVROS connections:
 - `slung_load_sim_quad.launch`
 - `marker_detect.launch`
 - `marker_sim_detect.launch`
+
+
+## Additional Examples
+
+### Pipe tracking Demo
+```sh
+roscore
+roslaunch mantis_description mantis_sim_quad_full_id.launch
+rosrun mantis_planner bends_pipe
+roslaunch mantis_planner plan_loader.launch move:=bends
+```
