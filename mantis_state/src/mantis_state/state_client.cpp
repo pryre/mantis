@@ -14,8 +14,8 @@ Client::Client( const ros::NodeHandle& nh,
 	, p_( p )
 	, timestamp_( 0 )
 	, voltage_( 0.0 )
-	, frame_id_( "map" )
-	, child_frame_id_( "mantis_uav" )
+	, frame_id_( "" )
+	, child_frame_id_( "" )
 	, mav_safety_disengaged_( false )
 	, mav_armed_(false) {
 
@@ -129,6 +129,11 @@ void Client::callback_state(
 	const mantis_msgs::State::ConstPtr& msg_in ) {
 	timestamp_ = msg_in->header.stamp;
 	configuration_stamp_ = msg_in->configuration_stamp;
+
+	if(frame_id_.length() == 0)
+		frame_id_ = msg_in->header.frame_id;
+	if(child_frame_id_.length() == 0)
+		child_frame_id_ = msg_in->child_frame_id;
 
 	g_ = MDTools::affine_from_msg( msg_in->pose );
 	bv_ = MDTools::vector_from_msg( msg_in->twist.linear );

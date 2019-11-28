@@ -24,7 +24,9 @@
 		<param name="base_arm_length" value="0.225"/>
 
 		<node pkg="mantis_params" type="mantis_params_node" name="mantis_params"
-		clear_params="true" output="screen"/>
+		clear_params="true" output="screen">
+			<param name="model_id" value="$(arg model_name)" />
+		</node>
 
 		<node pkg="mantis_state" type="mantis_state_node" name="mantis_state"
 		clear_params="true" output="screen">
@@ -66,6 +68,8 @@
 		</node>
 
 		<node name="hil_sensor" pkg="robin_gazebo" type="hil_sensor_viz_node" respawn="false" output="screen">
+			<param name="viz_rate" value="0" />
+
 			<remap from="hil/imu_data" to="mavros/hil/imu_ned"/>
 		</node>
 

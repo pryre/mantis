@@ -112,7 +112,7 @@ void Server::callback_estimator( const ros::TimerEvent& e ) {
 		mantis_msgs::State state;
 		state.header.stamp = e.current_real;
 		state.header.frame_id = "map";
-		state.child_frame_id = "mantis_uav";
+		state.child_frame_id = p_.get(MantisParams::PARAM_MODEL_ID);
 		state.configuration_stamp = p_.get(MantisParams::PARAM_TIME_CHANGE_CONFIG);
 
 		state.pose = MDTools::pose_from_eig( g_ );

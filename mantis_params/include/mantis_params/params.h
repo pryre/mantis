@@ -71,7 +71,8 @@ const char* ParamsAirframeTypeName[] {
 };
 
 typedef enum {
-	PARAM_AIRFRAME_NAME = 0
+	PARAM_AIRFRAME_NAME = 0,
+	PARAM_MODEL_ID
 } ParamsString;
 
 const char* ParamsStringName[] {

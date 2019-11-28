@@ -9,13 +9,13 @@
 namespace MantisParams {
 Server::Server( void )
 	: nh_()
+	, model_id_("mantis_uav")
 	, pwm_min_( 1000 )
 	, pwm_max_( 2000 )
-	,
 	// motor_kv_(0.0),
 	// rpm_thrust_m_(0.0),
 	// rpm_thrust_c_(0.0),
-	motor_thrust_max_( 0.0 )
+	, motor_thrust_max_( 0.0 )
 	, motor_drag_max_( 0.0 )
 	, la_( 0.0 )
 	, body_num_( 1 ) {
@@ -32,6 +32,10 @@ Server::Server( void )
 	if ( ready ) {
 		pub_params_ = nh_.advertise<mantis_msgs::Parameters>( "params", 1, true );
 		srv_reload_ = nh_.advertiseService( "reload_params", &Server::reload, this );
+		std::string ns = ros::this_node::getNamespace();
+		std::size_t it_name = ns.find_last_of("/");
+		model_id_ = ns.substr(it_name+1);
+		//ros::param::param<std::string>("model_id", model_id_, model_id_);
 
 		update();
 
@@ -56,7 +60,7 @@ mantis_msgs::Parameters Server::get_params( void ) {
 	mantis_msgs::Parameters p;
 
 	p.header.stamp = load_time_;
-	p.header.frame_id = "mantis_uav";
+	p.header.frame_id = model_id_;
 
 	p.airframe_name = airframe_name_;
 	p.pwm_min = pwm_min_;
@@ -84,7 +88,7 @@ bool Server::reload( std_srvs::Empty::Request& req,
 void Server::load( void ) {
 	load_time_ = ros::Time::now();
 
-	ROS_INFO( "--== Loading ControllerAug Parameters ==--" );
+	ROS_INFO( "--== Loading Mantis Parameters ==--" );
 
 	nh_.param( "motor/arm_len", la_, la_ );
 	// nh_.param("motor/kv", motor_kv_, motor_kv_);
@@ -177,6 +181,6 @@ void Server::load( void ) {
 	if ( ( bodies_.size() != body_num_ ) || ( joints_.size() != body_num_ ) )
 		ROS_WARN( "Number of loaded joints and bodies do not match, some params may be invalid" );
 
-	ROS_INFO( "--== ControllerAug Parameters Loaded ==--" );
+	ROS_INFO( "--== Mantis Parameters Loaded ==--" );
 }
 };

@@ -121,7 +121,7 @@ ForwardKinematics::ForwardKinematics()
 			tf_props[2].transform.translation = MDTools::vector_from_eig( rot * arm );
 			rot.angle() = 5.0 * M_PI / 4.0;
 			tf_props[3].transform.translation = MDTools::vector_from_eig( rot * arm );
-		} else if ( p_.get(MantisParams::PARAM_AIRFRAME_TYPE) == MantisParams::PARAM_AIRFRAME_TYPE_HEX_X6 ) {
+		} else if ( p_.get(MantisParams::PARAM_AIRFRAME_TYPE) == MantisParams::PARAM_AIRFRAME_TYPE_HEX_P6 ) {
 			Eigen::AngleAxisd rot( 0.0, Eigen::Vector3d::UnitZ() );
 			tf_props[0].transform.translation = MDTools::vector_from_eig( rot * arm );
 			rot.angle() = M_PI;

@@ -19,6 +19,7 @@ class Server {
 
 		ros::Time load_time_;
 
+		std::string model_id_;
 		std::string airframe_name_;
 		int pwm_min_;
 		int pwm_max_;

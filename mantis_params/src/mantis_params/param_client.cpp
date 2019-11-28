@@ -254,6 +254,9 @@ const std::string& Client::get(const ParamsString param_id) {
 		case PARAM_AIRFRAME_NAME: {
 			return p_.airframe_name;
 		}
+		case PARAM_MODEL_ID: {
+			return p_.header.frame_id;
+		}
 		default: {
 			warn_get_failed(ParamsStringName[param_id]);
 			throw std::bad_typeid();
