@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 #include <eigen3/Eigen/Dense>
 
 inline void calc_Cqqd(Eigen::MatrixXd& Cqqd, double IJ0x, double IJ0y, double IJ0z, double IJ1x, double IJ1y, double IJ2x, double IJ2y, double bvx, double bvy, double bvz, double bw1, double bw2, double bw3, double l0, double l1, double lc1, double lc2, double m0, double m1, double m2, double r1, double r1d, double r2, double r2d) {

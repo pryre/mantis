@@ -1,3 +1,11 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ vd_b, acc_c, R_c, q_c, integrator ] = control_acceleration_vector(pos_sp, vel_sp, acc_sp, yaw_sp, pos, vel, R, Kp, Kd, Ki, integrator, dt)
 %CONTROL_ACCELERATION_VECTOR Summary of this function goes here
 %   Detailed explanation goes here

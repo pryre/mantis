@@ -1,3 +1,11 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ eRw, ew, ewd ] = error_R_w_wd_trans(  R_sp, R, w_sp, w, wd_sp )
 %ERROR_W_TRANS Summary of this function goes here
 %   Detailed explanation goes here

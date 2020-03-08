@@ -1,3 +1,11 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ sn ] = state_names_lookup(n)
 %STATE_NAMES_LOOKUP State names lookup for state vector
 % Defines a set of constants to use with the state and control vectors.

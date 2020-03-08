@@ -1,3 +1,7 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ yf ] = mantis_goal( base_pos, arm_pos, p )
 %MANTIS_GOAL Calculates the final state goal for some input goals
 %   base: Goal position of the base link as [X,Y,Z]

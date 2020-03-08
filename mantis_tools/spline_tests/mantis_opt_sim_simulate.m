@@ -1,3 +1,11 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ results ] = mantis_opt_sim_simulate( config, camera, vias, num_samples, do_sim_steps )
 %MANTIS_SIM_SIMULATE Summary of this function goes here
 %   Detailed explanation goes here

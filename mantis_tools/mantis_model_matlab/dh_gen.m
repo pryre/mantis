@@ -1,3 +1,7 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ g ] = dh_gen( d, theta, r, alpha )
 %DH_GEN Summary of this function goes here
 %   Detailed explanation goes here

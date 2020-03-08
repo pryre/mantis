@@ -1,3 +1,11 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ ] = print_user_settings(t0, cdt, dt, tf, frame_type, manip_type, n, order, nvias, smethod, tbase, tjoints, cmethod, cact, w0p, w0t, w0r)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here

@@ -1,3 +1,11 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ tau_r, integrator ] = control_manip_decoupled(model, r_sp, rd_sp, x, dt, integrator )
 %COMPUTED_TORQUE_CONTROL Summary of this function goes here
 %   Detailed explanation goes here

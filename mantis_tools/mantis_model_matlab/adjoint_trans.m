@@ -1,3 +1,7 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ ad ] = adjoint_trans( g )
 %ADJOINT The 6x6 matrix which transforms twists by the spacial
 %transformation of g

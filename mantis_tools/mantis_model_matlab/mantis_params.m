@@ -1,3 +1,7 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ p ] = mantis_params( filepath )
 %MANTIS_PARAMS Generates the parameter structure for simulating a MM-UAV
 %   filepath: path to the parameter file

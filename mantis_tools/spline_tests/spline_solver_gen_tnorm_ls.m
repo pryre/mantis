@@ -1,3 +1,11 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ M ] = spline_solver_gen_tnorm_ls( dim )
 %SPLINE_SOLVER_GEN_LINEAR_SYSTEM Generates a linear system of a set
 %dimension for the use in solving for a spline in the case that the spline 

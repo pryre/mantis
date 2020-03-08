@@ -1,3 +1,7 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ Vh ] = cay( V )
 %CAY Performs the Cayley map of a SE(3) velocity
 %   Detailed explanation goes here

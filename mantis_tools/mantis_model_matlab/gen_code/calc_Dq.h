@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 #include <eigen3/Eigen/Dense>
 
 inline void calc_Dq(Eigen::MatrixXd& Dq, double IJ0x, double IJ0y, double IJ0z, double IJ1x, double IJ1y, double IJ1z, double IJ2x, double IJ2y, double IJ2z, double l0, double l1, double lc1, double lc2, double m0, double m1, double m2, double r1, double r2) {

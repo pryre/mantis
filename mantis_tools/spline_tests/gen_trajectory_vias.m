@@ -1,3 +1,11 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [via_points_x, via_points_y, via_points_z, via_points_psi ] = gen_trajectory_vias(trajectory,num_via_points)
 %TRAJECTORY_VIAS Summary of this function goes here
 %   Detailed explanation goes here

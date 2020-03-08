@@ -1,3 +1,11 @@
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 function [ t, s_x, s_y, s_z, s_psi, s_r ] = mantis_opt_sim_spline_gen( config, vias, num_samples )
 %MANTIS_SIM_SPLINE_GEN Summary of this function goes here
 %   Detailed explanation goes here
