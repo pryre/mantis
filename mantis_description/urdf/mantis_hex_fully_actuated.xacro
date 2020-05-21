@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<robot name="mantis_uav" xmlns:xacro="http://ros.org/wiki/xacro">
+	<!-- Constants -->
+	<xacro:property name="pi" value="3.1415926535897931"/>
+
+	<!-- Import macros -->
+	<xacro:include filename="$(find mantis_description)/urdf/base_hex_single_servo.xacro" />
+
+	<xacro:include filename="$(find mantis_description)/urdf/arm_joint.xacro" />
+	<xacro:include filename="$(find mantis_description)/urdf/arm_link.xacro" />
+
+	<!-- Import all Gazebo-customization elements, including Gazebo colors -->
+	<xacro:include filename="$(find mantis_description)/urdf/mantis.gazebo" />
+
+	<!-- Used for fixing robot to Gazebo 'base_link' -->
+	<link name="world"/>
+
+	<joint name="fixed" type="floating">
+		<parent link="world"/>
+		<child link="base_link"/>
+	</joint>
+
+	<xacro:base_hex_single_servo arm_length="0.17" base_radius="0.105" mass="1.80497" ixx="0.02961" iyy="0.02933" izz="0.05342" ixy="0.0" ixz="0.00004" iyz="0.0" />
+
+	<xacro:arm_joint suffix="shoulder" parent="base_link" child="link_upperarm" xyz="0 0 -0.05025" rpy="${pi/2} ${pi/2} 0" />
+
+	<xacro:arm_link suffix="upperarm" />
+
+	<xacro:arm_joint suffix="elbow" parent="link_upperarm" child="link_forearm" xyz="0.18325 0 0" rpy="0 0 0" />
+
+	<xacro:arm_link suffix="forearm" />
+</robot>

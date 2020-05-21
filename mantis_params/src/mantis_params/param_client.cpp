@@ -21,6 +21,7 @@ namespace MantisParams {
 
 Client::Client( const ros::NodeHandle& nh )
 	: nh_( nh )
+	, num_motors_( 0 )
 	, num_dynamic_joints_( 0 )
 	, total_mass_(0.0)
 	, airframe_type_(PARAM_AIRFRAME_TYPE_UNSUPPORTED) {
@@ -60,14 +61,18 @@ void Client::callback_params(
 	bool parametric_change = false;
 
 	// Check for simple configuration changes
-	if ( ( msg_in->airframe_name != p_.airframe_name ) || ( msg_in->bodies.size() != p_.bodies.size() ) || ( msg_in->joints.size() != p_.joints.size() ) ) {
+	if ( ( msg_in->airframe_name != p_.airframe_name ) ||
+		 ( msg_in->bodies.size() != p_.bodies.size() ) ||
+		 ( msg_in->joints.size() != p_.joints.size() ) ||
+		 ( msg_in->base_arm_length != p_.base_arm_length ) ||
+		 ( msg_in->base_motor_cant != p_.base_motor_cant ) ) {
 
 		configuration_change = true;
 	}
 
 	// Check for simple parametric changes
 	if ( !configuration_change ) {
-		if ( ( msg_in->pwm_min != p_.pwm_min ) || ( msg_in->pwm_max != p_.pwm_max ) || ( msg_in->base_arm_length != p_.base_arm_length ) ||
+		if ( ( msg_in->pwm_min != p_.pwm_min ) || ( msg_in->pwm_max != p_.pwm_max ) ||
 			//(msg_in->motor_kv != p_.motor_kv) ||
 			//(msg_in->rpm_thrust_m != p_.rpm_thrust_m) ||
 			//(msg_in->rpm_thrust_c != p_.rpm_thrust_c) ||
@@ -151,6 +156,9 @@ void Client::callback_params(
 		} else if ( p_.airframe_name == "hex_p6" ) {
 			airframe_type_ = PARAM_AIRFRAME_TYPE_HEX_P6;
 			num_motors_ = MDTools::mixer_generate_hex_p6( mixer_ );
+		} else if ( p_.airframe_name == "hex_fa" ) {
+			airframe_type_ = PARAM_AIRFRAME_TYPE_HEX_FA;
+			num_motors_ = MDTools::mixer_generate_hex_fa( mixer_, p_.base_arm_length, p_.base_motor_cant );
 		} else if ( p_.airframe_name == "octo_x8" ) {
 			airframe_type_ = PARAM_AIRFRAME_TYPE_OCTO_X8;
 			num_motors_ = MDTools::mixer_generate_octo_x8( mixer_ );
@@ -224,6 +232,9 @@ const double& Client::get(const ParamsDouble param_id) {
 	switch(param_id) {
 		case PARAM_BASE_ARM_LENGTH: {
 			return p_.base_arm_length;
+		}
+		case PARAM_BASE_MOTOR_CANT: {
+			return p_.base_motor_cant;
 		}
 		case PARAM_MOTOR_MAX_THRUST: {
 			return p_.motor_thrust_max;
@@ -384,6 +395,10 @@ const bool Client::set(const ParamsDouble param_id, const double& param) {
 	switch(param_id) {
 		case PARAM_BASE_ARM_LENGTH: {
 			nh_.setParam( "motor/arm_len", param );
+			success = true;
+		}
+		case PARAM_BASE_MOTOR_CANT: {
+			nh_.setParam( "motor/cant", param );
 			success = true;
 		}
 		case PARAM_MOTOR_MAX_THRUST: {

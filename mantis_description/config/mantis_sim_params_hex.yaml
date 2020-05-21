@@ -3,6 +3,7 @@
 motor:
   num: 6
   arm_len: 0.275 #m
+  cant: 0.0 #rad
   thrust_max: 10.5225 # N
   #kv: 920
   #rpm_thrust_curve:

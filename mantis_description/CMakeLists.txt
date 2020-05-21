@@ -19,7 +19,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}_se_tools ${PROJECT_NAME}_mixer_map
-  #CATKIN_DEPENDS
+  # CATKIN_DEPENDS
   DEPENDS EIGEN3
 )
 

@@ -30,12 +30,13 @@ generate_dynamic_reconfigure_options(
   cfg/SensorMiscParams.cfg
   cfg/SensorRateParams.cfg
   cfg/SensorScalingParams.cfg
+  cfg/XacroTest.cfg
 )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}_client
-  CATKIN_DEPENDS
+  CATKIN_DEPENDS mantis_params
   DEPENDS EIGEN3
 )
 
@@ -96,6 +97,13 @@ target_link_libraries(${PROJECT_NAME}_client
 
 target_link_libraries(${PROJECT_NAME}_node
   ${PROJECT_NAME}_server
+  ${catkin_LIBRARIES}
+)
+
+## XACRO Test Node
+add_executable(${PROJECT_NAME}_xacro_test_node src/xacro_test_node.cpp)
+add_dependencies(${PROJECT_NAME}_xacro_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+target_link_libraries(${PROJECT_NAME}_xacro_test_node
   ${catkin_LIBRARIES}
 )
 

@@ -22,6 +22,7 @@ Server::Server( void )
 	, motor_thrust_max_( 0.0 )
 	, motor_drag_max_( 0.0 )
 	, la_( 0.0 )
+	, cant_( 0.0 )
 	, body_num_( 1 ) {
 
 	bool ready = false;
@@ -70,6 +71,7 @@ mantis_msgs::Parameters Server::get_params( void ) {
 	p.pwm_min = pwm_min_;
 	p.pwm_max = pwm_max_;
 	p.base_arm_length = la_;
+	p.base_motor_cant = cant_;
 	// p.motor_kv = motor_kv_;
 	// p.rpm_thrust_m = rpm_thrust_m_;
 	// p.rpm_thrust_c = rpm_thrust_c_;
@@ -95,6 +97,7 @@ void Server::load( void ) {
 	ROS_INFO( "--== Loading Mantis Parameters ==--" );
 
 	nh_.param( "motor/arm_len", la_, la_ );
+	nh_.param( "motor/cant", cant_, cant_ );
 	// nh_.param("motor/kv", motor_kv_, motor_kv_);
 	// nh_.param("motor/rpm_thrust_curve/m", rpm_thrust_m_, rpm_thrust_m_);
 	// nh_.param("motor/rpm_thrust_curve/c", rpm_thrust_c_, rpm_thrust_c_);
@@ -170,6 +173,7 @@ void Server::load( void ) {
 		 ( airframe_name_ != "quad_p4" ) &&
 		 ( airframe_name_ != "hex_x6" ) &&
 		 ( airframe_name_ != "hex_x6" ) &&
+		 ( airframe_name_ != "hex_fa" ) &&
 		 ( airframe_name_ != "octo_x8" ) &&
 		 ( airframe_name_ != "octo_p8" ) ) {
 

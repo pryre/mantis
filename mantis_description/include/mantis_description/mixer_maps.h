@@ -25,6 +25,8 @@ namespace MDTools {
 	int mixer_generate_hex_x6(Eigen::MatrixXd &m);
 	int mixer_generate_hex_p6(Eigen::MatrixXd &m);	//XXX: UNTESTED!
 
+	int mixer_generate_hex_fa(Eigen::MatrixXd &m, const double la, const double alpha);	//XXX: UNTESTED!
+
 	int mixer_generate_octo_x8(Eigen::MatrixXd &m);	//XXX: UNTESTED!
 	int mixer_generate_octo_p8(Eigen::MatrixXd &m);	//XXX: UNTESTED!
 }

@@ -29,6 +29,7 @@ class Server {
 		int pwm_max_;
 
 		double la_;
+		double cant_;
 		//int motor_num_;
 		//double motor_kv_;
 		//double rpm_thrust_m_;

@@ -14,6 +14,7 @@ uint16 pwm_min
 uint16 pwm_max
 
 float64 base_arm_length
+float64 base_motor_cant
 #float64 motor_kv
 #float64 rpm_thrust_m
 #float64 rpm_thrust_c

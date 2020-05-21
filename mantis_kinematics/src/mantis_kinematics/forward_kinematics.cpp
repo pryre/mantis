@@ -77,83 +77,98 @@ ForwardKinematics::ForwardKinematics()
 
 		// Additional bodies
 		/*
-    for(int i=0; i<p_.get_joint_num(); i++) {
-            DHParameters j(p_.joint(i));
-            if(j.jt() != DHParameters::JointType::Static) {
-                    transform.header.frame_id = param_tf_prefix_ + "/" +
-    p_.body_inertial(i).name;
-                    if( (i +i) < p_.get_joint_num() ) {
-                            transform.child_frame_id = param_tf_prefix_ + "/" +
-    p_.body_inertial(i+1).name;
-                    } else {
-                            transform.child_frame_id = param_tf_prefix_ +
-    "/end_effector";
-                    }
+		for(int i=0; i<p_.get_joint_num(); i++) {
+				DHParameters j(p_.joint(i));
+				if(j.jt() != DHParameters::JointType::Static) {
+						transform.header.frame_id = param_tf_prefix_ + "/" +
+		p_.body_inertial(i).name;
+						if( (i +i) < p_.get_joint_num() ) {
+								transform.child_frame_id = param_tf_prefix_ + "/" +
+		p_.body_inertial(i+1).name;
+						} else {
+								transform.child_frame_id = param_tf_prefix_ +
+		"/end_effector";
+						}
 
-                    tf.transform.translation =
-    MDTools::vector_from_eig(-(j.transform().linear().transpose()*j.transform().translation()));
-                    tfsbr_.sendTransform(tf);
-            }
-    }
-    */
+						tf.transform.translation =
+		MDTools::vector_from_eig(-(j.transform().linear().transpose()*j.transform().translation()));
+						tfsbr_.sendTransform(tf);
+				}
+		}
+		*/
+
 		// Propeller links
 		tf_props.resize( p_.get(MantisParams::PARAM_MOTOR_NUM) );
 		Eigen::Vector3d arm = Eigen::Vector3d( p_.get(MantisParams::PARAM_BASE_ARM_LENGTH), 0.0, 0.046 );
 
-		// Prepare common values
+		// Prepare common values, we will preset prop angles soon to "nice" values
+		//but we need to make sure it is a valid quaternion now
 		for ( int i = 0; i < p_.get(MantisParams::PARAM_MOTOR_NUM); i++ ) {
 			tf_props[i].header.frame_id = s_.model_id() + "/" + p_.get(MantisParams::PARAM_BODY_INERTIAL, 0 ).name;
 			tf_props[i].child_frame_id = s_.model_id() + "/link_rotor_" + std::to_string( i + 1 );
 			tf_props[i].transform.rotation.w = 1.0;
 		}
 
+		std::vector<double> rot_angles(p_.get(MantisParams::PARAM_MOTOR_NUM));
+		std::vector<double> cant_angles(p_.get(MantisParams::PARAM_MOTOR_NUM));
+
 		if ( p_.get(MantisParams::PARAM_AIRFRAME_TYPE) == MantisParams::PARAM_AIRFRAME_TYPE_QUAD_P4 ) {
-			Eigen::AngleAxisd rot( 3.0 * M_PI / 2.0, Eigen::Vector3d::UnitZ() );
-			tf_props[0].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = M_PI / 2.0;
-			tf_props[1].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = 0.0;
-			tf_props[2].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = M_PI;
-			tf_props[3].transform.translation = MDTools::vector_from_eig( rot * arm );
+			rot_angles[0] = 6.0 * M_PI / 4.0;
+			rot_angles[1] = 2.0 * M_PI / 4.0;
+			rot_angles[2] = 0.0 * M_PI / 4.0;
+			rot_angles[3] = 4.0 * M_PI / 4.0;
 		} else if ( p_.get(MantisParams::PARAM_AIRFRAME_TYPE) == MantisParams::PARAM_AIRFRAME_TYPE_QUAD_X4 ) {
-			Eigen::AngleAxisd rot( 7.0 * M_PI / 4.0, Eigen::Vector3d::UnitZ() );
-			tf_props[0].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = 3.0 * M_PI / 4.0;
-			tf_props[1].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = M_PI / 4.0;
-			tf_props[2].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = 5.0 * M_PI / 4.0;
-			tf_props[3].transform.translation = MDTools::vector_from_eig( rot * arm );
+			rot_angles[0] = 7.0 * M_PI / 4.0;
+			rot_angles[1] = 3.0 * M_PI / 4.0;
+			rot_angles[2] = 1.0 * M_PI / 4.0;
+			rot_angles[3] = 5.0 * M_PI / 4.0;
 		} else if ( p_.get(MantisParams::PARAM_AIRFRAME_TYPE) == MantisParams::PARAM_AIRFRAME_TYPE_HEX_P6 ) {
-			Eigen::AngleAxisd rot( 0.0, Eigen::Vector3d::UnitZ() );
-			tf_props[0].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = M_PI;
-			tf_props[1].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = 2.0 * M_PI / 3.0;
-			tf_props[2].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = 5.0 * M_PI / 3.0;
-			tf_props[3].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = 1.0 * M_PI / 3.0;
-			tf_props[4].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = 4.0 * M_PI / 3.0;
-			tf_props[5].transform.translation = MDTools::vector_from_eig( rot * arm );
+			rot_angles[0] =  0.0 * M_PI / 6.0;
+			rot_angles[1] =  6.0 * M_PI / 6.0;
+			rot_angles[2] =  4.0 * M_PI / 6.0;
+			rot_angles[3] = 10.0 * M_PI / 6.0;
+			rot_angles[4] =  2.0 * M_PI / 6.0;
+			rot_angles[5] =  8.0 * M_PI / 6.0;
 		} else if ( p_.get(MantisParams::PARAM_AIRFRAME_TYPE) == MantisParams::PARAM_AIRFRAME_TYPE_HEX_X6 ) {
-			Eigen::AngleAxisd rot( 9.0 * M_PI / 6.0, Eigen::Vector3d::UnitZ() );
-			tf_props[0].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = 3.0 * M_PI / 6.0;
-			tf_props[1].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = 1.0 * M_PI / 6.0;
-			tf_props[2].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = 7.0 * M_PI / 6.0;
-			tf_props[3].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = 11.0 * M_PI / 6.0;
-			tf_props[4].transform.translation = MDTools::vector_from_eig( rot * arm );
-			rot.angle() = 5.0 * M_PI / 6.0;
-			tf_props[5].transform.translation = MDTools::vector_from_eig( rot * arm );
+			rot_angles[0] =  9.0 * M_PI / 6.0;
+			rot_angles[1] =  3.0 * M_PI / 6.0;
+			rot_angles[2] =  1.0 * M_PI / 6.0;
+			rot_angles[3] =  7.0 * M_PI / 6.0;
+			rot_angles[4] = 11.0 * M_PI / 6.0;
+			rot_angles[5] =  5.0 * M_PI / 6.0;
+		} else if ( p_.get(MantisParams::PARAM_AIRFRAME_TYPE) == MantisParams::PARAM_AIRFRAME_TYPE_HEX_FA ) {
+			//XXX: Motor cant gets applied as per the "standard" motor layout defined in thesis
+			rot_angles[0] =  9.0 * M_PI / 6.0;
+			rot_angles[1] =  3.0 * M_PI / 6.0;
+			rot_angles[2] =  1.0 * M_PI / 6.0;
+			rot_angles[3] =  7.0 * M_PI / 6.0;
+			rot_angles[4] = 11.0 * M_PI / 6.0;
+			rot_angles[5] =  5.0 * M_PI / 6.0;
+
+			const double c = p_.get(MantisParams::PARAM_BASE_MOTOR_CANT);
+			cant_angles[0] =  c;
+			cant_angles[1] = -c;
+			cant_angles[2] =  c;
+			cant_angles[3] = -c;
+			cant_angles[4] = -c;
+			cant_angles[5] =  c;
+
+		} else {
+			ROS_ERROR("Un-mapped airframe type, cannot visualisze");
+			ros::shutdown();
 		}
 
-		ROS_INFO( "Forward kinematics running!" );
+		if(ros::ok()) {
+			for(int i = 0; i< p_.get(MantisParams::PARAM_MOTOR_NUM); i++) {
+				Eigen::AngleAxisd rot( rot_angles[i], Eigen::Vector3d::UnitZ() );
+				Eigen::AngleAxisd cant(cant_angles[i], Eigen::Vector3d::UnitX());
+
+				tf_props[i].transform.translation = MDTools::vector_from_eig( rot * arm );
+				tf_props[i].transform.rotation = MDTools::quaternion_from_eig(rot * cant);	//rotate to look "nice" plus prop cant
+			}
+
+			ROS_INFO( "Forward kinematics running!" );
+		}
 	} else {
 		ros::shutdown();
 	}
@@ -204,17 +219,26 @@ void ForwardKinematics::callback_timer( const ros::TimerEvent& e ) {
 
 	if ( param_do_prop_viz_ ) {
 		if ( s_.flight_ready() ) {
-			Eigen::Quaterniond r(
-				Eigen::AngleAxisd( prop_rate_, Eigen::Vector3d::UnitZ() ) );
-			Eigen::VectorXd mdir = p_.get(MantisParams::PARAM_MIXER) * Eigen::Vector4d( 0.0, 0.0, 0.0, 1.0 );
+			Eigen::Quaterniond r( Eigen::AngleAxisd( prop_rate_, Eigen::Vector3d::UnitZ() ) );
+			const Eigen::MatrixXd M = p_.get(MantisParams::PARAM_MIXER);
+
+			Eigen::VectorXd mdir = Eigen::VectorXd::Zero(p_.get(MantisParams::PARAM_MOTOR_NUM));
+			if (M.cols() == 4) {
+				mdir = M * Eigen::Vector4d( 0.0, 0.0, 0.0, 1.0 );
+			} else if  (M.cols() == 6) {
+				Eigen::VectorXd cz(6);
+				cz <<  0.0, 0.0, 0.0, 0.0, 0.0, 1.0;
+				mdir = M * cz;
+			}
 
 			for ( int i = 0; i < p_.get(MantisParams::PARAM_MOTOR_NUM); i++ ) {
 				// tf_props[i].header.stamp = e.current_real;
 				Eigen::Quaterniond q = MDTools::quaternion_from_msg( tf_props[i].transform.rotation );
 				// Correct q for motor directions
 				Eigen::Quaterniond mr = ( mdir[i] < 0 ) ? r : r.inverse();
-				tf_props[i].transform.rotation = MDTools::quaternion_from_eig( mr * q );
+				tf_props[i].transform.rotation = MDTools::quaternion_from_eig( q * mr );	//XXX: do q*mr to make sure motor cant is respected
 			}
+
 		}
 
 		for ( int i = 0; i < p_.get(MantisParams::PARAM_MOTOR_NUM); i++ ) {

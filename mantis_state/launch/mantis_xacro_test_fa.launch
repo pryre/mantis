@@ -1,0 +1,41 @@
+<?xml version='1.0'?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<launch>
+	<arg name="model" default="$(find mantis_description)/urdf/mantis_hex.xacro"/>
+	<arg name="model_name" default="mantis_uav"/>
+	<arg name="spawn_x" default="0.0"/>
+	<arg name="spawn_y" default="0.0"/>
+	<arg name="spawn_z" default="0.5"/>
+
+	<group ns="$(arg model_name)">
+		<rosparam command="load" file="$(find mantis_description)/config/mantis_sim_params_hex_fa.yaml"/>
+		<param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
+
+		<node pkg="mantis_params" type="mantis_params_node" name="mantis_params"
+		clear_params="true" output="screen">
+			<param name="model_id" value="$(arg model_name)" />
+		</node>
+
+		<node pkg="mantis_state" type="mantis_state_xacro_test_node" name="mantis_state_xtn"
+		clear_params="true" output="screen">
+			<param name="update_rate" value="30.0" />
+		</node>
+
+		<node pkg="mantis_kinematics" type="mantis_kinematics_forward_node" name="mantis_fk"
+		clear_params="true" output="screen">
+			<param name="update_rate" value="30.0" />
+
+			<param name="armed_prop_velocity" value="0.6" />
+			<param name="prop_viz" value="true" />
+			<param name="end_effector_pose" value="true" />
+		</node>
+
+		<node pkg="tf2_ros" type="static_transform_publisher" name="tf_local_world"
+		args="0.0 0.0 0.0 0.0 0.0 0.0 world $(arg model_name)/world" clear_params="true" output="screen"/>
+
+		<node pkg="tf2_ros" type="static_transform_publisher" name="tf_local_map"
+		args="0.0 0.0 0.0 0.0 0.0 0.0 $(arg model_name)/world map" clear_params="true" output="screen"/>
+	</group>
+</launch>
