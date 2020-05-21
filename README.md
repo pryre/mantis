@@ -5,6 +5,9 @@
 # mantis
 ROS meta-package for a aerial manipulators.
 
+![Mantis Underactuated-Actuated Quadrotor](/mantis_description/resources/pic_quad.png) | ![Mantis Fully-Actuated Hexarotor](/mantis_description/resources/pic_hex_fa.png) 
+:-------------------------:|:-------------------------:
+
 ## Package Summary
 The following packages make up the MM-UAV framework. Although not directly listed, many of the packages are managed through Dynamic Reconfigure, and allow for a large amount of runtime tuning / customisation.
 
