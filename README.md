@@ -106,3 +106,37 @@ Change `mantis_uav_X`, `spawn_x`, and `spawn_y` in the following to match your U
 2. `roslaunch mantis_description robin_sim_udp.launch model_name:=mantis_uav_X`
 3. `roslaunch mantis_description mantis_sim_controller_feed.launch model_name:=mantis_uav_X`
 5. `roslaunch mantis_planner plan_loader.launch model_name:=mantis_uav_X move:=home`
+
+
+## Credits
+
+This package has been developed during research at the Queensland University of Technology by Kye Morton.
+
+#### Citations
+
+This package has a number of citable works, however please cite the final thesis:
+
+```
+@phdthesis{quteprints201669,
+          author = {Kye Morton},
+           title = {An extensible framework for nonlinear aerial manipulation},
+            year = {2020},
+          school = {Queensland University of Technology},
+             doi = {10.5204/thesis.eprints.201669},
+        keywords = {Aerial Manipulation, Robotics, Nonlinear Control, Autonomous Systems, Multirotor, Manipulation},
+        abstract = {This thesis presents a framework to aid in the design of a wide range of aerial manipulation systems. The framework provides an extensible architecture to develop, compare, and contrast new guidance and control methods for aerial manipulators.
+
+Key developments include a range of novel techniques to generate and track practically feasible trajectories, recover from large disturbances, and the ability to perform complex manipulation tasks. The framework is an important step towards safe and reliable aerial manipulation.},
+             url = {https://eprints.qut.edu.au/201669/}
+}
+```
+
+Related publications:
+- Feasible Polynomial Trajectory Planning for Aerial Manipulation. K Morton, A McFadyen, LFG Toro. 2020.
+- Search and retrieve with a fully autonomous aerial manipulator. K Morton, LFG Toro, A McFadyen. 2019.
+- Generalized trajectory control for tree-structured aerial manipulators. K Morton, A McFadyen, F Gonzalez. 2018.
+- Development of a robust framework for an outdoor mobile manipulation UAV. K Morton, LFG Toro. 2016.
+
+#### Package Name
+
+The name `mantis` is homage to a praying mantis; a (typically) winged insect with forelegs adapted for catching their prey.
